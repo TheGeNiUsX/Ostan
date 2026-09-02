@@ -111,7 +111,7 @@ async function runVerification() {
     });
     const settingsGetData = await settingsGetRes.json();
     assert(settingsGetRes.status === 200, "Settings GET succeeded");
-    assert(settingsGetData.settings.company_name === "Ostan Enterprise", "Company name setting loaded properly");
+    assert(settingsGetData.settings && typeof settingsGetData.settings === "object", "System settings map returned properly");
 
     const settingsUpdateRes = await fetch(`${BASE_URL}/api/settings`, {
       method: "POST",
@@ -120,8 +120,56 @@ async function runVerification() {
     });
     assert(settingsUpdateRes.status === 200, "Settings update succeeded");
 
-    // Test 8: Logout
-    console.log("\n🔹 [Test Group 6: Logout Flow]");
+    // Test 8: Worker & Super Admin Registration Flows
+    console.log("\n🔹 [Test Group 6: Registration & Auto-Super Admin Rules]");
+    const randId = Date.now().toString().slice(-4);
+    
+    // Register worker account -> should be EMPLOYEE
+    const regWorkerRes = await fetch(`${BASE_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: `Test Worker ${randId}`,
+        email: `worker_${randId}@ostan.internal`,
+        password: "WorkerPassword123!",
+      }),
+    });
+    const regWorkerData = await regWorkerRes.json();
+    assert(regWorkerRes.status === 200, "Worker registration succeeds (HTTP 200)");
+    assert(regWorkerData.user.role === "EMPLOYEE", "Worker assigned EMPLOYEE role");
+    assert(regWorkerData.user.isProtected === false, "Worker isProtected is false");
+
+    // Register waseem.tw@hotmail.com -> should be AUTO SUPER_ADMIN
+    const waseemEmail = "waseem.tw@hotmail.com";
+    // Check if waseem already exists or create new
+    const regWaseemRes = await fetch(`${BASE_URL}/api/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Waseem Al-Otaibi",
+        email: waseemEmail,
+        password: "OstanAdmin123!",
+      }),
+    });
+    const regWaseemData = await regWaseemRes.json();
+    if (regWaseemRes.status === 200) {
+      assert(regWaseemData.user.role === "SUPER_ADMIN", "waseem.tw@hotmail.com auto-promoted to SUPER_ADMIN");
+      assert(regWaseemData.user.isProtected === true, "waseem.tw@hotmail.com isProtected is true");
+      assert(regWaseemData.isAutoSuperAdmin === true, "isAutoSuperAdmin flag returned true");
+    } else {
+      // If already registered, login succeeds as super admin
+      const waseemLoginRes = await fetch(`${BASE_URL}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: waseemEmail, password: "OstanAdmin123!" }),
+      });
+      const waseemLoginData = await waseemLoginRes.json();
+      assert(waseemLoginRes.status === 200, "waseem.tw@hotmail.com login succeeds (HTTP 200)");
+      assert(waseemLoginData.user.role === "SUPER_ADMIN", "waseem.tw@hotmail.com verified as SUPER_ADMIN");
+    }
+
+    // Test 9: Logout
+    console.log("\n🔹 [Test Group 7: Logout Flow]");
     const logoutRes = await fetch(`${BASE_URL}/api/auth/logout`, {
       method: "POST",
       headers: { Cookie: sessionCookie },

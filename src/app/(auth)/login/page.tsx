@@ -5,41 +5,46 @@ import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n/context";
 import { useTheme } from "@/lib/theme/context";
 import {
-  Sparkles,
   Lock,
   Mail,
+  User,
   ArrowRight,
   ShieldCheck,
   ShieldAlert,
   Globe,
   Sun,
   Moon,
-  Users,
   Building2,
   Package,
   UserCheck,
+  Sparkles,
 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const { t, locale, setLocale } = useI18n();
-  const { theme, resolvedTheme, setTheme } = useTheme();
+  const { resolvedTheme, setTheme } = useTheme();
 
-  const [email, setEmail] = useState("superadmin@ostan.internal");
-  const [password, setPassword] = useState("SuperAdmin123!");
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("waseem.tw@hotmail.com");
+  const [password, setPassword] = useState("OstanAdmin123!");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const isWaseemEmail = email.toLowerCase().trim() === "waseem.tw@hotmail.com";
 
   const demoAccounts = [
     {
       role: "SUPER_ADMIN",
       roleLabel: locale === "ar" ? "المسؤول المتميز (Super Admin)" : "Super Admin",
-      name: locale === "ar" ? "طارق العتيبي" : "Tariq Al-Otaibi",
-      email: "superadmin@ostan.internal",
-      password: "SuperAdmin123!",
+      name: "Waseem Al-Otaibi",
+      email: "waseem.tw@hotmail.com",
+      password: "OstanAdmin123!",
       icon: ShieldAlert,
       badgeClass: "badge-rose",
-      desc: locale === "ar" ? "حساب محمي • صلاحيات كاملة للنظام" : "Protected Account • Full System Access",
+      desc: locale === "ar" ? "حساب المسؤول المتميز • تحكم كامل في أقسام وقفل النظام" : "Master Admin Account • Full Lock & Access Control",
     },
     {
       role: "ADMIN",
@@ -62,16 +67,6 @@ export default function LoginPage() {
       desc: locale === "ar" ? "إدارة الموظفين والمهام والمخزون" : "Manage Team, Tasks & Stock View",
     },
     {
-      role: "STOCK_MANAGER",
-      roleLabel: locale === "ar" ? "مدير المستودع (Stock Manager)" : "Stock Manager",
-      name: locale === "ar" ? "ريم الدوسري" : "Reem Al-Dosari",
-      email: "stock@ostan.internal",
-      password: "Stock123!",
-      icon: Package,
-      badgeClass: "badge-amber",
-      desc: locale === "ar" ? "إدارة كاملة للمنتجات والأصناف وحدود التنبيه" : "Full Inventory, Alert Thresholds & Items",
-    },
-    {
       role: "EMPLOYEE",
       roleLabel: locale === "ar" ? "موظف (Employee)" : "Employee",
       name: locale === "ar" ? "فيصل الحربي" : "Faisal Al-Harbi",
@@ -84,33 +79,57 @@ export default function LoginPage() {
   ];
 
   const handleQuickFill = (demoEmail: string, demoPass: string) => {
+    setAuthMode("login");
     setEmail(demoEmail);
     setPassword(demoPass);
     setError(null);
+    setSuccessMsg(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccessMsg(null);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const endpoint = authMode === "signup" ? "/api/auth/register" : "/api/auth/login";
+      const payload = authMode === "signup" ? { name, email, password } : { email, password };
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify(payload),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data.error || t("auth_error_invalid"));
+        setError(data.error || "Authentication failed. Please check your details.");
         setLoading(false);
         return;
       }
 
-      router.push("/dashboard");
-      router.refresh();
+      if (authMode === "signup") {
+        if (data.isAutoSuperAdmin) {
+          setSuccessMsg(
+            locale === "ar"
+              ? "🎉 مرحباً بك! تم تعيينك كمسؤول متميز للنظام (Super Admin) بنجاح."
+              : "🎉 Welcome! You have been automatically assigned as Super Admin."
+          );
+        } else {
+          setSuccessMsg(
+            locale === "ar"
+              ? "✅ تم إنشاء الحساب بنجاح! جاري الدخول للمنصة..."
+              : "✅ Account created successfully! Logging in..."
+          );
+        }
+      }
+
+      setTimeout(() => {
+        router.push("/dashboard");
+        router.refresh();
+      }, 700);
     } catch {
       setError("An unexpected network error occurred. Please try again.");
       setLoading(false);
@@ -195,7 +214,7 @@ export default function LoginPage() {
         }}
       >
         <div style={{ width: "100%", maxWidth: "520px" }}>
-          {/* Login Card */}
+          {/* Auth Card */}
           <div
             className="glass-panel"
             style={{
@@ -203,12 +222,60 @@ export default function LoginPage() {
               boxShadow: "var(--shadow-lg)",
             }}
           >
-            <div style={{ textAlign: "center", marginBottom: "1.75rem" }}>
-              <h1 style={{ fontSize: "1.5rem", fontWeight: 800, marginBottom: "0.4rem" }}>
-                {t("auth_title")}
+            {/* Mode Switch Tabs (Sign In vs Sign Up) */}
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: "6px",
+                background: "var(--bg-surface)",
+                padding: "4px",
+                borderRadius: "var(--radius-md)",
+                marginBottom: "1.5rem",
+                border: "1px solid var(--border-subtle)",
+              }}
+            >
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("login");
+                  setError(null);
+                  setSuccessMsg(null);
+                }}
+                className={`btn ${authMode === "login" ? "btn-primary" : "btn-ghost"}`}
+                style={{ padding: "0.5rem", fontSize: "0.88rem" }}
+              >
+                {locale === "ar" ? "تسجيل الدخول" : "Sign In"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("signup");
+                  setError(null);
+                  setSuccessMsg(null);
+                }}
+                className={`btn ${authMode === "signup" ? "btn-primary" : "btn-ghost"}`}
+                style={{ padding: "0.5rem", fontSize: "0.88rem" }}
+              >
+                {locale === "ar" ? "إنشاء حساب عامل" : "Sign Up (Worker)"}
+              </button>
+            </div>
+
+            <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+              <h1 style={{ fontSize: "1.45rem", fontWeight: 800, marginBottom: "0.3rem" }}>
+                {authMode === "signup"
+                  ? (locale === "ar" ? "تسجيل حساب عامل جديد" : "Create New Worker Account")
+                  : (locale === "ar" ? "تسجيل الدخول إلى أستان" : "Sign in to Ostan")}
               </h1>
-              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                {t("auth_subtitle")}
+              <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+                {authMode === "signup"
+                  ? (locale === "ar"
+                      ? "سجل حسابك للوصول إلى المهام والتذكيرات المخصصة لك"
+                      : "Register to access your assigned workflow and tasks")
+                  : (locale === "ar"
+                      ? "أدخل بيانات حسابك للمتابعة وإدارة العمليات"
+                      : "Enter your enterprise credentials to access your portal")}
               </p>
             </div>
 
@@ -232,11 +299,68 @@ export default function LoginPage() {
               </div>
             )}
 
+            {successMsg && (
+              <div
+                style={{
+                  padding: "0.75rem 1rem",
+                  background: "rgba(16, 185, 129, 0.12)",
+                  border: "1px solid rgba(16, 185, 129, 0.3)",
+                  borderRadius: "var(--radius-md)",
+                  color: "#34d399",
+                  fontSize: "0.85rem",
+                  marginBottom: "1.25rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <span>{successMsg}</span>
+              </div>
+            )}
+
             <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.1rem" }}>
+              {authMode === "signup" && (
+                <div className="input-group">
+                  <label className="input-label" htmlFor="name-input">
+                    {locale === "ar" ? "الاسم الكامل *" : "Full Name *"}
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      id="name-input"
+                      type="text"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder={locale === "ar" ? "مثال: وسيم العتيبي" : "e.g. Waseem Al-Otaibi"}
+                      className="input-field"
+                      style={{ paddingInlineStart: "2.4rem" }}
+                    />
+                    <div
+                      style={{
+                        position: "absolute",
+                        insetInlineStart: "0.75rem",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        color: "var(--text-faint)",
+                      }}
+                    >
+                      <User size={16} />
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="input-group">
-                <label className="input-label" htmlFor="email-input">
-                  {t("auth_email_label")}
-                </label>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <label className="input-label" htmlFor="email-input">
+                    {t("auth_email_label")}
+                  </label>
+                  {isWaseemEmail && (
+                    <span className="badge badge-rose" style={{ fontSize: "0.68rem", padding: "0.1rem 0.45rem" }}>
+                      👑 {locale === "ar" ? "مسؤول متميز تلقائي" : "Auto Super Admin"}
+                    </span>
+                  )}
+                </div>
                 <div style={{ position: "relative" }}>
                   <input
                     id="email-input"
@@ -244,7 +368,7 @@ export default function LoginPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={t("auth_email_placeholder")}
+                    placeholder="waseem.tw@hotmail.com"
                     className="input-field"
                     style={{ paddingInlineStart: "2.4rem" }}
                   />
@@ -291,6 +415,23 @@ export default function LoginPage() {
                 </div>
               </div>
 
+              {authMode === "signup" && isWaseemEmail && (
+                <div
+                  style={{
+                    padding: "0.65rem 0.85rem",
+                    borderRadius: "var(--radius-md)",
+                    background: "rgba(244, 63, 94, 0.08)",
+                    border: "1px solid rgba(244, 63, 94, 0.25)",
+                    fontSize: "0.78rem",
+                    color: "#fb7185",
+                  }}
+                >
+                  ⚡ {locale === "ar"
+                    ? "البريد waseem.tw@hotmail.com مخصص تلقائياً كمسؤول متميز بكامل صلاحيات قفل وإخفاء الأقسام وإدارة الحسابات."
+                    : "waseem.tw@hotmail.com is assigned as master Super Admin with full lock/hide controls across sections."}
+                </div>
+              )}
+
               <button
                 type="submit"
                 disabled={loading}
@@ -303,7 +444,13 @@ export default function LoginPage() {
                   marginTop: "0.5rem",
                 }}
               >
-                <span>{loading ? t("auth_signing_in") : t("auth_submit")}</span>
+                <span>
+                  {loading
+                    ? (locale === "ar" ? "جاري المعالجة..." : "Processing...")
+                    : authMode === "signup"
+                    ? (locale === "ar" ? "إنشاء الحساب والدخول" : "Create Account & Sign In")
+                    : t("auth_submit")}
+                </span>
                 <ArrowRight size={16} />
               </button>
             </form>
@@ -329,7 +476,7 @@ export default function LoginPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: "0.45rem" }}>
               {demoAccounts.map((account) => {
                 const Icon = account.icon;
-                const isSelected = email === account.email;
+                const isSelected = email === account.email && authMode === "login";
 
                 return (
                   <button

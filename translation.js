@@ -223,6 +223,32 @@
       settings_test_alarm_title: "Test Reminder Alarm Chime",
       settings_test_alarm_desc: "Click to test the in-app audio chime synthesizer and toast notification.",
       btn_test_alarm: "🔔 Test Audio Alarm Now",
+
+      // Authentication & Sign-Up Portal
+      auth_portal_title: "Sign in to Ostan",
+      auth_portal_subtitle: "Enterprise Business Management Platform",
+      auth_login_tab: "Sign In",
+      auth_signup_tab: "Sign Up (New Account)",
+      auth_fullname_label: "Full Name *",
+      auth_fullname_placeholder: "e.g. Waseem Al-Otaibi",
+      auth_email_label: "Email Address *",
+      auth_email_placeholder: "waseem.tw@hotmail.com",
+      auth_password_label: "Password *",
+      auth_password_placeholder: "••••••••",
+      auth_btn_login: "Sign In to Platform",
+      auth_btn_signup: "Create Account & Sign In",
+      auth_switch_to_signup: "Don't have an account? Sign Up",
+      auth_switch_to_login: "Already have an account? Sign In",
+      auth_superadmin_promoted_badge: "👑 Auto-Super Admin",
+      auth_auto_superadmin_hint: "Tip: Signing up with waseem.tw@hotmail.com will automatically assign master Super Admin privileges.",
+
+      // 3-State Section Access Control
+      access_state_accessible: "Accessible (Full Access)",
+      access_state_locked: "Locked 🔒 (View with Lock Effect)",
+      access_state_hidden: "Hidden 👁️ (Completely Hidden)",
+      locked_modal_title: "🔒 Department Section Locked",
+      locked_modal_desc: "This department/section has been locked for your account by Administrator (waseem.tw@hotmail.com). Please contact your administrator if you require access.",
+      locked_modal_btn: "Understood",
     },
     ar: {
       // Brand & General
@@ -443,6 +469,32 @@
       settings_test_alarm_title: "اختبار جرس التنبيه الصوتي",
       settings_test_alarm_desc: "اضغط لتشغيل نغمة التنبيه الصوتي وظهور الإشعار المنبثق.",
       btn_test_alarm: "🔔 تشغيل نغمة الإنذار الآن",
+
+      // Authentication & Sign-Up Portal
+      auth_portal_title: "تسجيل الدخول إلى أستان",
+      auth_portal_subtitle: "منصة إدارة العمليات والمؤسسات الذكية",
+      auth_login_tab: "تسجيل الدخول",
+      auth_signup_tab: "إنشاء حساب جديد (تسجيل عامل)",
+      auth_fullname_label: "الاسم الكامل *",
+      auth_fullname_placeholder: "مثال: وسيم العتيبي",
+      auth_email_label: "البريد الإلكتروني *",
+      auth_email_placeholder: "waseem.tw@hotmail.com",
+      auth_password_label: "كلمة المرور *",
+      auth_password_placeholder: "••••••••",
+      auth_btn_login: "دخول إلى المنصة",
+      auth_btn_signup: "إنشاء الحساب والدخول",
+      auth_switch_to_signup: "ليس لديك حساب؟ إنشاء حساب جديد",
+      auth_switch_to_login: "لديك حساب بالفعل؟ تسجيل الدخول",
+      auth_superadmin_promoted_badge: "👑 مسؤول متميز تلقائي",
+      auth_auto_superadmin_hint: "تنبيه: التسجيل بالبريد waseem.tw@hotmail.com يمنح تلقائياً صلاحيات المسؤول المتميز (Super Admin).",
+
+      // 3-State Section Access Control
+      access_state_accessible: "متاح (وصول كامل)",
+      access_state_locked: "مقفل 🔒 (يظهر تأثير القفل)",
+      access_state_hidden: "مخفي 👁️ (إخفاء تام عن العامل)",
+      locked_modal_title: "🔒 هذا القسم مقفل حالياً",
+      locked_modal_desc: "تم قفل هذا القسم لحسابك من قبل المسؤول (waseem.tw@hotmail.com). يرجى التواصل مع إدارة النظام إذا كنت بحاجة للوصول.",
+      locked_modal_btn: "حسناً، فهمت",
     },
   };
 

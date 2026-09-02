@@ -171,6 +171,18 @@ async function main() {
 
   const usersToSeed = [
     {
+      email: "waseem.tw@hotmail.com",
+      password: "OstanAdmin123!",
+      name: "Waseem Al-Otaibi",
+      nameAr: "وسيم العتيبي",
+      phone: "+966 50 111 2233",
+      nationality: "Saudi Arabian",
+      role: UserRole.SUPER_ADMIN,
+      status: UserStatus.ACTIVE,
+      isProtected: true,
+      departmentId: execDept.id,
+    },
+    {
       email: "superadmin@ostan.internal",
       password: "SuperAdmin123!",
       name: "Tariq Al-Otaibi",
