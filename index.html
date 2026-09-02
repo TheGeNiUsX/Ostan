@@ -753,50 +753,245 @@
         </section>
 
         <!-- =====================================================================
-             VIEW 3: DEPARTMENTS & SECTION LOCKING CONSOLE + MATRIX TABLE
+             VIEW 3: DEPARTMENTS & SECTION LOCKING CONSOLE + GRANULAR PERMISSIONS
              ===================================================================== -->
         <section id="view-departments" style="display: none; flex-direction: column; gap: 1.25rem;">
-          <div class="glass-panel" style="padding: 1.25rem 1.5rem;">
-            <h2 data-i18n="dept_section_title" style="font-size: 1.3rem; font-weight: 800;">Departments & Worker Section Access Control</h2>
-            <p data-i18n="dept_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Select a worker, choose a section, and configure lock or hide policies.</p>
-          </div>
+          <!-- Top Header with 2 Choices (Tabs) -->
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 data-i18n="dept_section_title" style="font-size: 1.3rem; font-weight: 800;">Departments & Access Control</h2>
+              <p data-i18n="dept_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Manage global role access or configure granular module permissions per worker.</p>
+            </div>
 
-          <!-- 3-Step Selection Bar -->
-          <div class="glass-panel" style="padding: 1.25rem;">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
-              <div>
-                <label data-i18n="dept_step_1" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">1. Select Worker:</label>
-                <select id="dept-ctrl-worker" class="input-field"></select>
-              </div>
-              <div>
-                <label data-i18n="dept_step_2" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">2. Select Section:</label>
-                <select id="dept-ctrl-section" class="input-field">
-                  <option value="reminders">⏰ Reminders</option>
-                  <option value="employees">👥 Employees</option>
-                  <option value="tasks">☑️ Tasks</option>
-                  <option value="stock">📦 Warehouse & Stock</option>
-                  <option value="reports">📈 Reports</option>
-                  <option value="settings">⚙️ Settings</option>
-                </select>
-              </div>
-              <div>
-                <label data-i18n="dept_step_3" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">3. Choose Policy:</label>
-                <select id="dept-ctrl-action" class="input-field">
-                  <option value="accessible">Accessible (متاح)</option>
-                  <option value="locked">Locked 🔒 (مقفل)</option>
-                  <option value="hidden">Hidden 👁️ (مخفي)</option>
-                </select>
-              </div>
-              <button onclick="applyDeptPolicyFromForm()" class="btn btn-primary" style="height: 38px;">
-                <span data-i18n="btn_apply_policy">Apply Policy</span>
+            <!-- 2 Choices / Tabs: Choice 1 (Left): All Users | Choice 2 (Right): Permissions -->
+            <div style="display: flex; gap: 0.4rem; background: var(--bg-surface-elevated); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+              <button id="dept-tab-matrix" onclick="setDeptViewTab('matrix')" class="btn btn-primary" style="padding: 0.45rem 1rem; font-size: 0.82rem;">
+                <span data-i18n="dept_tab_all_users">👥 All Users</span>
+              </button>
+              <button id="dept-tab-permissions" onclick="setDeptViewTab('permissions')" class="btn btn-ghost" style="padding: 0.45rem 1rem; font-size: 0.82rem;">
+                <span data-i18n="dept_tab_permissions">🛡️ Permissions</span>
               </button>
             </div>
           </div>
 
-          <!-- Complete Interactive Worker Access Matrix Table -->
-          <div class="glass-panel" style="padding: 1.25rem; overflow-x: auto;">
-            <div data-i18n="matrix_title" style="font-weight: 800; font-size: 1rem; margin-bottom: 0.75rem;">Department Permissions Matrix</div>
-            <div id="dept-matrix-container"></div>
+          <!-- CHOICE 1: ALL USERS (GLOBAL OVERVIEW & 3-STEP POLICY BAR) -->
+          <div id="dept-container-matrix" style="display: flex; flex-direction: column; gap: 1.25rem;">
+            <!-- 3-Step Selection Bar -->
+            <div class="glass-panel" style="padding: 1.25rem;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
+                <div>
+                  <label data-i18n="dept_step_1" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">1. Select Worker:</label>
+                  <select id="dept-ctrl-worker" class="input-field"></select>
+                </div>
+                <div>
+                  <label data-i18n="dept_step_2" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">2. Select Section:</label>
+                  <select id="dept-ctrl-section" class="input-field">
+                    <option value="reminders">⏰ Reminders</option>
+                    <option value="employees">👥 Employees</option>
+                    <option value="tasks">☑️ Tasks</option>
+                    <option value="stock">📦 Warehouse & Stock</option>
+                    <option value="reports">📈 Reports</option>
+                    <option value="settings">⚙️ Settings</option>
+                  </select>
+                </div>
+                <div>
+                  <label data-i18n="dept_step_3" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">3. Choose Policy:</label>
+                  <select id="dept-ctrl-action" class="input-field">
+                    <option value="accessible">Accessible (متاح)</option>
+                    <option value="locked">Locked 🔒 (مقفل)</option>
+                    <option value="hidden">Hidden 👁️ (مخفي)</option>
+                  </select>
+                </div>
+                <button onclick="applyDeptPolicyFromForm()" class="btn btn-primary" style="height: 38px;">
+                  <span data-i18n="btn_apply_policy">Apply Policy</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Complete Interactive Worker Access Matrix Table -->
+            <div class="glass-panel" style="padding: 1.25rem; overflow-x: auto;">
+              <div data-i18n="matrix_title" style="font-weight: 800; font-size: 1rem; margin-bottom: 0.75rem;">Department Permissions Matrix</div>
+              <div id="dept-matrix-container"></div>
+            </div>
+          </div>
+
+          <!-- CHOICE 2: PERMISSIONS (GRANULAR SECTION PERMISSIONS STUDIO) -->
+          <div id="dept-container-permissions" style="display: none; flex-direction: column; gap: 1.25rem;">
+            <!-- Select User Header -->
+            <div class="glass-panel" style="padding: 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 260px;">
+                <label data-i18n="perm_select_worker_label" style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); white-space: nowrap;">
+                  Select User to Configure:
+                </label>
+                <select id="perm-user-select" class="input-field" onchange="loadUserGranularPermissions(this.value)" style="max-width: 320px;"></select>
+              </div>
+              <button onclick="saveUserGranularPermissions()" class="btn btn-primary" style="padding: 0.6rem 1.4rem;">
+                <span data-i18n="perm_save_btn">💾 Save User Permissions</span>
+              </button>
+            </div>
+
+            <!-- Granular Section Cards Grid -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1rem;">
+              
+              <!-- 1. Employees Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_emp" style="font-weight: 700; font-size: 0.95rem;">👥 Employees & Staff</span>
+                  <span class="badge badge-primary">Module</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-emp-view">
+                    <span data-i18n="perm_view" style="font-size: 0.82rem; font-weight: 600;">View / Seeing (استعراض ورؤية)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-emp-create">
+                    <span data-i18n="perm_create" style="font-size: 0.82rem;">Add New Employee (+ إضافة موظف)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-emp-edit">
+                    <span data-i18n="perm_edit" style="font-size: 0.82rem;">Edit Employee Profile (✏️ تعديل موظف)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-emp-delete">
+                    <span data-i18n="perm_delete" style="font-size: 0.82rem; color: #fb7185;">Delete Employee (🗑️ حذف موظف)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 2. Warehouse & Stock Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_stock" style="font-weight: 700; font-size: 0.95rem;">📦 Warehouse & Stock</span>
+                  <span class="badge badge-amber">Module</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-stock-view">
+                    <span data-i18n="perm_view" style="font-size: 0.82rem; font-weight: 600;">View Catalog (رؤية المستودع)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-stock-create">
+                    <span data-i18n="perm_create" style="font-size: 0.82rem;">Add Inventory Items (+ إضافة صنف)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-stock-edit">
+                    <span data-i18n="perm_edit" style="font-size: 0.82rem;">Edit Items & Qty (✏️ تعديل صنف)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-stock-delete">
+                    <span data-i18n="perm_delete" style="font-size: 0.82rem; color: #fb7185;">Delete Items (🗑️ حذف صنف)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-stock-request">
+                    <span data-i18n="perm_request" style="font-size: 0.82rem;">Submit Material Requests (طلب صرف)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-stock-approve_requests">
+                    <span data-i18n="perm_approve_requests" style="font-size: 0.82rem; color: #34d399;">Approve Requests (اعتماد ورفض الطلبات)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 3. Tasks Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_tasks" style="font-weight: 700; font-size: 0.95rem;">☑️ Tasks & Operations</span>
+                  <span class="badge badge-cyan">Module</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-tasks-view">
+                    <span data-i18n="perm_view" style="font-size: 0.82rem; font-weight: 600;">View Tasks (استعراض المهام)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-tasks-create">
+                    <span data-i18n="perm_create" style="font-size: 0.82rem;">Assign Tasks to Staff (+ إسناد مهمة)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-tasks-edit">
+                    <span data-i18n="perm_edit" style="font-size: 0.82rem;">Edit Tasks (✏️ تعديل مهمة)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-tasks-delete">
+                    <span data-i18n="perm_delete" style="font-size: 0.82rem; color: #fb7185;">Cancel/Delete Tasks (🚫 إلغاء مهمة)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-tasks-status_change">
+                    <span data-i18n="perm_status_change" style="font-size: 0.82rem; color: #38bdf8;">Change Progress Status (تحديث الإنجاز)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 4. Reminders Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_rem" style="font-weight: 700; font-size: 0.95rem;">⏰ Reminders & Alarms</span>
+                  <span class="badge badge-emerald">Module</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-reminders-view">
+                    <span data-i18n="perm_view" style="font-size: 0.82rem; font-weight: 600;">View Reminders (رؤية التذكيرات)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-reminders-create">
+                    <span data-i18n="perm_create" style="font-size: 0.82rem;">Create Reminders (+ تذكير جديد)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-reminders-edit">
+                    <span data-i18n="perm_edit" style="font-size: 0.82rem;">Edit Reminders (✏️ تعديل تذكير)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-reminders-delete">
+                    <span data-i18n="perm_delete" style="font-size: 0.82rem; color: #fb7185;">Delete Reminders (🗑️ حذف تذكير)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 5. Reports Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_rep" style="font-weight: 700; font-size: 0.95rem;">📈 Reports & Analytics</span>
+                  <span class="badge badge-rose">Security</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-reports-view">
+                    <span data-i18n="perm_view" style="font-size: 0.82rem; font-weight: 600;">View Telemetry & Reports (استعراض التقارير)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 6. Audit Logs Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_audit" style="font-weight: 700; font-size: 0.95rem;">🛡️ Audit Logs</span>
+                  <span class="badge badge-rose">Security</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-audit-logs-view">
+                    <span data-i18n="perm_view" style="font-size: 0.82rem; font-weight: 600;">View Security Logs (سجل العمليات)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 7. Settings Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_set" style="font-weight: 700; font-size: 0.95rem;">⚙️ System Settings</span>
+                  <span class="badge badge-secondary">System</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-settings-view">
+                    <span data-i18n="perm_view" style="font-size: 0.82rem; font-weight: 600;">Access System Settings (الوصول للإعدادات)</span>
+                  </label>
+                </div>
+              </div>
+
+            </div>
           </div>
         </section>
 
@@ -1092,7 +1287,7 @@
             </select>
           </div>
           <div>
-            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Item Icon / Photo *</label>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Fallback Icon</label>
             <select id="stock-icon" class="input-field">
               <option value="⚙️">⚙️ Machinery Part</option>
               <option value="🔧">🔧 Tool Kit</option>
@@ -1101,6 +1296,30 @@
               <option value="🛢️">🛢️ Oil / Fuel Drum</option>
               <option value="📦">📦 General Box</option>
             </select>
+          </div>
+        </div>
+
+        <!-- Custom Photo Upload Drop/Pick Zone -->
+        <div>
+          <label data-i18n="stock_photo_label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 6px;">Item Photo (Upload Custom Image)</label>
+          <div style="display: flex; gap: 1rem; align-items: center; padding: 0.75rem; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+            <div id="stock-img-preview-box" style="width: 72px; height: 72px; border-radius: var(--radius-md); border: 2px dashed var(--border-strong); display: flex; align-items: center; justify-content: center; background: var(--bg-surface-elevated); overflow: hidden; position: relative; flex-shrink: 0;">
+              <span id="stock-img-placeholder" style="font-size: 1.8rem;">📦</span>
+              <img id="stock-img-preview" src="" alt="Item Preview" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.4rem; flex: 1;">
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <button type="button" onclick="document.getElementById('stock-file-input').click()" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">
+                  📷 <span data-i18n="stock_upload_btn">Upload Photo</span>
+                </button>
+                <button type="button" id="stock-btn-remove-photo" onclick="removeStockImage()" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.78rem; color: #fb7185; display: none;">
+                  ✕ <span data-i18n="stock_remove_photo">Remove</span>
+                </button>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-faint);">Supports PNG, JPG, JPEG, WebP. Cleanly displayed with item.</div>
+              <input type="file" id="stock-file-input" accept="image/*" style="display: none;" onchange="handleStockPhotoFile(event)">
+              <input type="hidden" id="stock-image-data" value="">
+            </div>
           </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -1262,10 +1481,46 @@
       return user && (user.role === "SUPER_ADMIN" || user.email.toLowerCase().trim() === "waseem.tw@hotmail.com");
     }
 
+    function hasUserPermission(sectionKey, action, user = getCurrentUser()) {
+      if (!user) return false;
+      if (isMasterSuperAdmin(user)) return true;
+
+      // 1. Check custom granular permissions if configured for this worker
+      if (user.permissions && user.permissions[sectionKey]) {
+        if (typeof user.permissions[sectionKey][action] !== "undefined") {
+          return !!user.permissions[sectionKey][action];
+        }
+      }
+
+      // 2. Check baseline section access
+      const secAccess = (user.sectionAccess && user.sectionAccess[sectionKey]) || getSectionAccess(sectionKey, user);
+      if (secAccess !== "accessible") return false;
+
+      // 3. Fallback to standard role capabilities if granular hasn't been set yet
+      if (action === "view") return true;
+      if (action === "create" || action === "edit" || action === "delete") {
+        return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || (sectionKey === "stock" && user.role === "STOCK_MANAGER");
+      }
+      if (action === "approve_requests") {
+        return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER";
+      }
+      if (action === "request" || action === "status_change") {
+        return true;
+      }
+      return true;
+    }
+    window.hasUserPermission = hasUserPermission;
+
     function getSectionAccess(mod, user = getCurrentUser()) {
       if (!user) return "hidden";
       if (isMasterSuperAdmin(user)) return "accessible";
       if (mod === "dashboard") return "accessible";
+
+      // If user has granular permissions configured, view flag governs visibility
+      if (user.permissions && user.permissions[mod]) {
+        return user.permissions[mod].view ? "accessible" : "hidden";
+      }
+
       if (user.sectionAccess && user.sectionAccess[mod]) {
         return user.sectionAccess[mod];
       }
@@ -1518,6 +1773,15 @@
       const grid = document.getElementById("workers-grid");
       if (!grid) return;
       const lang = document.documentElement.getAttribute("lang") || "en";
+      const currentUser = getCurrentUser();
+
+      const canCreate = hasUserPermission("employees", "create", currentUser);
+      const canEdit = hasUserPermission("employees", "edit", currentUser);
+      const canDelete = hasUserPermission("employees", "delete", currentUser);
+
+      // Hide/show Add Employee button based on permissions
+      const addEmpBtn = document.querySelector("#view-employees button[onclick='openWorkerHUD()']");
+      if (addEmpBtn) addEmpBtn.style.display = canCreate ? "inline-flex" : "none";
 
       grid.innerHTML = state.users.map(u => {
         const isMaster = u.email.toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
@@ -1545,10 +1809,12 @@
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
               <span class="badge badge-secondary" style="font-size: 0.68rem;">${isMaster ? (lang === 'ar' ? 'مسؤول متميز رئيسي' : 'Protected Master Admin') : (lang === 'ar' ? 'عضو فريق العمل' : 'Staff Member')}</span>
               <div style="display: flex; gap: 0.35rem;">
-                <button onclick="editWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem;" title="Edit">
-                  ✏️
-                </button>
-                ${!isMaster ? `
+                ${canEdit ? `
+                  <button onclick="editWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem;" title="Edit">
+                    ✏️
+                  </button>
+                ` : ''}
+                ${(!isMaster && canDelete) ? `
                   <button onclick="deleteWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; color: #fb7185; font-size: 0.75rem;" title="Delete">
                     🗑️
                   </button>
@@ -1561,6 +1827,10 @@
     }
 
     function editWorkerById(id) {
+      if (!hasUserPermission("employees", "edit")) {
+        alert("Permission denied: You do not have permission to edit employees.");
+        return;
+      }
       const u = state.users.find(x => x.id === id);
       if (!u) return;
       document.getElementById("worker-edit-id").value = u.id;
@@ -1573,6 +1843,10 @@
     window.editWorkerById = editWorkerById;
 
     function deleteWorkerById(id) {
+      if (!hasUserPermission("employees", "delete")) {
+        alert("Permission denied: You do not have permission to delete employees.");
+        return;
+      }
       const u = state.users.find(x => x.id === id);
       if (!u) return;
       if (u.isProtected || u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
@@ -1646,12 +1920,216 @@
     }
     window.saveWorker = saveWorker;
 
+    let currentDeptTab = "matrix";
+    function setDeptViewTab(tab) {
+      currentDeptTab = tab;
+      const tabMatrix = document.getElementById("dept-tab-matrix");
+      const tabPerms = document.getElementById("dept-tab-permissions");
+      const containerMatrix = document.getElementById("dept-container-matrix");
+      const containerPerms = document.getElementById("dept-container-permissions");
+
+      if (tabMatrix) tabMatrix.className = (tab === "matrix") ? "btn btn-primary" : "btn btn-ghost";
+      if (tabPerms) tabPerms.className = (tab === "permissions") ? "btn btn-primary" : "btn btn-ghost";
+
+      if (containerMatrix) containerMatrix.style.display = (tab === "matrix") ? "flex" : "none";
+      if (containerPerms) containerPerms.style.display = (tab === "permissions") ? "flex" : "none";
+
+      if (tab === "permissions") {
+        populatePermUserSelect();
+      }
+    }
+    window.setDeptViewTab = setDeptViewTab;
+
+    function populatePermUserSelect() {
+      const sel = document.getElementById("perm-user-select");
+      if (!sel) return;
+      const nonMasterUsers = state.users.filter(u => u.email.toLowerCase().trim() !== "waseem.tw@hotmail.com" && !u.isProtected);
+      const currentVal = sel.value;
+      sel.innerHTML = nonMasterUsers.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join("");
+      if (currentVal && nonMasterUsers.some(u => u.id === currentVal)) {
+        sel.value = currentVal;
+      } else if (nonMasterUsers.length > 0) {
+        sel.value = nonMasterUsers[0].id;
+      }
+      if (sel.value) {
+        loadUserGranularPermissions(sel.value);
+      }
+    }
+    window.populatePermUserSelect = populatePermUserSelect;
+
+    function loadUserGranularPermissions(userId) {
+      const user = state.users.find(u => u.id === userId);
+      if (!user) return;
+
+      const p = user.permissions || {};
+      const empP = p.employees || {
+        view: getSectionAccess("employees", user) === "accessible",
+        create: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
+        edit: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
+        delete: user.role === "SUPER_ADMIN" || user.role === "ADMIN"
+      };
+      const stockP = p.stock || {
+        view: getSectionAccess("stock", user) === "accessible",
+        create: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "STOCK_MANAGER",
+        edit: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "STOCK_MANAGER",
+        delete: user.role === "SUPER_ADMIN" || user.role === "ADMIN",
+        request: true,
+        approve_requests: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "STOCK_MANAGER"
+      };
+      const taskP = p.tasks || {
+        view: getSectionAccess("tasks", user) === "accessible",
+        create: user.role !== "EMPLOYEE",
+        edit: user.role !== "EMPLOYEE",
+        delete: user.role !== "EMPLOYEE",
+        status_change: true
+      };
+      const remP = p.reminders || {
+        view: getSectionAccess("reminders", user) === "accessible",
+        create: true,
+        edit: true,
+        delete: true
+      };
+      const repP = p.reports || {
+        view: getSectionAccess("reports", user) === "accessible"
+      };
+      const auditP = p["audit-logs"] || {
+        view: getSectionAccess("audit-logs", user) === "accessible"
+      };
+      const setP = p.settings || {
+        view: getSectionAccess("settings", user) === "accessible"
+      };
+
+      // Set Checkbox values
+      const setChecked = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = !!val;
+      };
+
+      setChecked("chk-perm-emp-view", empP.view);
+      setChecked("chk-perm-emp-create", empP.create);
+      setChecked("chk-perm-emp-edit", empP.edit);
+      setChecked("chk-perm-emp-delete", empP.delete);
+
+      setChecked("chk-perm-stock-view", stockP.view);
+      setChecked("chk-perm-stock-create", stockP.create);
+      setChecked("chk-perm-stock-edit", stockP.edit);
+      setChecked("chk-perm-stock-delete", stockP.delete);
+      setChecked("chk-perm-stock-request", stockP.request);
+      setChecked("chk-perm-stock-approve_requests", stockP.approve_requests);
+
+      setChecked("chk-perm-tasks-view", taskP.view);
+      setChecked("chk-perm-tasks-create", taskP.create);
+      setChecked("chk-perm-tasks-edit", taskP.edit);
+      setChecked("chk-perm-tasks-delete", taskP.delete);
+      setChecked("chk-perm-tasks-status_change", taskP.status_change);
+
+      setChecked("chk-perm-reminders-view", remP.view);
+      setChecked("chk-perm-reminders-create", remP.create);
+      setChecked("chk-perm-reminders-edit", remP.edit);
+      setChecked("chk-perm-reminders-delete", remP.delete);
+
+      setChecked("chk-perm-reports-view", repP.view);
+      setChecked("chk-perm-audit-logs-view", auditP.view);
+      setChecked("chk-perm-settings-view", setP.view);
+    }
+    window.loadUserGranularPermissions = loadUserGranularPermissions;
+
+    function saveUserGranularPermissions() {
+      const sel = document.getElementById("perm-user-select");
+      if (!sel || !sel.value) return;
+      const user = state.users.find(u => u.id === sel.value);
+      if (!user) return;
+
+      const getChecked = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.checked : false;
+      };
+
+      const empView = getChecked("chk-perm-emp-view");
+      const stockView = getChecked("chk-perm-stock-view");
+      const tasksView = getChecked("chk-perm-tasks-view");
+      const remView = getChecked("chk-perm-reminders-view");
+      const repView = getChecked("chk-perm-reports-view");
+      const auditView = getChecked("chk-perm-audit-logs-view");
+      const settingsView = getChecked("chk-perm-settings-view");
+
+      user.permissions = {
+        employees: {
+          view: empView,
+          create: getChecked("chk-perm-emp-create"),
+          edit: getChecked("chk-perm-emp-edit"),
+          delete: getChecked("chk-perm-emp-delete")
+        },
+        stock: {
+          view: stockView,
+          create: getChecked("chk-perm-stock-create"),
+          edit: getChecked("chk-perm-stock-edit"),
+          delete: getChecked("chk-perm-stock-delete"),
+          request: getChecked("chk-perm-stock-request"),
+          approve_requests: getChecked("chk-perm-stock-approve_requests")
+        },
+        tasks: {
+          view: tasksView,
+          create: getChecked("chk-perm-tasks-create"),
+          edit: getChecked("chk-perm-tasks-edit"),
+          delete: getChecked("chk-perm-tasks-delete"),
+          status_change: getChecked("chk-perm-tasks-status_change")
+        },
+        reminders: {
+          view: remView,
+          create: getChecked("chk-perm-reminders-create"),
+          edit: getChecked("chk-perm-reminders-edit"),
+          delete: getChecked("chk-perm-reminders-delete")
+        },
+        reports: { view: repView },
+        "audit-logs": { view: auditView },
+        settings: { view: settingsView }
+      };
+
+      if (!user.sectionAccess) user.sectionAccess = {};
+      user.sectionAccess.employees = empView ? "accessible" : "hidden";
+      user.sectionAccess.departments = empView ? "accessible" : "hidden";
+      user.sectionAccess.stock = stockView ? "accessible" : "hidden";
+      user.sectionAccess["stock-requests"] = stockView ? "accessible" : "hidden";
+      user.sectionAccess.tasks = tasksView ? "accessible" : "hidden";
+      user.sectionAccess.reminders = remView ? "accessible" : "hidden";
+      user.sectionAccess.reports = repView ? "accessible" : "hidden";
+      user.sectionAccess["audit-logs"] = auditView ? "accessible" : "hidden";
+      user.sectionAccess.settings = settingsView ? "accessible" : "hidden";
+
+      saveState();
+      renderDepartments();
+      applyModuleVisibility();
+
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("Permissions Saved", `Updated granular permissions for ${user.name}`);
+      }
+
+      // SYNC LIVE TO FIRESTORE SO WORKER CLIENT UPDATES IMMEDIATELY
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("users").doc(user.id).set({
+            permissions: user.permissions,
+            sectionAccess: user.sectionAccess
+          }, { merge: true });
+        } catch (e) {
+          console.error("Failed to sync permissions to Firestore:", e);
+        }
+      }
+    }
+    window.saveUserGranularPermissions = saveUserGranularPermissions;
+
     function renderDepartments() {
       const selectWorker = document.getElementById("dept-ctrl-worker");
       if (selectWorker) {
         selectWorker.innerHTML = state.users.filter(u => u.email !== "waseem.tw@hotmail.com").map(u => `
           <option value="${u.id}">${u.name} (${u.role})</option>
         `).join("");
+      }
+
+      // If in permissions tab, populate user dropdown
+      if (currentDeptTab === "permissions") {
+        populatePermUserSelect();
       }
 
       // Render Interactive Department Permissions Matrix
@@ -1779,6 +2257,15 @@
         taskDescEl.textContent = isEmp ? (lang === "ar" ? "استعراض وتحديث المهام المسندة إليك ومتابعة حالة التنفيذ." : "View and update your assigned tasks and track execution status.") : (lang === "ar" ? "إسناد ومتابعة مراحل تنفيذ المهام بين أفراد فريق العمل." : "Assign and track execution progress across company staff.");
       }
 
+      const canCreateTask = hasUserPermission("tasks", "create", user);
+      const canEditTask = hasUserPermission("tasks", "edit", user);
+      const canDeleteTask = hasUserPermission("tasks", "delete", user);
+      const canChangeStatus = hasUserPermission("tasks", "status_change", user);
+
+      // Hide or show Assign Task button
+      const btnNewTask = document.getElementById("btn-new-task");
+      if (btnNewTask) btnNewTask.style.display = canCreateTask ? "inline-flex" : "none";
+
       let filtered = state.tasks;
       if (isEmp) {
         filtered = filtered.filter(t => t.workerName === user.name || t.workerEmail === user.email);
@@ -1798,28 +2285,30 @@
         const isDone = t.status === "DONE";
         const isProgress = t.status === "PROGRESS";
         const isTodo = t.status === "TODO" || !t.status;
-        const canCancel = isTodo;
+        const canCancel = isTodo && canDeleteTask;
 
         const item = `
           <div class="glass-panel card-hover" style="padding: 0.95rem; background: var(--bg-surface-elevated); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">${t.title}</div>
-              ${!isDone ? `<button onclick="editTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Edit Task">✏️</button>` : ''}
+              ${(!isDone && canEditTask) ? `<button onclick="editTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Edit Task">✏️</button>` : ''}
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">👤 ${t.workerName || 'Staff'}</div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem;">
               <div style="display: flex; gap: 0.35rem;">
-                ${isDone ? `
-                  <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">↶ ${lang === 'ar' ? 'انتظار' : 'To Do'}</button>
-                  <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
-                ` : isProgress ? `
-                  <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">↶ ${lang === 'ar' ? 'انتظار' : 'To Do'}</button>
-                  <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
-                ` : `
-                  <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
-                  <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
-                `}
+                ${canChangeStatus ? (
+                  isDone ? `
+                    <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">↶ ${lang === 'ar' ? 'انتظار' : 'To Do'}</button>
+                    <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
+                  ` : isProgress ? `
+                    <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">↶ ${lang === 'ar' ? 'انتظار' : 'To Do'}</button>
+                    <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
+                  ` : `
+                    <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
+                    <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
+                  `
+                ) : ''}
               </div>
               ${canCancel ? `
                 <button onclick="cancelTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; color: #fb7185; font-size: 0.7rem;">
@@ -1840,6 +2329,10 @@
     }
 
     function editTaskById(id) {
+      if (!hasUserPermission("tasks", "edit")) {
+        alert("Permission denied: You do not have permission to edit tasks.");
+        return;
+      }
       const t = state.tasks.find(x => x.id === id);
       if (!t) return;
       if (t.status === "DONE") {
@@ -1855,6 +2348,10 @@
     window.editTaskById = editTaskById;
 
     function cancelTaskById(id) {
+      if (!hasUserPermission("tasks", "delete")) {
+        alert("Permission denied: You do not have permission to cancel or delete tasks.");
+        return;
+      }
       const t = state.tasks.find(x => x.id === id);
       if (!t) return;
       if (t.status !== "TODO") {
@@ -1870,6 +2367,10 @@
     window.cancelTaskById = cancelTaskById;
 
     function setTaskStatus(taskId, newStatus) {
+      if (!hasUserPermission("tasks", "status_change")) {
+        alert("Permission denied: You do not have permission to change task status.");
+        return;
+      }
       const t = state.tasks.find(x => x.id === taskId);
       if (t) {
         t.status = newStatus;
@@ -1891,6 +2392,14 @@
       const now = new Date().getTime();
       const user = getCurrentUser();
       if (!user) return;
+
+      const canCreateRem = hasUserPermission("reminders", "create", user);
+      const canEditRem = hasUserPermission("reminders", "edit", user);
+      const canDeleteRem = hasUserPermission("reminders", "delete", user);
+
+      // Hide or show New Reminder button
+      const btnNewRem = document.querySelector("#view-reminders button[onclick='openReminderHUD()']");
+      if (btnNewRem) btnNewRem.style.display = canCreateRem ? "inline-flex" : "none";
 
       const isSuper = isMasterSuperAdmin(user);
 
@@ -1930,8 +2439,8 @@
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">${r.title}</div>
               <div style="display: flex; gap: 0.35rem;">
-                <button onclick="editReminderById('${r.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Edit">✏️</button>
-                <button onclick="deleteReminderById('${r.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; color: #fb7185; font-size: 0.75rem;" title="Delete">🗑️</button>
+                ${canEditRem ? `<button onclick="editReminderById('${r.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Edit">✏️</button>` : ''}
+                ${canDeleteRem ? `<button onclick="deleteReminderById('${r.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; color: #fb7185; font-size: 0.75rem;" title="Delete">🗑️</button>` : ''}
               </div>
             </div>
 
@@ -1992,20 +2501,75 @@
     }
     window.markReminderDone = markReminderDone;
 
+    function handleStockPhotoFile(event) {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const dataUrl = e.target.result;
+        document.getElementById("stock-image-data").value = dataUrl;
+        const imgEl = document.getElementById("stock-img-preview");
+        const placeholder = document.getElementById("stock-img-placeholder");
+        const removeBtn = document.getElementById("stock-btn-remove-photo");
+
+        if (imgEl) {
+          imgEl.src = dataUrl;
+          imgEl.style.display = "block";
+        }
+        if (placeholder) placeholder.style.display = "none";
+        if (removeBtn) removeBtn.style.display = "inline-flex";
+      };
+      reader.readAsDataURL(file);
+    }
+    window.handleStockPhotoFile = handleStockPhotoFile;
+
+    function removeStockImage() {
+      const dataInput = document.getElementById("stock-image-data");
+      const fileInput = document.getElementById("stock-file-input");
+      if (dataInput) dataInput.value = "";
+      if (fileInput) fileInput.value = "";
+
+      const imgEl = document.getElementById("stock-img-preview");
+      const placeholder = document.getElementById("stock-img-placeholder");
+      const removeBtn = document.getElementById("stock-btn-remove-photo");
+
+      if (imgEl) {
+        imgEl.src = "";
+        imgEl.style.display = "none";
+      }
+      if (placeholder) placeholder.style.display = "block";
+      if (removeBtn) removeBtn.style.display = "none";
+    }
+    window.removeStockImage = removeStockImage;
+
     function renderWarehouse() {
       const grid = document.getElementById("warehouse-grid");
       if (!grid) return;
       const lang = document.documentElement.getAttribute("lang") || "en";
+      const currentUser = getCurrentUser();
+
+      const canCreate = hasUserPermission("stock", "create", currentUser);
+      const canEdit = hasUserPermission("stock", "edit", currentUser);
+      const canDelete = hasUserPermission("stock", "delete", currentUser);
+
+      // Hide or show Add Inventory Item button
+      const addStockBtn = document.querySelector("#view-stock button[onclick='openStockHUD()']");
+      if (addStockBtn) addStockBtn.style.display = canCreate ? "inline-flex" : "none";
 
       grid.innerHTML = state.stock.map(s => {
         const isLow = s.quantity <= (s.threshold || 5);
         const catBadgeClass = s.category === "Equipment" ? "badge-primary" : s.category === "Tools" ? "badge-amber" : s.category === "Consumables" ? "badge-rose" : "badge-cyan";
 
+        const photoHtml = s.imageUrl
+          ? `<img src="${s.imageUrl}" alt="${s.name}" style="width: 58px; height: 58px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border-strong); box-shadow: 0 4px 12px rgba(0,0,0,0.3);">`
+          : `<div style="width: 58px; height: 58px; border-radius: var(--radius-md); background: var(--bg-surface); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; font-size: 2rem;">${s.icon || '📦'}</div>`;
+
         return `
           <div class="glass-panel card-hover" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border: ${isLow ? '1px solid rgba(244, 63, 94, 0.4)' : '1px solid var(--border-subtle)'};">
             <div>
               <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="font-size: 2.25rem; line-height: 1;">${s.icon || '📦'}</div>
+                ${photoHtml}
                 <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem;">
                   <span class="badge ${catBadgeClass}">${s.category || 'General'}</span>
                   ${isLow ? `<span class="badge badge-rose" style="font-size: 0.65rem;">⚠️ LOW STOCK</span>` : `<span class="badge badge-emerald" style="font-size: 0.65rem;">IN STOCK</span>`}
@@ -2021,8 +2585,8 @@
             </div>
 
             <div style="display: flex; justify-content: flex-end; gap: 0.35rem; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
-              <button onclick="editStockById('${s.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem;" title="Edit">✏️</button>
-              <button onclick="deleteStockById('${s.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; color: #fb7185; font-size: 0.75rem;" title="Delete">🗑️</button>
+              ${canEdit ? `<button onclick="editStockById('${s.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem;" title="Edit">✏️</button>` : ''}
+              ${canDelete ? `<button onclick="deleteStockById('${s.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; color: #fb7185; font-size: 0.75rem;" title="Delete">🗑️</button>` : ''}
             </div>
           </div>
         `;
@@ -2030,6 +2594,10 @@
     }
 
     function editStockById(id) {
+      if (!hasUserPermission("stock", "edit")) {
+        alert("Permission denied: You do not have permission to edit warehouse items.");
+        return;
+      }
       const s = state.stock.find(x => x.id === id);
       if (!s) return;
       document.getElementById("stock-edit-id").value = s.id;
@@ -2038,12 +2606,29 @@
       document.getElementById("stock-icon").value = s.icon || "📦";
       document.getElementById("stock-qty").value = s.quantity;
       document.getElementById("stock-threshold").value = s.threshold || 5;
+
+      if (s.imageUrl) {
+        document.getElementById("stock-image-data").value = s.imageUrl;
+        const imgEl = document.getElementById("stock-img-preview");
+        const placeholder = document.getElementById("stock-img-placeholder");
+        const removeBtn = document.getElementById("stock-btn-remove-photo");
+        if (imgEl) { imgEl.src = s.imageUrl; imgEl.style.display = "block"; }
+        if (placeholder) placeholder.style.display = "none";
+        if (removeBtn) removeBtn.style.display = "inline-flex";
+      } else {
+        removeStockImage();
+      }
+
       document.getElementById("modal-stock-heading").textContent = "✏️ Edit Inventory Item";
       document.getElementById("modal-stock").style.display = "flex";
     }
     window.editStockById = editStockById;
 
     function deleteStockById(id) {
+      if (!hasUserPermission("stock", "delete")) {
+        alert("Permission denied: You do not have permission to delete warehouse items.");
+        return;
+      }
       if (!confirm("Are you sure you want to remove this item from warehouse?")) return;
       state.stock = state.stock.filter(x => x.id !== id);
       saveState();
@@ -2055,6 +2640,14 @@
       const container = document.getElementById("stock-requests-container");
       if (!container) return;
       const lang = document.documentElement.getAttribute("lang") || "en";
+      const currentUser = getCurrentUser();
+
+      const canRequest = hasUserPermission("stock", "request", currentUser);
+      const canApprove = hasUserPermission("stock", "approve_requests", currentUser);
+
+      // Hide or show Submit Request button
+      const reqBtn = document.querySelector("#view-stock-requests button[onclick='openStockRequestHUD()']");
+      if (reqBtn) reqBtn.style.display = canRequest ? "inline-flex" : "none";
 
       if (state.stockRequests.length === 0) {
         container.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-faint);">${lang === 'ar' ? 'لا توجد طلبات صرف معلقة.' : 'No pending material requests.'}</div>`;
@@ -2084,12 +2677,14 @@
                   </span>
                 </td>
                 <td>
-                  ${r.status === 'PENDING' ? `
-                    <div style="display: flex; gap: 0.4rem;">
-                      <button onclick="approveStockRequest('${r.id}')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.72rem;">✓ Approve</button>
-                      <button onclick="rejectStockRequest('${r.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.55rem; color: #fb7185; font-size: 0.72rem;">✕ Reject</button>
-                    </div>
-                  ` : `<span style="font-size: 0.75rem; color: var(--text-faint);">Processed</span>`}
+                  ${r.status === 'PENDING' ? (
+                    canApprove ? `
+                      <div style="display: flex; gap: 0.4rem;">
+                        <button onclick="approveStockRequest('${r.id}')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.72rem;">✓ Approve</button>
+                        <button onclick="rejectStockRequest('${r.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.55rem; color: #fb7185; font-size: 0.72rem;">✕ Reject</button>
+                      </div>
+                    ` : `<span style="font-size: 0.75rem; color: var(--text-faint);">${lang === 'ar' ? 'بانتظار الاعتماد' : 'Pending Review'}</span>`
+                  ) : `<span style="font-size: 0.75rem; color: var(--text-faint);">Processed</span>`}
                 </td>
               </tr>
             `).join("")}
@@ -2099,6 +2694,10 @@
     }
 
     function openStockRequestHUD() {
+      if (!hasUserPermission("stock", "request")) {
+        alert("Permission denied: You do not have permission to submit material requests.");
+        return;
+      }
       const sel = document.getElementById("req-item-select");
       if (sel) {
         sel.innerHTML = state.stock.map(s => `
@@ -2111,6 +2710,10 @@
 
     function handleStockRequestSubmit(e) {
       e.preventDefault();
+      if (!hasUserPermission("stock", "request")) {
+        alert("Permission denied: You do not have permission to submit material requests.");
+        return;
+      }
       const user = getCurrentUser();
       const stockId = document.getElementById("req-item-select").value;
       const qty = parseInt(document.getElementById("req-qty").value) || 1;
@@ -2139,6 +2742,10 @@
     window.handleStockRequestSubmit = handleStockRequestSubmit;
 
     function approveStockRequest(id) {
+      if (!hasUserPermission("stock", "approve_requests")) {
+        alert("Permission denied: You do not have permission to approve material requests.");
+        return;
+      }
       const req = state.stockRequests.find(r => r.id === id);
       if (!req) return;
       const item = state.stock.find(s => s.id === req.stockId);
@@ -2154,6 +2761,10 @@
     window.approveStockRequest = approveStockRequest;
 
     function rejectStockRequest(id) {
+      if (!hasUserPermission("stock", "approve_requests")) {
+        alert("Permission denied: You do not have permission to reject material requests.");
+        return;
+      }
       const req = state.stockRequests.find(r => r.id === id);
       if (!req) return;
       req.status = "REJECTED";
@@ -2163,6 +2774,10 @@
     window.rejectStockRequest = rejectStockRequest;
 
     function openReminderHUD() {
+      if (!hasUserPermission("reminders", "create")) {
+        alert("Permission denied: You do not have permission to create reminders.");
+        return;
+      }
       document.getElementById("rem-edit-id").value = "";
       document.getElementById("rem-title").value = "";
       document.getElementById("rem-time").value = "";
@@ -2170,6 +2785,10 @@
       document.getElementById("modal-reminder").style.display = "flex";
     }
     function openTaskHUD() {
+      if (!hasUserPermission("tasks", "create")) {
+        alert("Permission denied: You do not have permission to assign tasks.");
+        return;
+      }
       const sel = document.getElementById("task-worker-select");
       if (sel) {
         sel.innerHTML = state.users
@@ -2180,6 +2799,10 @@
       document.getElementById("modal-task").style.display = "flex";
     }
     function openWorkerHUD() {
+      if (!hasUserPermission("employees", "create")) {
+        alert("Permission denied: You do not have permission to add employees.");
+        return;
+      }
       document.getElementById("worker-edit-id").value = "";
       document.getElementById("worker-name").value = "";
       document.getElementById("worker-email").value = "";
@@ -2187,10 +2810,15 @@
       document.getElementById("modal-worker").style.display = "flex";
     }
     function openStockHUD() {
+      if (!hasUserPermission("stock", "create")) {
+        alert("Permission denied: You do not have permission to add warehouse items.");
+        return;
+      }
       document.getElementById("stock-edit-id").value = "";
       document.getElementById("stock-name").value = "";
       document.getElementById("stock-qty").value = "10";
       document.getElementById("stock-threshold").value = "5";
+      removeStockImage();
       document.getElementById("modal-stock-heading").textContent = "📦 Add Inventory Item";
       document.getElementById("modal-stock").style.display = "flex";
     }
@@ -2213,12 +2841,20 @@
       const time = document.getElementById("rem-time").value;
 
       if (editId) {
+        if (!hasUserPermission("reminders", "edit")) {
+          alert("Permission denied: You do not have permission to edit reminders.");
+          return;
+        }
         const r = state.reminders.find(x => x.id === editId);
         if (r) {
           r.title = title;
           r.reminderTime = time;
         }
       } else {
+        if (!hasUserPermission("reminders", "create")) {
+          alert("Permission denied: You do not have permission to create reminders.");
+          return;
+        }
         state.reminders.unshift({
           id: "rem-" + Date.now(),
           title,
@@ -2244,12 +2880,20 @@
       const workerName = document.getElementById("task-worker-select").value;
 
       if (editId) {
+        if (!hasUserPermission("tasks", "edit")) {
+          alert("Permission denied: You do not have permission to edit tasks.");
+          return;
+        }
         const t = state.tasks.find(x => x.id === editId);
         if (t) {
           t.title = title;
           t.workerName = workerName;
         }
       } else {
+        if (!hasUserPermission("tasks", "create")) {
+          alert("Permission denied: You do not have permission to assign tasks.");
+          return;
+        }
         state.tasks.unshift({ id: "task-" + Date.now(), title, workerName, status: "TODO" });
       }
 
@@ -2266,20 +2910,30 @@
       const name = document.getElementById("stock-name").value.trim();
       const category = document.getElementById("stock-category").value;
       const icon = document.getElementById("stock-icon").value;
+      const imageUrl = document.getElementById("stock-image-data")?.value || "";
       const quantity = parseInt(document.getElementById("stock-qty").value) || 0;
       const threshold = parseInt(document.getElementById("stock-threshold").value) || 5;
 
       if (editId) {
+        if (!hasUserPermission("stock", "edit")) {
+          alert("Permission denied: You do not have permission to edit warehouse items.");
+          return;
+        }
         const s = state.stock.find(x => x.id === editId);
         if (s) {
           s.name = name;
           s.category = category;
           s.icon = icon;
+          s.imageUrl = imageUrl;
           s.quantity = quantity;
           s.threshold = threshold;
         }
       } else {
-        state.stock.unshift({ id: "stock-" + Date.now(), name, category, icon, quantity, threshold });
+        if (!hasUserPermission("stock", "create")) {
+          alert("Permission denied: You do not have permission to add warehouse items.");
+          return;
+        }
+        state.stock.unshift({ id: "stock-" + Date.now(), name, category, icon, imageUrl, quantity, threshold });
       }
 
       saveState();
@@ -2426,12 +3080,13 @@
               tasks: "accessible",
               employees: isSuper ? "accessible" : "hidden",
               departments: isSuper ? "accessible" : "hidden",
-              stock: isSuper ? "accessible" : "locked",
-              "stock-requests": "accessible",
+              stock: isSuper ? "accessible" : "hidden",
+              "stock-requests": isSuper ? "accessible" : "hidden",
               reports: isSuper ? "accessible" : "hidden",
               "audit-logs": isSuper ? "accessible" : "hidden",
               settings: "accessible"
-            }
+            },
+            permissions: (docData && docData.permissions) || null
           };
           state.users.push(user);
 
@@ -2534,6 +3189,9 @@
               if (docData.sectionAccess) {
                 targetUser.sectionAccess = { ...targetUser.sectionAccess, ...docData.sectionAccess };
               }
+              if (docData.permissions) {
+                targetUser.permissions = { ...targetUser.permissions, ...docData.permissions };
+              }
             } else if (docData.email) {
               const isSuper = docData.email?.toLowerCase().trim() === "waseem.tw@hotmail.com";
               targetUser = {
@@ -2554,7 +3212,8 @@
                   reports: isSuper ? "accessible" : "hidden",
                   "audit-logs": isSuper ? "accessible" : "hidden",
                   settings: "accessible"
-                }
+                },
+                permissions: docData.permissions || null
               };
               state.users.push(targetUser);
 
