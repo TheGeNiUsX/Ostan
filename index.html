@@ -6,6 +6,10 @@
   <title>Ostan</title>
   <script src="style.js"></script>
   <script src="translation.js"></script>
+  <!-- Firebase Web SDK Integration -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <style>
     /* Full Screen Edge-to-Edge Layout */
     .app-fullscreen-hud {
@@ -1173,6 +1177,28 @@
        JAVASCRIPT APPLICATION ENGINE
        ========================================================================= -->
   <script>
+    // Live Firebase Project Initialization
+    const firebaseConfig = {
+      apiKey: "AIzaSyBosnwK5ima8AFANYoBxfzPN9mb-yNwVnQ",
+      authDomain: "ostan-75a0c.firebaseapp.com",
+      projectId: "ostan-75a0c",
+      storageBucket: "ostan-75a0c.firebasestorage.app",
+      messagingSenderId: "278978199753",
+      appId: "1:278978199753:web:e32452e1c4b39f41970d18",
+      measurementId: "G-L275GLK65X"
+    };
+
+    if (typeof firebase !== "undefined") {
+      try {
+        firebase.initializeApp(firebaseConfig);
+        window.fbAuth = firebase.auth();
+        window.fbDb = firebase.firestore();
+        console.log("🔥 Live Firebase successfully connected: ostan-75a0c");
+      } catch (e) {
+        console.warn("Firebase HUD init warning:", e);
+      }
+    }
+
     function getLang() {
       return document.documentElement.getAttribute("lang") || "en";
     }

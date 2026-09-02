@@ -4,6 +4,8 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useI18n } from "@/lib/i18n/context";
 import { useTheme } from "@/lib/theme/context";
+import { loginWithFirebase, registerWithFirebase } from "@/lib/firebase/auth";
+import { isFirebaseConfigured } from "@/lib/firebase/config";
 import {
   Lock,
   Mail,
@@ -18,6 +20,7 @@ import {
   Package,
   UserCheck,
   Sparkles,
+  Flame,
 } from "lucide-react";
 
 export default function LoginPage() {
@@ -93,6 +96,18 @@ export default function LoginPage() {
     setSuccessMsg(null);
 
     try {
+      // 1. Firebase Auth Step
+      try {
+        if (authMode === "signup") {
+          await registerWithFirebase(name, email, password);
+        } else {
+          await loginWithFirebase(email, password);
+        }
+      } catch (fbErr: any) {
+        console.warn("Firebase Auth Notice (proceeding with unified server session):", fbErr?.message || fbErr);
+      }
+
+      // 2. Server Session & HTTP-Only Cookie Step
       const endpoint = authMode === "signup" ? "/api/auth/register" : "/api/auth/login";
       const payload = authMode === "signup" ? { name, email, password } : { email, password };
 
