@@ -48,6 +48,8 @@
       dash_low_stock_items: "Low Stock Items",
       dash_stock_alert: "Below threshold alert",
       dash_stock_healthy: "Stock healthy",
+      dash_active_tasks_title: "Active Assigned Tasks",
+      dash_no_active_tasks: "No active tasks assigned.",
 
       // Quick Operations
       quick_ops_title: "⚡ Quick Operations",
@@ -57,15 +59,6 @@
       op_reminders_desc: "Create scheduled reminders with live countdown tracking and chime",
       op_stock_title: "Warehouse & Stock Catalog",
       op_stock_desc: "Manage inventory counts, safety thresholds, and material requests",
-
-      // System Readiness
-      system_readiness_title: "🛡️ System Security & Identity",
-      sys_cloud_firebase: "Firebase Cloud Sync",
-      sys_cloud_active: "Active & Synced",
-      sys_rbac: "Granular RBAC Policies",
-      sys_rbac_active: "Enforced",
-      sys_audit: "Enterprise Audit Trail",
-      sys_audit_active: "Recording",
 
       // Employees Section
       emp_section_title: "Employees & User Management",
@@ -87,6 +80,7 @@
       policy_locked: "LOCKED 🔒",
       policy_hidden: "HIDDEN 👁️",
       matrix_worker_col: "Worker / Account",
+      matrix_title: "Department Permissions Matrix",
 
       // Tasks Section
       tasks_section_title: "Tasks & Assignments",
@@ -98,6 +92,7 @@
       col_todo: "To Do",
       col_progress: "In Progress",
       col_done: "Done ✓",
+      btn_cancel_task: "🚫 Cancel Task",
 
       // Reminders Section
       rem_section_title: "Reminders & Alerts",
@@ -106,16 +101,28 @@
       col_action: "Action Needed",
       col_scheduled: "Scheduled Ahead",
       col_completed: "Completed",
+      countdown_due_in: "⏳ Due in:",
+      countdown_overdue: "🚨 Overdue by:",
+      countdown_now: "⏰ Due now!",
 
       // Warehouse Section
       stock_section_title: "Warehouse & Stock Management",
-      stock_section_desc: "Track equipment catalog, quantities, and low stock threshold alerts.",
+      stock_section_desc: "Track equipment catalog, categories, quantities, and low stock threshold alerts.",
       btn_add_stock: "+ Add Inventory Item",
+      cat_general: "General",
+      cat_equipment: "Equipment",
+      cat_tools: "Tools",
+      cat_consumables: "Consumables",
 
       // Stock Requests Section
       requests_section_title: "Material & Stock Requests",
-      requests_section_desc: "Submit and review material withdrawal requests.",
-      btn_new_request: "+ Submit Material Request",
+      requests_section_desc: "Submit and review material withdrawal requests with automated inventory deduction.",
+      btn_submit_request: "+ Submit Request",
+      col_request_item: "Requested Item",
+      col_request_qty: "Qty",
+      col_request_by: "Requested By",
+      col_request_status: "Status",
+      col_request_actions: "Actions",
 
       // Reports Section
       reports_section_title: "Reports & Analytics",
@@ -130,7 +137,7 @@
       settings_section_desc: "Customize interface appearance themes and test audio alarm diagnostics.",
       settings_theme_label: "Theme Mode",
       settings_audio_label: "Audio Alarm Diagnostics",
-      btn_test_audio: "Test Audio Alarm Chime",
+      btn_test_audio: "Test Audio Alarm Chime (880Hz)",
 
       // Auth Portal
       auth_title: "Sign in to Ostan",
@@ -150,6 +157,7 @@
       btn_cancel: "Cancel",
       btn_save: "Save Changes",
       btn_delete: "Delete",
+      btn_edit: "Edit",
     },
 
     ar: {
@@ -196,6 +204,8 @@
       dash_low_stock_items: "نواقص المخزون",
       dash_stock_alert: "أصناف دون الحد الأدنى",
       dash_stock_healthy: "المخزون مكتمل",
+      dash_active_tasks_title: "قائمة المهام النشطة المسندة إليك",
+      dash_no_active_tasks: "لا توجد مهام نشطة مسندة حالياً.",
 
       // Quick Operations
       quick_ops_title: "⚡ العمليات السريعة",
@@ -205,15 +215,6 @@
       op_reminders_desc: "إنشاء تذكيرات موقوتة مع عداد تنازلي وجرس إنذار صوتي",
       op_stock_title: "دليل المستودع والمخزون",
       op_stock_desc: "متابعة كميات الأصناف، وحدود التنبيه، وطلبات الصرف",
-
-      // System Readiness
-      system_readiness_title: "🛡️ الأمان وهوية النظام",
-      sys_cloud_firebase: "المزامنة الحية مع Firebase",
-      sys_cloud_active: "متصل ونشط",
-      sys_rbac: "سياسات الأدوار والصلاحيات",
-      sys_rbac_active: "مطبقة بالكامل",
-      sys_audit: "سجل التوثيق والأمان",
-      sys_audit_active: "تسجيل فوري",
 
       // Employees Section
       emp_section_title: "إدارة الموظفين وفريق العمل",
@@ -235,6 +236,7 @@
       policy_locked: "مقفل 🔒",
       policy_hidden: "مخفي 👁️",
       matrix_worker_col: "الموظف / الحساب",
+      matrix_title: "جدول مصفوفة الصلاحيات لكل قسم",
 
       // Tasks Section
       tasks_section_title: "إدارة المهام وتعيين العمال",
@@ -246,6 +248,7 @@
       col_todo: "قيد الانتظار",
       col_progress: "قيد التنفيذ",
       col_done: "مكتملة ✓",
+      btn_cancel_task: "🚫 إلغاء المهمة",
 
       // Reminders Section
       rem_section_title: "التذكيرات والتنبيهات الموقوتة",
@@ -254,16 +257,28 @@
       col_action: "مطلوبة الآن",
       col_scheduled: "مجدولة قادمة",
       col_completed: "مكتملة",
+      countdown_due_in: "⏳ متبقي:",
+      countdown_overdue: "🚨 متأخر منذ:",
+      countdown_now: "⏰ حان الموعد الآن!",
 
       // Warehouse Section
       stock_section_title: "المستودع وإدارة المخزون",
-      stock_section_desc: "متابعة أصناف المعدات، والكميات المتوفرة، وتنبيهات نواقص المخزون.",
+      stock_section_desc: "متابعة أصناف المعدات، والتصنيفات، والكميات، وتنبيهات نواقص المخزون.",
       btn_add_stock: "+ إضافة صنف للمستودع",
+      cat_general: "عام",
+      cat_equipment: "معدات",
+      cat_tools: "أدوات وعدد",
+      cat_consumables: "مواد استهلاكية",
 
       // Stock Requests Section
       requests_section_title: "طلبات صرف المواد والمعدات",
-      requests_section_desc: "تقديم ومراجعة واعتماد طلبات صرف المواد من المستودع.",
-      btn_new_request: "+ تقديم طلب صرف جديد",
+      requests_section_desc: "تقديم ومراجعة واعتماد طلبات صرف المواد من المستودع مع الخصم التلقائي.",
+      btn_submit_request: "+ تقديم طلب",
+      col_request_item: "الصنف المطلوب",
+      col_request_qty: "الكمية",
+      col_request_by: "مقدم الطلب",
+      col_request_status: "الحالة",
+      col_request_actions: "الإجراءات",
 
       // Reports Section
       reports_section_title: "التقارير والإحصائيات",
@@ -298,6 +313,7 @@
       btn_cancel: "إلغاء",
       btn_save: "حفظ التغييرات",
       btn_delete: "حذف",
+      btn_edit: "تعديل",
     },
   };
 
