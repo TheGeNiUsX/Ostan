@@ -376,24 +376,24 @@
           <div class="brand-logo-box">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
               <defs>
-                <linearGradient id="side-logo-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <linearGradient id="auth-logo-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
                   <stop offset="0%" stop-color="#38bdf8" />
                   <stop offset="50%" stop-color="#007aff" />
                   <stop offset="100%" stop-color="#818cf8" />
                 </linearGradient>
-                <linearGradient id="side-logo-violet-grad" x1="100%" y1="0%" x2="0%" y2="100%">
+                <linearGradient id="auth-logo-violet-grad" x1="100%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stop-color="#c084fc" />
                   <stop offset="50%" stop-color="#a855f7" />
                   <stop offset="100%" stop-color="#38bdf8" />
                 </linearGradient>
-                <filter id="side-neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+                <filter id="auth-neon-glow" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur stdDeviation="3" result="glow" />
                   <feComposite in="SourceGraphic" in2="glow" operator="over" />
                 </filter>
               </defs>
-              <path d="M 50 10 A 40 40 0 1 1 18 78 A 32 32 0 1 0 50 20 A 30 30 0 0 1 76 34 A 40 40 0 0 0 50 10 Z" fill="url(#side-logo-blue-grad)" filter="url(#side-neon-glow)" />
-              <path d="M 50 20 A 30 30 0 1 1 24 68 A 22 22 0 1 0 50 28 A 20 20 0 0 1 68 40 A 30 30 0 0 0 50 20 Z" fill="url(#side-logo-violet-grad)" opacity="0.9" />
-              <circle cx="50" cy="50" r="14" fill="none" stroke="url(#side-logo-blue-grad)" stroke-width="2.5" opacity="0.6" />
+              <path d="M 50 10 A 40 40 0 1 1 18 78 A 32 32 0 1 0 50 20 A 30 30 0 0 1 76 34 A 40 40 0 0 0 50 10 Z" fill="url(#auth-logo-blue-grad)" filter="url(#auth-neon-glow)" />
+              <path d="M 50 20 A 30 30 0 1 1 24 68 A 22 22 0 1 0 50 28 A 20 20 0 0 1 68 40 A 30 30 0 0 0 50 20 Z" fill="url(#auth-logo-violet-grad)" opacity="0.9" />
+              <circle cx="50" cy="50" r="14" fill="none" stroke="url(#auth-logo-blue-grad)" stroke-width="2.5" opacity="0.6" />
             </svg>
           </div>
           <span style="font-weight: 800; font-size: 1.3rem; letter-spacing: -0.02em;">Ostan</span>
@@ -449,19 +449,34 @@
   <div id="app-shell-root" class="app-shell" style="display: none;">
     <!-- LEFT SIDEBAR -->
     <aside class="app-sidebar">
-      <!-- Brand Header with Official Transparent Glowing Logo -->
+      <!-- Brand Header with Self-Contained Neon Gradient SVG Logo -->
       <div class="brand-header">
         <div style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" onclick="setModule('dashboard')">
           <div class="brand-logo-box">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+              <defs>
+                <linearGradient id="side-logo-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8" />
+                  <stop offset="50%" stop-color="#007aff" />
+                  <stop offset="100%" stop-color="#818cf8" />
+                </linearGradient>
+                <linearGradient id="side-logo-violet-grad" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#c084fc" />
+                  <stop offset="50%" stop-color="#a855f7" />
+                  <stop offset="100%" stop-color="#38bdf8" />
+                </linearGradient>
+                <filter id="side-neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="glow" />
+                  <feComposite in="SourceGraphic" in2="glow" operator="over" />
+                </filter>
+              </defs>
               <path d="M 50 10 A 40 40 0 1 1 18 78 A 32 32 0 1 0 50 20 A 30 30 0 0 1 76 34 A 40 40 0 0 0 50 10 Z" fill="url(#side-logo-blue-grad)" filter="url(#side-neon-glow)" />
               <path d="M 50 20 A 30 30 0 1 1 24 68 A 22 22 0 1 0 50 28 A 20 20 0 0 1 68 40 A 30 30 0 0 0 50 20 Z" fill="url(#side-logo-violet-grad)" opacity="0.9" />
               <circle cx="50" cy="50" r="14" fill="none" stroke="url(#side-logo-blue-grad)" stroke-width="2.5" opacity="0.6" />
             </svg>
           </div>
           <div>
-            <div style="font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em;">Ostan</div>
-            <div style="font-size: 0.68rem; color: var(--text-muted);" data-i18n="app_subtitle">Enterprise Management</div>
+            <div style="font-weight: 800; font-size: 1.3rem; letter-spacing: -0.02em;">Ostan</div>
           </div>
         </div>
       </div>
@@ -672,7 +687,7 @@
             </div>
           </div>
 
-          <!-- Bottom 2-Column Grid: Quick Operations & Active Assigned Tasks -->
+          <!-- Bottom 2-Column Grid: Quick Operations & Active Tasks -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
             <!-- Left: Quick Operations -->
             <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
@@ -706,10 +721,10 @@
               </div>
             </div>
 
-            <!-- Right: Active Assigned Tasks (Replaces Security & Identity) -->
+            <!-- Right: Active Tasks (Named "Tasks") -->
             <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div data-i18n="dash_active_tasks_title" style="font-weight: 700; font-size: 1rem;">Active Assigned Tasks</div>
+                <div data-i18n="dash_active_tasks_title" style="font-weight: 700; font-size: 1rem;">Tasks</div>
                 <button onclick="setModule('tasks')" class="btn btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">View All →</button>
               </div>
 
@@ -791,7 +806,7 @@
         <section id="view-tasks" style="display: none; flex-direction: column; gap: 1.25rem;">
           <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-              <h2 data-i18n="tasks_section_title" style="font-size: 1.3rem; font-weight: 800;">Tasks & Assignments</h2>
+              <h2 id="tasks-header-title" data-i18n="tasks_section_title" style="font-size: 1.3rem; font-weight: 800;">Tasks & Assignments</h2>
               <p id="tasks-desc-text" data-i18n="tasks_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Assign and track execution progress across company staff.</p>
             </div>
             <button id="btn-new-task" class="btn btn-primary" onclick="openTaskHUD()">
@@ -1350,6 +1365,25 @@
         groupEl.style.display = hasVisibleChild ? "flex" : "none";
       });
 
+      // Update Task Management label for employees (without task assigning permissions)
+      const isEmp = user && user.role === "EMPLOYEE";
+      const lang = document.documentElement.getAttribute("lang") || "en";
+
+      const navTasksLabel = document.querySelector("#nav-tasks span[data-i18n]");
+      if (navTasksLabel) {
+        navTasksLabel.textContent = isEmp ? (lang === "ar" ? "المهام" : "Tasks") : (lang === "ar" ? "إدارة المهام" : "Task Management");
+      }
+
+      const quickOpTasksTitle = document.querySelector("#quick-op-tasks div[data-i18n='op_tasks_title']");
+      if (quickOpTasksTitle) {
+        quickOpTasksTitle.textContent = isEmp ? (lang === "ar" ? "المهام" : "Tasks") : (lang === "ar" ? "إدارة وتوزيع المهام" : "Task Management");
+      }
+
+      const quickOpTasksDesc = document.querySelector("#quick-op-tasks div[data-i18n='op_tasks_desc']");
+      if (quickOpTasksDesc) {
+        quickOpTasksDesc.textContent = isEmp ? (lang === "ar" ? "استعراض وتحديث المهام المسندة إليك ومتابعة حالة التنفيذ." : "View and update your assigned tasks and track execution status.") : (lang === "ar" ? "إسناد المهام للعمال ومتابعة مراحل الإنجاز والتحديث الفوري" : "Assign tasks to specific registered workers with full edit controls");
+      }
+
       // Dashboard low stock card and quick-op warehouse visibility
       const hasStockAccess = getSectionAccess("stock", user) !== "hidden";
       const cardLowStock = document.getElementById("card-low-stock");
@@ -1382,8 +1416,12 @@
       const taskCount = document.getElementById("stat-open-tasks");
       if (taskCount) taskCount.textContent = openTasks.length;
 
+      // Personalize reminders count for employees
+      const userReminders = (user.role === "EMPLOYEE")
+        ? state.reminders.filter(r => r.createdByEmail === user.email || r.createdById === user.id || !r.createdByEmail)
+        : state.reminders;
       const remCount = document.getElementById("stat-upcoming-reminders");
-      if (remCount) remCount.textContent = state.reminders.filter(r => !r.completed).length;
+      if (remCount) remCount.textContent = userReminders.filter(r => !r.completed).length;
 
       const stockCount = document.getElementById("stat-low-stock");
       if (stockCount) stockCount.textContent = state.stock.filter(s => s.quantity <= (s.threshold || 5)).length;
@@ -1652,6 +1690,16 @@
       const isEmp = user && user.role === "EMPLOYEE";
       const lang = document.documentElement.getAttribute("lang") || "en";
 
+      // Dynamically update section title and description for employees vs managers
+      const taskTitleEl = document.getElementById("tasks-header-title");
+      const taskDescEl = document.getElementById("tasks-desc-text");
+      if (taskTitleEl) {
+        taskTitleEl.textContent = isEmp ? (lang === "ar" ? "المهام" : "Tasks") : (lang === "ar" ? "إدارة المهام وتعيين العمال" : "Tasks & Assignments");
+      }
+      if (taskDescEl) {
+        taskDescEl.textContent = isEmp ? (lang === "ar" ? "استعراض وتحديث المهام المسندة إليك ومتابعة حالة التنفيذ." : "View and update your assigned tasks and track execution status.") : (lang === "ar" ? "إسناد ومتابعة مراحل تنفيذ المهام بين أفراد فريق العمل." : "Assign and track execution progress across company staff.");
+      }
+
       let filtered = state.tasks;
       if (isEmp) {
         filtered = filtered.filter(t => t.workerName === user.name || t.workerEmail === user.email);
@@ -1746,8 +1794,16 @@
       if (listComp) listComp.innerHTML = "";
 
       const now = new Date().getTime();
+      const user = getCurrentUser();
+      const isEmp = user && user.role === "EMPLOYEE";
 
-      state.reminders.forEach(r => {
+      // Filter reminders so employees ONLY see their own personal reminders
+      let filteredReminders = state.reminders;
+      if (isEmp) {
+        filteredReminders = filteredReminders.filter(r => r.createdByEmail === user.email || r.createdById === user.id || !r.createdByEmail);
+      }
+
+      filteredReminders.forEach(r => {
         let badgeHtml = "";
         let isOverdue = false;
 
@@ -2051,6 +2107,7 @@
 
     function saveReminder(e) {
       e.preventDefault();
+      const user = getCurrentUser();
       const editId = document.getElementById("rem-edit-id").value;
       const title = document.getElementById("rem-title").value.trim();
       const time = document.getElementById("rem-time").value;
@@ -2062,7 +2119,15 @@
           r.reminderTime = time;
         }
       } else {
-        state.reminders.unshift({ id: "rem-" + Date.now(), title, reminderTime: time, completed: false });
+        state.reminders.unshift({
+          id: "rem-" + Date.now(),
+          title,
+          reminderTime: time,
+          completed: false,
+          createdByEmail: user ? user.email : "",
+          createdById: user ? user.id : "",
+          createdByName: user ? user.name : ""
+        });
       }
 
       saveState();

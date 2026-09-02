@@ -22,6 +22,7 @@
       nav_group_ops: "OPERATIONS",
       nav_reminders: "Reminders",
       nav_tasks: "Task Management",
+      nav_tasks_emp: "Tasks",
       nav_group_inv: "INVENTORY",
       nav_stock: "Stock & Inventory",
       nav_stock_requests: "Stock Requests",
@@ -48,13 +49,15 @@
       dash_low_stock_items: "Low Stock Items",
       dash_stock_alert: "Below threshold alert",
       dash_stock_healthy: "Stock healthy",
-      dash_active_tasks_title: "Active Assigned Tasks",
+      dash_active_tasks_title: "Tasks",
       dash_no_active_tasks: "No active tasks assigned.",
 
       // Quick Operations
       quick_ops_title: "⚡ Quick Operations",
       op_tasks_title: "Task Management",
+      op_tasks_title_emp: "Tasks",
       op_tasks_desc: "Assign tasks to specific registered workers with full edit controls",
+      op_tasks_desc_emp: "View and update your assigned tasks and track execution status.",
       op_reminders_title: "Reminders & Sound Alarms",
       op_reminders_desc: "Create scheduled reminders with live countdown tracking and chime",
       op_stock_title: "Warehouse & Stock Catalog",
@@ -84,8 +87,9 @@
 
       // Tasks Section
       tasks_section_title: "Tasks & Assignments",
+      tasks_section_title_emp: "Tasks",
       tasks_section_desc: "Assign and track execution progress across company staff.",
-      tasks_section_desc_emp: "View and execute your assigned tasks and update progress.",
+      tasks_section_desc_emp: "View and update your assigned tasks and track execution status.",
       btn_assign_task: "+ Assign Task",
       task_filter_label: "Filter by Assignee:",
       filter_all_workers: "All Staff",
@@ -178,6 +182,7 @@
       nav_group_ops: "العمليات والمهام",
       nav_reminders: "التذكيرات",
       nav_tasks: "إدارة المهام",
+      nav_tasks_emp: "المهام",
       nav_group_inv: "المستودع والمخزون",
       nav_stock: "المستودع والمخزون",
       nav_stock_requests: "طلبات الصرف",
@@ -204,13 +209,15 @@
       dash_low_stock_items: "نواقص المخزون",
       dash_stock_alert: "أصناف دون الحد الأدنى",
       dash_stock_healthy: "المخزون مكتمل",
-      dash_active_tasks_title: "قائمة المهام النشطة المسندة إليك",
+      dash_active_tasks_title: "المهام",
       dash_no_active_tasks: "لا توجد مهام نشطة مسندة حالياً.",
 
       // Quick Operations
       quick_ops_title: "⚡ العمليات السريعة",
       op_tasks_title: "إدارة وتوزيع المهام",
+      op_tasks_title_emp: "المهام",
       op_tasks_desc: "إسناد المهام للعمال ومتابعة مراحل الإنجاز والتحديث الفوري",
+      op_tasks_desc_emp: "استعراض وتحديث المهام المسندة إليك ومتابعة حالة التنفيذ.",
       op_reminders_title: "التذكيرات والمنبه الصوتي",
       op_reminders_desc: "إنشاء تذكيرات موقوتة مع عداد تنازلي وجرس إنذار صوتي",
       op_stock_title: "دليل المستودع والمخزون",
@@ -240,8 +247,9 @@
 
       // Tasks Section
       tasks_section_title: "إدارة المهام وتعيين العمال",
+      tasks_section_title_emp: "المهام",
       tasks_section_desc: "إسناد ومتابعة مراحل تنفيذ المهام بين أفراد فريق العمل.",
-      tasks_section_desc_emp: "متابعة وتنفيذ المهام المسندة إليك وتحديث حالة الإنجاز.",
+      tasks_section_desc_emp: "استعراض وتحديث المهام المسندة إليك ومتابعة حالة التنفيذ.",
       btn_assign_task: "+ إسناد مهمة",
       task_filter_label: "تصفية بحسب الموظف:",
       filter_all_workers: "جميع الموظفين",
