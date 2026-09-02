@@ -1716,19 +1716,31 @@
       let cTodo = 0, cProg = 0, cDone = 0;
 
       filtered.forEach(t => {
-        const canCancel = t.status === "TODO";
+        const isDone = t.status === "DONE";
+        const isProgress = t.status === "PROGRESS";
+        const isTodo = t.status === "TODO" || !t.status;
+        const canCancel = isTodo;
+
         const item = `
           <div class="glass-panel card-hover" style="padding: 0.95rem; background: var(--bg-surface-elevated); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">${t.title}</div>
-              <button onclick="editTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Edit Task">✏️</button>
+              ${!isDone ? `<button onclick="editTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Edit Task">✏️</button>` : ''}
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">👤 ${t.workerName || 'Staff'}</div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem;">
               <div style="display: flex; gap: 0.35rem;">
-                ${t.status === "TODO" ? `<button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ Progress</button>` : ''}
-                ${t.status !== "DONE" ? `<button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ Done</button>` : ''}
+                ${isDone ? `
+                  <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">↶ ${lang === 'ar' ? 'انتظار' : 'To Do'}</button>
+                  <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
+                ` : isProgress ? `
+                  <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">↶ ${lang === 'ar' ? 'انتظار' : 'To Do'}</button>
+                  <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
+                ` : `
+                  <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
+                  <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
+                `}
               </div>
               ${canCancel ? `
                 <button onclick="cancelTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; color: #fb7185; font-size: 0.7rem;">
@@ -1751,6 +1763,10 @@
     function editTaskById(id) {
       const t = state.tasks.find(x => x.id === id);
       if (!t) return;
+      if (t.status === "DONE") {
+        alert("Completed tasks are locked and cannot be edited.");
+        return;
+      }
       document.getElementById("task-edit-id").value = t.id;
       document.getElementById("task-title").value = t.title;
       openTaskHUD();
@@ -1763,7 +1779,7 @@
       const t = state.tasks.find(x => x.id === id);
       if (!t) return;
       if (t.status !== "TODO") {
-        alert("Tasks that have moved to 'In Progress' or 'Done' cannot be cancelled.");
+        alert("Tasks that have moved to 'In Progress' or 'Done' cannot be cancelled or deleted.");
         return;
       }
       if (!confirm(`Cancel task "${t.title}"?`)) return;
@@ -1795,13 +1811,18 @@
 
       const now = new Date().getTime();
       const user = getCurrentUser();
-      const isEmp = user && user.role === "EMPLOYEE";
+      if (!user) return;
 
-      // Filter reminders so employees ONLY see their own personal reminders
-      let filteredReminders = state.reminders;
-      if (isEmp) {
-        filteredReminders = filteredReminders.filter(r => r.createdByEmail === user.email || r.createdById === user.id || !r.createdByEmail);
-      }
+      const isSuper = isMasterSuperAdmin(user);
+
+      // Reminders are STRICTLY visible only to the person who created them
+      let filteredReminders = state.reminders.filter(r => {
+        if (isSuper) {
+          return r.createdByEmail === user.email || r.createdById === user.id || !r.createdByEmail;
+        }
+        return (r.createdByEmail && r.createdByEmail.toLowerCase().trim() === user.email.toLowerCase().trim()) ||
+               (r.createdById && r.createdById === user.id);
+      });
 
       filteredReminders.forEach(r => {
         let badgeHtml = "";
@@ -2271,9 +2292,10 @@
         setModule("dashboard");
       } else {
         // Sign In
+        let authUserCred = null;
         if (window.fbAuth) {
           try {
-            await window.fbAuth.signInWithEmailAndPassword(email, pass);
+            authUserCred = await window.fbAuth.signInWithEmailAndPassword(email, pass);
           } catch (fbErr) {
             console.error("Firebase Sign In Error:", fbErr);
             if (errBox) {
@@ -2285,6 +2307,63 @@
         }
 
         let user = state.users.find(u => u.email.toLowerCase() === email);
+
+        // If user logged in successfully with Firebase Auth, but isn't in local state yet:
+        if (!user && authUserCred && authUserCred.user) {
+          let docData = null;
+          let docId = authUserCred.user.uid;
+
+          if (window.fbDb) {
+            try {
+              // 1. Try fetching document by Firebase UID
+              const docSnap = await window.fbDb.collection("users").doc(authUserCred.user.uid).get();
+              if (docSnap.exists) {
+                docData = docSnap.data();
+                docId = docSnap.id;
+              } else {
+                // 2. Try querying document by email
+                const qSnap = await window.fbDb.collection("users").where("email", "==", email).get();
+                if (!qSnap.empty) {
+                  docData = qSnap.docs[0].data();
+                  docId = qSnap.docs[0].id;
+                }
+              }
+            } catch (e) {
+              console.warn("Firestore user fetch notice:", e);
+            }
+          }
+
+          const isSuper = email === "waseem.tw@hotmail.com";
+          user = {
+            id: docId,
+            name: (docData && docData.name) || authUserCred.user.displayName || email.split('@')[0],
+            nameAr: (docData && docData.nameAr) || (isSuper ? "اسامة الطويش" : null),
+            email: email,
+            role: (docData && docData.role) || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
+            status: "ACTIVE",
+            isProtected: isSuper,
+            sectionAccess: (docData && docData.sectionAccess) || {
+              reminders: "accessible",
+              tasks: "accessible",
+              employees: isSuper ? "accessible" : "hidden",
+              departments: isSuper ? "accessible" : "hidden",
+              stock: isSuper ? "accessible" : "locked",
+              "stock-requests": "accessible",
+              reports: isSuper ? "accessible" : "hidden",
+              "audit-logs": isSuper ? "accessible" : "hidden",
+              settings: "accessible"
+            }
+          };
+          state.users.push(user);
+
+          // Save to Firestore to keep in sync
+          if (window.fbDb) {
+            try {
+              window.fbDb.collection("users").doc(user.id).set(user, { merge: true });
+            } catch (e) {}
+          }
+        }
+
         if (!user && email === "waseem.tw@hotmail.com") {
           user = {
             id: "u-osama",
