@@ -99,7 +99,7 @@ export async function loginWithFirebase(
     const mockUser: UserProfile = {
       uid: "fb-waseem",
       email: normalizedEmail,
-      name: isWaseem ? "Waseem Al-Otaibi" : "Ostan Worker",
+      name: isWaseem ? "Osama Al-Twaish" : "Ostan Worker",
       role: isWaseem ? "SUPER_ADMIN" : "EMPLOYEE",
       status: "ACTIVE",
       isProtected: isWaseem,
@@ -129,7 +129,7 @@ export async function loginWithFirebase(
     profile = {
       uid: fbUser.uid,
       email: normalizedEmail,
-      name: fbUser.displayName || (isWaseem ? "Waseem Al-Otaibi" : "Worker"),
+      name: fbUser.displayName || (isWaseem ? "Osama Al-Twaish" : "Worker"),
       role: isWaseem ? "SUPER_ADMIN" : "EMPLOYEE",
       status: "ACTIVE",
       isProtected: isWaseem,

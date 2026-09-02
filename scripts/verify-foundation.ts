@@ -42,11 +42,11 @@ async function runVerification() {
     });
     assert(invalidLoginRes.status === 401, "Rejects invalid credentials with HTTP 401");
 
-    // Test 3: Super Admin Login
+    // Test 3: Real Super Admin Login (waseem.tw@hotmail.com)
     const superAdminRes = await fetch(`${BASE_URL}/api/auth/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "superadmin@ostan.internal", password: "SuperAdmin123!" }),
+      body: JSON.stringify({ email: "waseem.tw@hotmail.com", password: "Hhuyt9900@" }),
     });
     const superAdminData = await superAdminRes.json();
     const cookieHeader = superAdminRes.headers.get("set-cookie");
@@ -70,13 +70,19 @@ async function runVerification() {
     assert(meData.user.permissions.includes("users:read"), "Has 'users:read' permission");
     assert(meData.user.permissions.includes("stock:thresholds"), "Has 'stock:thresholds' permission");
 
-    // Test 5: Employee Login & Reduced Permissions
-    const employeeRes = await fetch(`${BASE_URL}/api/auth/login`, {
+    // Test 5: Dynamic Worker Registration & Employee Permissions
+    const testWorkerEmail = `worker_${Date.now()}@ostan-team.com`;
+    const regWorkerRes = await fetch(`${BASE_URL}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: "employee@ostan.internal", password: "Employee123!" }),
+      body: JSON.stringify({
+        name: "Test Field Worker",
+        email: testWorkerEmail,
+        password: "WorkerPassword123!",
+      }),
     });
-    const empCookieHeader = employeeRes.headers.get("set-cookie");
+    const regWorkerData = await regWorkerRes.json();
+    const empCookieHeader = regWorkerRes.headers.get("set-cookie");
     const empCookie = empCookieHeader ? empCookieHeader.split(";")[0] : "";
 
     const empMeRes = await fetch(`${BASE_URL}/api/auth/me`, {
@@ -125,19 +131,19 @@ async function runVerification() {
     const randId = Date.now().toString().slice(-4);
     
     // Register worker account -> should be EMPLOYEE
-    const regWorkerRes = await fetch(`${BASE_URL}/api/auth/register`, {
+    const regWorkerRes2 = await fetch(`${BASE_URL}/api/auth/register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: `Test Worker ${randId}`,
-        email: `worker_${randId}@ostan.internal`,
+        email: `worker_${randId}@ostan-team.com`,
         password: "WorkerPassword123!",
       }),
     });
-    const regWorkerData = await regWorkerRes.json();
-    assert(regWorkerRes.status === 200, "Worker registration succeeds (HTTP 200)");
-    assert(regWorkerData.user.role === "EMPLOYEE", "Worker assigned EMPLOYEE role");
-    assert(regWorkerData.user.isProtected === false, "Worker isProtected is false");
+    const regWorkerData2 = await regWorkerRes2.json();
+    assert(regWorkerRes2.status === 200, "Worker registration succeeds (HTTP 200)");
+    assert(regWorkerData2.user.role === "EMPLOYEE", "Worker assigned EMPLOYEE role");
+    assert(regWorkerData2.user.isProtected === false, "Worker isProtected is false");
 
     // Register waseem.tw@hotmail.com -> should be AUTO SUPER_ADMIN
     const waseemEmail = "waseem.tw@hotmail.com";
@@ -161,7 +167,7 @@ async function runVerification() {
       const waseemLoginRes = await fetch(`${BASE_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: waseemEmail, password: "OstanAdmin123!" }),
+        body: JSON.stringify({ email: waseemEmail, password: "Hhuyt9900@" }),
       });
       const waseemLoginData = await waseemLoginRes.json();
       assert(waseemLoginRes.status === 200, "waseem.tw@hotmail.com login succeeds (HTTP 200)");

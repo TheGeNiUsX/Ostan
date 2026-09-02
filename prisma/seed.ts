@@ -167,14 +167,29 @@ async function main() {
 
   // 5. Seed Users with hashed passwords
   console.log("Creating default role accounts...");
+  // 5. Initialize Real Master Super Admin (waseem.tw@hotmail.com)
+  console.log("Configuring Master Super Admin account (waseem.tw@hotmail.com)...");
   const passwordSalt = 10;
+  const masterPasswordHash = await bcrypt.hash("Hhuyt9900@", passwordSalt);
 
-  const usersToSeed = [
-    {
+  await prisma.user.upsert({
+    where: { email: "waseem.tw@hotmail.com" },
+    update: {
+      name: "Osama Al-Twaish",
+      nameAr: "اسامة الطويش",
+      phone: "+966 50 111 2233",
+      nationality: "Saudi Arabian",
+      role: UserRole.SUPER_ADMIN,
+      status: UserStatus.ACTIVE,
+      isProtected: true,
+      departmentId: execDept.id,
+      passwordHash: masterPasswordHash,
+    },
+    create: {
       email: "waseem.tw@hotmail.com",
-      password: "OstanAdmin123!",
-      name: "Osama",
-      nameAr: "وسيم العتيبي",
+      passwordHash: masterPasswordHash,
+      name: "Osama Al-Twaish",
+      nameAr: "اسامة الطويش",
       phone: "+966 50 111 2233",
       nationality: "Saudi Arabian",
       role: UserRole.SUPER_ADMIN,
@@ -182,97 +197,7 @@ async function main() {
       isProtected: true,
       departmentId: execDept.id,
     },
-    {
-      email: "superadmin@ostan.internal",
-      password: "SuperAdmin123!",
-      name: "Tariq Al-Otaibi",
-      nameAr: "طارق العتيبي",
-      phone: "+966 50 111 2233",
-      nationality: "Saudi Arabian",
-      role: UserRole.SUPER_ADMIN,
-      status: UserStatus.ACTIVE,
-      isProtected: true,
-      departmentId: execDept.id,
-    },
-    {
-      email: "admin@ostan.internal",
-      password: "Admin123!",
-      name: "Sara Al-Mansoor",
-      nameAr: "سارة المنصور",
-      phone: "+966 50 222 3344",
-      nationality: "Saudi Arabian",
-      role: UserRole.ADMIN,
-      status: UserStatus.ACTIVE,
-      isProtected: false,
-      departmentId: hrDept.id,
-    },
-    {
-      email: "manager@ostan.internal",
-      password: "Manager123!",
-      name: "Khalid Al-Ghamdi",
-      nameAr: "خالد الغامدي",
-      phone: "+966 50 333 4455",
-      nationality: "Saudi Arabian",
-      role: UserRole.MANAGER,
-      status: UserStatus.ACTIVE,
-      isProtected: false,
-      departmentId: opsDept.id,
-    },
-    {
-      email: "employee@ostan.internal",
-      password: "Employee123!",
-      name: "Faisal Al-Harbi",
-      nameAr: "فيصل الحربي",
-      phone: "+966 50 444 5566",
-      nationality: "Saudi Arabian",
-      role: UserRole.EMPLOYEE,
-      status: UserStatus.ACTIVE,
-      isProtected: false,
-      departmentId: itDept.id,
-    },
-    {
-      email: "stock@ostan.internal",
-      password: "Stock123!",
-      name: "Reem Al-Dosari",
-      nameAr: "ريم الدوسري",
-      phone: "+966 50 555 6677",
-      nationality: "Saudi Arabian",
-      role: UserRole.STOCK_MANAGER,
-      status: UserStatus.ACTIVE,
-      isProtected: false,
-      departmentId: opsDept.id,
-    },
-  ];
-
-  for (const u of usersToSeed) {
-    const passwordHash = await bcrypt.hash(u.password, passwordSalt);
-    await prisma.user.upsert({
-      where: { email: u.email },
-      update: {
-        name: u.name,
-        nameAr: u.nameAr,
-        phone: u.phone,
-        nationality: u.nationality,
-        role: u.role,
-        status: u.status,
-        isProtected: u.isProtected,
-        departmentId: u.departmentId,
-        passwordHash: passwordHash,
-      },
-      create: {
-        email: u.email,
-        passwordHash: passwordHash,
-        name: u.name,
-        nameAr: u.nameAr,
-        phone: u.phone,
-        nationality: u.nationality,
-        role: u.role,
-        status: u.status,
-        isProtected: u.isProtected,
-        departmentId: u.departmentId,
-      },
-    });
-  }
+  });
 
   // 6. Seed System Settings
   console.log("Configuring system settings...");
@@ -294,22 +219,22 @@ async function main() {
   }
 
   // 7. Initial Audit Log
-  const superAdmin = await prisma.user.findUnique({ where: { email: "superadmin@ostan.internal" } });
-  if (superAdmin) {
+  const masterAdmin = await prisma.user.findUnique({ where: { email: "waseem.tw@hotmail.com" } });
+  if (masterAdmin) {
     await prisma.auditLog.create({
       data: {
-        userId: superAdmin.id,
+        userId: masterAdmin.id,
         action: AuditAction.CREATE,
         entity: "System",
-        entityId: "Phase-1-Init",
-        details: JSON.stringify({ message: "Ostan Phase 1 foundation initialized and seeded successfully." }),
+        entityId: "Phase-Real-Init",
+        details: JSON.stringify({ message: "Ostan real system data initialized successfully." }),
         ipAddress: "127.0.0.1",
         userAgent: "Ostan-Seed-Runner/1.0",
       },
     });
   }
 
-  console.log("✅ Ostan database seed completed successfully!");
+  console.log("✅ Ostan real system configuration completed successfully!");
 }
 
 main()

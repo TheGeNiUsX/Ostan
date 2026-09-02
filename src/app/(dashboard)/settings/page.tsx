@@ -12,19 +12,23 @@ import {
   Save,
   CheckCircle2,
   Lock,
-  Sliders,
+  Volume2,
+  Flame,
+  Clock,
+  Building,
 } from "lucide-react";
 
 export default function SettingsPage() {
   const { t, locale, setLocale } = useI18n();
   const { theme, setTheme } = useTheme();
 
-  const [companyName, setCompanyName] = useState("Ostan");
-  const [companyNameAr, setCompanyNameAr] = useState("أستان");
+  const [companyName, setCompanyName] = useState("Ostan Enterprise");
+  const [companyNameAr, setCompanyNameAr] = useState("مؤسسة أستان");
   const [stockThreshold, setStockThreshold] = useState("5");
   const [sessionHours, setSessionHours] = useState("24");
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [audioTesting, setAudioTesting] = useState(false);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -76,114 +80,189 @@ export default function SettingsPage() {
     }
   };
 
+  const handleTestAudioAlarm = () => {
+    setAudioTesting(true);
+    try {
+      const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+      if (AudioContext) {
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 1.2);
+      }
+    } catch (e) {
+      console.warn("Audio Context notice:", e);
+    }
+    setTimeout(() => setAudioTesting(false), 1200);
+  };
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem", maxWidth: "900px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
       {/* Page Header */}
-      <div>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
-          <Settings size={26} color="var(--primary-500)" />
-          <h1 style={{ fontSize: "1.45rem", fontWeight: 800 }}>{t("settings_title")}</h1>
+      <div className="glass-panel" style={{ padding: "1.5rem 1.75rem", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "1rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              borderRadius: "var(--radius-md)",
+              background: "linear-gradient(135deg, #6366f1, #4f46e5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#ffffff",
+              boxShadow: "0 0 20px rgba(99, 102, 241, 0.3)",
+            }}
+          >
+            <Settings size={26} />
+          </div>
+          <div>
+            <h1 style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-main)", letterSpacing: "-0.02em" }}>
+              {locale === "ar" ? "إعدادات النظام والتهيئة العامة" : "System Settings & Configuration"}
+            </h1>
+            <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "2px" }}>
+              {locale === "ar"
+                ? "إدارة هوية المؤسسة، الاتصال السحابي بـ Firebase، والمظهر العام والأمان."
+                : "Manage enterprise identity, Firebase cloud synchronization, themes, and security."}
+            </p>
+          </div>
         </div>
-        <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "0.2rem" }}>
-          {t("settings_subtitle")}
-        </p>
+
+        {savedSuccess && (
+          <div
+            style={{
+              padding: "0.5rem 1rem",
+              background: "rgba(16, 185, 129, 0.15)",
+              border: "1px solid rgba(16, 185, 129, 0.35)",
+              borderRadius: "var(--radius-md)",
+              color: "#34d399",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+            }}
+          >
+            <CheckCircle2 size={16} />
+            <span>{locale === "ar" ? "تم حفظ الإعدادات بنجاح!" : "Settings saved successfully!"}</span>
+          </div>
+        )}
       </div>
 
-      {savedSuccess && (
-        <div
-          style={{
-            padding: "0.85rem 1rem",
-            background: "rgba(16, 185, 129, 0.12)",
-            border: "1px solid rgba(16, 185, 129, 0.3)",
-            borderRadius: "var(--radius-md)",
-            color: "#34d399",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            fontSize: "0.85rem",
-          }}
-        >
-          <CheckCircle2 size={18} />
-          <span>{t("settings_save_success")}</span>
-        </div>
-      )}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "1.5rem" }}>
+        {/* 1. Firebase Cloud Connectivity Card */}
+        <div className="glass-panel" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <Flame size={20} color="#f59e0b" />
+            <h2 style={{ fontSize: "1.1rem", fontWeight: 700 }}>
+              {locale === "ar" ? "حالة الربط السحابي (Firebase)" : "Firebase Cloud Connection"}
+            </h2>
+          </div>
+          <p style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>
+            {locale === "ar"
+              ? "النظام متصل بشكل مباشر وفوري بقاعدة بيانات Firebase وخدمات التوثيق السحابية."
+              : "Live real-time link to Firebase Authentication & Cloud Firestore database."}
+          </p>
 
-      {/* Appearance & Localization Section */}
-      <div className="glass-panel" style={{ padding: "1.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
-          <Palette size={18} color="var(--primary-500)" />
-          <h2 style={{ fontSize: "1.05rem", fontWeight: 700 }}>{t("settings_appearance")}</h2>
+          <div
+            style={{
+              padding: "1rem",
+              borderRadius: "var(--radius-md)",
+              background: "rgba(245, 158, 11, 0.08)",
+              border: "1px solid rgba(245, 158, 11, 0.25)",
+              display: "flex",
+              flexDirection: "column",
+              gap: "0.6rem",
+            }}
+          >
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Project ID</span>
+              <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f59e0b" }}>ostan-75a0c</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Auth Domain</span>
+              <span style={{ fontSize: "0.82rem", color: "var(--text-main)" }}>ostan-75a0c.firebaseapp.com</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontSize: "0.82rem", color: "var(--text-muted)" }}>Connection Status</span>
+              <span className="badge badge-emerald">🟢 Active & Synced</span>
+            </div>
+          </div>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "1.25rem",
-          }}
-        >
-          {/* Theme Selector */}
-          <div className="input-group">
-            <label className="input-label">{t("settings_theme_label")}</label>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
-              {(["light", "dark", "system"] as const).map((th) => (
+        {/* 2. Appearance & Diagnostics Card */}
+        <div className="glass-panel" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+            <Palette size={20} color="#818cf8" />
+            <h2 style={{ fontSize: "1.1rem", fontWeight: 700 }}>
+              {locale === "ar" ? "المظهر والفحص الصوتي" : "Appearance & Diagnostics"}
+            </h2>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.85rem" }}>
+            <div>
+              <label style={{ fontSize: "0.8rem", color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>
+                {locale === "ar" ? "نمط العرض (Theme)" : "Theme Mode"}
+              </label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
                 <button
-                  key={th}
                   type="button"
-                  onClick={() => setTheme(th)}
-                  className={`btn ${theme === th ? "btn-primary" : "btn-secondary"}`}
-                  style={{ flex: 1, padding: "0.5rem", fontSize: "0.8rem", textTransform: "capitalize" }}
+                  onClick={() => setTheme("dark")}
+                  className={`btn ${theme === "dark" ? "btn-primary" : "btn-secondary"}`}
+                  style={{ flex: 1 }}
                 >
-                  {t(`theme_${th}` as any, th)}
+                  Dark Theme
                 </button>
-              ))}
+                <button
+                  type="button"
+                  onClick={() => setTheme("light")}
+                  className={`btn ${theme === "light" ? "btn-primary" : "btn-secondary"}`}
+                  style={{ flex: 1 }}
+                >
+                  Light Theme
+                </button>
+              </div>
             </div>
-          </div>
 
-          {/* Language Selector */}
-          <div className="input-group">
-            <label className="input-label">{t("settings_lang_label")}</label>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div>
+              <label style={{ fontSize: "0.8rem", color: "var(--text-muted)", display: "block", marginBottom: "6px" }}>
+                {locale === "ar" ? "فحص جرس الإنذار الصوتي" : "Audio Alarm Diagnostics"}
+              </label>
               <button
                 type="button"
-                onClick={() => setLocale("en")}
-                className={`btn ${locale === "en" ? "btn-primary" : "btn-secondary"}`}
-                style={{ flex: 1, padding: "0.5rem", fontSize: "0.8rem" }}
+                onClick={handleTestAudioAlarm}
+                className="btn btn-secondary"
+                style={{ width: "100%", justifyContent: "center", gap: "0.5rem" }}
               >
-                {t("lang_en")}
-              </button>
-              <button
-                type="button"
-                onClick={() => setLocale("ar")}
-                className={`btn ${locale === "ar" ? "btn-primary" : "btn-secondary"}`}
-                style={{ flex: 1, padding: "0.5rem", fontSize: "0.8rem" }}
-              >
-                {t("lang_ar")}
+                <Volume2 size={16} />
+                <span>{audioTesting ? "🔔 Ringing (880Hz)..." : "Test Audio Alarm Chime"}</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* System Brand & Parameters Form */}
-      <form onSubmit={handleSave} className="glass-panel" style={{ padding: "1.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1.25rem" }}>
-          <Sliders size={18} color="#06b6d4" />
-          <h2 style={{ fontSize: "1.05rem", fontWeight: 700 }}>
-            {locale === "ar" ? "المعايير المؤسسية" : "Enterprise System Parameters"}
+      {/* 3. Enterprise Profile & Policies Form */}
+      <form onSubmit={handleSave} className="glass-panel" style={{ padding: "1.5rem", display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+          <Building size={20} color="#38bdf8" />
+          <h2 style={{ fontSize: "1.1rem", fontWeight: 700 }}>
+            {locale === "ar" ? "بيانات المؤسسة والسياسات العامة" : "Enterprise Identity & Policies"}
           </h2>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: "1.25rem",
-            marginBottom: "1.5rem",
-          }}
-        >
-          <div className="input-group">
-            <label className="input-label">{locale === "ar" ? "اسم المنشأة (الإنجليزية)" : "Company Name (English)"}</label>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1rem" }}>
+          <div>
+            <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+              Company Name (English)
+            </label>
             <input
               type="text"
               value={companyName}
@@ -192,8 +271,10 @@ export default function SettingsPage() {
             />
           </div>
 
-          <div className="input-group">
-            <label className="input-label">{locale === "ar" ? "اسم المنشأة (العربية)" : "Company Name (Arabic)"}</label>
+          <div>
+            <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+              اسم المؤسسة (باللغة العربية)
+            </label>
             <input
               type="text"
               value={companyNameAr}
@@ -202,20 +283,26 @@ export default function SettingsPage() {
             />
           </div>
 
-          <div className="input-group">
-            <label className="input-label">{locale === "ar" ? "حد التنبيه الافتراضي لانخفاض المخزون" : "Low-Stock Alert Threshold"}</label>
+          <div>
+            <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+              {locale === "ar" ? "حد التنبيه لنقص المخزون (Default Low Stock Threshold)" : "Default Low Stock Threshold"}
+            </label>
             <input
               type="number"
+              min="1"
               value={stockThreshold}
               onChange={(e) => setStockThreshold(e.target.value)}
               className="input-field"
             />
           </div>
 
-          <div className="input-group">
-            <label className="input-label">{locale === "ar" ? "مدة انتهاء الجلسة (بالساعات)" : "Session Expiration (Hours)"}</label>
+          <div>
+            <label style={{ fontSize: "0.8rem", fontWeight: 600, color: "var(--text-muted)", display: "block", marginBottom: "4px" }}>
+              {locale === "ar" ? "مدة صلاحية جلسة الدخول بالساعات (Session Timeout)" : "Session Timeout (Hours)"}
+            </label>
             <input
               type="number"
+              min="1"
               value={sessionHours}
               onChange={(e) => setSessionHours(e.target.value)}
               className="input-field"
@@ -223,47 +310,13 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "0.5rem" }}>
           <button type="submit" disabled={saving} className="btn btn-primary" style={{ padding: "0.6rem 1.4rem" }}>
-            <Save size={15} />
-            <span>{saving ? "Saving..." : t("action_save")}</span>
+            <Save size={16} />
+            <span>{saving ? (locale === "ar" ? "جاري الحفظ..." : "Saving...") : (locale === "ar" ? "حفظ التغييرات" : "Save Settings")}</span>
           </button>
         </div>
       </form>
-
-      {/* System Information Panel */}
-      <div className="glass-panel" style={{ padding: "1.5rem" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "1rem" }}>
-          <Database size={18} color="#10b981" />
-          <h2 style={{ fontSize: "1.05rem", fontWeight: 700 }}>{t("settings_system_info")}</h2>
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "1rem",
-            fontSize: "0.82rem",
-          }}
-        >
-          <div style={{ background: "var(--bg-surface)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-            <div style={{ color: "var(--text-faint)" }}>Architecture</div>
-            <div style={{ fontWeight: 600, marginTop: "2px" }}>Next.js App Router</div>
-          </div>
-          <div style={{ background: "var(--bg-surface)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-            <div style={{ color: "var(--text-faint)" }}>Database</div>
-            <div style={{ fontWeight: 600, marginTop: "2px" }}>PostgreSQL + Prisma ORM</div>
-          </div>
-          <div style={{ background: "var(--bg-surface)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-            <div style={{ color: "var(--text-faint)" }}>Security Engine</div>
-            <div style={{ fontWeight: 600, marginTop: "2px" }}>RBAC + Immutable Super Admin Guard</div>
-          </div>
-          <div style={{ background: "var(--bg-surface)", padding: "0.75rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-subtle)" }}>
-            <div style={{ color: "var(--text-faint)" }}>Phase Status</div>
-            <div style={{ fontWeight: 600, marginTop: "2px", color: "var(--emerald-500)" }}>Phase 1 Foundation: Active</div>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

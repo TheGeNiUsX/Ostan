@@ -42,7 +42,7 @@ export default function LoginPage() {
     {
       role: "SUPER_ADMIN",
       roleLabel: locale === "ar" ? "المسؤول المتميز (Super Admin)" : "Super Admin",
-      name: "Waseem Al-Otaibi",
+      name: locale === "ar" ? "اسامة الطويش" : "Osama Al-Twaish",
       email: "waseem.tw@hotmail.com",
       password: "OstanAdmin123!",
       icon: ShieldAlert,
@@ -374,7 +374,7 @@ export default function LoginPage() {
                       required
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      placeholder={locale === "ar" ? "مثال: وسيم العتيبي" : "e.g. Waseem Al-Otaibi"}
+                      placeholder={locale === "ar" ? "مثال: اسامة الطويش" : "e.g. Osama Al-Twaish"}
                       className="input-field"
                       style={{ paddingInlineStart: "2.4rem" }}
                     />

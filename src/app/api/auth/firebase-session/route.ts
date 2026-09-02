@@ -28,7 +28,8 @@ export async function POST(req: NextRequest) {
         data: {
           email: normalizedEmail,
           passwordHash: dummyPasswordHash,
-          name: name ? name.trim() : (isWaseem ? "Waseem Al-Otaibi" : "Worker"),
+          name: name ? name.trim() : (isWaseem ? "Osama Al-Twaish" : "Worker"),
+          nameAr: isWaseem ? "اسامة الطويش" : null,
           role: isWaseem ? UserRole.SUPER_ADMIN : UserRole.EMPLOYEE,
           status: UserStatus.ACTIVE,
           isProtected: isWaseem,
