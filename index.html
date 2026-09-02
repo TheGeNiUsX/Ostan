@@ -71,28 +71,78 @@
       text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
     }
 
-    /* Top Grid Cards (4 Main Operations: Reminders, Tasks, Workers, Warehouse) */
+    /* Precision Engineered Executive Stat Cards */
     .status-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 10px;
     }
     .stat-card {
-      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(26, 34, 52, 0.7) 0%, rgba(15, 22, 35, 0.85) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 12px;
       padding: 12px 14px;
-      color: #fff;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      height: 76px;
+      height: 82px;
       cursor: pointer;
-      transition: transform 0.15s ease, box-shadow 0.15s ease;
+      position: relative;
+      overflow: hidden;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .stat-card:hover { transform: translateY(-2px); }
-    .card-reminders { background: #007aff; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35); }
-    .card-tasks { background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); }
-    .card-workers { background: #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35); }
-    .card-warehouse { background: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35); }
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    .stat-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(255, 255, 255, 0.16);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+    }
+    .stat-card:hover::before { opacity: 1; }
+    
+    .card-reminders::before { background: linear-gradient(90deg, #38bdf8, #007aff); }
+    .card-tasks::before { background: linear-gradient(90deg, #34d399, #10b981); }
+    .card-workers::before { background: linear-gradient(90deg, #c084fc, #8b5cf6); }
+    .card-warehouse::before { background: linear-gradient(90deg, #fbbf24, #f59e0b); }
+
+    .stat-card-icon-pill {
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+    }
+    .icon-pill-reminders { background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); }
+    .icon-pill-tasks { background: rgba(52, 211, 153, 0.12); color: #34d399; border: 1px solid rgba(52, 211, 153, 0.25); }
+    .icon-pill-workers { background: rgba(192, 132, 252, 0.12); color: #c084fc; border: 1px solid rgba(192, 132, 252, 0.25); }
+    .icon-pill-warehouse { background: rgba(251, 191, 36, 0.12); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.25); }
+
+    .stat-card-val {
+      font-size: 1.65rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #f8fafc;
+      line-height: 1;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+    .stat-card-label {
+      font-weight: 600;
+      font-size: 0.74rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
 
     /* Modules & Operations Navigation */
     .module-nav-list {
@@ -109,8 +159,9 @@
       border-radius: 10px;
       cursor: pointer;
       color: var(--text-muted);
-      font-size: 0.9rem;
+      font-size: 0.88rem;
       font-weight: 500;
+      border: 1px solid transparent;
       transition: all 0.15s ease;
     }
     .module-btn:hover {
@@ -118,14 +169,15 @@
       color: var(--text-main);
     }
     .module-btn.active {
-      background: #007aff;
-      color: #ffffff;
+      background: rgba(99, 102, 241, 0.12);
+      border-color: rgba(99, 102, 241, 0.28);
+      color: #818cf8;
       font-weight: 600;
     }
     .module-icon-box {
       width: 28px;
       height: 28px;
-      border-radius: 50%;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -350,38 +402,46 @@
       <div id="sidebar-status-grid" class="status-grid">
         <!-- 1. Reminders -->
         <div id="card-stat-reminders" class="stat-card card-reminders" onclick="setModule('reminders')">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <span style="font-size:1.15rem;">⏰</span>
-            <span id="stat-reminders" style="font-size:1.6rem; font-weight:800; line-height:1;">0</span>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="stat-card-icon-pill icon-pill-reminders">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+            </div>
+            <span id="stat-reminders" class="stat-card-val">0</span>
           </div>
-          <span data-i18n="stat_reminders" style="font-weight:700; font-size:0.85rem;">Reminders</span>
+          <span data-i18n="stat_reminders" class="stat-card-label">Reminders</span>
         </div>
 
         <!-- 2. Tasks -->
         <div id="card-stat-tasks" class="stat-card card-tasks" onclick="setModule('tasks')">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <span style="font-size:1.15rem;">📋</span>
-            <span id="stat-tasks" style="font-size:1.6rem; font-weight:800; line-height:1;">0</span>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="stat-card-icon-pill icon-pill-tasks">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            </div>
+            <span id="stat-tasks" class="stat-card-val">0</span>
           </div>
-          <span data-i18n="stat_tasks" style="font-weight:700; font-size:0.85rem;">Tasks</span>
+          <span data-i18n="stat_tasks" class="stat-card-label">Tasks</span>
         </div>
 
         <!-- 3. Workers (Hidden for Employee & Stock Manager) -->
         <div id="card-stat-workers" class="stat-card card-workers" onclick="setModule('workers')">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <span style="font-size:1.15rem;">👥</span>
-            <span id="stat-workers" style="font-size:1.6rem; font-weight:800; line-height:1;">0</span>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="stat-card-icon-pill icon-pill-workers">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
+            <span id="stat-workers" class="stat-card-val">0</span>
           </div>
-          <span data-i18n="stat_workers" style="font-weight:700; font-size:0.85rem;">Workers</span>
+          <span data-i18n="stat_workers" class="stat-card-label">Workers</span>
         </div>
 
         <!-- 4. Warehouse -->
         <div id="card-stat-warehouse" class="stat-card card-warehouse" onclick="setModule('warehouse')">
-          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <span style="font-size:1.15rem;">📦</span>
-            <span id="stat-warehouse" style="font-size:1.6rem; font-weight:800; line-height:1;">0</span>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div class="stat-card-icon-pill icon-pill-warehouse">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+            </div>
+            <span id="stat-warehouse" class="stat-card-val">0</span>
           </div>
-          <span data-i18n="stat_warehouse" style="font-weight:700; font-size:0.85rem;">Warehouse</span>
+          <span data-i18n="stat_warehouse" class="stat-card-label">Warehouse</span>
         </div>
       </div>
 
