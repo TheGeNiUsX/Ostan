@@ -1474,8 +1474,42 @@
 
     function getCurrentUser() {
       if (!state.currentUserId) return null;
-      return state.users.find(u => u.id === state.currentUserId) || null;
+      let u = state.users.find(x => x.id === state.currentUserId);
+      if (!u && state.users.length > 0) {
+        u = state.users.find(x => x.email && (state.currentUserId === x.email || state.currentUserId === x.id));
+      }
+      return u || null;
     }
+
+    function syncUserToFirestore(targetUser) {
+      if (!window.fbDb || !targetUser || !targetUser.email) return;
+      const cleanEmail = targetUser.email.toLowerCase().trim();
+      const payload = {
+        email: cleanEmail,
+        name: targetUser.name,
+        nameAr: targetUser.nameAr || null,
+        role: targetUser.role,
+        isProtected: !!targetUser.isProtected,
+        status: targetUser.status || "ACTIVE",
+        sectionAccess: targetUser.sectionAccess || {},
+        permissions: targetUser.permissions || null,
+        updatedAt: new Date().toISOString()
+      };
+
+      try {
+        if (targetUser.id) {
+          window.fbDb.collection("users").doc(targetUser.id).set(payload, { merge: true });
+        }
+        window.fbDb.collection("users").where("email", "==", cleanEmail).get().then(snap => {
+          snap.forEach(docSnap => {
+            docSnap.ref.set(payload, { merge: true });
+          });
+        }).catch(err => console.warn("Firestore sync email notice:", err));
+      } catch (e) {
+        console.error("Firestore syncUser error:", e);
+      }
+    }
+    window.syncUserToFirestore = syncUserToFirestore;
 
     function isMasterSuperAdmin(user = getCurrentUser()) {
       return user && (user.role === "SUPER_ADMIN" || user.email.toLowerCase().trim() === "waseem.tw@hotmail.com");
@@ -1516,9 +1550,17 @@
       if (isMasterSuperAdmin(user)) return "accessible";
       if (mod === "dashboard") return "accessible";
 
-      // If user has granular permissions configured, view flag governs visibility
-      if (user.permissions && user.permissions[mod]) {
-        return user.permissions[mod].view ? "accessible" : "hidden";
+      // 1. If user has granular permissions configured, view flag governs visibility
+      if (user.permissions) {
+        if (mod === "stock-requests" && user.permissions.stock) {
+          return (user.permissions.stock.request || user.permissions.stock.view) ? "accessible" : "hidden";
+        }
+        if (mod === "departments" && user.permissions.employees) {
+          return user.permissions.employees.view ? "accessible" : "hidden";
+        }
+        if (user.permissions[mod] && typeof user.permissions[mod].view !== "undefined") {
+          return user.permissions[mod].view ? "accessible" : "hidden";
+        }
       }
 
       if (user.sectionAccess && user.sectionAccess[mod]) {
@@ -2086,11 +2128,10 @@
         settings: { view: settingsView }
       };
 
-      if (!user.sectionAccess) user.sectionAccess = {};
       user.sectionAccess.employees = empView ? "accessible" : "hidden";
       user.sectionAccess.departments = empView ? "accessible" : "hidden";
       user.sectionAccess.stock = stockView ? "accessible" : "hidden";
-      user.sectionAccess["stock-requests"] = stockView ? "accessible" : "hidden";
+      user.sectionAccess["stock-requests"] = (stockView || getChecked("chk-perm-stock-request")) ? "accessible" : "hidden";
       user.sectionAccess.tasks = tasksView ? "accessible" : "hidden";
       user.sectionAccess.reminders = remView ? "accessible" : "hidden";
       user.sectionAccess.reports = repView ? "accessible" : "hidden";
@@ -2106,16 +2147,7 @@
       }
 
       // SYNC LIVE TO FIRESTORE SO WORKER CLIENT UPDATES IMMEDIATELY
-      if (window.fbDb) {
-        try {
-          window.fbDb.collection("users").doc(user.id).set({
-            permissions: user.permissions,
-            sectionAccess: user.sectionAccess
-          }, { merge: true });
-        } catch (e) {
-          console.error("Failed to sync permissions to Firestore:", e);
-        }
-      }
+      syncUserToFirestore(user);
     }
     window.saveUserGranularPermissions = saveUserGranularPermissions;
 
@@ -2201,15 +2233,7 @@
       if (window.OstanStyle) window.OstanStyle.showToast("Access Updated", `${u.name} -> ${sectionKey}: ${next}`);
 
       // SYNC LIVE TO FIRESTORE SO WORKER CLIENTS UPDATE IN REAL TIME
-      if (window.fbDb) {
-        try {
-          window.fbDb.collection("users").doc(u.id).set({
-            sectionAccess: u.sectionAccess
-          }, { merge: true });
-        } catch (e) {
-          console.error("Firestore access sync failed:", e);
-        }
-      }
+      syncUserToFirestore(u);
     }
     window.cycleWorkerAccess = cycleWorkerAccess;
 
@@ -2229,15 +2253,7 @@
         if (window.OstanStyle) window.OstanStyle.showToast("Policy Applied", `Updated access for ${worker.name}`);
 
         // SYNC LIVE TO FIRESTORE SO WORKER CLIENTS UPDATE IN REAL TIME
-        if (window.fbDb) {
-          try {
-            window.fbDb.collection("users").doc(worker.id).set({
-              sectionAccess: worker.sectionAccess
-            }, { merge: true });
-          } catch (e) {
-            console.error("Firestore policy sync failed:", e);
-          }
-        }
+        syncUserToFirestore(worker);
       }
     }
     window.applyDeptPolicyFromForm = applyDeptPolicyFromForm;
@@ -3039,36 +3055,45 @@
           }
         }
 
-        let user = state.users.find(u => u.email.toLowerCase() === email);
+        // ALWAYS fetch the latest user profile and permissions from Cloud Firestore on login!
+        let docData = null;
+        let docId = authUserCred && authUserCred.user ? authUserCred.user.uid : null;
 
-        // If user logged in successfully with Firebase Auth, but isn't in local state yet:
-        if (!user && authUserCred && authUserCred.user) {
-          let docData = null;
-          let docId = authUserCred.user.uid;
-
-          if (window.fbDb) {
-            try {
-              // 1. Try fetching document by Firebase UID
-              const docSnap = await window.fbDb.collection("users").doc(authUserCred.user.uid).get();
+        if (window.fbDb) {
+          try {
+            if (docId) {
+              const docSnap = await window.fbDb.collection("users").doc(docId).get();
               if (docSnap.exists) {
                 docData = docSnap.data();
-                docId = docSnap.id;
-              } else {
-                // 2. Try querying document by email
-                const qSnap = await window.fbDb.collection("users").where("email", "==", email).get();
-                if (!qSnap.empty) {
-                  docData = qSnap.docs[0].data();
-                  docId = qSnap.docs[0].id;
-                }
               }
-            } catch (e) {
-              console.warn("Firestore user fetch notice:", e);
             }
+            if (!docData) {
+              const qSnap = await window.fbDb.collection("users").where("email", "==", email).get();
+              if (!qSnap.empty) {
+                docData = qSnap.docs[0].data();
+                docId = qSnap.docs[0].id;
+              }
+            }
+          } catch (e) {
+            console.warn("Firestore user fetch notice on login:", e);
           }
+        }
 
+        let user = state.users.find(u => u.email.toLowerCase() === email || (docId && u.id === docId));
+
+        if (user) {
+          if (docId) user.id = docId;
+          if (docData) {
+            user.name = docData.name || user.name;
+            user.nameAr = docData.nameAr || user.nameAr;
+            user.role = docData.role || user.role;
+            if (docData.permissions) user.permissions = docData.permissions;
+            if (docData.sectionAccess) user.sectionAccess = docData.sectionAccess;
+          }
+        } else if (authUserCred && authUserCred.user) {
           const isSuper = email === "waseem.tw@hotmail.com";
           user = {
-            id: docId,
+            id: docId || authUserCred.user.uid,
             name: (docData && docData.name) || authUserCred.user.displayName || email.split('@')[0],
             nameAr: (docData && docData.nameAr) || (isSuper ? "اسامة الطويش" : null),
             email: email,
@@ -3089,13 +3114,6 @@
             permissions: (docData && docData.permissions) || null
           };
           state.users.push(user);
-
-          // Save to Firestore to keep in sync
-          if (window.fbDb) {
-            try {
-              window.fbDb.collection("users").doc(user.id).set(user, { merge: true });
-            } catch (e) {}
-          }
         }
 
         if (!user && email === "waseem.tw@hotmail.com") {
@@ -3107,7 +3125,18 @@
             password: pass,
             role: "SUPER_ADMIN",
             status: "ACTIVE",
-            isProtected: true
+            isProtected: true,
+            sectionAccess: {
+              reminders: "accessible",
+              employees: "accessible",
+              departments: "accessible",
+              tasks: "accessible",
+              stock: "accessible",
+              "stock-requests": "accessible",
+              reports: "accessible",
+              "audit-logs": "accessible",
+              settings: "accessible"
+            }
           };
           state.users.unshift(user);
         }
@@ -3118,6 +3147,7 @@
           document.getElementById("auth-portal-fullscreen").style.display = "none";
           document.getElementById("app-shell-root").style.display = "grid";
           updateUserSessionUI();
+          applyModuleVisibility();
           setModule("dashboard");
         } else {
           if (errBox) {
@@ -3175,13 +3205,18 @@
     if (window.fbDb) {
       let initialLoadDone = false;
       window.fbDb.collection("users").onSnapshot((snapshot) => {
+        let stateChanged = false;
         snapshot.docChanges().forEach((change) => {
           const docData = change.doc.data();
           const docId = change.doc.id;
+          if (!docData) return;
 
-          let targetUser = state.users.find(u => u.id === docId || (docData.email && u.email.toLowerCase() === docData.email.toLowerCase()));
+          const docEmail = (docData.email || "").toLowerCase().trim();
+
+          let targetUser = state.users.find(u => u.id === docId || (docEmail && u.email && u.email.toLowerCase().trim() === docEmail));
 
           if (change.type === "added" || change.type === "modified") {
+            stateChanged = true;
             if (targetUser) {
               targetUser.name = docData.name || targetUser.name;
               targetUser.nameAr = docData.nameAr || targetUser.nameAr;
@@ -3192,14 +3227,21 @@
               if (docData.permissions) {
                 targetUser.permissions = { ...targetUser.permissions, ...docData.permissions };
               }
-            } else if (docData.email) {
-              const isSuper = docData.email?.toLowerCase().trim() === "waseem.tw@hotmail.com";
+              if (docId && targetUser.id !== docId) {
+                const oldId = targetUser.id;
+                targetUser.id = docId;
+                if (state.currentUserId === oldId) {
+                  state.currentUserId = docId;
+                }
+              }
+            } else if (docEmail) {
+              const isSuper = docEmail === "waseem.tw@hotmail.com";
               targetUser = {
                 id: docId,
                 name: docData.name || "New Employee",
                 nameAr: docData.nameAr || null,
-                email: docData.email,
-                role: docData.role || "EMPLOYEE",
+                email: docEmail,
+                role: docData.role || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
                 status: "ACTIVE",
                 isProtected: isSuper,
                 sectionAccess: docData.sectionAccess || {
@@ -3226,20 +3268,37 @@
                 }
               }
             }
+
+            // Live sync session if current logged in user was modified
+            const curUser = getCurrentUser();
+            if (curUser && docEmail && curUser.email && curUser.email.toLowerCase().trim() === docEmail) {
+              if (docData.permissions) curUser.permissions = docData.permissions;
+              if (docData.sectionAccess) curUser.sectionAccess = docData.sectionAccess;
+              if (docData.role) curUser.role = docData.role;
+              if (docData.name) curUser.name = docData.name;
+              if (docId && curUser.id !== docId) {
+                curUser.id = docId;
+                state.currentUserId = docId;
+              }
+            }
           }
 
           if (change.type === "removed") {
-            state.users = state.users.filter(u => u.id !== docId && u.email !== docData.email);
+            stateChanged = true;
+            state.users = state.users.filter(u => u.id !== docId && (!docEmail || u.email.toLowerCase() !== docEmail));
           }
         });
 
         initialLoadDone = true;
-        saveState();
-        applyModuleVisibility();
-        renderDashboard();
-        renderWorkers();
-        renderDepartments();
-        updateCounts();
+        if (stateChanged) {
+          saveState();
+          updateUserSessionUI();
+          applyModuleVisibility();
+          renderDashboard();
+          renderWorkers();
+          renderDepartments();
+          updateCounts();
+        }
       });
     }
 
@@ -3253,7 +3312,27 @@
       document.getElementById("auth-portal-fullscreen").style.display = "none";
       document.getElementById("app-shell-root").style.display = "grid";
       updateUserSessionUI();
+      applyModuleVisibility();
       setModule("dashboard");
+
+      // Pull latest user permissions from Firestore on boot
+      if (window.fbDb && initialUser.email) {
+        window.fbDb.collection("users").where("email", "==", initialUser.email.toLowerCase().trim()).get().then(snap => {
+          if (!snap.empty) {
+            const data = snap.docs[0].data();
+            if (data) {
+              if (data.permissions) initialUser.permissions = data.permissions;
+              if (data.sectionAccess) initialUser.sectionAccess = data.sectionAccess;
+              if (data.role) initialUser.role = data.role;
+              if (data.name) initialUser.name = data.name;
+              saveState();
+              updateUserSessionUI();
+              applyModuleVisibility();
+              renderDashboard();
+            }
+          }
+        }).catch(err => console.warn("Boot sync notice:", err));
+      }
     }
   </script>
 </body>
