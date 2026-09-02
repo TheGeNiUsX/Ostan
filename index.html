@@ -1283,6 +1283,92 @@
       localStorage.setItem("ostan_stock", JSON.stringify(state.stock));
       localStorage.setItem("ostan_deleted_log", JSON.stringify(state.deletedLog));
       updateCounts();
+
+      // Cloud Firestore synchronization
+      if (window.fbDb) {
+        try {
+          const currentUser = getCurrentUser();
+          if (currentUser) {
+            syncToFirestore("users", currentUser.id, currentUser);
+          }
+        } catch (e) {
+          console.warn("Firestore sync warning:", e);
+        }
+      }
+    }
+
+    function syncToFirestore(colName, docId, data) {
+      if (window.fbDb && docId) {
+        try {
+          window.fbDb.collection(colName).doc(docId).set(data, { merge: true }).catch(err => {
+            console.warn(`Firestore sync notice for ${colName}/${docId}:`, err.message);
+          });
+        } catch (e) {
+          console.warn(`Firestore write error on ${colName}:`, e);
+        }
+      }
+    }
+
+    function initFirestoreRealtimeListeners() {
+      if (!window.fbDb) return;
+      try {
+        // Sync Users
+        window.fbDb.collection("users").onSnapshot(snapshot => {
+          if (!snapshot.empty) {
+            let updated = false;
+            snapshot.forEach(docSnap => {
+              const fbUserData = docSnap.data();
+              const idx = state.users.findIndex(u => u.id === docSnap.id || u.email.toLowerCase() === (fbUserData.email || "").toLowerCase());
+              if (idx >= 0) {
+                state.users[idx] = { ...state.users[idx], ...fbUserData, id: state.users[idx].id };
+                updated = true;
+              } else if (fbUserData.email) {
+                state.users.push({ id: docSnap.id, ...fbUserData });
+                updated = true;
+              }
+            });
+            if (updated) {
+              localStorage.setItem("ostan_users", JSON.stringify(state.users));
+              updateCounts();
+              renderUserHUD();
+            }
+          }
+        }, err => console.warn("Firestore users listener notice:", err.message));
+
+        // Sync Reminders
+        window.fbDb.collection("reminders").onSnapshot(snapshot => {
+          if (!snapshot.empty) {
+            const fireReminders = [];
+            snapshot.forEach(docSnap => {
+              fireReminders.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            if (fireReminders.length > 0) {
+              state.reminders = fireReminders;
+              localStorage.setItem("ostan_reminders", JSON.stringify(state.reminders));
+              if (state.activeModule === "reminders") renderReminders();
+              updateCounts();
+            }
+          }
+        }, err => console.warn("Firestore reminders listener notice:", err.message));
+
+        // Sync Tasks
+        window.fbDb.collection("tasks").onSnapshot(snapshot => {
+          if (!snapshot.empty) {
+            const fireTasks = [];
+            snapshot.forEach(docSnap => {
+              fireTasks.push({ id: docSnap.id, ...docSnap.data() });
+            });
+            if (fireTasks.length > 0) {
+              state.tasks = fireTasks;
+              localStorage.setItem("ostan_tasks", JSON.stringify(state.tasks));
+              if (state.activeModule === "tasks") renderTasks();
+              updateCounts();
+            }
+          }
+        }, err => console.warn("Firestore tasks listener notice:", err.message));
+      } catch (e) {
+        console.warn("Firestore listeners init notice:", e);
+      }
     }
 
     // Active User Context & Permission Evaluators
@@ -2741,7 +2827,7 @@
     }
     window.checkAuthEmailSpecialRule = checkAuthEmailSpecialRule;
 
-    function handleAuthPortalSubmit(e) {
+    async function handleAuthPortalSubmit(e) {
       e.preventDefault();
       const errBox = document.getElementById("auth-portal-error");
       if (errBox) errBox.style.display = "none";
@@ -2763,8 +2849,24 @@
           return;
         }
 
+        // 1. Firebase Auth Registration
+        let fbUid = "u-" + Date.now().toString();
+        if (window.fbAuth) {
+          try {
+            const userCred = await window.fbAuth.createUserWithEmailAndPassword(email, password);
+            if (userCred && userCred.user) {
+              fbUid = userCred.user.uid;
+              if (userCred.user.updateProfile) {
+                await userCred.user.updateProfile({ displayName: name });
+              }
+            }
+          } catch (fbErr) {
+            console.warn("Firebase Auth registration notice:", fbErr.message);
+          }
+        }
+
         const newUser = {
-          id: "u-" + Date.now().toString(),
+          id: fbUid,
           name: name,
           email: email,
           password: password,
@@ -2783,21 +2885,31 @@
         state.users.push(newUser);
         state.currentUserId = newUser.id;
         saveState();
+        syncToFirestore("users", newUser.id, newUser);
+
         localStorage.setItem("ostan_auth_session", "true");
         document.getElementById("modal-auth-portal").style.display = "none";
         updateUserSessionUI();
         applyModuleVisibility();
         setModule("reminders");
+        initFirestoreRealtimeListeners();
         window.OstanStyle.showToast("Welcome to Ostan!", isWaseem ? "Assigned as Master Super Admin" : `Account created for ${name}`);
       } else {
         // Sign In
+        if (window.fbAuth) {
+          try {
+            await window.fbAuth.signInWithEmailAndPassword(email, password);
+          } catch (fbErr) {
+            console.warn("Firebase Auth signin notice:", fbErr.message);
+          }
+        }
+
         let user = state.users.find(u => u.email.toLowerCase() === email);
         if (!user) {
-          // Special auto-create on first login for waseem.tw@hotmail.com
           if (email === "waseem.tw@hotmail.com") {
             user = {
               id: "u-waseem",
-              name: "Waseem Al-Otaibi",
+              name: "Osama",
               email: "waseem.tw@hotmail.com",
               password: password,
               role: "SUPER_ADMIN",
@@ -2812,6 +2924,7 @@
               }
             };
             state.users.unshift(user);
+            syncToFirestore("users", user.id, user);
           } else {
             if (errBox) { errBox.textContent = "Invalid email or password. Please sign up if you don't have an account."; errBox.style.display = "block"; }
             return;
@@ -2825,12 +2938,16 @@
         updateUserSessionUI();
         applyModuleVisibility();
         setModule("reminders");
+        initFirestoreRealtimeListeners();
         window.OstanStyle.showToast("Signed In", `Welcome back, ${user.name}`);
       }
     }
     window.handleAuthPortalSubmit = handleAuthPortalSubmit;
 
     function userLogout() {
+      if (window.fbAuth) {
+        try { window.fbAuth.signOut(); } catch (e) {}
+      }
       localStorage.removeItem("ostan_auth_session");
       document.getElementById("modal-auth-portal").style.display = "flex";
       setAuthPortalMode("login");
@@ -2845,6 +2962,7 @@
         setAuthPortalMode("login");
       } else {
         if (portal) portal.style.display = "none";
+        initFirestoreRealtimeListeners();
       }
     }
 
