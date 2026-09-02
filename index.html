@@ -580,7 +580,7 @@
           <!-- 4 Operation Metric Cards Grid -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem;">
             <!-- Card 1: Total Employees -->
-            <div class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('employees')">
+            <div id="card-total-employees" class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('employees')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                 <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Total Employees</span>
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); color: #818cf8; display: flex; align-items: center; justify-content: center;">
@@ -1191,7 +1191,7 @@
 
     let state = {
       activeModule: "dashboard",
-      currentUserId: localStorage.getItem("ostan_current_user_id") || "u-waseem",
+      currentUserId: localStorage.getItem("ostan_current_user_id") || "",
       users: JSON.parse(localStorage.getItem("ostan_users") || "null") || DEFAULT_USERS,
       reminders: JSON.parse(localStorage.getItem("ostan_reminders") || "[]"),
       workers: JSON.parse(localStorage.getItem("ostan_workers") || "[]"),
@@ -1202,7 +1202,11 @@
     window.state = state;
 
     function saveState() {
-      localStorage.setItem("ostan_current_user_id", state.currentUserId);
+      if (state.currentUserId) {
+        localStorage.setItem("ostan_current_user_id", state.currentUserId);
+      } else {
+        localStorage.removeItem("ostan_current_user_id");
+      }
       localStorage.setItem("ostan_users", JSON.stringify(state.users));
       localStorage.setItem("ostan_reminders", JSON.stringify(state.reminders));
       localStorage.setItem("ostan_workers", JSON.stringify(state.workers));
@@ -1213,7 +1217,8 @@
     }
 
     function getCurrentUser() {
-      return state.users.find(u => u.id === state.currentUserId) || state.users[0];
+      if (!state.currentUserId) return null;
+      return state.users.find(u => u.id === state.currentUserId) || null;
     }
 
     function isMasterSuperAdmin(user = getCurrentUser()) {
@@ -1669,6 +1674,12 @@
 
     function updateUserSessionUI() {
       const user = getCurrentUser();
+      if (!user) {
+        document.getElementById("modal-auth-portal").style.display = "flex";
+        setAuthPortalMode("login");
+        return;
+      }
+
       const nameEl = document.getElementById("sidebar-user-name");
       const roleEl = document.getElementById("sidebar-user-role");
       const avatarEl = document.getElementById("sidebar-user-avatar");
@@ -1677,18 +1688,38 @@
       if (roleEl) roleEl.textContent = user.role;
       if (avatarEl) avatarEl.textContent = user.name.charAt(0).toUpperCase();
 
+      // Hide Total Employees card from employees
+      const cardEmp = document.getElementById("card-total-employees");
+      if (cardEmp) {
+        cardEmp.style.display = (user.role === "EMPLOYEE") ? "none" : "block";
+      }
+
+      // Hide task creation from employees
+      const btnNewTask = document.getElementById("btn-new-task");
+      if (btnNewTask) {
+        btnNewTask.style.display = (user.role === "EMPLOYEE") ? "none" : "inline-flex";
+      }
+
       applyModuleVisibility();
     }
 
     function userLogout() {
+      state.currentUserId = "";
+      saveState();
       document.getElementById("modal-auth-portal").style.display = "flex";
       setAuthPortalMode("login");
     }
     window.userLogout = userLogout;
 
     // Initialization
-    updateUserSessionUI();
-    setModule("dashboard");
+    const initialUser = getCurrentUser();
+    if (!initialUser) {
+      document.getElementById("modal-auth-portal").style.display = "flex";
+      setAuthPortalMode("login");
+    } else {
+      updateUserSessionUI();
+      setModule("dashboard");
+    }
   </script>
 </body>
 </html>

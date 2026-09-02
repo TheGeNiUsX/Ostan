@@ -528,7 +528,7 @@ export function Sidebar({ isOpen, onClose, user }: SidebarProps) {
               }}
             >
               <LogOut size={14} />
-              <span>{t("auth_logout")}</span>
+              <span>{locale === "ar" ? "تسجيل الخروج" : "Sign Out"}</span>
             </button>
           </div>
         )}

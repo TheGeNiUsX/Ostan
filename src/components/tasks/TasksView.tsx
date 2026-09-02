@@ -50,13 +50,29 @@ export function TasksView({ currentUser, canAssignTasks = false }: TasksViewProp
   const [status, setStatus] = useState<"TODO" | "PROGRESS" | "COMPLETED">("TODO");
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const savedWorkers = JSON.parse(localStorage.getItem("ostan_workers") || "[]");
-      setWorkers(savedWorkers);
-      if (savedWorkers.length > 0 && !assigneeId) {
-        setAssigneeId(savedWorkers[0].id);
-      }
-    }
+    fetch("/api/users")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.users && Array.isArray(data.users)) {
+          // Exclude Super Admin from assignable workers (tasks are assigned to subordinates/staff)
+          const assignableWorkers = data.users
+            .filter((u: any) => u.role !== "SUPER_ADMIN" && u.email !== "waseem.tw@hotmail.com")
+            .map((u: any) => ({
+              id: u.id,
+              name: u.name,
+              responsibility: u.department?.name || u.role,
+              role: u.role,
+            }));
+
+          setWorkers(assignableWorkers);
+          if (assignableWorkers.length > 0 && !assigneeId) {
+            setAssigneeId(assignableWorkers[0].id);
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Could not fetch real users for task assignment:", err);
+      });
   }, []);
 
   useEffect(() => {
