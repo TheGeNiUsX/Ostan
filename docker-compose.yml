@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ostan-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ostan_user
+      POSTGRES_PASSWORD: ostan_password_secret
+      POSTGRES_DB: ostan_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ostan_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  ostan_postgres_data:

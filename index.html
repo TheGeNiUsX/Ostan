@@ -1,0 +1,2430 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ostan</title>
+  <script src="style.js"></script>
+  <script src="translation.js"></script>
+  <style>
+    /* Full Screen Edge-to-Edge Layout */
+    .app-fullscreen-hud {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      width: 100vw;
+      height: 100vh;
+      background: var(--bg-app);
+      overflow: hidden;
+    }
+
+    /* Left Navigation Sidebar */
+    .hud-sidebar {
+      background: var(--bg-surface);
+      border-inline-end: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+      padding: 1.1rem;
+      gap: 1.1rem;
+      user-select: none;
+    }
+
+    /* Top Full Brand Banner Card (Seamless Logo Migration with Chart) */
+    .brand-banner-card {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 0.75rem 0.9rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(12px);
+    }
+    .brand-left-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .brand-logo-box {
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      background: transparent;
+      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+    }
+    .brand-logo-box svg {
+      width: 100%;
+      height: 100%;
+    }
+    .brand-title-text {
+      font-weight: 800;
+      font-size: 1.4rem;
+      line-height: 1;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    /* Top Grid Cards (4 Main Operations: Reminders, Tasks, Workers, Warehouse) */
+    .status-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .stat-card {
+      border-radius: 14px;
+      padding: 12px 14px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 76px;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .stat-card:hover { transform: translateY(-2px); }
+    .card-reminders { background: #007aff; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35); }
+    .card-tasks { background: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35); }
+    .card-workers { background: #8b5cf6; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35); }
+    .card-warehouse { background: #f59e0b; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35); }
+
+    /* Modules & Operations Navigation */
+    .module-nav-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .module-btn {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0.85rem;
+      border-radius: 10px;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .module-btn:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text-main);
+    }
+    .module-btn.active {
+      background: #007aff;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .module-icon-box {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      color: #fff;
+    }
+
+    /* Active User Session Footer Card */
+    .active-user-session-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 0.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-top: auto;
+    }
+    .user-avatar-circle {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.9rem;
+      color: #fff;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #ef4444, #8b5cf6);
+    }
+
+    /* Main Right Content Panel */
+    .hud-main-content {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--bg-app);
+      padding: 1.5rem 2rem;
+      gap: 1.25rem;
+    }
+
+    /* Multi-Column Board Cards */
+    .columns-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+    .column-box {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 1.1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.85rem;
+    }
+    .reminder-item-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 0.85rem;
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      transition: all 0.15s ease;
+    }
+    .reminder-item-card.completed {
+      opacity: 0.6;
+    }
+    .reminder-item-card.completed .item-title {
+      text-decoration: line-through;
+    }
+    .check-toggle-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid #94a3b8;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 2px;
+      flex-shrink: 0;
+      transition: all 0.15s ease;
+    }
+    .reminder-item-card.completed .check-toggle-btn {
+      background: #007aff;
+      border-color: #007aff;
+      color: #fff;
+    }
+
+    /* Live Countdown Pill Badge */
+    .countdown-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      margin-top: 5px;
+    }
+    .countdown-active {
+      background: rgba(0, 122, 255, 0.15);
+      border: 1px solid rgba(0, 122, 255, 0.4);
+      color: #60a5fa;
+    }
+    .countdown-overdue {
+      background: rgba(239, 68, 68, 0.18);
+      border: 1px solid rgba(239, 68, 68, 0.45);
+      color: #f87171;
+      animation: pulseAlert 2s infinite ease-in-out;
+    }
+    @keyframes pulseAlert {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+
+    /* Worker & Stock Cards */
+    .worker-card {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
+
+    .stock-item-photo {
+      width: 52px;
+      height: 52px;
+      border-radius: 10px;
+      object-fit: cover;
+      border: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+
+    .perm-chip {
+      display: inline-flex;
+      align-items: center;
+      padding: 2px 7px;
+      border-radius: 6px;
+      font-size: 0.7rem;
+      font-weight: 600;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+    }
+    .perm-chip.active {
+      background: rgba(0, 122, 255, 0.15);
+      border-color: rgba(0, 122, 255, 0.4);
+      color: #60a5fa;
+    }
+
+    .icon-action-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 3px 6px;
+      border-radius: 4px;
+      transition: background 0.15s ease;
+      color: var(--text-faint);
+    }
+    .icon-action-btn:hover {
+      background: var(--bg-surface-hover);
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-fullscreen-hud">
+    <!-- =========================================================================
+         LEFT SIDEBAR
+         ========================================================================= -->
+    <aside class="hud-sidebar">
+      <!-- Full Brand Header Card (Transparent Glowing Emblem with Ostan text) -->
+      <div class="brand-banner-card">
+        <div class="brand-left-group">
+          <div class="brand-logo-box">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="logo-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#38bdf8" />
+                  <stop offset="50%" stop-color="#007aff" />
+                  <stop offset="100%" stop-color="#818cf8" />
+                </linearGradient>
+                <linearGradient id="logo-violet-grad" x1="100%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="#c084fc" />
+                  <stop offset="50%" stop-color="#a855f7" />
+                  <stop offset="100%" stop-color="#38bdf8" />
+                </linearGradient>
+                <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="glow" />
+                  <feComposite in="SourceGraphic" in2="glow" operator="over" />
+                </filter>
+              </defs>
+              <path d="M 50 10 A 40 40 0 1 1 18 78 A 32 32 0 1 0 50 20 A 30 30 0 0 1 76 34 A 40 40 0 0 0 50 10 Z" fill="url(#logo-blue-grad)" filter="url(#neon-glow)" />
+              <path d="M 50 20 A 30 30 0 1 1 24 68 A 22 22 0 1 0 50 28 A 20 20 0 0 1 68 40 A 30 30 0 0 0 50 20 Z" fill="url(#logo-violet-grad)" opacity="0.9" />
+              <circle cx="50" cy="50" r="14" fill="none" stroke="url(#logo-blue-grad)" stroke-width="2.5" opacity="0.6" />
+            </svg>
+          </div>
+          <span data-i18n="app_name" class="brand-title-text">Ostan</span>
+        </div>
+
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <button class="btn btn-secondary" onclick="window.OstanStyle.toggleTheme()" style="padding: 4px 8px; font-size: 0.75rem;" title="Toggle Theme">🌓</button>
+          <button class="btn btn-secondary" onclick="window.OstanI18n.toggle()" style="padding: 4px 8px; font-size: 0.75rem;" title="Toggle Language">
+            <span data-i18n="lang_toggle">🌐 العربية</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Top Status Grid (4 Main Operations: Reminders, Tasks, Workers, Warehouse) -->
+      <div id="sidebar-status-grid" class="status-grid">
+        <!-- 1. Reminders -->
+        <div id="card-stat-reminders" class="stat-card card-reminders" onclick="setModule('reminders')">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <span style="font-size:1.15rem;">⏰</span>
+            <span id="stat-reminders" style="font-size:1.6rem; font-weight:800; line-height:1;">0</span>
+          </div>
+          <span data-i18n="stat_reminders" style="font-weight:700; font-size:0.85rem;">Reminders</span>
+        </div>
+
+        <!-- 2. Tasks -->
+        <div id="card-stat-tasks" class="stat-card card-tasks" onclick="setModule('tasks')">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <span style="font-size:1.15rem;">📋</span>
+            <span id="stat-tasks" style="font-size:1.6rem; font-weight:800; line-height:1;">0</span>
+          </div>
+          <span data-i18n="stat_tasks" style="font-weight:700; font-size:0.85rem;">Tasks</span>
+        </div>
+
+        <!-- 3. Workers (Hidden for Employee & Stock Manager) -->
+        <div id="card-stat-workers" class="stat-card card-workers" onclick="setModule('workers')">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <span style="font-size:1.15rem;">👥</span>
+            <span id="stat-workers" style="font-size:1.6rem; font-weight:800; line-height:1;">0</span>
+          </div>
+          <span data-i18n="stat_workers" style="font-weight:700; font-size:0.85rem;">Workers</span>
+        </div>
+
+        <!-- 4. Warehouse -->
+        <div id="card-stat-warehouse" class="stat-card card-warehouse" onclick="setModule('warehouse')">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <span style="font-size:1.15rem;">📦</span>
+            <span id="stat-warehouse" style="font-size:1.6rem; font-weight:800; line-height:1;">0</span>
+          </div>
+          <span data-i18n="stat_warehouse" style="font-weight:700; font-size:0.85rem;">Warehouse</span>
+        </div>
+      </div>
+
+      <!-- Main Operations Modules Navigation -->
+      <div>
+        <div data-i18n="nav_operations_header" style="font-size: 0.72rem; font-weight: 700; color: var(--text-faint); padding: 0.3rem 0.5rem; text-transform: uppercase;">
+          Operations & Modules
+        </div>
+        <div class="module-nav-list">
+          <div id="nav-reminders" class="module-btn active" onclick="setModule('reminders')">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <div class="module-icon-box" style="background: #007aff;">⏰</div>
+              <span data-i18n="nav_reminders">Reminders & Alerts</span>
+            </div>
+            <span id="badge-reminders-count" class="badge badge-primary">0</span>
+          </div>
+
+          <div id="nav-tasks" class="module-btn" onclick="setModule('tasks')">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <div class="module-icon-box" style="background: #10b981;">📋</div>
+              <span id="nav-tasks-label" data-i18n="nav_tasks">Tasks & Assignments</span>
+            </div>
+            <span id="badge-tasks-count" class="badge badge-emerald">0</span>
+          </div>
+
+          <!-- Workers Navigation (Hidden for Employee & Stock Manager) -->
+          <div id="nav-workers" class="module-btn" onclick="setModule('workers')">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <div class="module-icon-box" style="background: #8b5cf6;">👥</div>
+              <span data-i18n="nav_workers">Workers & Team</span>
+            </div>
+            <span id="badge-workers-count" class="badge badge-primary">0</span>
+          </div>
+
+          <div id="nav-warehouse" class="module-btn" onclick="setModule('warehouse')">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <div class="module-icon-box" style="background: #f59e0b;">📦</div>
+              <span data-i18n="nav_warehouse">Warehouse & Stock</span>
+            </div>
+            <span id="badge-stock-count" class="badge badge-amber">0</span>
+          </div>
+
+          <!-- USERS MANAGEMENT MODULE (Super Admin Guarded) -->
+          <div id="nav-users" class="module-btn" onclick="setModule('users')" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <div class="module-icon-box" style="background: #ef4444;">🛡️</div>
+              <span data-i18n="nav_users">Users Management</span>
+            </div>
+            <span id="badge-users-count" class="badge badge-rose">0</span>
+          </div>
+
+          <!-- RECYCLE BIN & RESTORE LOG -->
+          <div id="nav-recycle" class="module-btn" onclick="setModule('recycle')">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <div class="module-icon-box" style="background: #64748b;">♻️</div>
+              <span data-i18n="nav_recycle_bin">Recycle Bin & Restore</span>
+            </div>
+            <span id="badge-recycle-count" class="badge badge-secondary">0</span>
+          </div>
+
+          <div id="nav-settings" class="module-btn" onclick="setModule('settings')">
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <div class="module-icon-box" style="background: #64748b;">⚙️</div>
+              <span data-i18n="nav_settings">System Settings</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active User Session Switcher (RBAC Dynamic Test) -->
+      <div class="active-user-session-card">
+        <div style="display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <div id="sidebar-user-avatar" class="user-avatar-circle">SA</div>
+            <div>
+              <div id="sidebar-user-name" style="font-weight: 700; font-size: 0.85rem; line-height: 1.1;">Super Admin</div>
+              <span id="sidebar-user-role" class="badge badge-rose" style="font-size: 0.65rem; padding: 1px 5px;">SUPER_ADMIN</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top: 2px;">
+          <label data-i18n="switch_user_prompt" style="font-size: 0.7rem; color: var(--text-faint); display: block; margin-bottom: 2px;">Switch Active Session (RBAC):</label>
+          <select id="user-session-select" onchange="switchActiveUser(this.value)" class="input-field" style="font-size: 0.75rem; padding: 0.3rem 0.5rem; width: 100%;">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Action Button -->
+      <div>
+        <button id="sidebar-quick-btn" class="btn btn-primary" style="width: 100%; padding: 0.7rem;" onclick="openReminderHUD()">
+          <span data-i18n="nav_btn_quick_reminder">+ Create Scheduled Reminder</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- =========================================================================
+         MAIN CONTENT AREA
+         ========================================================================= -->
+    <main class="hud-main-content">
+      <!-- Top Navigation Action Bar -->
+      <header style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem;">
+        <div>
+          <h1 id="module-main-title" style="font-size: 1.8rem; font-weight: 800; color: var(--text-main); margin-bottom: 2px;">
+            Reminders & Alerts
+          </h1>
+          <p id="module-main-desc" style="font-size: 0.85rem; color: var(--text-muted);">
+            Create scheduled reminders with live sound alarms and edit controls.
+          </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <button id="primary-action-btn" class="btn btn-primary" onclick="handlePrimaryAction()">
+            <span id="primary-action-btn-label">+ New Reminder</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW 1: REMINDERS VIEW -->
+      <section id="view-reminders" style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="columns-container">
+          <!-- Column 1: Action Items -->
+          <div class="column-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 data-i18n="col_action_items" style="font-size: 1.1rem; font-weight: 700;">Action Items</h3>
+              <span id="col-count-action" class="badge badge-primary">0</span>
+            </div>
+            <div id="list-reminders-action" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 80px;"></div>
+            <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="openReminderHUD('Action Items')">
+              <span data-i18n="btn_add_item">+ Add Item</span>
+            </button>
+          </div>
+
+          <!-- Column 2: Scheduled & Timed -->
+          <div class="column-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 data-i18n="col_timed_scheduled" style="font-size: 1.1rem; font-weight: 700;">Timed & Scheduled</h3>
+              <span id="col-count-scheduled" class="badge badge-rose">0</span>
+            </div>
+            <div id="list-reminders-scheduled" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 80px;"></div>
+            <button class="btn btn-secondary" style="font-size: 0.8rem;" onclick="openReminderHUD('Timed & Scheduled')">
+              <span data-i18n="btn_add_item">+ Add Item</span>
+            </button>
+          </div>
+
+          <!-- Column 3: Completed History -->
+          <div class="column-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 data-i18n="col_completed" style="font-size: 1.1rem; font-weight: 700;">Completed</h3>
+              <span id="col-count-completed" class="badge badge-emerald">0</span>
+            </div>
+            <div id="list-reminders-completed" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 80px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 2: TASKS VIEW -->
+      <section id="view-tasks" style="display: none; flex-direction: column; gap: 1.25rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface); padding: 0.75rem 1.25rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <div id="task-filter-container" style="display: flex; align-items: center; gap: 0.75rem;">
+            <span data-i18n="filter_worker_label" style="font-size: 0.85rem; font-weight: 600;">Filter by Worker:</span>
+            <select id="task-worker-filter" onchange="renderTasks()" class="input-field" style="width: 220px; padding: 0.4rem 0.6rem;">
+              <option value="ALL">All Workers</option>
+            </select>
+          </div>
+          <button id="btn-create-task-view" class="btn btn-primary" onclick="openTaskHUD()">
+            <span data-i18n="btn_assign_task">+ Assign New Task</span>
+          </button>
+        </div>
+
+        <div class="columns-container">
+          <!-- Column: To Do -->
+          <div class="column-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 data-i18n="col_todo" style="font-size: 1.1rem; font-weight: 700;">To Do</h3>
+              <span id="task-count-todo" class="badge badge-primary">0</span>
+            </div>
+            <div id="task-list-todo" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 100px;"></div>
+          </div>
+
+          <!-- Column: In Progress -->
+          <div class="column-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 data-i18n="col_progress" style="font-size: 1.1rem; font-weight: 700;">In Progress</h3>
+              <span id="task-count-progress" class="badge badge-amber">0</span>
+            </div>
+            <div id="task-list-progress" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 100px;"></div>
+          </div>
+
+          <!-- Column: Completed -->
+          <div class="column-box">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 data-i18n="col_done" style="font-size: 1.1rem; font-weight: 700;">Completed</h3>
+              <span id="task-count-completed" class="badge badge-emerald">0</span>
+            </div>
+            <div id="task-list-completed" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 100px;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- VIEW 3: WORKERS & TEAM VIEW (SUPER_ADMIN, ADMIN, MANAGER ONLY) -->
+      <section id="view-workers" style="display: none; flex-direction: column; gap: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div data-i18n="registered_staff_title" style="font-weight: 700; font-size: 1.1rem;">Registered Company Workers & Staff</div>
+          <button id="btn-create-worker-view" class="btn btn-primary" onclick="openWorkerHUD()">
+            <span data-i18n="mod_workers_btn">+ Add New Worker</span>
+          </button>
+        </div>
+
+        <div id="workers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;"></div>
+      </section>
+
+      <!-- VIEW 4: WAREHOUSE & STOCK VIEW -->
+      <section id="view-warehouse" style="display: none; flex-direction: column; gap: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div data-i18n="inventory_catalog_title" style="font-weight: 700; font-size: 1.1rem;">Inventory & Equipment Catalog</div>
+          <button class="btn btn-primary" onclick="openStockHUD()">
+            <span data-i18n="mod_warehouse_btn">+ Add Inventory Item</span>
+          </button>
+        </div>
+
+        <div id="warehouse-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;"></div>
+      </section>
+
+      <!-- VIEW 5: USERS MANAGEMENT VIEW (Super Admin Only) -->
+      <section id="view-users" style="display: none; flex-direction: column; gap: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div data-i18n="users_catalog_title" style="font-weight: 700; font-size: 1.1rem;">System User Accounts & Security Credentials</div>
+          <button class="btn btn-primary" onclick="openUserHUD()">
+            <span data-i18n="mod_users_btn">+ Add User Account</span>
+          </button>
+        </div>
+
+        <div id="users-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1.1rem;"></div>
+      </section>
+
+      <!-- VIEW 6: RECYCLE BIN & RESTORE LOG -->
+      <section id="view-recycle" style="display: none; flex-direction: column; gap: 1.25rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div data-i18n="mod_recycle_title" style="font-weight: 700; font-size: 1.1rem;">Recycle Bin & Restore Log</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted);">Restore cancelled or deleted items back to active rosters anytime.</div>
+          </div>
+          <button class="btn btn-danger" onclick="emptyRecycleBin()">
+            <span data-i18n="mod_recycle_btn">Empty Bin</span>
+          </button>
+        </div>
+
+        <div id="recycle-list" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+      </section>
+
+      <!-- VIEW 7: SETTINGS VIEW -->
+      <section id="view-settings" style="display: none; flex-direction: column; gap: 1.25rem; max-width: 700px;">
+        <div class="column-box">
+          <h3 data-i18n="settings_appearance_title" style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">Appearance & Language</h3>
+          <div style="display: flex; gap: 0.75rem;">
+            <button class="btn btn-secondary" onclick="window.OstanStyle.setTheme('dark')" style="flex: 1;" data-i18n="btn_dark_theme">Dark Theme</button>
+            <button class="btn btn-secondary" onclick="window.OstanStyle.setTheme('light')" style="flex: 1;" data-i18n="btn_light_theme">Light Theme</button>
+          </div>
+          <div style="display: flex; gap: 0.75rem; margin-top: 0.5rem;">
+            <button class="btn btn-secondary" onclick="window.OstanI18n.applyTranslations('en')" style="flex: 1;" data-i18n="btn_en_lang">English (LTR)</button>
+            <button class="btn btn-secondary" onclick="window.OstanI18n.applyTranslations('ar')" style="flex: 1;" data-i18n="btn_ar_lang">العربية (RTL)</button>
+          </div>
+        </div>
+
+        <div class="column-box">
+          <h3 data-i18n="settings_test_alarm_title" style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;">Test Reminder Alarm Chime</h3>
+          <p data-i18n="settings_test_alarm_desc" style="font-size: 0.85rem; color: var(--text-muted);">Click to test the in-app audio chime synthesizer and toast notification.</p>
+          <button class="btn btn-primary" onclick="window.OstanStyle.showToast(window.OstanI18n.t('settings_test_alarm_title'), window.OstanI18n.t('settings_test_alarm_desc'))" style="margin-top: 0.5rem;" data-i18n="btn_test_alarm">
+            🔔 Test Audio Alarm Now
+          </button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- =========================================================================
+       MODALS
+       ========================================================================= -->
+  <!-- 1. UNIVERSAL 2-STEP CONFIRMATION MODAL -->
+  <div id="modal-confirm-delete" class="hud-modal-overlay" style="display: none; z-index: 11000;">
+    <div class="hud-modal-box" style="max-width: 440px; text-align: center;">
+      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">⚠️</div>
+      <h2 data-i18n="confirm_delete_title" style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.5rem;">Confirm Deletion</h2>
+      <p id="confirm-delete-msg" data-i18n="confirm_delete_prompt" style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 1.5rem;">
+        Are you sure you want to delete this item? It will be moved to the Recycle Bin and can be restored at any time.
+      </p>
+
+      <div style="display: flex; justify-content: center; gap: 0.75rem;">
+        <button type="button" onclick="closeConfirmModal()" class="btn btn-secondary" style="padding: 0.6rem 1.2rem;" data-i18n="btn_cancel">Cancel</button>
+        <button id="btn-execute-confirm-delete" type="button" class="btn btn-danger" style="padding: 0.6rem 1.2rem;" data-i18n="btn_confirm_delete">Yes, Move to Bin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. REMINDER MODAL -->
+  <div id="modal-reminder" class="hud-modal-overlay" style="display: none;">
+    <div class="hud-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 id="modal-rem-title-head" style="font-size: 1.25rem; font-weight: 800;">⏰ Set Scheduled Reminder</h2>
+        <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <form onsubmit="saveReminder(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <input id="rem-edit-id" type="hidden" value="">
+        <div>
+          <label data-i18n="label_rem_title" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Reminder Title *</label>
+          <input id="rem-title" type="text" required data-i18n-placeholder="placeholder_rem_title" placeholder="e.g. Inspect generator fuel levels..." class="input-field">
+        </div>
+
+        <div>
+          <label data-i18n="label_rem_notes" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Notes & Details</label>
+          <textarea id="rem-notes" rows="2" data-i18n-placeholder="placeholder_rem_notes" placeholder="e.g. Check fuel tanks at station B..." class="input-field"></textarea>
+        </div>
+
+        <div>
+          <label data-i18n="label_rem_time" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Target Reminder Date & Time * (Alarm will ring)</label>
+          <input id="rem-time" type="datetime-local" class="input-field">
+        </div>
+
+        <div style="display: flex; gap: 1rem; align-items: center;">
+          <label style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; cursor: pointer;">
+            <input id="rem-flagged" type="checkbox">
+            <span data-i18n="label_rem_flagged">Mark as Flagged 🚩</span>
+          </label>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+          <button type="button" onclick="closeModals()" class="btn btn-secondary" data-i18n="btn_cancel">Cancel</button>
+          <button id="btn-save-rem" type="submit" class="btn btn-primary" data-i18n="btn_save_reminder">Save Reminder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. WORKER MODAL -->
+  <div id="modal-worker" class="hud-modal-overlay" style="display: none;">
+    <div class="hud-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 id="modal-worker-title-head" style="font-size: 1.25rem; font-weight: 800;">👥 Register Company Worker</h2>
+        <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <form onsubmit="saveWorker(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <input id="worker-edit-id" type="hidden" value="">
+        <div>
+          <label data-i18n="label_worker_name" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Worker Name *</label>
+          <input id="worker-name" type="text" required data-i18n-placeholder="placeholder_worker_name" placeholder="e.g. Tariq Al-Otaibi" class="input-field">
+        </div>
+
+        <div>
+          <label data-i18n="label_worker_resp" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Responsibility / Job Title *</label>
+          <input id="worker-resp" type="text" required data-i18n-placeholder="placeholder_worker_resp" placeholder="e.g. Electrical Supervisor, Fleet Driver..." class="input-field">
+        </div>
+
+        <div>
+          <label data-i18n="label_worker_role" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">System Role</label>
+          <select id="worker-role" class="input-field">
+            <option value="EMPLOYEE">EMPLOYEE</option>
+            <option value="MANAGER">MANAGER</option>
+            <option value="STOCK_MANAGER">STOCK_MANAGER</option>
+            <option value="ADMIN">ADMIN</option>
+            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+          </select>
+        </div>
+
+        <div>
+          <label data-i18n="label_worker_phone" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Phone / Contact (Optional)</label>
+          <input id="worker-phone" type="text" placeholder="+966 50 123 4567" class="input-field">
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+          <button type="button" onclick="closeModals()" class="btn btn-secondary" data-i18n="btn_cancel">Cancel</button>
+          <button id="btn-save-worker" type="submit" class="btn btn-primary" data-i18n="btn_save_worker">Save Worker</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. TASK MODAL (Manager / Admin / Super Admin Only) -->
+  <div id="modal-task" class="hud-modal-overlay" style="display: none;">
+    <div class="hud-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 id="modal-task-title-head" style="font-size: 1.25rem; font-weight: 800;">📋 Assign Task to Worker</h2>
+        <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <form onsubmit="saveTask(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <input id="task-edit-id" type="hidden" value="">
+        <div>
+          <label data-i18n="label_task_worker" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Select Assignee Worker *</label>
+          <select id="task-worker-select" required class="input-field">
+            <!-- Dynamically populated -->
+          </select>
+        </div>
+
+        <div>
+          <label data-i18n="label_task_title" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Task Title *</label>
+          <input id="task-title" type="text" required data-i18n-placeholder="placeholder_task_title" placeholder="e.g. Inspect hydraulic generators on site B..." class="input-field">
+        </div>
+
+        <div>
+          <label data-i18n="label_task_desc" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Instructions & Details</label>
+          <textarea id="task-desc" rows="2" data-i18n-placeholder="placeholder_task_desc" placeholder="Task execution details..." class="input-field"></textarea>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label data-i18n="label_task_priority" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Priority</label>
+            <select id="task-priority" class="input-field">
+              <option value="Normal">Normal</option>
+              <option value="High">High Priority ⚡</option>
+              <option value="Urgent">Urgent / Critical 🚨</option>
+            </select>
+          </div>
+
+          <div>
+            <label data-i18n="label_task_status" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Status</label>
+            <select id="task-status" class="input-field">
+              <option value="TODO">To Do</option>
+              <option value="PROGRESS">In Progress</option>
+              <option value="COMPLETED">Completed</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+          <button type="button" onclick="closeModals()" class="btn btn-secondary" data-i18n="btn_cancel">Cancel</button>
+          <button id="btn-save-task" type="submit" class="btn btn-primary" data-i18n="btn_save_task">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. STOCK MODAL (With Category Choices & Optional Photo Upload) -->
+  <div id="modal-stock" class="hud-modal-overlay" style="display: none;">
+    <div class="hud-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 id="modal-stock-title-head" style="font-size: 1.25rem; font-weight: 800;">📦 Add Warehouse Item</h2>
+        <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <form onsubmit="saveStock(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <input id="stock-edit-id" type="hidden" value="">
+        <input id="stock-image-data" type="hidden" value="">
+
+        <div>
+          <label data-i18n="label_stock_name" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Item / Product Name *</label>
+          <input id="stock-name" type="text" required data-i18n-placeholder="placeholder_stock_name" placeholder="e.g. Safety Helmets (Class E)" class="input-field">
+        </div>
+
+        <!-- Optional Item Photo Upload Section -->
+        <div>
+          <label data-i18n="label_stock_image" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Item Photo (Optional)</label>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <input type="file" id="stock-file-input" accept="image/*" onchange="handleStockImageFile(event)" class="input-field" style="padding: 0.35rem 0.6rem; font-size: 0.8rem;">
+            <div id="stock-preview-box" style="display: none; align-items: center; gap: 0.4rem;">
+              <img id="stock-preview-img" src="" alt="Preview" style="width: 38px; height: 38px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border-subtle);">
+              <button type="button" onclick="clearStockImage()" class="btn btn-secondary" style="padding: 2px 6px; font-size: 0.7rem;" title="Remove Photo">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label data-i18n="label_stock_sku" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">SKU / Code</label>
+            <input id="stock-sku" type="text" placeholder="SKU-001" class="input-field">
+          </div>
+          <div>
+            <label data-i18n="label_stock_cat" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Category</label>
+            <select id="stock-cat" class="input-field">
+              <option id="opt-cat-general" value="General">General</option>
+              <option id="opt-cat-equipment" value="Equipment">Equipment</option>
+              <option id="opt-cat-consumables" value="Consumables">Consumables</option>
+              <option id="opt-cat-tools" value="Tools">Tools</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label data-i18n="label_stock_qty" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Quantity</label>
+            <input id="stock-qty" type="number" min="0" value="10" required class="input-field">
+          </div>
+          <div>
+            <label data-i18n="label_stock_thresh" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Low-Stock Threshold</label>
+            <input id="stock-thresh" type="number" min="1" value="5" required class="input-field">
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+          <button type="button" onclick="closeModals()" class="btn btn-secondary" data-i18n="btn_cancel">Cancel</button>
+          <button id="btn-save-stock" type="submit" class="btn btn-primary" data-i18n="btn_save_stock">Save Item</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 6. USER MANAGEMENT MODAL (Super Admin) -->
+  <div id="modal-user" class="hud-modal-overlay" style="display: none;">
+    <div class="hud-modal-box" style="max-width: 540px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 id="modal-user-title-head" style="font-size: 1.25rem; font-weight: 800;">👤 User Account & Security</h2>
+        <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <form onsubmit="saveUser(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <input id="user-edit-id" type="hidden" value="">
+        <input id="user-photo-data" type="hidden" value="">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label data-i18n="label_user_name" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Full Name *</label>
+            <input id="user-form-name" type="text" required data-i18n-placeholder="placeholder_user_name" placeholder="e.g. Tariq Al-Otaibi" class="input-field">
+          </div>
+          <div>
+            <label data-i18n="label_user_email" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Email Address *</label>
+            <input id="user-form-email" type="email" required data-i18n-placeholder="placeholder_user_email" placeholder="e.g. user@ostan.internal" class="input-field">
+          </div>
+        </div>
+
+        <div>
+          <label data-i18n="label_user_password" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Password *</label>
+          <input id="user-form-password" type="password" data-i18n-placeholder="placeholder_user_password" placeholder="Enter password (or leave blank to keep current)" class="input-field">
+        </div>
+
+        <!-- Optional Profile Photo Upload -->
+        <div>
+          <label data-i18n="label_user_photo" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Profile Picture (Optional)</label>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <input type="file" id="user-file-input" accept="image/*" onchange="handleUserPhotoFile(event)" class="input-field" style="padding: 0.35rem 0.6rem; font-size: 0.8rem;">
+            <div id="user-preview-box" style="display: none; align-items: center; gap: 0.4rem;">
+              <img id="user-preview-img" src="" alt="Preview" style="width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border-subtle);">
+              <button type="button" onclick="clearUserPhoto()" class="btn btn-secondary" style="padding: 2px 6px; font-size: 0.7rem;">✕</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label data-i18n="label_user_role" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">System Role *</label>
+            <select id="user-form-role" onchange="handleRoleChangeAutoPerms(this.value)" class="input-field">
+              <option value="SUPER_ADMIN">SUPER_ADMIN (Full Immunity)</option>
+              <option value="ADMIN">ADMIN</option>
+              <option value="MANAGER">MANAGER</option>
+              <option value="STOCK_MANAGER">STOCK_MANAGER</option>
+              <option value="EMPLOYEE">EMPLOYEE</option>
+            </select>
+          </div>
+          <div>
+            <label data-i18n="label_user_status" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Account Status</label>
+            <select id="user-form-status" class="input-field">
+              <option value="ACTIVE">ACTIVE</option>
+              <option value="SUSPENDED">SUSPENDED</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Granular Permissions Checklist -->
+        <div>
+          <label data-i18n="label_user_permissions" style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 6px;">Module Access Permissions</label>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; background: var(--bg-surface); padding: 0.75rem; border-radius: 10px; border: 1px solid var(--border-subtle);">
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer;">
+              <input type="checkbox" id="perm-reminders" value="reminders:access">
+              <span data-i18n="perm_reminders">Reminders</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer;">
+              <input type="checkbox" id="perm-tasks" value="tasks:access">
+              <span data-i18n="perm_tasks">Tasks</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer;">
+              <input type="checkbox" id="perm-workers" value="workers:access">
+              <span data-i18n="perm_workers">Workers</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer;">
+              <input type="checkbox" id="perm-warehouse" value="warehouse:access">
+              <span data-i18n="perm_warehouse">Warehouse</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer;">
+              <input type="checkbox" id="perm-settings" value="settings:access">
+              <span data-i18n="perm_settings">Settings</span>
+            </label>
+            <label style="display: flex; align-items: center; gap: 6px; font-size: 0.82rem; cursor: pointer;">
+              <input type="checkbox" id="perm-users" value="users:manage">
+              <span data-i18n="perm_users" style="color: #f43f5e; font-weight: 700;">Users Mgmt</span>
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 0.5rem;">
+          <button type="button" onclick="closeModals()" class="btn btn-secondary" data-i18n="btn_cancel">Cancel</button>
+          <button id="btn-save-user" type="submit" class="btn btn-primary" data-i18n="btn_save">Save User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       JAVASCRIPT APPLICATION ENGINE
+       ========================================================================= -->
+  <script>
+    function getLang() {
+      return document.documentElement.getAttribute("lang") || "en";
+    }
+
+    function _t(key) {
+      if (window.OstanI18n && typeof window.OstanI18n.t === "function") {
+        return window.OstanI18n.t(key, getLang());
+      }
+      return key;
+    }
+
+    // Default Seed Users if empty
+    const DEFAULT_USERS = [
+      {
+        id: "u-superadmin",
+        name: "Super Admin",
+        email: "superadmin@ostan.internal",
+        password: "SuperAdmin123!",
+        role: "SUPER_ADMIN",
+        status: "ACTIVE",
+        isProtected: true,
+        permissions: ["reminders:access", "tasks:access", "workers:access", "warehouse:access", "settings:access", "users:manage"]
+      },
+      {
+        id: "u-admin",
+        name: "Tariq Al-Otaibi",
+        email: "tariq.admin@ostan.internal",
+        password: "Admin123!",
+        role: "ADMIN",
+        status: "ACTIVE",
+        isProtected: false,
+        permissions: ["reminders:access", "tasks:access", "workers:access", "warehouse:access", "settings:access"]
+      },
+      {
+        id: "u-stockmgr",
+        name: "Sami Al-Ghamdi",
+        email: "sami.stock@ostan.internal",
+        password: "Stock123!",
+        role: "STOCK_MANAGER",
+        status: "ACTIVE",
+        isProtected: false,
+        permissions: ["warehouse:access", "tasks:access"]
+      },
+      {
+        id: "u-emp1",
+        name: "Fahad Al-Zahrani",
+        email: "fahad.eng@ostan.internal",
+        password: "User123!",
+        role: "EMPLOYEE",
+        status: "ACTIVE",
+        isProtected: false,
+        permissions: ["tasks:access", "reminders:access"]
+      }
+    ];
+
+    let state = {
+      activeModule: "reminders",
+      currentUserId: localStorage.getItem("ostan_current_user_id") || "u-superadmin",
+      users: JSON.parse(localStorage.getItem("ostan_users") || "null") || DEFAULT_USERS,
+      reminders: JSON.parse(localStorage.getItem("ostan_reminders") || "[]"),
+      workers: JSON.parse(localStorage.getItem("ostan_workers") || "[]"),
+      tasks: JSON.parse(localStorage.getItem("ostan_tasks") || "[]"),
+      stock: JSON.parse(localStorage.getItem("ostan_stock") || "[]"),
+      deletedLog: JSON.parse(localStorage.getItem("ostan_deleted_log") || "[]"),
+    };
+    window.state = state;
+
+    function saveState() {
+      localStorage.setItem("ostan_current_user_id", state.currentUserId);
+      localStorage.setItem("ostan_users", JSON.stringify(state.users));
+      localStorage.setItem("ostan_reminders", JSON.stringify(state.reminders));
+      localStorage.setItem("ostan_workers", JSON.stringify(state.workers));
+      localStorage.setItem("ostan_tasks", JSON.stringify(state.tasks));
+      localStorage.setItem("ostan_stock", JSON.stringify(state.stock));
+      localStorage.setItem("ostan_deleted_log", JSON.stringify(state.deletedLog));
+      updateCounts();
+    }
+
+    // Active User Context & Permission Evaluators
+    function getCurrentUser() {
+      return state.users.find(u => u.id === state.currentUserId) || state.users[0];
+    }
+
+    // RBAC: Can manage / view other workers? (Restricted for EMPLOYEE and STOCK_MANAGER)
+    function canManageWorkers(user = getCurrentUser()) {
+      if (!user) return false;
+      return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER";
+    }
+
+    // RBAC: Can assign tasks to others or create tasks? (Restricted for EMPLOYEE and STOCK_MANAGER)
+    function canAssignTasks(user = getCurrentUser()) {
+      if (!user) return false;
+      return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER";
+    }
+
+    function canAccessModule(mod) {
+      const user = getCurrentUser();
+      if (!user) return false;
+      if (user.role === "SUPER_ADMIN") return true;
+
+      // Restrict Workers module completely for Employee and Stock Manager
+      if (mod === "workers") return canManageWorkers(user);
+
+      const perms = user.permissions || [];
+      if (mod === "reminders") return perms.includes("reminders:access");
+      if (mod === "tasks") return perms.includes("tasks:access");
+      if (mod === "warehouse") return perms.includes("warehouse:access");
+      if (mod === "recycle") return true; // Anyone can view recycle bin log
+      if (mod === "settings") return perms.includes("settings:access");
+      if (mod === "users") return user.role === "SUPER_ADMIN" || perms.includes("users:manage");
+      return false;
+    }
+
+    function switchActiveUser(userId) {
+      state.currentUserId = userId;
+      saveState();
+      updateUserSessionUI();
+      applyModuleVisibility();
+
+      if (!canAccessModule(state.activeModule)) {
+        const fallback = ["reminders", "tasks", "warehouse", "recycle", "settings"].find(m => canAccessModule(m)) || "reminders";
+        setModule(fallback);
+      } else {
+        setModule(state.activeModule);
+      }
+    }
+    window.switchActiveUser = switchActiveUser;
+
+    function updateUserSessionUI() {
+      const user = getCurrentUser();
+      if (!user) return;
+
+      const nameEl = document.getElementById("sidebar-user-name");
+      const roleEl = document.getElementById("sidebar-user-role");
+      const avatarEl = document.getElementById("sidebar-user-avatar");
+      const selectEl = document.getElementById("user-session-select");
+
+      if (nameEl) nameEl.textContent = user.name;
+      if (roleEl) {
+        roleEl.textContent = user.role;
+        roleEl.className = `badge ${user.role === 'SUPER_ADMIN' ? 'badge-rose' : user.role === 'ADMIN' ? 'badge-primary' : 'badge-emerald'}`;
+      }
+
+      if (avatarEl) {
+        if (user.photo) {
+          avatarEl.innerHTML = `<img src="${user.photo}" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">`;
+        } else {
+          avatarEl.textContent = user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) || "U";
+        }
+      }
+
+      if (selectEl) {
+        selectEl.innerHTML = "";
+        state.users.forEach(u => {
+          selectEl.innerHTML += `<option value="${u.id}" ${u.id === user.id ? 'selected' : ''}>${u.name} (${u.role})</option>`;
+        });
+      }
+
+      applyDynamicLabels();
+    }
+
+    // Dynamic Navigation & Module Title Labels (Role-Based)
+    function applyDynamicLabels() {
+      const user = getCurrentUser();
+      const hasAssignAccess = canAssignTasks(user);
+
+      // 1. Sidebar Nav Label for Tasks
+      const navTasksLabel = document.getElementById("nav-tasks-label");
+      if (navTasksLabel) {
+        navTasksLabel.textContent = hasAssignAccess ? _t("nav_tasks") : _t("nav_tasks_employee");
+      }
+
+      // 2. Main Title and Description if currently on Tasks module
+      if (state.activeModule === "tasks") {
+        document.getElementById("module-main-title").textContent = hasAssignAccess ? _t("mod_tasks_title") : _t("mod_tasks_title_employee");
+        document.getElementById("module-main-desc").textContent = hasAssignAccess ? _t("mod_tasks_desc") : _t("mod_tasks_desc_employee");
+      }
+    }
+    window.applyDynamicLabels = applyDynamicLabels;
+
+    function applyModuleVisibility() {
+      const user = getCurrentUser();
+      const isSuper = user && user.role === "SUPER_ADMIN";
+
+      const navUsers = document.getElementById("nav-users");
+      if (navUsers) navUsers.style.display = (isSuper || (user && user.permissions && user.permissions.includes("users:manage"))) ? "flex" : "none";
+
+      const navRem = document.getElementById("nav-reminders");
+      const cardRem = document.getElementById("card-stat-reminders");
+      const hasRem = canAccessModule("reminders");
+      if (navRem) navRem.style.display = hasRem ? "flex" : "none";
+      if (cardRem) cardRem.style.display = hasRem ? "flex" : "none";
+
+      const navTasks = document.getElementById("nav-tasks");
+      const cardTasks = document.getElementById("card-stat-tasks");
+      const hasTasks = canAccessModule("tasks");
+      if (navTasks) navTasks.style.display = hasTasks ? "flex" : "none";
+      if (cardTasks) cardTasks.style.display = hasTasks ? "flex" : "none";
+
+      // Workers visibility: HIDDEN for Employee and Stock Manager
+      const navWorkers = document.getElementById("nav-workers");
+      const cardWorkers = document.getElementById("card-stat-workers");
+      const hasWorkers = canAccessModule("workers");
+      if (navWorkers) navWorkers.style.display = hasWorkers ? "flex" : "none";
+      if (cardWorkers) cardWorkers.style.display = hasWorkers ? "flex" : "none";
+
+      const navWh = document.getElementById("nav-warehouse");
+      const cardWh = document.getElementById("card-stat-warehouse");
+      const hasWh = canAccessModule("warehouse");
+      if (navWh) navWh.style.display = hasWh ? "flex" : "none";
+      if (cardWh) cardWh.style.display = hasWh ? "flex" : "none";
+
+      const navSet = document.getElementById("nav-settings");
+      if (navSet) navSet.style.display = canAccessModule("settings") ? "flex" : "none";
+
+      applyDynamicLabels();
+    }
+
+    // Module Switcher
+    function setModule(mod) {
+      if (!canAccessModule(mod)) {
+        alert(getLang() === "ar" ? "عفواً، لا تملك الصلاحيات الكافية للوصول لهذا القسم!" : "Access restricted: Your role does not have permission for this module.");
+        return;
+      }
+
+      state.activeModule = mod;
+      document.querySelectorAll(".module-btn").forEach(el => el.classList.remove("active"));
+      const navBtn = document.getElementById(`nav-${mod}`);
+      if (navBtn) navBtn.classList.add("active");
+
+      document.querySelectorAll("main > section").forEach(el => el.style.display = "none");
+      const targetSec = document.getElementById(`view-${mod}`);
+      if (targetSec) targetSec.style.display = "flex";
+
+      const user = getCurrentUser();
+      const hasAssignAccess = canAssignTasks(user);
+
+      if (mod === "tasks") {
+        document.getElementById("module-main-title").textContent = hasAssignAccess ? _t("mod_tasks_title") : _t("mod_tasks_title_employee");
+        document.getElementById("module-main-desc").textContent = hasAssignAccess ? _t("mod_tasks_desc") : _t("mod_tasks_desc_employee");
+      } else {
+        document.getElementById("module-main-title").textContent = _t(`mod_${mod}_title`);
+        document.getElementById("module-main-desc").textContent = _t(`mod_${mod}_desc`);
+      }
+
+      document.getElementById("primary-action-btn-label").textContent = _t(`mod_${mod}_btn`);
+
+      const pBtn = document.getElementById("primary-action-btn");
+      if (pBtn) {
+        // If user cannot assign tasks or manage workers, hide header action button in those views
+        if (mod === "tasks" && !hasAssignAccess) {
+          pBtn.style.display = "none";
+        } else if (mod === "workers" && !canManageWorkers()) {
+          pBtn.style.display = "none";
+        } else if (mod === "recycle" || mod === "settings") {
+          pBtn.style.display = "none";
+        } else {
+          pBtn.style.display = "flex";
+        }
+      }
+
+      if (mod === "reminders") renderReminders();
+      if (mod === "tasks") renderTasks();
+      if (mod === "workers") renderWorkers();
+      if (mod === "warehouse") renderStock();
+      if (mod === "users") renderUsers();
+      if (mod === "recycle") renderRecycleBin();
+      updateCounts();
+    }
+    window.setModule = setModule;
+
+    function handlePrimaryAction() {
+      if (state.activeModule === "reminders") openReminderHUD();
+      if (state.activeModule === "tasks" && canAssignTasks()) openTaskHUD();
+      if (state.activeModule === "workers" && canManageWorkers()) openWorkerHUD();
+      if (state.activeModule === "warehouse") openStockHUD();
+      if (state.activeModule === "users") openUserHUD();
+    }
+
+    function closeModals() {
+      document.querySelectorAll(".hud-modal-overlay").forEach(m => m.style.display = "none");
+    }
+
+    // =========================================================================
+    // 2-STEP CONFIRMATION DELETE SYSTEM
+    // =========================================================================
+    let pendingDeleteAction = null;
+
+    function requestDeleteConfirmation(itemType, itemId, itemName, isPermanent = false) {
+      pendingDeleteAction = { itemType, itemId, itemName, isPermanent };
+      const modal = document.getElementById("modal-confirm-delete");
+      const msg = document.getElementById("confirm-delete-msg");
+      const btn = document.getElementById("btn-execute-confirm-delete");
+
+      const isAr = getLang() === "ar";
+      if (isPermanent) {
+        msg.textContent = isAr 
+          ? `هل أنت متأكد من الحذف النهائي لـ "${itemName}"؟ لا يمكن التراجع عن هذا الإجراء!` 
+          : `Are you sure you want to permanently delete "${itemName}"? This action cannot be undone!`;
+        btn.textContent = _t("btn_confirm_perm_delete");
+      } else {
+        msg.textContent = isAr 
+          ? `هل أنت متأكد من حذف "${itemName}"؟ سيتم نقله إلى سلة المحذوفات ويمكنك استعادته في أي وقت.` 
+          : `Are you sure you want to delete "${itemName}"? It will be moved to the Recycle Bin and can be restored anytime.`;
+        btn.textContent = _t("btn_confirm_delete");
+      }
+
+      modal.style.display = "flex";
+    }
+
+    function closeConfirmModal() {
+      pendingDeleteAction = null;
+      document.getElementById("modal-confirm-delete").style.display = "none";
+    }
+
+    document.getElementById("btn-execute-confirm-delete").onclick = function() {
+      if (!pendingDeleteAction) return;
+      const { itemType, itemId, itemName, isPermanent } = pendingDeleteAction;
+      closeConfirmModal();
+
+      if (isPermanent) {
+        state.deletedLog = state.deletedLog.filter(d => d.id !== itemId);
+        saveState();
+        renderRecycleBin();
+        window.OstanStyle.showToast("Deleted", `"${itemName}" was permanently deleted.`);
+        return;
+      }
+
+      // Move item to deletedLog Recycle Bin
+      let itemObj = null;
+      if (itemType === "reminder") {
+        itemObj = state.reminders.find(r => r.id === itemId);
+        state.reminders = state.reminders.filter(r => r.id !== itemId);
+        renderReminders();
+      } else if (itemType === "worker") {
+        itemObj = state.workers.find(w => w.id === itemId);
+        state.workers = state.workers.filter(w => w.id !== itemId);
+        renderWorkers();
+        populateWorkerSelects();
+      } else if (itemType === "task") {
+        itemObj = state.tasks.find(t => t.id === itemId);
+        state.tasks = state.tasks.filter(t => t.id !== itemId);
+        renderTasks();
+      } else if (itemType === "stock") {
+        itemObj = state.stock.find(s => s.id === itemId);
+        state.stock = state.stock.filter(s => s.id !== itemId);
+        renderStock();
+      } else if (itemType === "user") {
+        itemObj = state.users.find(u => u.id === itemId);
+        state.users = state.users.filter(u => u.id !== itemId);
+        if (state.currentUserId === itemId) state.currentUserId = "u-superadmin";
+        updateUserSessionUI();
+        applyModuleVisibility();
+        renderUsers();
+      }
+
+      if (itemObj) {
+        state.deletedLog.unshift({
+          id: "del-" + Date.now().toString(),
+          itemType,
+          itemName: itemObj.name || itemObj.title,
+          originalItem: itemObj,
+          deletedAt: new Date().toISOString(),
+          deletedBy: getCurrentUser().name
+        });
+        saveState();
+        window.OstanStyle.showToast(_t("toast_deleted"), `"${itemName}" ${_t("toast_deleted")}`);
+      }
+    };
+
+    // =========================================================================
+    // 1. REMINDERS & LIVE COUNTDOWN TRACKING
+    // =========================================================================
+    function formatCountdown(targetIso) {
+      if (!targetIso) return null;
+      const target = new Date(targetIso).getTime();
+      const now = new Date().getTime();
+      const diff = target - now;
+
+      const uD = _t("unit_days");
+      const uH = _t("unit_hours");
+      const uM = _t("unit_mins");
+      const uS = _t("unit_secs");
+
+      if (diff > 0) {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((diff % (1000 * 60)) / 1000);
+
+        let parts = [];
+        if (days > 0) parts.push(`${days}${uD}`);
+        if (hours > 0 || days > 0) parts.push(`${hours}${uH}`);
+        parts.push(`${mins}${uM}`);
+        parts.push(`${secs}${uS}`);
+
+        return {
+          isOverdue: false,
+          text: `⏳ ${_t("countdown_due_in")} ${parts.join(" ")}`
+        };
+      } else {
+        const over = Math.abs(diff);
+        const days = Math.floor(over / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((over % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const mins = Math.floor((over % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((over % (1000 * 60)) / 1000);
+
+        let parts = [];
+        if (days > 0) parts.push(`${days}${uD}`);
+        if (hours > 0 || days > 0) parts.push(`${hours}${uH}`);
+        parts.push(`${mins}${uM}`);
+        parts.push(`${secs}${uS}`);
+
+        return {
+          isOverdue: true,
+          text: `${_t("countdown_overdue")} ${parts.join(" ")}`
+        };
+      }
+    }
+
+    function openReminderHUD(editId) {
+      const modal = document.getElementById("modal-reminder");
+      const titleHead = document.getElementById("modal-rem-title-head");
+      const btnSave = document.getElementById("btn-save-rem");
+
+      if (typeof editId === "string" && editId.length > 5 && editId !== "Action Items" && editId !== "Timed & Scheduled") {
+        const item = state.reminders.find(r => r.id === editId);
+        if (item) {
+          titleHead.textContent = _t("modal_rem_edit_title");
+          btnSave.textContent = _t("btn_update_reminder");
+          document.getElementById("rem-edit-id").value = item.id;
+          document.getElementById("rem-title").value = item.title;
+          document.getElementById("rem-notes").value = item.notes || "";
+          document.getElementById("rem-time").value = item.reminderTime || "";
+          document.getElementById("rem-flagged").checked = !!item.flagged;
+          modal.style.display = "flex";
+          return;
+        }
+      }
+
+      titleHead.textContent = _t("modal_rem_create_title");
+      btnSave.textContent = _t("btn_save_reminder");
+      document.getElementById("rem-edit-id").value = "";
+      document.getElementById("rem-title").value = "";
+      document.getElementById("rem-notes").value = "";
+      document.getElementById("rem-flagged").checked = false;
+
+      const now = new Date(Date.now() + 5 * 60000);
+      const iso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+      document.getElementById("rem-time").value = iso;
+      modal.style.display = "flex";
+    }
+
+    function saveReminder(e) {
+      e.preventDefault();
+      const editId = document.getElementById("rem-edit-id").value;
+      const title = document.getElementById("rem-title").value.trim();
+      const notes = document.getElementById("rem-notes").value.trim();
+      const time = document.getElementById("rem-time").value;
+      const flagged = document.getElementById("rem-flagged").checked;
+
+      if (editId) {
+        state.reminders = state.reminders.map(r => r.id === editId ? {
+          ...r,
+          title,
+          notes,
+          reminderTime: time,
+          flagged,
+          notified: false
+        } : r);
+      } else {
+        const item = {
+          id: Date.now().toString(),
+          title,
+          notes,
+          reminderTime: time,
+          flagged,
+          completed: false,
+          notified: false,
+        };
+        state.reminders.push(item);
+      }
+
+      saveState();
+      renderReminders();
+      closeModals();
+    }
+
+    function toggleReminder(id) {
+      state.reminders = state.reminders.map(r => r.id === id ? { ...r, completed: !r.completed } : r);
+      saveState();
+      renderReminders();
+    }
+
+    function renderReminders() {
+      const listAction = document.getElementById("list-reminders-action");
+      const listScheduled = document.getElementById("list-reminders-scheduled");
+      const listCompleted = document.getElementById("list-reminders-completed");
+
+      listAction.innerHTML = "";
+      listScheduled.innerHTML = "";
+      listCompleted.innerHTML = "";
+
+      const activeReminders = state.reminders.filter(r => !r.completed);
+      const completedReminders = state.reminders.filter(r => r.completed);
+
+      if (activeReminders.length === 0) {
+        listAction.innerHTML = `<div style="color:var(--text-faint); font-size:0.8rem; text-align:center; padding:1rem;">${_t("no_reminders")}</div>`;
+      }
+
+      activeReminders.forEach(r => {
+        const hasTime = !!r.reminderTime;
+        const targetList = hasTime ? listScheduled : listAction;
+        const timeStr = r.reminderTime ? new Date(r.reminderTime).toLocaleString(getLang() === 'ar' ? 'ar-SA' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }) : "";
+        const countdownInfo = hasTime ? formatCountdown(r.reminderTime) : null;
+
+        const card = document.createElement("div");
+        card.className = `reminder-item-card ${r.flagged ? 'flagged' : ''}`;
+        card.innerHTML = `
+          <div class="check-toggle-btn" onclick="toggleReminder('${r.id}')"></div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div class="item-title" style="font-weight:600; font-size:0.9rem;">${r.title}</div>
+              <div style="display:flex; gap:2px;">
+                <button class="icon-action-btn" onclick="openReminderHUD('${r.id}')" title="${_t('btn_edit')}">✏️</button>
+                <button class="icon-action-btn" onclick="requestDeleteConfirmation('reminder', '${r.id}', '${r.title.replace(/'/g, "\\'")}')" title="${_t('btn_delete')}">🗑️</button>
+              </div>
+            </div>
+            ${r.notes ? `<div style="font-size:0.78rem; color:var(--text-muted); margin-top:2px;">${r.notes}</div>` : ''}
+            ${timeStr ? `
+              <div style="display:flex; flex-direction:column; gap:2px; margin-top:4px;">
+                <span style="font-size:0.75rem; color:#60a5fa; font-weight:600;">⏰ ${timeStr}</span>
+                ${countdownInfo ? `
+                  <div class="countdown-pill ${countdownInfo.isOverdue ? 'countdown-overdue' : 'countdown-active'}" data-reminder-countdown="${r.id}" data-target-iso="${r.reminderTime}">
+                    ${countdownInfo.text}
+                  </div>
+                ` : ''}
+              </div>
+            ` : ''}
+          </div>
+        `;
+        targetList.appendChild(card);
+      });
+
+      completedReminders.forEach(r => {
+        const card = document.createElement("div");
+        card.className = "reminder-item-card completed";
+        card.innerHTML = `
+          <div class="check-toggle-btn" onclick="toggleReminder('${r.id}')">✓</div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between;">
+              <div class="item-title" style="font-weight:600; font-size:0.9rem;">${r.title}</div>
+              <div style="display:flex; gap:2px;">
+                <button class="icon-action-btn" onclick="openReminderHUD('${r.id}')" title="${_t('btn_edit')}">✏️</button>
+                <button class="icon-action-btn" onclick="requestDeleteConfirmation('reminder', '${r.id}', '${r.title.replace(/'/g, "\\'")}')" title="${_t('btn_delete')}">🗑️</button>
+              </div>
+            </div>
+          </div>
+        `;
+        listCompleted.appendChild(card);
+      });
+
+      document.getElementById("col-count-action").textContent = listAction.children.length;
+      document.getElementById("col-count-scheduled").textContent = listScheduled.children.length;
+      document.getElementById("col-count-completed").textContent = completedReminders.length;
+    }
+
+    function updateLiveCountdowns() {
+      document.querySelectorAll("[data-reminder-countdown]").forEach(el => {
+        const targetIso = el.getAttribute("data-target-iso");
+        const info = formatCountdown(targetIso);
+        if (info) {
+          el.textContent = info.text;
+          el.className = `countdown-pill ${info.isOverdue ? 'countdown-overdue' : 'countdown-active'}`;
+        }
+      });
+    }
+
+    // =========================================================================
+    // 2. WORKERS & TEAM (SUPER_ADMIN, ADMIN, MANAGER ONLY)
+    // =========================================================================
+    function openWorkerHUD(editId) {
+      if (!canManageWorkers()) {
+        alert(getLang() === "ar" ? "ليس لديك صلاحية لإضافة أو تعديل بيانات العمال!" : "Access restricted: Only Managers and Admins can manage workers.");
+        return;
+      }
+
+      const modal = document.getElementById("modal-worker");
+      const titleHead = document.getElementById("modal-worker-title-head");
+      const btnSave = document.getElementById("btn-save-worker");
+
+      if (editId) {
+        const w = state.workers.find(item => item.id === editId);
+        if (w) {
+          titleHead.textContent = _t("modal_worker_edit_title");
+          btnSave.textContent = _t("btn_update_worker");
+          document.getElementById("worker-edit-id").value = w.id;
+          document.getElementById("worker-name").value = w.name;
+          document.getElementById("worker-resp").value = w.responsibility;
+          document.getElementById("worker-role").value = w.role;
+          document.getElementById("worker-phone").value = w.phone || "";
+          modal.style.display = "flex";
+          return;
+        }
+      }
+
+      titleHead.textContent = _t("modal_worker_create_title");
+      btnSave.textContent = _t("btn_save_worker");
+      document.getElementById("worker-edit-id").value = "";
+      document.getElementById("worker-name").value = "";
+      document.getElementById("worker-resp").value = "";
+      document.getElementById("worker-phone").value = "";
+      document.getElementById("worker-role").value = "EMPLOYEE";
+      modal.style.display = "flex";
+    }
+
+    function saveWorker(e) {
+      e.preventDefault();
+      if (!canManageWorkers()) return;
+
+      const editId = document.getElementById("worker-edit-id").value;
+      const name = document.getElementById("worker-name").value.trim();
+      const responsibility = document.getElementById("worker-resp").value.trim();
+      const role = document.getElementById("worker-role").value;
+      const phone = document.getElementById("worker-phone").value.trim();
+
+      if (editId) {
+        state.workers = state.workers.map(w => w.id === editId ? {
+          ...w,
+          name,
+          responsibility,
+          role,
+          phone
+        } : w);
+
+        state.tasks = state.tasks.map(t => t.workerId === editId ? { ...t, workerName: name, workerRole: role } : t);
+      } else {
+        const worker = {
+          id: Date.now().toString(),
+          name,
+          responsibility,
+          role,
+          phone,
+        };
+        state.workers.push(worker);
+      }
+
+      saveState();
+      renderWorkers();
+      populateWorkerSelects();
+      closeModals();
+    }
+
+    function renderWorkers() {
+      const grid = document.getElementById("workers-grid");
+      if (!grid) return;
+      grid.innerHTML = "";
+
+      if (!canManageWorkers()) {
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:2rem; color:var(--text-muted);">${getLang() === 'ar' ? 'قسم العمال متاح فقط للمدراء والمشرفين.' : 'Workers roster is only accessible to Managers and Admins.'}</div>`;
+        return;
+      }
+
+      if (state.workers.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 2rem; color:var(--text-muted);">${_t("no_workers")}</div>`;
+        return;
+      }
+
+      state.workers.forEach(w => {
+        const assignedTasksCount = state.tasks.filter(t => t.workerId === w.id && t.status !== "COMPLETED").length;
+        const card = document.createElement("div");
+        card.className = "worker-card";
+        card.innerHTML = `
+          <div style="width:44px; height:44px; border-radius:50%; background:linear-gradient(135deg, #6366f1, #06b6d4); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:1.1rem; flex-shrink:0;">
+            ${w.name.charAt(0)}
+          </div>
+          <div style="flex:1;">
+            <div style="font-weight:700; font-size:0.95rem;">${w.name}</div>
+            <div style="font-size:0.8rem; color:var(--text-muted);">${w.responsibility}</div>
+            <div style="display:flex; gap:0.4rem; margin-top:4px; align-items:center;">
+              <span class="badge badge-primary">${w.role}</span>
+              ${w.phone ? `<span style="font-size:0.75rem; color:var(--text-faint);">${w.phone}</span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px;">
+            <div style="font-size:0.75rem; color:var(--text-faint);">${assignedTasksCount} ${_t("active_tasks_count")}</div>
+            <div style="display:flex; gap:4px;">
+              <button class="btn btn-secondary" onclick="openWorkerHUD('${w.id}')" style="padding:2px 8px; font-size:0.75rem;">${_t("btn_edit")}</button>
+              <button class="btn btn-danger" onclick="requestDeleteConfirmation('worker', '${w.id}', '${w.name.replace(/'/g, "\\'")}')" style="padding:2px 8px; font-size:0.75rem;">${_t("btn_delete")}</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function populateWorkerSelects() {
+      const selectModal = document.getElementById("task-worker-select");
+      const selectFilter = document.getElementById("task-worker-filter");
+
+      if (selectModal) selectModal.innerHTML = `<option value="" disabled selected>${_t("select_worker_placeholder")}</option>`;
+      if (selectFilter) selectFilter.innerHTML = `<option value="ALL">${_t("all_workers_option")} (${state.workers.length})</option>`;
+
+      state.workers.forEach(w => {
+        if (selectModal) selectModal.innerHTML += `<option value="${w.id}">${w.name} — ${w.responsibility}</option>`;
+        if (selectFilter) selectFilter.innerHTML += `<option value="${w.id}">${w.name}</option>`;
+      });
+    }
+
+    // =========================================================================
+    // 3. TASKS (RBAC Scoped)
+    // =========================================================================
+    function openTaskHUD(editId) {
+      if (!canAssignTasks()) {
+        alert(getLang() === "ar" ? "ليس لديك صلاحية لإنشاء أو إسناد مهام للآخرين!" : "Access restricted: Only Managers and Admins can assign or edit tasks.");
+        return;
+      }
+
+      if (state.workers.length === 0) {
+        alert(getLang() === "ar" ? "يرجى تسجيل عامل واحد على الأقل في قسم العمال لتتمكن من إسناد المهام إليه!" : "Please register at least one worker first in the Workers section!");
+        setModule("workers");
+        openWorkerHUD();
+        return;
+      }
+      populateWorkerSelects();
+
+      const modal = document.getElementById("modal-task");
+      const titleHead = document.getElementById("modal-task-title-head");
+      const btnSave = document.getElementById("btn-save-task");
+
+      if (editId) {
+        const t = state.tasks.find(item => item.id === editId);
+        if (t) {
+          titleHead.textContent = _t("modal_task_edit_title");
+          btnSave.textContent = _t("btn_update_task");
+          document.getElementById("task-edit-id").value = t.id;
+          document.getElementById("task-worker-select").value = t.workerId;
+          document.getElementById("task-title").value = t.title;
+          document.getElementById("task-desc").value = t.desc || "";
+          document.getElementById("task-priority").value = t.priority;
+          document.getElementById("task-status").value = t.status;
+          modal.style.display = "flex";
+          return;
+        }
+      }
+
+      titleHead.textContent = _t("modal_task_create_title");
+      btnSave.textContent = _t("btn_save_task");
+      document.getElementById("task-edit-id").value = "";
+      document.getElementById("task-title").value = "";
+      document.getElementById("task-desc").value = "";
+      document.getElementById("task-priority").value = "Normal";
+      document.getElementById("task-status").value = "TODO";
+      modal.style.display = "flex";
+    }
+
+    function saveTask(e) {
+      e.preventDefault();
+      if (!canAssignTasks()) return;
+
+      const editId = document.getElementById("task-edit-id").value;
+      const workerId = document.getElementById("task-worker-select").value;
+      const title = document.getElementById("task-title").value.trim();
+      const desc = document.getElementById("task-desc").value.trim();
+      const priority = document.getElementById("task-priority").value;
+      const status = document.getElementById("task-status").value;
+
+      const worker = state.workers.find(w => w.id === workerId);
+      if (!worker) {
+        alert(getLang() === "ar" ? "يرجى اختيار عامل صحيح!" : "Please select a valid worker!");
+        return;
+      }
+
+      if (editId) {
+        state.tasks = state.tasks.map(t => t.id === editId ? {
+          ...t,
+          workerId: worker.id,
+          workerName: worker.name,
+          workerRole: worker.role,
+          title,
+          desc,
+          priority,
+          status,
+        } : t);
+      } else {
+        const task = {
+          id: Date.now().toString(),
+          workerId: worker.id,
+          workerName: worker.name,
+          workerRole: worker.role,
+          title,
+          desc,
+          priority,
+          status,
+          createdAt: new Date().toISOString(),
+        };
+        state.tasks.push(task);
+      }
+
+      saveState();
+      renderTasks();
+      closeModals();
+    }
+
+    function setTaskStatus(id, newStatus) {
+      state.tasks = state.tasks.map(t => t.id === id ? { ...t, status: newStatus } : t);
+      saveState();
+      renderTasks();
+    }
+
+    function renderTasks() {
+      const user = getCurrentUser();
+      const isManagerOrAdmin = canAssignTasks(user);
+
+      // Hide or show the "+ Assign New Task" button in the tasks view
+      const btnCreateTaskView = document.getElementById("btn-create-task-view");
+      if (btnCreateTaskView) btnCreateTaskView.style.display = isManagerOrAdmin ? "inline-flex" : "none";
+
+      // Hide or show the worker filter container
+      const taskFilterContainer = document.getElementById("task-filter-container");
+      if (taskFilterContainer) taskFilterContainer.style.display = isManagerOrAdmin ? "flex" : "none";
+
+      const filterVal = document.getElementById("task-worker-filter").value;
+      const listTodo = document.getElementById("task-list-todo");
+      const listProgress = document.getElementById("task-list-progress");
+      const listCompleted = document.getElementById("task-list-completed");
+
+      listTodo.innerHTML = "";
+      listProgress.innerHTML = "";
+      listCompleted.innerHTML = "";
+
+      let filtered = state.tasks;
+
+      // If regular Employee or Stock Manager: ONLY show tasks assigned to themself!
+      if (!isManagerOrAdmin) {
+        filtered = filtered.filter(t => 
+          t.workerName.toLowerCase() === user.name.toLowerCase() || 
+          t.workerId === user.id ||
+          (user.role === "STOCK_MANAGER" && (t.workerRole === "STOCK_MANAGER" || t.workerName.toLowerCase().includes("sami"))) ||
+          (user.role === "EMPLOYEE" && (t.workerRole === "EMPLOYEE" || t.workerName.toLowerCase().includes("fahad")))
+        );
+      } else if (filterVal && filterVal !== "ALL") {
+        filtered = filtered.filter(t => t.workerId === filterVal);
+      }
+
+      filtered.forEach(t => {
+        const card = document.createElement("div");
+        card.className = "reminder-item-card";
+        card.style.flexDirection = "column";
+
+        const priorityBadge = t.priority === "Urgent" ? 'badge-rose' : t.priority === "High" ? 'badge-amber' : 'badge-primary';
+
+        // Action buttons: Only Managers/Admins can edit/delete tasks!
+        const editDeleteControls = isManagerOrAdmin ? `
+          <div style="display:flex; gap:2px;">
+            <button class="icon-action-btn" onclick="openTaskHUD('${t.id}')" title="${_t('btn_edit')}">✏️</button>
+            <button class="icon-action-btn" onclick="requestDeleteConfirmation('task', '${t.id}', '${t.title.replace(/'/g, "\\'")}')" title="${_t('btn_delete')}">🗑️</button>
+          </div>
+        ` : '';
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; width:100%; align-items:flex-start;">
+            <div style="font-weight:700; font-size:0.92rem;">${t.title}</div>
+            ${editDeleteControls}
+          </div>
+          ${t.desc ? `<div style="font-size:0.8rem; color:var(--text-muted); margin-top:2px;">${t.desc}</div>` : ''}
+          
+          <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-top:8px; border-top:1px solid var(--border-subtle); padding-top:6px;">
+            <div style="display:flex; align-items:center; gap:0.4rem;">
+              <span style="font-size:0.75rem; font-weight:700; color:#60a5fa;">👤 ${t.workerName}</span>
+              <span class="badge ${priorityBadge}">${t.priority}</span>
+            </div>
+
+            <!-- Task Status Progress Toggles (Accessible by Assigned Worker) -->
+            <div style="display:flex; gap:4px;">
+              ${t.status !== 'TODO' ? `<button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding:2px 6px; font-size:0.7rem;">${_t('col_todo')}</button>` : ''}
+              ${t.status !== 'PROGRESS' ? `<button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding:2px 6px; font-size:0.7rem;">${_t('col_progress')}</button>` : ''}
+              ${t.status !== 'COMPLETED' ? `<button onclick="setTaskStatus('${t.id}', 'COMPLETED')" class="btn btn-primary" style="padding:2px 6px; font-size:0.7rem;">${_t('col_done')}</button>` : ''}
+            </div>
+          </div>
+        `;
+
+        if (t.status === "TODO") listTodo.appendChild(card);
+        else if (t.status === "PROGRESS") listProgress.appendChild(card);
+        else listCompleted.appendChild(card);
+      });
+
+      document.getElementById("task-count-todo").textContent = listTodo.children.length;
+      document.getElementById("task-count-progress").textContent = listProgress.children.length;
+      document.getElementById("task-count-completed").textContent = listCompleted.children.length;
+    }
+
+    // =========================================================================
+    // 4. WAREHOUSE
+    // =========================================================================
+    function handleStockImageFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const dataUrl = evt.target.result;
+        document.getElementById("stock-image-data").value = dataUrl;
+        document.getElementById("stock-preview-img").src = dataUrl;
+        document.getElementById("stock-preview-box").style.display = "flex";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearStockImage() {
+      document.getElementById("stock-image-data").value = "";
+      document.getElementById("stock-file-input").value = "";
+      document.getElementById("stock-preview-img").src = "";
+      document.getElementById("stock-preview-box").style.display = "none";
+    }
+
+    function openStockHUD(editId) {
+      const modal = document.getElementById("modal-stock");
+      const titleHead = document.getElementById("modal-stock-title-head");
+      const btnSave = document.getElementById("btn-save-stock");
+
+      if (editId) {
+        const item = state.stock.find(s => s.id === editId);
+        if (item) {
+          titleHead.textContent = _t("modal_stock_edit_title");
+          btnSave.textContent = _t("btn_update_stock");
+          document.getElementById("stock-edit-id").value = item.id;
+          document.getElementById("stock-name").value = item.name;
+          document.getElementById("stock-sku").value = item.sku;
+          document.getElementById("stock-cat").value = item.category || "General";
+          document.getElementById("stock-qty").value = item.quantity;
+          document.getElementById("stock-thresh").value = item.threshold;
+          
+          if (item.image) {
+            document.getElementById("stock-image-data").value = item.image;
+            document.getElementById("stock-preview-img").src = item.image;
+            document.getElementById("stock-preview-box").style.display = "flex";
+          } else {
+            clearStockImage();
+          }
+
+          modal.style.display = "flex";
+          return;
+        }
+      }
+
+      titleHead.textContent = _t("modal_stock_create_title");
+      btnSave.textContent = _t("btn_save_stock");
+      document.getElementById("stock-edit-id").value = "";
+      document.getElementById("stock-name").value = "";
+      document.getElementById("stock-sku").value = "SKU-001";
+      document.getElementById("stock-cat").value = "General";
+      document.getElementById("stock-qty").value = 10;
+      document.getElementById("stock-thresh").value = 5;
+      clearStockImage();
+      modal.style.display = "flex";
+    }
+
+    function saveStock(e) {
+      e.preventDefault();
+      const editId = document.getElementById("stock-edit-id").value;
+      const name = document.getElementById("stock-name").value.trim();
+      const sku = document.getElementById("stock-sku").value.trim() || "SKU-001";
+      const category = document.getElementById("stock-cat").value || "General";
+      const qty = parseInt(document.getElementById("stock-qty").value, 10) || 0;
+      const threshold = parseInt(document.getElementById("stock-thresh").value, 10) || 5;
+      const image = document.getElementById("stock-image-data").value || undefined;
+
+      if (editId) {
+        state.stock = state.stock.map(s => s.id === editId ? {
+          ...s,
+          name,
+          sku,
+          category,
+          quantity: qty,
+          threshold,
+          image: image || undefined
+        } : s);
+      } else {
+        const item = {
+          id: Date.now().toString(),
+          name,
+          sku,
+          category,
+          quantity: qty,
+          threshold,
+          image: image || undefined,
+        };
+        state.stock.push(item);
+      }
+
+      saveState();
+      renderStock();
+      closeModals();
+    }
+
+    function adjustStock(id, delta) {
+      state.stock = state.stock.map(s => s.id === id ? { ...s, quantity: Math.max(0, s.quantity + delta) } : s);
+      saveState();
+      renderStock();
+    }
+
+    function renderStock() {
+      const grid = document.getElementById("warehouse-grid");
+      grid.innerHTML = "";
+
+      if (state.stock.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding: 2rem; color:var(--text-muted);">${_t("no_stock")}</div>`;
+        return;
+      }
+
+      state.stock.forEach(s => {
+        const isLow = s.quantity <= s.threshold;
+        const card = document.createElement("div");
+        card.className = "worker-card";
+        card.style.flexDirection = "column";
+        card.style.alignItems = "stretch";
+
+        const catKeyMap = {
+          "General": "cat_general",
+          "Equipment": "cat_equipment",
+          "Consumables": "cat_consumables",
+          "Consumbles": "cat_consumables",
+          "Tools": "cat_tools"
+        };
+        const catLabel = catKeyMap[s.category] ? _t(catKeyMap[s.category]) : s.category;
+
+        const imageMarkup = s.image ? `
+          <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:0.4rem;">
+            <img src="${s.image}" alt="${s.name}" class="stock-item-photo">
+            <div style="flex:1;">
+              <div style="font-weight:700; font-size:0.95rem;">${s.name}</div>
+              <div style="font-size:0.75rem; color:var(--text-faint);">${s.sku} • ${catLabel}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span class="badge ${isLow ? 'badge-rose' : 'badge-emerald'}">${isLow ? _t('badge_low_stock') : _t('badge_in_stock')}</span>
+              <button class="icon-action-btn" onclick="openStockHUD('${s.id}')" title="${_t('btn_edit')}">✏️</button>
+              <button class="icon-action-btn" onclick="requestDeleteConfirmation('stock', '${s.id}', '${s.name.replace(/'/g, "\\'")}')" title="${_t('btn_delete')}">🗑️</button>
+            </div>
+          </div>
+        ` : `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div style="font-weight:700; font-size:0.95rem;">${s.name}</div>
+              <div style="font-size:0.75rem; color:var(--text-faint);">${s.sku} • ${catLabel}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:4px;">
+              <span class="badge ${isLow ? 'badge-rose' : 'badge-emerald'}">${isLow ? _t('badge_low_stock') : _t('badge_in_stock')}</span>
+              <button class="icon-action-btn" onclick="openStockHUD('${s.id}')" title="${_t('btn_edit')}">✏️</button>
+              <button class="icon-action-btn" onclick="requestDeleteConfirmation('stock', '${s.id}', '${s.name.replace(/'/g, "\\'")}')" title="${_t('btn_delete')}">🗑️</button>
+            </div>
+          </div>
+        `;
+
+        card.innerHTML = `
+          ${imageMarkup}
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:0.75rem; border-top:1px solid var(--border-subtle); padding-top:0.5rem;">
+            <div>
+              <span style="font-size:1.4rem; font-weight:800;">${s.quantity}</span>
+              <span style="font-size:0.75rem; color:var(--text-faint);"> (${_t('min_threshold_label')} ${s.threshold})</span>
+            </div>
+            <div style="display:flex; gap:4px;">
+              <button onclick="adjustStock('${s.id}', -1)" class="btn btn-secondary" style="padding:2px 8px; font-weight:800;">-</button>
+              <button onclick="adjustStock('${s.id}', 1)" class="btn btn-secondary" style="padding:2px 8px; font-weight:800;">+</button>
+            </div>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    // =========================================================================
+    // 5. USERS & ACCOUNTS MANAGEMENT (SUPER ADMIN EXCLUSIVE)
+    // =========================================================================
+    function handleUserPhotoFile(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const dataUrl = evt.target.result;
+        document.getElementById("user-photo-data").value = dataUrl;
+        document.getElementById("user-preview-img").src = dataUrl;
+        document.getElementById("user-preview-box").style.display = "flex";
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function clearUserPhoto() {
+      document.getElementById("user-photo-data").value = "";
+      document.getElementById("user-file-input").value = "";
+      document.getElementById("user-preview-img").src = "";
+      document.getElementById("user-preview-box").style.display = "none";
+    }
+
+    function handleRoleChangeAutoPerms(role) {
+      const isSuper = role === "SUPER_ADMIN";
+      document.getElementById("perm-reminders").checked = true;
+      document.getElementById("perm-tasks").checked = true;
+      document.getElementById("perm-workers").checked = role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER";
+      document.getElementById("perm-warehouse").checked = role === "SUPER_ADMIN" || role === "ADMIN" || role === "STOCK_MANAGER";
+      document.getElementById("perm-settings").checked = role === "SUPER_ADMIN" || role === "ADMIN";
+      document.getElementById("perm-users").checked = isSuper;
+    }
+
+    function openUserHUD(editId) {
+      const modal = document.getElementById("modal-user");
+      const titleHead = document.getElementById("modal-user-title-head");
+      const btnSave = document.getElementById("btn-save-user");
+
+      if (editId) {
+        const u = state.users.find(item => item.id === editId);
+        if (u) {
+          titleHead.textContent = _t("modal_user_edit_title");
+          btnSave.textContent = _t("btn_save");
+          document.getElementById("user-edit-id").value = u.id;
+          document.getElementById("user-form-name").value = u.name;
+          document.getElementById("user-form-email").value = u.email;
+          document.getElementById("user-form-password").value = "";
+          document.getElementById("user-form-role").value = u.role;
+          document.getElementById("user-form-status").value = u.status || "ACTIVE";
+
+          document.getElementById("user-form-role").disabled = !!u.isProtected;
+
+          if (u.photo) {
+            document.getElementById("user-photo-data").value = u.photo;
+            document.getElementById("user-preview-img").src = u.photo;
+            document.getElementById("user-preview-box").style.display = "flex";
+          } else {
+            clearUserPhoto();
+          }
+
+          const perms = u.permissions || [];
+          document.getElementById("perm-reminders").checked = perms.includes("reminders:access") || u.role === "SUPER_ADMIN";
+          document.getElementById("perm-tasks").checked = perms.includes("tasks:access") || u.role === "SUPER_ADMIN";
+          document.getElementById("perm-workers").checked = perms.includes("workers:access") || u.role === "SUPER_ADMIN";
+          document.getElementById("perm-warehouse").checked = perms.includes("warehouse:access") || u.role === "SUPER_ADMIN";
+          document.getElementById("perm-settings").checked = perms.includes("settings:access") || u.role === "SUPER_ADMIN";
+          document.getElementById("perm-users").checked = perms.includes("users:manage") || u.role === "SUPER_ADMIN";
+
+          modal.style.display = "flex";
+          return;
+        }
+      }
+
+      titleHead.textContent = _t("modal_user_create_title");
+      btnSave.textContent = _t("btn_save");
+      document.getElementById("user-edit-id").value = "";
+      document.getElementById("user-form-name").value = "";
+      document.getElementById("user-form-email").value = "";
+      document.getElementById("user-form-password").value = "Ostan123!";
+      document.getElementById("user-form-role").value = "EMPLOYEE";
+      document.getElementById("user-form-role").disabled = false;
+      document.getElementById("user-form-status").value = "ACTIVE";
+      clearUserPhoto();
+      handleRoleChangeAutoPerms("EMPLOYEE");
+      modal.style.display = "flex";
+    }
+
+    function saveUser(e) {
+      e.preventDefault();
+      const editId = document.getElementById("user-edit-id").value;
+      const name = document.getElementById("user-form-name").value.trim();
+      const email = document.getElementById("user-form-email").value.trim().toLowerCase();
+      const password = document.getElementById("user-form-password").value.trim();
+      const role = document.getElementById("user-form-role").value;
+      const status = document.getElementById("user-form-status").value;
+      const photo = document.getElementById("user-photo-data").value || undefined;
+
+      const perms = [];
+      if (document.getElementById("perm-reminders").checked) perms.push("reminders:access");
+      if (document.getElementById("perm-tasks").checked) perms.push("tasks:access");
+      if (document.getElementById("perm-workers").checked) perms.push("workers:access");
+      if (document.getElementById("perm-warehouse").checked) perms.push("warehouse:access");
+      if (document.getElementById("perm-settings").checked) perms.push("settings:access");
+      if (document.getElementById("perm-users").checked || role === "SUPER_ADMIN") perms.push("users:manage");
+
+      if (editId) {
+        state.users = state.users.map(u => {
+          if (u.id === editId) {
+            return {
+              ...u,
+              name,
+              email,
+              password: password || u.password,
+              role: u.isProtected ? "SUPER_ADMIN" : role,
+              status,
+              photo,
+              permissions: u.isProtected ? ["reminders:access", "tasks:access", "workers:access", "warehouse:access", "settings:access", "users:manage"] : perms
+            };
+          }
+          return u;
+        });
+      } else {
+        const newUser = {
+          id: "u-" + Date.now().toString(),
+          name,
+          email,
+          password: password || "Ostan123!",
+          role,
+          status,
+          isProtected: false,
+          photo,
+          permissions: perms,
+        };
+        state.users.push(newUser);
+      }
+
+      saveState();
+      updateUserSessionUI();
+      applyModuleVisibility();
+      renderUsers();
+      closeModals();
+    }
+
+    function renderUsers() {
+      const grid = document.getElementById("users-grid");
+      if (!grid) return;
+      grid.innerHTML = "";
+
+      if (state.users.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:2rem; color:var(--text-muted);">${_t("no_users")}</div>`;
+        return;
+      }
+
+      state.users.forEach(u => {
+        const card = document.createElement("div");
+        card.className = "worker-card";
+        card.style.flexDirection = "column";
+        card.style.alignItems = "stretch";
+
+        const roleBadge = u.role === "SUPER_ADMIN" ? "badge-rose" : u.role === "ADMIN" ? "badge-primary" : u.role === "MANAGER" ? "badge-amber" : "badge-emerald";
+        const statusBadge = u.status === "ACTIVE" ? "badge-emerald" : "badge-rose";
+        const perms = u.permissions || [];
+
+        const avatarMarkup = u.photo ? `
+          <img src="${u.photo}" style="width:46px; height:46px; border-radius:50%; object-fit:cover; border:1px solid var(--border-subtle); flex-shrink:0;">
+        ` : `
+          <div style="width:46px; height:46px; border-radius:50%; background:linear-gradient(135deg, #ef4444, #8b5cf6); display:flex; align-items:center; justify-content:center; color:#fff; font-weight:800; font-size:1.1rem; flex-shrink:0;">
+            ${u.name.charAt(0)}
+          </div>
+        `;
+
+        card.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div style="display:flex; align-items:center; gap:0.75rem;">
+              ${avatarMarkup}
+              <div>
+                <div style="font-weight:700; font-size:0.98rem; display:flex; align-items:center; gap:0.4rem;">
+                  ${u.name}
+                  ${u.isProtected ? `<span class="badge badge-rose" style="font-size:0.65rem;">🛡️ ${_t('badge_protected')}</span>` : ''}
+                </div>
+                <div style="font-size:0.78rem; color:var(--text-muted); margin-top:1px;">${u.email}</div>
+                <div style="display:flex; gap:0.35rem; margin-top:4px;">
+                  <span class="badge ${roleBadge}">${u.role}</span>
+                  <span class="badge ${statusBadge}">${u.status || 'ACTIVE'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display:flex; gap:2px;">
+              <button class="icon-action-btn" onclick="openUserHUD('${u.id}')" title="${_t('btn_edit')}">✏️</button>
+              ${!u.isProtected ? `<button class="icon-action-btn" onclick="requestDeleteConfirmation('user', '${u.id}', '${u.name.replace(/'/g, "\\'")}')" title="${_t('btn_delete')}">🗑️</button>` : ''}
+            </div>
+          </div>
+
+          <!-- Granted Permissions Chips -->
+          <div style="margin-top:0.75rem; border-top:1px solid var(--border-subtle); padding-top:0.5rem;">
+            <div style="font-size:0.72rem; color:var(--text-faint); margin-bottom:4px; font-weight:700; text-transform:uppercase;">Granted Permissions:</div>
+            <div style="display:flex; flex-wrap:wrap; gap:4px;">
+              <span class="perm-chip ${perms.includes('reminders:access') || u.role === 'SUPER_ADMIN' ? 'active' : ''}">⏰ Reminders</span>
+              <span class="perm-chip ${perms.includes('tasks:access') || u.role === 'SUPER_ADMIN' ? 'active' : ''}">📋 Tasks</span>
+              <span class="perm-chip ${perms.includes('workers:access') || u.role === 'SUPER_ADMIN' ? 'active' : ''}">👥 Workers</span>
+              <span class="perm-chip ${perms.includes('warehouse:access') || u.role === 'SUPER_ADMIN' ? 'active' : ''}">📦 Warehouse</span>
+              <span class="perm-chip ${perms.includes('settings:access') || u.role === 'SUPER_ADMIN' ? 'active' : ''}">⚙️ Settings</span>
+              <span class="perm-chip ${perms.includes('users:manage') || u.role === 'SUPER_ADMIN' ? 'active' : ''}">🛡️ Users Mgmt</span>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    // =========================================================================
+    // 6. RECYCLE BIN & RESTORE LOG SYSTEM
+    // =========================================================================
+    function restoreItem(logId) {
+      const entry = state.deletedLog.find(d => d.id === logId);
+      if (!entry || !entry.originalItem) return;
+
+      const { itemType, originalItem } = entry;
+
+      if (itemType === "reminder") {
+        state.reminders.push(originalItem);
+      } else if (itemType === "worker") {
+        state.workers.push(originalItem);
+        populateWorkerSelects();
+      } else if (itemType === "task") {
+        state.tasks.push(originalItem);
+      } else if (itemType === "stock") {
+        state.stock.push(originalItem);
+      } else if (itemType === "user") {
+        state.users.push(originalItem);
+        updateUserSessionUI();
+        applyModuleVisibility();
+      }
+
+      state.deletedLog = state.deletedLog.filter(d => d.id !== logId);
+      saveState();
+      renderRecycleBin();
+      window.OstanStyle.showToast(_t("toast_restored"), `"${entry.itemName}" ${_t("toast_restored")}`);
+    }
+
+    function emptyRecycleBin() {
+      if (state.deletedLog.length === 0) return;
+      if (confirm(getLang() === "ar" ? "هل أنت متأكد من إفراغ سلة المحذوفات بالكامل وحذف جميع السجلات نهائياً؟" : "Are you sure you want to empty the Recycle Bin permanently?")) {
+        state.deletedLog = [];
+        saveState();
+        renderRecycleBin();
+      }
+    }
+
+    function renderRecycleBin() {
+      const list = document.getElementById("recycle-list");
+      if (!list) return;
+      list.innerHTML = "";
+
+      if (state.deletedLog.length === 0) {
+        list.innerHTML = `<div style="text-align:center; padding:3rem; color:var(--text-muted); background:var(--bg-surface); border-radius:var(--radius-md); border:1px dashed var(--border-subtle);">${_t("recycle_bin_empty")}</div>`;
+        return;
+      }
+
+      state.deletedLog.forEach(d => {
+        const typeBadgeMap = {
+          reminder: { badge: "badge-primary", icon: "⏰", label: _t("badge_item_type_reminder") },
+          task: { badge: "badge-emerald", icon: "📋", label: _t("badge_item_type_task") },
+          worker: { badge: "badge-primary", icon: "👥", label: _t("badge_item_type_worker") },
+          stock: { badge: "badge-amber", icon: "📦", label: _t("badge_item_type_stock") },
+          user: { badge: "badge-rose", icon: "👤", label: _t("badge_item_type_user") },
+        };
+        const meta = typeBadgeMap[d.itemType] || { badge: "badge-secondary", icon: "📄", label: d.itemType };
+        const timeStr = new Date(d.deletedAt).toLocaleString(getLang() === 'ar' ? 'ar-SA' : 'en-US', { dateStyle: 'short', timeStyle: 'short' });
+
+        const card = document.createElement("div");
+        card.className = "reminder-item-card";
+        card.style.alignItems = "center";
+        card.style.justifyContent = "space-between";
+        card.innerHTML = `
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <span style="font-size:1.4rem;">${meta.icon}</span>
+            <div>
+              <div style="display:flex; align-items:center; gap:0.4rem;">
+                <span style="font-weight:700; font-size:0.95rem;">${d.itemName}</span>
+                <span class="badge ${meta.badge}">${meta.label}</span>
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-faint); margin-top:2px;">
+                Deleted at: ${timeStr} • by: ${d.deletedBy || 'Admin'}
+              </div>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:0.5rem;">
+            <button class="btn btn-primary" onclick="restoreItem('${d.id}')" style="padding:4px 10px; font-size:0.78rem;">
+              ${_t("btn_restore")}
+            </button>
+            <button class="btn btn-danger" onclick="requestDeleteConfirmation('recycle_entry', '${d.id}', '${d.itemName.replace(/'/g, "\\'")}', true)" style="padding:4px 8px; font-size:0.78rem;" title="Delete Permanently">
+              🗑️
+            </button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // =========================================================================
+    // 7. COUNTERS & REAL-TIME ALARM & COUNTDOWN ENGINE (1000ms loop)
+    // =========================================================================
+    function updateCounts() {
+      const activeReminders = state.reminders.filter(r => !r.completed);
+      const user = getCurrentUser();
+      const isManagerOrAdmin = canAssignTasks(user);
+
+      let activeTasks = state.tasks.filter(t => t.status !== "COMPLETED");
+      if (!isManagerOrAdmin) {
+        activeTasks = activeTasks.filter(t => 
+          t.workerName.toLowerCase() === user.name.toLowerCase() || 
+          t.workerId === user.id ||
+          (user.role === "STOCK_MANAGER" && (t.workerRole === "STOCK_MANAGER" || t.workerName.toLowerCase().includes("sami"))) ||
+          (user.role === "EMPLOYEE" && (t.workerRole === "EMPLOYEE" || t.workerName.toLowerCase().includes("fahad")))
+        );
+      }
+
+      // Top 4 Operations Cards
+      const statRem = document.getElementById("stat-reminders");
+      const statTk = document.getElementById("stat-tasks");
+      const statWk = document.getElementById("stat-workers");
+      const statWh = document.getElementById("stat-warehouse");
+
+      if (statRem) statRem.textContent = activeReminders.length;
+      if (statTk) statTk.textContent = activeTasks.length;
+      if (statWk) statWk.textContent = state.workers.length;
+      if (statWh) statWh.textContent = state.stock.length;
+
+      // Sidebar badges
+      const bRem = document.getElementById("badge-reminders-count");
+      const bTk = document.getElementById("badge-tasks-count");
+      const bWk = document.getElementById("badge-workers-count");
+      const bWh = document.getElementById("badge-stock-count");
+      const bUs = document.getElementById("badge-users-count");
+      const bRec = document.getElementById("badge-recycle-count");
+
+      if (bRem) bRem.textContent = activeReminders.length;
+      if (bTk) bTk.textContent = activeTasks.length;
+      if (bWk) bWk.textContent = state.workers.length;
+      if (bWh) bWh.textContent = state.stock.length;
+      if (bUs) bUs.textContent = state.users.length;
+      if (bRec) bRec.textContent = state.deletedLog.length;
+    }
+
+    setInterval(() => {
+      const now = new Date().getTime();
+      state.reminders.forEach(r => {
+        if (!r.completed && !r.notified && r.reminderTime) {
+          const target = new Date(r.reminderTime).getTime();
+          if (now >= target) {
+            r.notified = true;
+            saveState();
+            window.OstanStyle.showToast(`Reminder Alarm: ${r.title}`, r.notes || _t("countdown_time_arrived"));
+          }
+        }
+      });
+
+      // Update live countdown badges every second
+      updateLiveCountdowns();
+    }, 1000);
+
+    // Initial Launch
+    populateWorkerSelects();
+    updateUserSessionUI();
+    applyModuleVisibility();
+    setModule("reminders");
+  </script>
+</body>
+</html>
