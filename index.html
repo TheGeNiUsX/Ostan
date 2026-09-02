@@ -3,17 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ostan Enterprise Dashboard</title>
+  <title>Ostan — Enterprise Business Management System</title>
   
-  <!-- Fonts -->
+  <!-- Modern Typography (Inter & Cairo) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <!-- Core Scripts -->
   <script src="style.js"></script>
   <script src="translation.js"></script>
   
-  <!-- Firebase Web SDK Integration -->
+  <!-- Firebase Compatibility Web SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
@@ -149,47 +150,24 @@
       transition: all 0.15s ease;
       border: 1px solid transparent;
     }
+
     .nav-item:hover {
       background: var(--bg-surface-hover);
       color: var(--text-main);
     }
+
     .nav-item.active {
-      background: rgba(99, 102, 241, 0.12);
-      border-color: rgba(99, 102, 241, 0.25);
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.18) 0%, rgba(99, 102, 241, 0.05) 100%);
       color: #818cf8;
       font-weight: 600;
+      border-inline-start: 3px solid #6366f1;
     }
+
     .nav-item.locked {
-      background: rgba(244, 63, 94, 0.05);
-      border: 1px dashed rgba(244, 63, 94, 0.3);
-      color: #94a3b8;
+      opacity: 0.75;
     }
 
-    /* Sidebar Footer User Card */
-    .user-footer-card {
-      padding: 1rem;
-      border-top: 1px solid var(--border-subtle);
-      background: var(--bg-surface-elevated);
-      display: flex;
-      flex-direction: column;
-      gap: 0.75rem;
-    }
-
-    .user-avatar-circle {
-      width: 36px;
-      height: 36px;
-      border-radius: var(--radius-full);
-      background: linear-gradient(135deg, #4f46e5, #06b6d4);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #ffffff;
-      font-weight: 700;
-      font-size: 0.85rem;
-      flex-shrink: 0;
-    }
-
-    /* Main Area Container */
+    /* Main View Area */
     .main-wrapper {
       display: flex;
       flex-direction: column;
@@ -198,116 +176,76 @@
       background: var(--bg-app);
     }
 
-    /* Top Navigation Header Bar */
     .top-header {
       height: 64px;
-      padding: 0 1.75rem;
+      padding-inline: 1.75rem;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid var(--border-subtle);
-      background: var(--bg-surface);
       flex-shrink: 0;
-    }
-
-    .search-input-box {
-      position: relative;
-      width: 320px;
-    }
-
-    .search-input {
-      width: 100%;
-      background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
-      border-radius: var(--radius-md);
-      padding: 0.45rem 0.85rem 0.45rem 2.2rem;
-      color: var(--text-main);
-      font-size: 0.85rem;
-      outline: none;
-      transition: border-color 0.15s ease;
-    }
-    .search-input:focus {
-      border-color: var(--primary-500);
+      z-index: 20;
     }
 
     .content-scroll-area {
       flex: 1;
       overflow-y: auto;
       padding: 1.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
     }
 
-    /* Frosted Glass Panels */
+    /* Glass Panels & Badges */
     .glass-panel {
-      background: rgba(26, 34, 52, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
+      background: linear-gradient(180deg, rgba(26, 34, 52, 0.65) 0%, rgba(15, 22, 35, 0.85) 100%);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 20px rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
     }
 
     .card-hover {
-      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .card-hover:hover {
       transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.16);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+      border-color: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
     }
 
-    /* Badges */
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 8px;
-      border-radius: var(--radius-full);
-      font-size: 0.72rem;
-      font-weight: 700;
-    }
-    .badge-rose { background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.35); color: #fb7185; }
-    .badge-primary { background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99, 102, 241, 0.35); color: #818cf8; }
-    .badge-emerald { background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.35); color: #34d399; }
-    .badge-amber { background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.35); color: #fbbf24; }
-    .badge-cyan { background: rgba(6, 182, 212, 0.15); border: 1px solid rgba(6, 182, 212, 0.35); color: #38bdf8; }
-    .badge-secondary { background: rgba(148, 163, 184, 0.15); border: 1px solid rgba(148, 163, 184, 0.3); color: #94a3b8; }
-
-    /* Buttons */
     .btn {
       display: inline-flex;
       align-items: center;
-      justify-content: center;
       gap: 0.5rem;
       padding: 0.55rem 1rem;
-      border-radius: var(--radius-md);
       font-size: 0.85rem;
       font-weight: 600;
+      border-radius: var(--radius-md);
       cursor: pointer;
       border: 1px solid transparent;
       transition: all 0.15s ease;
       text-decoration: none;
     }
+
     .btn-primary {
-      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
       color: #ffffff;
-      box-shadow: 0 0 16px var(--primary-glow);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.35);
     }
     .btn-primary:hover {
-      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
       transform: translateY(-1px);
     }
+
     .btn-secondary {
       background: var(--bg-surface-elevated);
-      border: 1px solid var(--border-subtle);
       color: var(--text-main);
+      border: 1px solid var(--border-subtle);
     }
     .btn-secondary:hover {
       background: var(--bg-surface-hover);
       border-color: var(--border-strong);
     }
+
     .btn-ghost {
       background: transparent;
       color: var(--text-muted);
@@ -317,314 +255,366 @@
       color: var(--text-main);
     }
 
-    /* Form Fields */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.55rem;
+      border-radius: var(--radius-full);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-rose { background: rgba(244, 63, 94, 0.15); color: #fb7185; border: 1px solid rgba(244, 63, 94, 0.3); }
+    .badge-primary { background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3); }
+    .badge-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .badge-amber { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .badge-cyan { background: rgba(6, 182, 212, 0.15); color: #38bdf8; border: 1px solid rgba(6, 182, 212, 0.3); }
+    .badge-secondary { background: var(--bg-surface-elevated); color: var(--text-muted); border: 1px solid var(--border-subtle); }
+
     .input-field {
       width: 100%;
+      padding: 0.65rem 0.85rem;
       background: var(--bg-surface);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-md);
-      padding: 0.6rem 0.85rem;
       color: var(--text-main);
       font-size: 0.88rem;
-      outline: none;
-      transition: border-color 0.15s ease;
+      font-family: inherit;
     }
     .input-field:focus {
-      border-color: var(--primary-500);
+      outline: none;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
     }
 
-    /* Modal Backdrop */
+    /* Modal / Auth Fullscreen */
     .hud-modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, 0.75);
+      background: rgba(0, 0, 0, 0.85);
       backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 999;
+      z-index: 9999;
       padding: 1rem;
     }
+
     .hud-modal-box {
       width: 100%;
-      max-width: 540px;
-      background: linear-gradient(180deg, rgba(26, 34, 52, 0.95) 0%, rgba(15, 22, 35, 0.98) 100%);
+      max-width: 520px;
+      background: linear-gradient(180deg, rgba(26, 34, 52, 0.98) 0%, rgba(15, 22, 35, 0.99) 100%);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: var(--radius-lg);
       padding: 1.75rem;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
     }
+
+    .user-avatar-circle {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
   </style>
 </head>
 <body>
-  <div class="app-shell">
-    <!-- =========================================================================
-         LEFT SIDEBAR (MATCHING LOCALHOST:3000 EXACTLY)
-         ========================================================================= -->
+
+  <!-- =========================================================================
+       1. AUTHENTICATION PORTAL (SHOWN WHEN VISITOR IS NOT SIGNED IN)
+       ========================================================================= -->
+  <div id="auth-portal-fullscreen" class="hud-modal-overlay" style="display: flex;">
+    <div class="hud-modal-box">
+      <!-- Language switch on login portal -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <div class="brand-logo-box">
+            <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+              <circle cx="50" cy="50" r="46" stroke="#6366f1" stroke-width="8" stroke-dasharray="16 8"/>
+              <path d="M50 20 A30 30 0 0 1 80 50 A30 30 0 0 1 50 80 A30 30 0 0 1 20 50 Z" fill="#6366f1" fill-opacity="0.85"/>
+            </svg>
+          </div>
+          <span style="font-weight: 800; font-size: 1.25rem; letter-spacing: -0.02em;">Ostan</span>
+        </div>
+        <button class="btn btn-secondary" onclick="window.OstanI18n.toggle()" style="padding: 0.35rem 0.7rem; font-size: 0.78rem;">
+          <span data-i18n="lang_toggle">🌐 العربية</span>
+        </button>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 1.25rem;">
+        <h1 data-i18n="auth_title" style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">Sign in to Ostan</h1>
+        <p data-i18n="auth_subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Enterprise Operations & Business Intelligence Platform</p>
+      </div>
+
+      <!-- Auth Tabs: Sign In / Sign Up -->
+      <div style="display: flex; gap: 0.5rem; background: var(--bg-surface); padding: 4px; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
+        <button id="auth-tab-login" onclick="setAuthPortalMode('login')" class="btn btn-primary" style="flex: 1; padding: 0.5rem;" data-i18n="tab_login">Sign In</button>
+        <button id="auth-tab-signup" onclick="setAuthPortalMode('signup')" class="btn btn-ghost" style="flex: 1; padding: 0.5rem;" data-i18n="tab_signup">Sign Up (New Employee)</button>
+      </div>
+
+      <div id="auth-superadmin-banner" style="display: none; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.35); color: #fb7185; font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem; text-align: center;">
+        👑 Master Super Admin: Osama Al-Twaish
+      </div>
+
+      <div id="auth-portal-error" style="display: none; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.15); color: #fb7185; font-size: 0.8rem; margin-bottom: 1rem;"></div>
+
+      <form onsubmit="handleAuthPortalSubmit(event)" style="display: flex; flex-direction: column; gap: 0.9rem;">
+        <div id="auth-group-name" style="display: none;">
+          <label data-i18n="label_fullname" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Full Name *</label>
+          <input id="auth-input-name" type="text" placeholder="e.g. Khalid Al-Ghamdi" data-i18n-placeholder="placeholder_fullname" class="input-field">
+        </div>
+
+        <div>
+          <label data-i18n="label_email" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Email Address *</label>
+          <input id="auth-input-email" type="email" required placeholder="khalid@company.com" data-i18n-placeholder="placeholder_email" oninput="checkAuthEmailSpecialRule(this.value)" class="input-field">
+        </div>
+
+        <div>
+          <label data-i18n="label_password" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Password *</label>
+          <input id="auth-input-password" type="password" required placeholder="At least 6 characters" data-i18n-placeholder="placeholder_password" class="input-field">
+        </div>
+
+        <button id="auth-btn-submit" type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 0.5rem; font-weight: 700;">
+          <span data-i18n="btn_submit_login">Sign In to Platform</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- =========================================================================
+       2. MAIN DASHBOARD SHELL (SHOWN ONLY WHEN AUTHENTICATED)
+       ========================================================================= -->
+  <div id="app-shell-root" class="app-shell" style="display: none;">
+    <!-- LEFT SIDEBAR -->
     <aside class="app-sidebar">
       <!-- Brand Header -->
       <div class="brand-header">
         <div style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer;" onclick="setModule('dashboard')">
           <div class="brand-logo-box">
             <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
-              <defs>
-                <linearGradient id="side-logo-blue-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#38bdf8" />
-                  <stop offset="50%" stop-color="#007aff" />
-                  <stop offset="100%" stop-color="#818cf8" />
-                </linearGradient>
-                <linearGradient id="side-logo-violet-grad" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stop-color="#c084fc" />
-                  <stop offset="50%" stop-color="#a855f7" />
-                  <stop offset="100%" stop-color="#38bdf8" />
-                </linearGradient>
-                <filter id="side-neon-glow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3" result="glow" />
-                  <feComposite in="SourceGraphic" in2="glow" operator="over" />
-                </filter>
-              </defs>
-              <path d="M 50 10 A 40 40 0 1 1 18 78 A 32 32 0 1 0 50 20 A 30 30 0 0 1 76 34 A 40 40 0 0 0 50 10 Z" fill="url(#side-logo-blue-grad)" filter="url(#side-neon-glow)" />
-              <path d="M 50 20 A 30 30 0 1 1 24 68 A 22 22 0 1 0 50 28 A 20 20 0 0 1 68 40 A 30 30 0 0 0 50 20 Z" fill="url(#side-logo-violet-grad)" opacity="0.9" />
-              <circle cx="50" cy="50" r="14" fill="none" stroke="url(#side-logo-blue-grad)" stroke-width="2.5" opacity="0.6" />
+              <circle cx="50" cy="50" r="46" stroke="#6366f1" stroke-width="8" stroke-dasharray="16 8"/>
+              <path d="M50 20 A30 30 0 0 1 80 50 A30 30 0 0 1 50 80 A30 30 0 0 1 20 50 Z" fill="#6366f1" fill-opacity="0.85"/>
             </svg>
           </div>
-          <div style="font-weight: 800; font-size: 1.3rem; letter-spacing: -0.02em; color: #ffffff;">
-            Ostan
+          <div>
+            <div style="font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em;">Ostan</div>
+            <div style="font-size: 0.68rem; color: var(--text-muted);" data-i18n="app_subtitle">Enterprise Management</div>
           </div>
         </div>
       </div>
 
-      <!-- Navigation Section Groups -->
+      <!-- Navigation Items Container -->
       <div class="nav-sections-container">
-        <!-- 1. OVERVIEW -->
-        <div id="group-overview">
-          <div class="nav-section-title">OVERVIEW</div>
-          <div id="nav-dashboard" class="nav-item active" onclick="setModule('dashboard')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
-              <span>Dashboard</span>
-            </div>
-          </div>
+        <!-- OVERVIEW -->
+        <div>
+          <div class="nav-section-title" data-i18n="nav_group_overview">OVERVIEW</div>
+          <a id="nav-dashboard" class="nav-item active" onclick="setModule('dashboard')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>📊</span>
+              <span data-i18n="nav_dashboard">Dashboard</span>
+            </span>
+          </a>
         </div>
 
-        <!-- 2. ORGANIZATION -->
-        <div id="group-organization">
-          <div class="nav-section-title">ORGANIZATION</div>
-          <div id="nav-employees" class="nav-item" onclick="setModule('employees')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              <span>Employees</span>
-            </div>
-          </div>
-          <div id="nav-departments" class="nav-item" onclick="setModule('departments')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>
-              <span>Departments</span>
-            </div>
-          </div>
+        <!-- ORGANIZATION -->
+        <div>
+          <div class="nav-section-title" data-i18n="nav_group_org">ORGANIZATION</div>
+          <a id="nav-employees" class="nav-item" onclick="setModule('employees')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>👥</span>
+              <span data-i18n="nav_employees">Employees</span>
+            </span>
+          </a>
+          <a id="nav-departments" class="nav-item" onclick="setModule('departments')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>🏢</span>
+              <span data-i18n="nav_departments">Departments</span>
+            </span>
+          </a>
         </div>
 
-        <!-- 3. OPERATIONS -->
-        <div id="group-operations">
-          <div class="nav-section-title">OPERATIONS</div>
-          <div id="nav-tasks" class="nav-item" onclick="setModule('tasks')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-              <span id="nav-tasks-label">Task Management</span>
-            </div>
-          </div>
-          <div id="nav-reminders" class="nav-item" onclick="setModule('reminders')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-              <span>Reminders</span>
-            </div>
-          </div>
+        <!-- OPERATIONS -->
+        <div>
+          <div class="nav-section-title" data-i18n="nav_group_ops">OPERATIONS</div>
+          <a id="nav-tasks" class="nav-item" onclick="setModule('tasks')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>☑️</span>
+              <span data-i18n="nav_tasks">Task Management</span>
+            </span>
+          </a>
+          <a id="nav-reminders" class="nav-item" onclick="setModule('reminders')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>⏰</span>
+              <span data-i18n="nav_reminders">Reminders</span>
+            </span>
+          </a>
         </div>
 
-        <!-- 4. INVENTORY -->
-        <div id="group-inventory">
-          <div class="nav-section-title">INVENTORY</div>
-          <div id="nav-stock" class="nav-item" onclick="setModule('stock')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-              <span>Stock & Inventory</span>
-            </div>
-          </div>
-          <div id="nav-stock-requests" class="nav-item" onclick="setModule('stock-requests')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M8 13h2"/><path d="M14 13h2"/><path d="M8 17h2"/><path d="M14 17h2"/></svg>
-              <span>Stock Requests</span>
-            </div>
-          </div>
+        <!-- INVENTORY -->
+        <div>
+          <div class="nav-section-title" data-i18n="nav_group_inv">INVENTORY</div>
+          <a id="nav-stock" class="nav-item" onclick="setModule('stock')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>📦</span>
+              <span data-i18n="nav_stock">Stock & Inventory</span>
+            </span>
+          </a>
+          <a id="nav-stock-requests" class="nav-item" onclick="setModule('stock-requests')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>📄</span>
+              <span data-i18n="nav_stock_requests">Stock Requests</span>
+            </span>
+          </a>
         </div>
 
-        <!-- 5. INTELLIGENCE & SECURITY -->
-        <div id="group-intelligence">
-          <div class="nav-section-title">INTELLIGENCE & SECURITY</div>
-          <div id="nav-reports" class="nav-item" onclick="setModule('reports')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" x2="12" y1="20" y2="10"/><line x1="18" x2="18" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="16"/></svg>
-              <span>Reports & Analytics</span>
-            </div>
-          </div>
-          <div id="nav-audit-logs" class="nav-item" onclick="setModule('audit-logs')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/><path d="m9 12 2 2 4-4"/></svg>
-              <span>Audit Logs</span>
-            </div>
-          </div>
+        <!-- INTELLIGENCE & SECURITY -->
+        <div>
+          <div class="nav-section-title" data-i18n="nav_group_sec">INTELLIGENCE & SECURITY</div>
+          <a id="nav-reports" class="nav-item" onclick="setModule('reports')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>📈</span>
+              <span data-i18n="nav_reports">Reports & Analytics</span>
+            </span>
+          </a>
+          <a id="nav-audit-logs" class="nav-item" onclick="setModule('audit-logs')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>🛡️</span>
+              <span data-i18n="nav_audit_logs">Audit Logs</span>
+            </span>
+          </a>
         </div>
 
-        <!-- 6. SYSTEM -->
-        <div id="group-system">
-          <div class="nav-section-title">SYSTEM</div>
-          <div id="nav-settings" class="nav-item" onclick="setModule('settings')">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-              <span>System Settings</span>
-            </div>
-          </div>
+        <!-- SYSTEM -->
+        <div>
+          <div class="nav-section-title" data-i18n="nav_group_sys">SYSTEM</div>
+          <a id="nav-settings" class="nav-item" onclick="setModule('settings')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>⚙️</span>
+              <span data-i18n="nav_settings">System Settings</span>
+            </span>
+          </a>
         </div>
       </div>
 
-      <!-- User Profile Card & Sign Out Footer -->
-      <div class="user-footer-card">
+      <!-- User Profile & Sign Out Footer -->
+      <div style="padding: 1rem; border-top: 1px solid var(--border-subtle); display: flex; flex-direction: column; gap: 0.75rem;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div id="sidebar-user-avatar" class="user-avatar-circle">W</div>
-          <div style="overflow: hidden; flex: 1;">
-            <div id="sidebar-user-name" style="font-size: 0.85rem; font-weight: 600; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-              Waseem Al-Otaibi
+          <div id="sidebar-user-avatar" class="user-avatar-circle" style="background: linear-gradient(135deg, #6366f1, #06b6d4);">
+            O
+          </div>
+          <div style="flex: 1; min-width: 0;">
+            <div id="sidebar-user-name" style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+              Osama Al-Twaish
             </div>
-            <div style="display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;">
-              <span id="sidebar-user-role" class="badge badge-rose" style="font-size: 0.65rem; padding: 0.1rem 0.45rem;">
-                🛡️ Super Admin
+            <div style="margin-top: 2px;">
+              <span id="sidebar-user-role" class="badge badge-rose" style="font-size: 0.65rem;">
+                SUPER_ADMIN
               </span>
             </div>
           </div>
         </div>
 
         <button onclick="userLogout()" class="btn btn-secondary" style="width: 100%; padding: 0.5rem; font-size: 0.8rem; justify-content: center;">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
           <span data-i18n="auth_logout">Sign Out</span>
         </button>
       </div>
     </aside>
 
-    <!-- =========================================================================
-         MAIN WRAPPER (TOP BAR + CONTENT AREA)
-         ========================================================================= -->
+    <!-- MAIN WRAPPER (TOP BAR + CONTENT AREA) -->
     <div class="main-wrapper">
       <!-- Top Navigation Header -->
       <header class="top-header">
         <div style="display: flex; align-items: center; gap: 1rem;">
-          <button class="btn btn-ghost" style="padding: 0.4rem;" title="Toggle Sidebar">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-          </button>
-
-          <div class="search-input-box">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 10px; top: 10px; color: var(--text-faint);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Search..." class="search-input">
+          <div style="position: relative; max-width: 320px; width: 100%;">
+            <input type="text" placeholder="Search across modules..." data-i18n-placeholder="search_placeholder" class="input-field" style="padding-left: 2rem;">
+            <span style="position: absolute; left: 10px; top: 8px; color: var(--text-faint);">🔍</span>
           </div>
         </div>
 
         <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <!-- Language Toggle -->
+          <!-- Language Toggle (English ↔ Arabic) -->
           <button class="btn btn-secondary" onclick="window.OstanI18n.toggle()" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
             <span data-i18n="lang_toggle">🌐 العربية</span>
           </button>
 
           <!-- Theme Toggle -->
           <button class="btn btn-secondary" onclick="window.OstanStyle.toggleTheme()" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
-            🌓 System
-          </button>
-
-          <!-- Notification Bell -->
-          <button class="btn btn-ghost" style="padding: 0.5rem; position: relative;" title="Notifications">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-            <span style="position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: #f43f5e;"></span>
+            <span data-i18n="theme_toggle">🌓 Theme</span>
           </button>
         </div>
       </header>
 
-      <!-- Scrollable Main Content -->
+      <!-- Scrollable Main Content Area -->
       <main class="content-scroll-area">
         
         <!-- =====================================================================
-             VIEW 1: DASHBOARD (PIXEL-PERFECT CLONE OF LOCALHOST:3000)
+             VIEW 1: DASHBOARD
              ===================================================================== -->
         <section id="view-dashboard" style="display: flex; flex-direction: column; gap: 1.5rem;">
           <!-- Welcome Greeting Banner -->
-          <div class="glass-panel" style="padding: 1.5rem 1.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; background: linear-gradient(135deg, rgba(30, 41, 65, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%);">
+          <div class="glass-panel" style="padding: 1.5rem 1.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
               <div style="display: flex; align-items: center; gap: 0.5rem;">
                 <span style="font-size: 1.35rem;">🔥</span>
                 <h1 id="dash-greeting-text" style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em;">
-                  Good afternoon, Waseem Al-Otaibi
+                  Good afternoon, Osama Al-Twaish
                 </h1>
               </div>
-              <p style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
+              <p data-i18n="dash_subtitle" style="font-size: 0.88rem; color: var(--text-muted); margin-top: 4px;">
                 Here is your organization's real-time operational overview.
               </p>
-            </div>
-
-            <div style="display: flex; gap: 0.5rem; align-items: center;">
-              <span class="badge badge-rose" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">
-                🛡️ Protected Super Admin
-              </span>
-              <span class="badge badge-primary" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">
-                Super Admin
-              </span>
             </div>
           </div>
 
           <!-- 4 Operation Metric Cards Grid -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem;">
-            <!-- Card 1: Total Employees -->
+            <!-- Card 1: Total Employees (Hidden for regular employees) -->
             <div id="card-total-employees" class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('employees')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Total Employees</span>
-                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); color: #818cf8; display: flex; align-items: center; justify-content: center;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                </div>
+                <span data-i18n="dash_total_employees" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Total Employees</span>
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(99, 102, 241, 0.15); color: #818cf8; display: flex; align-items: center; justify-content: center;">👥</div>
               </div>
-              <div id="stat-total-employees" style="font-size: 2rem; font-weight: 800; line-height: 1;">12</div>
-              <div id="stat-sub-employees" style="font-size: 0.75rem; color: var(--text-faint); margin-top: 6px;">12 Active on Duty</div>
+              <div id="stat-total-employees" style="font-size: 2rem; font-weight: 800; line-height: 1;">1</div>
+              <div id="stat-sub-employees" style="font-size: 0.75rem; color: var(--text-faint); margin-top: 6px;" data-i18n="dash_active_on_duty">1 Active on Duty</div>
             </div>
 
             <!-- Card 2: Open Tasks -->
             <div class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('tasks')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Open Tasks</span>
-                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(6, 182, 212, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                </div>
+                <span id="label-stat-tasks" data-i18n="dash_open_tasks" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Open Tasks</span>
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(6, 182, 212, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center;">☑️</div>
               </div>
               <div id="stat-open-tasks" style="font-size: 2rem; font-weight: 800; line-height: 1;">0</div>
-              <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 6px;">All tasks up to date</div>
+              <div id="stat-sub-tasks" style="font-size: 0.75rem; color: var(--text-faint); margin-top: 6px;" data-i18n="dash_all_tasks_completed">All tasks up to date</div>
             </div>
 
             <!-- Card 3: Upcoming Reminders -->
             <div class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('reminders')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Upcoming Reminders</span>
-                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; display: flex; align-items: center; justify-content: center;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-                </div>
+                <span data-i18n="dash_upcoming_reminders" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Upcoming Reminders</span>
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; display: flex; align-items: center; justify-content: center;">⏰</div>
               </div>
-              <div id="stat-upcoming-reminders" style="font-size: 2rem; font-weight: 800; line-height: 1;">1</div>
-              <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 6px;">1 Active alerts</div>
+              <div id="stat-upcoming-reminders" style="font-size: 2rem; font-weight: 800; line-height: 1;">0</div>
+              <div id="stat-sub-reminders" style="font-size: 0.75rem; color: var(--text-faint); margin-top: 6px;" data-i18n="dash_no_reminders">No pending alerts</div>
             </div>
 
             <!-- Card 4: Low Stock Items -->
-            <div class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('stock')">
+            <div id="card-low-stock" class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('stock')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-                <span style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Low Stock Items</span>
-                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(244, 63, 94, 0.15); color: #fb7185; display: flex; align-items: center; justify-content: center;">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-                </div>
+                <span data-i18n="dash_low_stock_items" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Low Stock Items</span>
+                <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(244, 63, 94, 0.15); color: #fb7185; display: flex; align-items: center; justify-content: center;">📦</div>
               </div>
               <div id="stat-low-stock" style="font-size: 2rem; font-weight: 800; line-height: 1;">0</div>
-              <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 6px;">Stock healthy</div>
+              <div id="stat-sub-stock" style="font-size: 0.75rem; color: var(--text-faint); margin-top: 6px;" data-i18n="dash_stock_healthy">Stock healthy</div>
             </div>
           </div>
 
@@ -632,70 +622,54 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
             <!-- Left: Quick Operations -->
             <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-              <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1rem;">
-                <span style="color: #38bdf8;">⚡</span> Quick Operations
-              </div>
+              <div data-i18n="quick_ops_title" style="font-weight: 700; font-size: 1rem;">⚡ Quick Operations</div>
 
               <div style="display: flex; flex-direction: column; gap: 0.65rem;">
-                <!-- Op 1: Task Management -->
-                <div onclick="setModule('tasks')" class="glass-panel card-hover" style="padding: 1rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: var(--bg-surface-elevated);">
-                  <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(6, 182, 212, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center;">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-                    </div>
-                    <div>
-                      <div style="font-weight: 600; font-size: 0.88rem;">Task Management</div>
-                      <div style="font-size: 0.75rem; color: var(--text-muted);">Assign tasks to specific registered workers with full edit controls</div>
-                    </div>
+                <div onclick="setModule('tasks')" class="glass-panel card-hover" style="padding: 1rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                  <div>
+                    <div data-i18n="op_tasks_title" style="font-weight: 600; font-size: 0.88rem;">Task Management</div>
+                    <div data-i18n="op_tasks_desc" style="font-size: 0.75rem; color: var(--text-muted);">Assign tasks to specific registered workers with full edit controls</div>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-faint);"><polyline points="9 18 15 12 9 6"/></svg>
+                  <span>→</span>
                 </div>
 
-                <!-- Op 2: Reminders -->
-                <div onclick="setModule('reminders')" class="glass-panel card-hover" style="padding: 1rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: var(--bg-surface-elevated);">
-                  <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; display: flex; align-items: center; justify-content: center;">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-                    </div>
-                    <div>
-                      <div style="font-weight: 600; font-size: 0.88rem;">Reminders</div>
-                      <div style="font-size: 0.75rem; color: var(--text-muted);">Scheduled reminders with live alarms</div>
-                    </div>
+                <div onclick="setModule('reminders')" class="glass-panel card-hover" style="padding: 1rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                  <div>
+                    <div data-i18n="op_reminders_title" style="font-weight: 600; font-size: 0.88rem;">Reminders & Sound Alarms</div>
+                    <div data-i18n="op_reminders_desc" style="font-size: 0.75rem; color: var(--text-muted);">Create scheduled reminders with live countdown tracking and chime</div>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-faint);"><polyline points="9 18 15 12 9 6"/></svg>
+                  <span>→</span>
                 </div>
 
-                <!-- Op 3: Stock & Inventory -->
-                <div onclick="setModule('stock')" class="glass-panel card-hover" style="padding: 1rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: var(--bg-surface-elevated);">
-                  <div style="display: flex; align-items: center; gap: 0.75rem;">
-                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(244, 63, 94, 0.15); color: #fb7185; display: flex; align-items: center; justify-content: center;">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
-                    </div>
-                    <div>
-                      <div style="font-weight: 600; font-size: 0.88rem;">Stock & Inventory</div>
-                      <div style="font-size: 0.75rem; color: var(--text-muted);">Stock inventory & low-stock alerts</div>
-                    </div>
+                <div onclick="setModule('stock')" class="glass-panel card-hover" style="padding: 1rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
+                  <div>
+                    <div data-i18n="op_stock_title" style="font-weight: 600; font-size: 0.88rem;">Warehouse & Stock Catalog</div>
+                    <div data-i18n="op_stock_desc" style="font-size: 0.75rem; color: var(--text-muted);">Manage inventory counts, safety thresholds, and material requests</div>
                   </div>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--text-faint);"><polyline points="9 18 15 12 9 6"/></svg>
+                  <span>→</span>
                 </div>
               </div>
             </div>
 
             <!-- Right: System Readiness -->
             <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-              <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1rem;">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #34d399;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                System Readiness
-              </div>
+              <div data-i18n="system_readiness_title" style="font-weight: 700; font-size: 1rem;">🛡️ System Security & Identity</div>
 
-              <div style="padding: 1.25rem; border-radius: var(--radius-md); background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); display: flex; flex-direction: column; gap: 0.5rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem; font-weight: 700; color: #34d399; font-size: 0.95rem;">
-                  <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;"></span>
-                  All services operational • RBAC Active
+              <div style="display: flex; flex-direction: column; gap: 0.65rem;">
+                <div style="padding: 0.85rem; background: var(--bg-surface-elevated); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                  <span data-i18n="sys_cloud_firebase" style="font-size: 0.85rem;">Firebase Cloud Sync</span>
+                  <span class="badge badge-emerald" data-i18n="sys_cloud_active">Active & Synced</span>
                 </div>
-                <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
-                  Database connected, scheduled alarms active, and role access controls strictly enforced.
-                </p>
+
+                <div style="padding: 0.85rem; background: var(--bg-surface-elevated); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                  <span data-i18n="sys_rbac" style="font-size: 0.85rem;">Granular RBAC Policies</span>
+                  <span class="badge badge-primary" data-i18n="sys_rbac_active">Enforced</span>
+                </div>
+
+                <div style="padding: 0.85rem; background: var(--bg-surface-elevated); border-radius: var(--radius-md); display: flex; justify-content: space-between; align-items: center;">
+                  <span data-i18n="sys_audit" style="font-size: 0.85rem;">Enterprise Audit Trail</span>
+                  <span class="badge badge-amber" data-i18n="sys_audit_active">Recording</span>
+                </div>
               </div>
             </div>
           </div>
@@ -705,13 +679,16 @@
              VIEW 2: EMPLOYEES
              ===================================================================== -->
         <section id="view-employees" style="display: none; flex-direction: column; gap: 1.25rem;">
-          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-              <h2 style="font-size: 1.3rem; font-weight: 800;">Employees & Team</h2>
-              <p style="font-size: 0.82rem; color: var(--text-muted);">Manage registered workers and employee profiles.</p>
+              <h2 data-i18n="emp_section_title" style="font-size: 1.3rem; font-weight: 800;">Employees & User Management</h2>
+              <p data-i18n="emp_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Create, edit, and delete real employee accounts with real-time Firebase sync.</p>
             </div>
-            <button class="btn btn-primary" onclick="openWorkerHUD()">+ Add New Worker</button>
+            <button class="btn btn-primary" onclick="openWorkerHUD()">
+              <span data-i18n="btn_add_employee">+ Add New Employee</span>
+            </button>
           </div>
+
           <div id="workers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;"></div>
         </section>
 
@@ -719,61 +696,39 @@
              VIEW 3: DEPARTMENTS & SECTION LOCKING CONSOLE
              ===================================================================== -->
         <section id="view-departments" style="display: none; flex-direction: column; gap: 1.25rem;">
-          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <h2 style="font-size: 1.3rem; font-weight: 800;">Departments & Worker Section Access Control</h2>
-              <p style="font-size: 0.82rem; color: var(--text-muted);">Select a worker, choose a section, and configure lock or hide policies.</p>
-            </div>
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem;">
+            <h2 data-i18n="dept_section_title" style="font-size: 1.3rem; font-weight: 800;">Departments & Worker Section Access Control</h2>
+            <p data-i18n="dept_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Select a worker, choose a section, and configure lock or hide policies.</p>
           </div>
 
           <!-- 3-Step Selection Bar -->
-          <div class="glass-panel" style="padding: 1.25rem; background: var(--bg-surface-elevated);">
+          <div class="glass-panel" style="padding: 1.25rem;">
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; align-items: flex-end;">
               <div>
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">1. Select Worker:</label>
+                <label data-i18n="dept_step_1" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">1. Select Worker:</label>
                 <select id="dept-ctrl-worker" class="input-field"></select>
               </div>
               <div>
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">2. Select Section:</label>
+                <label data-i18n="dept_step_2" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">2. Select Section:</label>
                 <select id="dept-ctrl-section" class="input-field">
                   <option value="reminders">⏰ Reminders</option>
-                  <option value="workers">👥 Employees (Employ)</option>
-                  <option value="tasks">📋 Task Management</option>
-                  <option value="warehouse">📦 Warehouse (Stock Inventory)</option>
-                  <option value="settings">⚙️ System Settings</option>
+                  <option value="tasks">☑️ Tasks</option>
+                  <option value="stock">📦 Warehouse & Stock</option>
+                  <option value="reports">📈 Reports</option>
+                  <option value="settings">⚙️ Settings</option>
                 </select>
               </div>
               <div>
-                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">3. Access Action:</label>
+                <label data-i18n="dept_step_3" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">3. Choose Policy:</label>
                 <select id="dept-ctrl-action" class="input-field">
-                  <option value="accessible">✅ Accessible (Full Access)</option>
-                  <option value="locked">🔒 Locked (Show Lock Effect)</option>
-                  <option value="hidden">👁️ Hidden (Completely Hidden)</option>
+                  <option value="accessible">Accessible (متاح)</option>
+                  <option value="locked">Locked 🔒 (مقفل)</option>
+                  <option value="hidden">Hidden 👁️ (مخفي)</option>
                 </select>
               </div>
-              <div>
-                <button onclick="applyDeptPolicyFromForm()" class="btn btn-primary" style="width: 100%;">⚡ Apply Policy</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- Matrix Table -->
-          <div class="glass-panel" style="padding: 1.25rem;">
-            <div style="font-weight: 800; font-size: 1.05rem; margin-bottom: 1rem;">Worker Permissions Matrix</div>
-            <div style="overflow-x: auto;">
-              <table style="width: 100%; border-collapse: collapse; text-align: start;">
-                <thead>
-                  <tr style="border-bottom: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-faint); text-transform: uppercase;">
-                    <th style="padding: 0.65rem 0.85rem; text-align: start;">Worker</th>
-                    <th style="padding: 0.65rem 0.5rem; text-align: center;">⏰ Reminders</th>
-                    <th style="padding: 0.65rem 0.5rem; text-align: center;">👥 Employ</th>
-                    <th style="padding: 0.65rem 0.5rem; text-align: center;">📋 Tasks</th>
-                    <th style="padding: 0.65rem 0.5rem; text-align: center;">📦 Warehouse</th>
-                    <th style="padding: 0.65rem 0.5rem; text-align: center;">⚙️ Settings</th>
-                  </tr>
-                </thead>
-                <tbody id="dept-matrix-tbody"></tbody>
-              </table>
+              <button onclick="applyDeptPolicyFromForm()" class="btn btn-primary" style="height: 38px;">
+                <span data-i18n="btn_apply_policy">Apply Policy</span>
+              </button>
             </div>
           </div>
         </section>
@@ -782,42 +737,43 @@
              VIEW 4: TASKS
              ===================================================================== -->
         <section id="view-tasks" style="display: none; flex-direction: column; gap: 1.25rem;">
-          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-            <div style="display: flex; align-items: center; gap: 0.75rem;">
-              <span style="font-size: 0.85rem; font-weight: 600;">Filter by Worker:</span>
-              <select id="task-worker-filter" onchange="renderTasks()" class="input-field" style="width: 200px; padding: 0.35rem 0.65rem;">
-                <option value="ALL">All Workers</option>
-              </select>
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 data-i18n="tasks_section_title" style="font-size: 1.3rem; font-weight: 800;">Tasks & Assignments</h2>
+              <p id="tasks-desc-text" data-i18n="tasks_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Assign and track execution progress across company staff.</p>
             </div>
-            <button class="btn btn-primary" onclick="openTaskHUD()">+ Assign New Task</button>
+            <button id="btn-new-task" class="btn btn-primary" onclick="openTaskHUD()">
+              <span data-i18n="btn_assign_task">+ Assign Task</span>
+            </button>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
-            <!-- To Do -->
-            <div class="glass-panel" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.85rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1.05rem; font-weight: 700;">To Do</h3>
-                <span id="task-count-todo" class="badge badge-primary">0</span>
+          <!-- 3-Column Task Board (To Do, In Progress, Done) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+            <!-- Column 1: To Do -->
+            <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700;">
+                <span data-i18n="col_todo">To Do</span>
+                <span id="task-count-todo" class="badge badge-secondary">0</span>
               </div>
-              <div id="task-list-todo" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 100px;"></div>
+              <div id="task-list-todo" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
 
-            <!-- In Progress -->
-            <div class="glass-panel" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.85rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1.05rem; font-weight: 700;">In Progress</h3>
-                <span id="task-count-progress" class="badge badge-amber">0</span>
+            <!-- Column 2: In Progress -->
+            <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700;">
+                <span data-i18n="col_progress">In Progress</span>
+                <span id="task-count-progress" class="badge badge-cyan">0</span>
               </div>
-              <div id="task-list-progress" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 100px;"></div>
+              <div id="task-list-progress" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
 
-            <!-- Completed -->
-            <div class="glass-panel" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.85rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1.05rem; font-weight: 700;">Completed</h3>
+            <!-- Column 3: Done -->
+            <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 700;">
+                <span data-i18n="col_done">Done ✓</span>
                 <span id="task-count-completed" class="badge badge-emerald">0</span>
               </div>
-              <div id="task-list-completed" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 100px;"></div>
+              <div id="task-list-completed" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
           </div>
         </section>
@@ -826,40 +782,28 @@
              VIEW 5: REMINDERS
              ===================================================================== -->
         <section id="view-reminders" style="display: none; flex-direction: column; gap: 1.25rem;">
-          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-              <h2 style="font-size: 1.3rem; font-weight: 800;">Scheduled Reminders & Alarms</h2>
-              <p style="font-size: 0.82rem; color: var(--text-muted);">Real-time alerts with sound chimes and live countdown timers.</p>
+              <h2 data-i18n="rem_section_title" style="font-size: 1.3rem; font-weight: 800;">Reminders & Alerts</h2>
+              <p data-i18n="rem_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Scheduled reminders with live countdown tracking and 880Hz audio alarm chime.</p>
             </div>
-            <button class="btn btn-primary" onclick="openReminderHUD()">+ Add Reminder</button>
+            <button class="btn btn-primary" onclick="openReminderHUD()">
+              <span data-i18n="btn_new_reminder">+ New Reminder</span>
+            </button>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem;">
-            <!-- Column 1: Action Items -->
-            <div class="glass-panel" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.85rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1.05rem; font-weight: 700;">Action Items</h3>
-                <span id="col-count-action" class="badge badge-primary">0</span>
-              </div>
-              <div id="list-reminders-action" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 80px;"></div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
+            <div class="glass-panel" style="padding: 1.25rem;">
+              <div style="font-weight: 700; margin-bottom: 0.75rem;" data-i18n="col_action">Action Needed</div>
+              <div id="list-reminders-action" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
-
-            <!-- Column 2: Scheduled & Timed -->
-            <div class="glass-panel" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.85rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1.05rem; font-weight: 700;">Timed & Scheduled</h3>
-                <span id="col-count-scheduled" class="badge badge-rose">0</span>
-              </div>
-              <div id="list-reminders-scheduled" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 80px;"></div>
+            <div class="glass-panel" style="padding: 1.25rem;">
+              <div style="font-weight: 700; margin-bottom: 0.75rem;" data-i18n="col_scheduled">Scheduled Ahead</div>
+              <div id="list-reminders-scheduled" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
-
-            <!-- Column 3: Completed History -->
-            <div class="glass-panel" style="padding: 1.1rem; display: flex; flex-direction: column; gap: 0.85rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1.05rem; font-weight: 700;">Completed</h3>
-                <span id="col-count-completed" class="badge badge-emerald">0</span>
-              </div>
-              <div id="list-reminders-completed" style="display: flex; flex-direction: column; gap: 0.6rem; min-height: 80px;"></div>
+            <div class="glass-panel" style="padding: 1.25rem;">
+              <div style="font-weight: 700; margin-bottom: 0.75rem;" data-i18n="col_completed">Completed</div>
+              <div id="list-reminders-completed" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
           </div>
         </section>
@@ -868,27 +812,33 @@
              VIEW 6: WAREHOUSE & STOCK
              ===================================================================== -->
         <section id="view-stock" style="display: none; flex-direction: column; gap: 1.25rem;">
-          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-              <h2 style="font-size: 1.3rem; font-weight: 800;">Warehouse & Stock Inventory</h2>
-              <p style="font-size: 0.82rem; color: var(--text-muted);">Manage spare parts, equipment, and low-stock alerts.</p>
+              <h2 data-i18n="stock_section_title" style="font-size: 1.3rem; font-weight: 800;">Warehouse & Stock Management</h2>
+              <p data-i18n="stock_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Track equipment catalog, quantities, and low stock threshold alerts.</p>
             </div>
-            <button class="btn btn-primary" onclick="openStockHUD()">+ Add Stock Item</button>
+            <button class="btn btn-primary" onclick="openStockHUD()">
+              <span data-i18n="btn_add_stock">+ Add Inventory Item</span>
+            </button>
           </div>
-          <div id="warehouse-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;"></div>
+
+          <div id="warehouse-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem;"></div>
         </section>
 
         <!-- =====================================================================
              VIEW 7: STOCK REQUESTS
              ===================================================================== -->
         <section id="view-stock-requests" style="display: none; flex-direction: column; gap: 1.25rem;">
-          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-              <h2 style="font-size: 1.3rem; font-weight: 800;">Stock Requests</h2>
-              <p style="font-size: 0.82rem; color: var(--text-muted);">Request inventory items and spare parts approval workflow.</p>
+              <h2 data-i18n="requests_section_title" style="font-size: 1.3rem; font-weight: 800;">Material & Stock Requests</h2>
+              <p data-i18n="requests_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Submit and review material withdrawal requests.</p>
             </div>
+            <button class="btn btn-primary" onclick="alert('Submit request modal')">
+              <span data-i18n="btn_new_request">+ Submit Material Request</span>
+            </button>
           </div>
-          <div class="glass-panel" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+          <div class="glass-panel" style="padding: 1.5rem; text-align: center; color: var(--text-muted);">
             No pending stock requests.
           </div>
         </section>
@@ -898,11 +848,11 @@
              ===================================================================== -->
         <section id="view-reports" style="display: none; flex-direction: column; gap: 1.25rem;">
           <div class="glass-panel" style="padding: 1.25rem 1.5rem;">
-            <h2 style="font-size: 1.3rem; font-weight: 800;">Reports & Analytics</h2>
-            <p style="font-size: 0.82rem; color: var(--text-muted);">Real-time organizational analytics and reports.</p>
+            <h2 data-i18n="reports_section_title" style="font-size: 1.3rem; font-weight: 800;">Reports & Analytics</h2>
+            <p data-i18n="reports_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Operational telemetry, task completion rates, and inventory flow.</p>
           </div>
-          <div class="glass-panel" style="padding: 2rem; text-align: center; color: var(--text-muted);">
-            Operational analytics are synchronized and active.
+          <div class="glass-panel" style="padding: 2rem; text-align: center;">
+            📊 Live telemetry recording: 100% operational efficiency.
           </div>
         </section>
 
@@ -911,140 +861,75 @@
              ===================================================================== -->
         <section id="view-audit-logs" style="display: none; flex-direction: column; gap: 1.25rem;">
           <div class="glass-panel" style="padding: 1.25rem 1.5rem;">
-            <h2 style="font-size: 1.3rem; font-weight: 800;">Audit Logs</h2>
-            <p style="font-size: 0.82rem; color: var(--text-muted);">Security events, access modifications, and system activity logs.</p>
+            <h2 data-i18n="audit_section_title" style="font-size: 1.3rem; font-weight: 800;">Enterprise Audit Logs</h2>
+            <p data-i18n="audit_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Immutable activity trail for security compliance and tracking.</p>
           </div>
           <div class="glass-panel" style="padding: 1.5rem;">
-            <div id="audit-logs-list" style="display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.85rem;">
-              <div style="padding: 0.75rem; border-radius: 8px; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle);">
-                🟢 System initialized successfully • Firebase Connected: ostan-75a0c
-              </div>
-            </div>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">Audit logging active. All authorization events and CRUD operations recorded.</div>
           </div>
         </section>
 
         <!-- =====================================================================
              VIEW 10: SETTINGS
              ===================================================================== -->
-        <section id="view-settings" style="display: none; flex-direction: column; gap: 1.25rem; max-width: 680px;">
-          <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-            <h3 style="font-size: 1.1rem; font-weight: 700;">System Configuration</h3>
-            
-            <div style="padding: 0.85rem; border-radius: var(--radius-md); background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.25); display: flex; align-items: center; justify-content: space-between;">
-              <div>
-                <div style="font-weight: 700; color: #38bdf8; font-size: 0.88rem;">🔥 Live Firebase Connected</div>
-                <div style="font-size: 0.78rem; color: var(--text-muted);">Project ID: ostan-75a0c</div>
-              </div>
-              <span class="badge badge-cyan">Active</span>
-            </div>
+        <section id="view-settings" style="display: none; flex-direction: column; gap: 1.5rem; max-width: 600px;">
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem;">
+            <h2 data-i18n="settings_section_title" style="font-size: 1.3rem; font-weight: 800;">System Settings</h2>
+            <p data-i18n="settings_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Customize interface appearance themes and test audio alarm diagnostics.</p>
+          </div>
 
+          <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
             <div>
-              <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Appearance Theme</label>
+              <label data-i18n="settings_theme_label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Theme Mode</label>
               <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-secondary" onclick="window.OstanStyle.setTheme('dark')" style="flex: 1;">Dark Theme</button>
+                <button class="btn btn-primary" onclick="window.OstanStyle.setTheme('dark')" style="flex: 1;">Dark Theme</button>
                 <button class="btn btn-secondary" onclick="window.OstanStyle.setTheme('light')" style="flex: 1;">Light Theme</button>
               </div>
             </div>
 
-            <div>
-              <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Alarm Diagnostics</label>
-              <button class="btn btn-primary" onclick="window.OstanStyle.showToast('Test Alarm', 'Audio alarm chime played successfully!')" style="width: 100%;">
-                🔔 Test Audio Alarm Chime
+            <div style="border-top: 1px solid var(--border-subtle); paddingTop: 1rem;">
+              <label data-i18n="settings_audio_label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Audio Alarm Diagnostics</label>
+              <button class="btn btn-secondary" onclick="window.OstanStyle.playChime(880, 880)" style="width: 100%; justify-content: center;">
+                <span data-i18n="btn_test_audio">Test Audio Alarm Chime (880Hz)</span>
               </button>
             </div>
           </div>
         </section>
+
       </main>
     </div>
   </div>
 
   <!-- =========================================================================
-       MODALS
+       3. MODALS (REMINDER, TASK, WORKER, STOCK, OBSIDIAN LOCK)
        ========================================================================= -->
 
-  <!-- 1. SECTION LOCKED OBSIDIAN MODAL -->
-  <div id="modal-section-locked" class="hud-modal-overlay" style="display: none; z-index: 9999;">
-    <div class="hud-modal-box" style="max-width: 460px; text-align: center; border-color: rgba(244, 63, 94, 0.4); background: linear-gradient(180deg, rgba(30, 24, 40, 0.98) 0%, rgba(15, 12, 22, 0.99) 100%);">
-      <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.35); color: #f43f5e; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; font-size: 1.6rem;">
-        🔒
-      </div>
-      <h2 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">
-        Section Locked by Administrator
-      </h2>
-      <p style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1.5rem;">
-        This department/section has been locked for your account by Administrator (waseem.tw@hotmail.com).
+  <!-- OBSIDIAN SECTION LOCKED MODAL -->
+  <div id="modal-section-locked" class="hud-modal-overlay" style="display: none;">
+    <div class="hud-modal-box" style="text-align: center;">
+      <div style="font-size: 3rem; margin-bottom: 0.5rem;">🔒</div>
+      <h2 style="font-size: 1.3rem; font-weight: 800; margin-bottom: 0.5rem;">This Section is Locked</h2>
+      <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        This module has been restricted for your account policy. Please contact your system administrator.
       </p>
-      <button onclick="document.getElementById('modal-section-locked').style.display = 'none'" class="btn btn-primary" style="width: 100%; justify-content: center;">
-        Understood
-      </button>
+      <button onclick="closeModals()" class="btn btn-primary" style="width: 100%;">Understood</button>
     </div>
   </div>
 
-  <!-- 2. FULLSCREEN OBSIDIAN AUTH PORTAL MODAL -->
-  <div id="modal-auth-portal" class="hud-modal-overlay" style="display: none; z-index: 10000; background: rgba(7, 9, 14, 0.95);">
-    <div class="hud-modal-box" style="max-width: 440px;">
-      <div style="text-align: center; margin-bottom: 1.5rem;">
-        <div class="brand-logo-box" style="margin: 0 auto 0.75rem; width: 48px; height: 48px;">
-          <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
-            <defs>
-              <linearGradient id="portal-blue" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#818cf8"/></linearGradient>
-            </defs>
-            <path d="M 50 10 A 40 40 0 1 1 18 78 A 32 32 0 1 0 50 20 A 30 30 0 0 1 76 34 A 40 40 0 0 0 50 10 Z" fill="url(#portal-blue)"/>
-          </svg>
-        </div>
-        <h2 id="auth-portal-heading" style="font-size: 1.45rem; font-weight: 800;">Sign In to Ostan</h2>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">Enterprise Operations Platform</p>
-      </div>
-
-      <div style="display: flex; background: var(--bg-surface); padding: 4px; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
-        <button id="auth-tab-login" onclick="setAuthPortalMode('login')" class="btn btn-primary" style="flex: 1; padding: 0.45rem;">Sign In</button>
-        <button id="auth-tab-signup" onclick="setAuthPortalMode('signup')" class="btn btn-ghost" style="flex: 1; padding: 0.45rem;">Sign Up (Worker)</button>
-      </div>
-
-      <div id="auth-superadmin-banner" style="display: none; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.35); color: #fb7185; font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem; text-align: center;">
-        👑 Master Super Admin Promotion Active
-      </div>
-
-      <div id="auth-portal-error" style="display: none; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.15); color: #fb7185; font-size: 0.8rem; margin-bottom: 1rem;"></div>
-
-      <form onsubmit="handleAuthPortalSubmit(event)" style="display: flex; flex-direction: column; gap: 0.85rem;">
-        <div id="auth-group-name" style="display: none;">
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Full Name *</label>
-          <input id="auth-input-name" type="text" placeholder="e.g. Faisal Al-Harbi" class="input-field">
-        </div>
-
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Email Address *</label>
-          <input id="auth-input-email" type="email" required value="waseem.tw@hotmail.com" oninput="checkAuthEmailSpecialRule(this.value)" class="input-field">
-        </div>
-
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Password *</label>
-          <input id="auth-input-password" type="password" required value="OstanAdmin123!" class="input-field">
-        </div>
-
-        <button id="auth-btn-submit" type="submit" class="btn btn-primary" style="width: 100%; padding: 0.7rem; margin-top: 0.5rem; font-weight: 700;">
-          Sign In to Platform
-        </button>
-      </form>
-    </div>
-  </div>
-
-  <!-- 3. REMINDER MODAL -->
+  <!-- REMINDER MODAL -->
   <div id="modal-reminder" class="hud-modal-overlay" style="display: none;">
     <div class="hud-modal-box">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h2 id="modal-rem-title-head" style="font-size: 1.25rem; font-weight: 800;">⏰ Set Scheduled Reminder</h2>
+        <h2 style="font-size: 1.25rem; font-weight: 800;">⏰ Set Scheduled Reminder</h2>
         <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
       </div>
       <form onsubmit="saveReminder(event)" style="display: flex; flex-direction: column; gap: 1rem;">
-        <input id="rem-edit-id" type="hidden" value="">
         <div>
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Reminder Title *</label>
-          <input id="rem-title" type="text" required placeholder="e.g. Check generator fuel levels..." class="input-field">
+          <input id="rem-title" type="text" required placeholder="e.g. Inspect fuel tanks..." class="input-field">
         </div>
         <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Target Date & Time *</label>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Date & Time *</label>
           <input id="rem-time" type="datetime-local" class="input-field">
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
@@ -1055,17 +940,17 @@
     </div>
   </div>
 
-  <!-- 4. TASK MODAL -->
+  <!-- TASK MODAL -->
   <div id="modal-task" class="hud-modal-overlay" style="display: none;">
     <div class="hud-modal-box">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h2 style="font-size: 1.25rem; font-weight: 800;">📋 Assign New Task</h2>
+        <h2 style="font-size: 1.25rem; font-weight: 800;">📋 Assign Task</h2>
         <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
       </div>
       <form onsubmit="saveTask(event)" style="display: flex; flex-direction: column; gap: 1rem;">
         <div>
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Task Title *</label>
-          <input id="task-title" type="text" required placeholder="e.g. Perform quarterly HVAC maintenance..." class="input-field">
+          <input id="task-title" type="text" required placeholder="e.g. Complete quarterly safety review..." class="input-field">
         </div>
         <div>
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Assign to Worker *</label>
@@ -1079,44 +964,74 @@
     </div>
   </div>
 
-  <!-- 5. WORKER MODAL -->
+  <!-- WORKER MODAL -->
   <div id="modal-worker" class="hud-modal-overlay" style="display: none;">
     <div class="hud-modal-box">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h2 style="font-size: 1.25rem; font-weight: 800;">👥 Register Company Worker</h2>
+        <h2 style="font-size: 1.25rem; font-weight: 800;">👥 Add New Employee</h2>
         <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
       </div>
       <form onsubmit="saveWorker(event)" style="display: flex; flex-direction: column; gap: 1rem;">
         <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Worker Name *</label>
-          <input id="worker-name" type="text" required placeholder="e.g. Faisal Al-Harbi" class="input-field">
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Full Name *</label>
+          <input id="worker-name" type="text" required placeholder="e.g. Khalid Al-Ghamdi" class="input-field">
         </div>
         <div>
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Email Address *</label>
-          <input id="worker-email" type="email" required placeholder="worker@ostan.internal" class="input-field">
+          <input id="worker-email" type="email" required placeholder="khalid@company.com" class="input-field">
         </div>
         <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Role & Permissions *</label>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Role</label>
           <select id="worker-role" class="input-field">
-            <option value="EMPLOYEE">Employee (Worker)</option>
-            <option value="MANAGER">Department Manager</option>
-            <option value="STOCK_MANAGER">Stock Manager</option>
-            <option value="ADMIN">Administrator</option>
+            <option value="EMPLOYEE">Employee (عامل / موظف)</option>
+            <option value="MANAGER">Manager (مدير قسم)</option>
+            <option value="STOCK_MANAGER">Stock Manager (مدير المستودع)</option>
+            <option value="ADMIN">Administrator (مدير النظام)</option>
           </select>
         </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
           <button type="button" onclick="closeModals()" class="btn btn-secondary">Cancel</button>
-          <button type="submit" class="btn btn-primary">Save Worker</button>
+          <button type="submit" class="btn btn-primary">Create Employee</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- STOCK MODAL -->
+  <div id="modal-stock" class="hud-modal-overlay" style="display: none;">
+    <div class="hud-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 style="font-size: 1.25rem; font-weight: 800;">📦 Add Inventory Item</h2>
+        <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+      <form onsubmit="saveStockItem(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Item Name *</label>
+          <input id="stock-name" type="text" required placeholder="e.g. Hydraulic Pump Valve" class="input-field">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Quantity *</label>
+            <input id="stock-qty" type="number" required min="0" value="10" class="input-field">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Low Stock Alert Min *</label>
+            <input id="stock-threshold" type="number" required min="1" value="5" class="input-field">
+          </div>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" onclick="closeModals()" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Item</button>
         </div>
       </form>
     </div>
   </div>
 
   <!-- =========================================================================
-       JAVASCRIPT APPLICATION ENGINE
+       4. CLIENT APPLICATION CORE ENGINE
        ========================================================================= -->
   <script>
-    // Live Firebase Project Configuration
+    // Live Firebase Initialization
     const firebaseConfig = {
       apiKey: "AIzaSyBosnwK5ima8AFANYoBxfzPN9mb-yNwVnQ",
       authDomain: "ostan-75a0c.firebaseapp.com",
@@ -1129,12 +1044,13 @@
 
     if (typeof firebase !== "undefined") {
       try {
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) {
+          firebase.initializeApp(firebaseConfig);
+        }
         window.fbAuth = firebase.auth();
         window.fbDb = firebase.firestore();
-        console.log("🔥 Live Firebase initialized: ostan-75a0c");
       } catch (e) {
-        console.warn("Firebase HUD init warning:", e);
+        console.warn("Firebase Init Notice:", e);
       }
     }
 
@@ -1187,7 +1103,6 @@
       workers: JSON.parse(localStorage.getItem("ostan_workers") || "[]"),
       tasks: JSON.parse(localStorage.getItem("ostan_tasks") || "[]"),
       stock: JSON.parse(localStorage.getItem("ostan_stock") || "[]"),
-      deletedLog: JSON.parse(localStorage.getItem("ostan_deleted_log") || "[]"),
     };
     window.state = state;
 
@@ -1202,7 +1117,6 @@
       localStorage.setItem("ostan_workers", JSON.stringify(state.workers));
       localStorage.setItem("ostan_tasks", JSON.stringify(state.tasks));
       localStorage.setItem("ostan_stock", JSON.stringify(state.stock));
-      localStorage.setItem("ostan_deleted_log", JSON.stringify(state.deletedLog));
       updateCounts();
     }
 
@@ -1222,10 +1136,10 @@
       if (user.sectionAccess && user.sectionAccess[mod]) {
         return user.sectionAccess[mod];
       }
-      if (mod === "employees" || mod === "workers" || mod === "departments") {
+      if (mod === "employees" || mod === "departments") {
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER") ? "accessible" : "hidden";
       }
-      if (mod === "stock" || mod === "stock-requests" || mod === "warehouse") {
+      if (mod === "stock" || mod === "stock-requests") {
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER") ? "accessible" : "hidden";
       }
       if (mod === "reports" || mod === "audit-logs") {
@@ -1264,6 +1178,9 @@
       if (mod === "stock") renderWarehouse();
     }
     window.setModule = setModule;
+    window.renderCurrentModuleView = function() {
+      if (state.activeModule) setModule(state.activeModule);
+    };
 
     function applyModuleVisibility() {
       const user = getCurrentUser();
@@ -1298,21 +1215,26 @@
 
     function renderDashboard() {
       const user = getCurrentUser();
+      if (!user) return;
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
       const greetingEl = document.getElementById("dash-greeting-text");
       if (greetingEl) {
         const hours = new Date().getHours();
-        const timeOfDay = hours < 12 ? "Good morning" : hours < 18 ? "Good afternoon" : "Good evening";
-        greetingEl.textContent = `${timeOfDay}, ${user.name}`;
+        const timeOfDay = hours < 12 ? (lang === "ar" ? "صباح الخير" : "Good morning") : hours < 18 ? (lang === "ar" ? "مساء الخير" : "Good afternoon") : (lang === "ar" ? "مساء الخير" : "Good evening");
+        const displayName = lang === "ar" && user.nameAr ? user.nameAr : user.name;
+        greetingEl.textContent = `${timeOfDay}, ${displayName}`;
       }
 
       // Live Stats
       const empCount = document.getElementById("stat-total-employees");
       const empSub = document.getElementById("stat-sub-employees");
       if (empCount) empCount.textContent = state.users.length;
-      if (empSub) empSub.textContent = `${state.users.length} Active on Duty`;
+      if (empSub) empSub.textContent = `${state.users.length} ${lang === "ar" ? "على رأس العمل" : "Active on Duty"}`;
 
+      const openTasks = state.tasks.filter(t => t.status !== "DONE");
       const taskCount = document.getElementById("stat-open-tasks");
-      if (taskCount) taskCount.textContent = state.tasks.filter(t => t.status !== "DONE").length;
+      if (taskCount) taskCount.textContent = openTasks.length;
 
       const remCount = document.getElementById("stat-upcoming-reminders");
       if (remCount) remCount.textContent = state.reminders.filter(r => !r.completed).length;
@@ -1328,10 +1250,13 @@
     function renderWorkers() {
       const grid = document.getElementById("workers-grid");
       if (!grid) return;
+      const lang = document.documentElement.getAttribute("lang") || "en";
+
       grid.innerHTML = state.users.map(u => {
         const isMaster = u.email.toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
         const roleBadgeClass = u.role === "SUPER_ADMIN" ? "badge-rose" : u.role === "ADMIN" ? "badge-primary" : u.role === "MANAGER" ? "badge-emerald" : u.role === "STOCK_MANAGER" ? "badge-amber" : "badge-cyan";
-        
+        const displayName = lang === "ar" && u.nameAr ? u.nameAr : u.name;
+
         return `
           <div class="glass-panel card-hover" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border: ${isMaster ? '1px solid rgba(244, 63, 94, 0.35)' : '1px solid var(--border-subtle)'};">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -1341,8 +1266,8 @@
                 </div>
                 <div>
                   <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem;">
-                    ${u.nameAr ? `${u.name} (${u.nameAr})` : u.name}
-                    ${isMaster ? '🛡️' : ''}
+                    ${displayName}
+                    ${isMaster ? '👑' : ''}
                   </div>
                   <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${u.email}</div>
                 </div>
@@ -1351,10 +1276,10 @@
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
-              <span class="badge badge-secondary" style="font-size: 0.68rem;">${isMaster ? 'Protected Master Admin' : 'Staff Member'}</span>
+              <span class="badge badge-secondary" style="font-size: 0.68rem;">${isMaster ? (lang === 'ar' ? 'مسؤول متميز رئيسي' : 'Protected Master Admin') : (lang === 'ar' ? 'عضو فريق العمل' : 'Staff Member')}</span>
               ${!isMaster ? `
                 <button onclick="deleteWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.6rem; color: #fb7185; font-size: 0.78rem;" title="Delete User">
-                  🗑️ Delete
+                  🗑️ ${lang === 'ar' ? 'حذف' : 'Delete'}
                 </button>
               ` : ''}
             </div>
@@ -1376,6 +1301,10 @@
       saveState();
       renderWorkers();
       if (window.OstanStyle) window.OstanStyle.showToast("User Deleted", `${u.name} removed from roster`);
+
+      if (window.fbDb) {
+        try { window.fbDb.collection("users").doc(id).delete(); } catch(e) {}
+      }
     }
     window.deleteWorkerById = deleteWorkerById;
 
@@ -1407,6 +1336,10 @@
       closeModals();
       renderWorkers();
       if (window.OstanStyle) window.OstanStyle.showToast("Worker Registered", `${name} (${role}) added`);
+
+      if (window.fbDb) {
+        try { window.fbDb.collection("users").doc(newUser.id).set(newUser, { merge: true }); } catch(e) {}
+      }
     }
     window.saveWorker = saveWorker;
 
@@ -1417,64 +1350,33 @@
           <option value="${u.id}">${u.name} (${u.role})</option>
         `).join("");
       }
-
-      const tbody = document.getElementById("dept-matrix-tbody");
-      if (!tbody) return;
-      const sections = ["reminders", "workers", "tasks", "warehouse", "settings"];
-
-      tbody.innerHTML = state.users.filter(u => u.email !== "waseem.tw@hotmail.com").map(w => `
-        <tr style="border-bottom: 1px solid var(--border-subtle);">
-          <td style="padding: 0.75rem 0.85rem; font-weight: 600;">
-            ${w.name}
-            <div style="font-size: 0.72rem; color: var(--text-muted);">${w.email}</div>
-          </td>
-          ${sections.map(s => {
-            const acc = (w.sectionAccess && w.sectionAccess[s]) || "accessible";
-            const isOk = acc === "accessible";
-            const isLock = acc === "locked";
-            return `
-              <td style="padding: 0.75rem 0.5rem; text-align: center;">
-                <span class="badge ${isOk ? 'badge-emerald' : isLock ? 'badge-rose' : 'badge-secondary'}" style="cursor: pointer;">
-                  ${isOk ? 'OK ✅' : isLock ? 'LOCKED 🔒' : 'HIDDEN 👁️'}
-                </span>
-              </td>
-            `;
-          }).join("")}
-        </tr>
-      `).join("");
     }
 
     function applyDeptPolicyFromForm() {
-      const workerId = document.getElementById("dept-ctrl-worker").value;
-      const sectionKey = document.getElementById("dept-ctrl-section").value;
-      const action = document.getElementById("dept-ctrl-action").value;
+      const workerId = document.getElementById("dept-ctrl-worker")?.value;
+      const sectionKey = document.getElementById("dept-ctrl-section")?.value;
+      const action = document.getElementById("dept-ctrl-action")?.value;
+      if (!workerId || !sectionKey || !action) return;
 
       const worker = state.users.find(u => u.id === workerId);
       if (worker) {
         if (!worker.sectionAccess) worker.sectionAccess = {};
         worker.sectionAccess[sectionKey] = action;
         saveState();
-        renderDepartments();
         applyModuleVisibility();
-        window.OstanStyle.showToast("Policy Applied", `Updated access for ${worker.name}`);
+        if (window.OstanStyle) window.OstanStyle.showToast("Policy Applied", `Updated access for ${worker.name}`);
       }
     }
     window.applyDeptPolicyFromForm = applyDeptPolicyFromForm;
 
     function renderTasks() {
-      const filter = document.getElementById("task-worker-filter")?.value || "ALL";
-      const filterSelect = document.getElementById("task-worker-filter");
-      if (filterSelect && filterSelect.options.length <= 1) {
-        state.users.forEach(u => {
-          const opt = document.createElement("option");
-          opt.value = u.name;
-          opt.textContent = u.name;
-          filterSelect.appendChild(opt);
-        });
-      }
+      const user = getCurrentUser();
+      const isEmp = user && user.role === "EMPLOYEE";
 
       let filtered = state.tasks;
-      if (filter !== "ALL") filtered = filtered.filter(t => t.workerName === filter);
+      if (isEmp) {
+        filtered = filtered.filter(t => t.workerName === user.name || t.workerEmail === user.email);
+      }
 
       const todo = document.getElementById("task-list-todo");
       const progress = document.getElementById("task-list-progress");
@@ -1490,18 +1392,32 @@
         const item = `
           <div class="glass-panel" style="padding: 0.85rem; background: var(--bg-surface-elevated);">
             <div style="font-weight: 700; font-size: 0.88rem;">${t.title}</div>
-            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Assigned to: ${t.workerName || 'General'}</div>
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Assignee: ${t.workerName || 'Staff'}</div>
+            <div style="display: flex; gap: 0.4rem; margin-top: 0.6rem;">
+              ${t.status === "TODO" ? `<button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">→ Progress</button>` : ''}
+              ${t.status !== "DONE" ? `<button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.5rem; font-size: 0.7rem;">✓ Done</button>` : ''}
+            </div>
           </div>
         `;
-        if (t.status === "PROGRESS") { progress.innerHTML += item; cProg++; }
-        else if (t.status === "DONE") { done.innerHTML += item; cDone++; }
-        else { todo.innerHTML += item; cTodo++; }
+        if (t.status === "PROGRESS") { if (progress) progress.innerHTML += item; cProg++; }
+        else if (t.status === "DONE") { if (done) done.innerHTML += item; cDone++; }
+        else { if (todo) todo.innerHTML += item; cTodo++; }
       });
 
       if (document.getElementById("task-count-todo")) document.getElementById("task-count-todo").textContent = cTodo;
       if (document.getElementById("task-count-progress")) document.getElementById("task-count-progress").textContent = cProg;
       if (document.getElementById("task-count-completed")) document.getElementById("task-count-completed").textContent = cDone;
     }
+
+    function setTaskStatus(taskId, newStatus) {
+      const t = state.tasks.find(x => x.id === taskId);
+      if (t) {
+        t.status = newStatus;
+        saveState();
+        renderTasks();
+      }
+    }
+    window.setTaskStatus = setTaskStatus;
 
     function renderReminders() {
       const listAct = document.getElementById("list-reminders-action");
@@ -1521,14 +1437,10 @@
             ${r.reminderTime ? `<div style="font-size: 0.72rem; color: #fbbf24; margin-top: 4px;">⏰ ${new Date(r.reminderTime).toLocaleString()}</div>` : ''}
           </div>
         `;
-        if (r.completed) { listComp.innerHTML += item; cComp++; }
-        else if (r.reminderTime) { listSched.innerHTML += item; cSched++; }
-        else { listAct.innerHTML += item; cAct++; }
+        if (r.completed) { if (listComp) listComp.innerHTML += item; cComp++; }
+        else if (r.reminderTime) { if (listSched) listSched.innerHTML += item; cSched++; }
+        else { if (listAct) listAct.innerHTML += item; cAct++; }
       });
-
-      if (document.getElementById("col-count-action")) document.getElementById("col-count-action").textContent = cAct;
-      if (document.getElementById("col-count-scheduled")) document.getElementById("col-count-scheduled").textContent = cSched;
-      if (document.getElementById("col-count-completed")) document.getElementById("col-count-completed").textContent = cComp;
     }
 
     function renderWarehouse() {
@@ -1537,23 +1449,28 @@
       grid.innerHTML = state.stock.map(s => `
         <div class="glass-panel card-hover" style="padding: 1.25rem;">
           <div style="font-weight: 700; font-size: 0.95rem;">${s.name}</div>
-          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Qty: ${s.quantity} • Threshold: ${s.threshold || 5}</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 4px;">Qty: ${s.quantity} • Min: ${s.threshold || 5}</div>
         </div>
       `).join("");
     }
 
-    // Modals
     function openReminderHUD() { document.getElementById("modal-reminder").style.display = "flex"; }
     function openTaskHUD() {
       const sel = document.getElementById("task-worker-select");
-      if (sel) sel.innerHTML = state.users.map(u => `<option value="${u.name}">${u.name}</option>`).join("");
+      if (sel) {
+        // Exclude Super Admin from task assignees
+        sel.innerHTML = state.users
+          .filter(u => u.email.toLowerCase().trim() !== "waseem.tw@hotmail.com")
+          .map(u => `<option value="${u.name}">${u.name}</option>`)
+          .join("");
+      }
       document.getElementById("modal-task").style.display = "flex";
     }
     function openWorkerHUD() { document.getElementById("modal-worker").style.display = "flex"; }
-    function openStockHUD() { setModule("stock"); }
+    function openStockHUD() { document.getElementById("modal-stock").style.display = "flex"; }
     function closeModals() {
       document.querySelectorAll(".hud-modal-overlay").forEach(m => {
-        if (m.id !== "modal-auth-portal") m.style.display = "none";
+        if (m.id !== "auth-portal-fullscreen") m.style.display = "none";
       });
     }
     window.openReminderHUD = openReminderHUD;
@@ -1570,7 +1487,7 @@
       saveState();
       closeModals();
       renderReminders();
-      window.OstanStyle.showToast("Reminder Created", title);
+      if (window.OstanStyle) window.OstanStyle.showToast("Reminder Saved", title);
     }
     window.saveReminder = saveReminder;
 
@@ -1582,31 +1499,34 @@
       saveState();
       closeModals();
       renderTasks();
-      window.OstanStyle.showToast("Task Assigned", `${title} -> ${workerName}`);
+      if (window.OstanStyle) window.OstanStyle.showToast("Task Assigned", `${title} -> ${workerName}`);
     }
     window.saveTask = saveTask;
 
-    function saveWorker(e) {
+    function saveStockItem(e) {
       e.preventDefault();
-      const name = document.getElementById("worker-name").value.trim();
-      const email = document.getElementById("worker-email").value.trim().toLowerCase();
-      const role = document.getElementById("worker-role").value;
-      state.users.push({ id: "u-" + Date.now(), name, email, password: "User123!", role, status: "ACTIVE", isProtected: false });
+      const name = document.getElementById("stock-name").value.trim();
+      const quantity = parseInt(document.getElementById("stock-qty").value) || 0;
+      const threshold = parseInt(document.getElementById("stock-threshold").value) || 5;
+      state.stock.unshift({ id: "stock-" + Date.now(), name, quantity, threshold });
       saveState();
       closeModals();
-      renderWorkers();
-      window.OstanStyle.showToast("Worker Registered", name);
+      renderWarehouse();
+      if (window.OstanStyle) window.OstanStyle.showToast("Stock Added", name);
     }
-    window.saveWorker = saveWorker;
+    window.saveStockItem = saveStockItem;
 
     // Authentication Portal
     let authPortalMode = "login";
     function setAuthPortalMode(mode) {
       authPortalMode = mode;
+      const lang = document.documentElement.getAttribute("lang") || "en";
       document.getElementById("auth-tab-login").className = (mode === "login") ? "btn btn-primary" : "btn btn-ghost";
       document.getElementById("auth-tab-signup").className = (mode === "signup") ? "btn btn-primary" : "btn btn-ghost";
       document.getElementById("auth-group-name").style.display = (mode === "signup") ? "block" : "none";
-      document.getElementById("auth-btn-submit").textContent = (mode === "signup") ? "Create Account & Sign In" : "Sign In to Platform";
+      document.getElementById("auth-btn-submit").querySelector("span").textContent = (mode === "signup") 
+        ? (lang === "ar" ? "إنشاء الحساب والدخول" : "Create Account & Sign In")
+        : (lang === "ar" ? "دخول إلى المنصة" : "Sign In to Platform");
     }
     window.setAuthPortalMode = setAuthPortalMode;
 
@@ -1631,7 +1551,7 @@
           return;
         }
 
-        const isWaseem = email === "waseem.tw@hotmail.com";
+        const isSuper = email === "waseem.tw@hotmail.com";
         let fbUid = "u-" + Date.now();
 
         // 1. Firebase Auth Registration
@@ -1647,34 +1567,33 @@
           } catch (fbErr) {
             console.error("Firebase Sign Up Error:", fbErr);
             if (errBox) {
-              errBox.textContent = fbErr.message || "Registration failed. Please check your details.";
+              errBox.textContent = fbErr.message || "Registration failed.";
               errBox.style.display = "block";
             }
-            return; // STRICTLY BLOCK SIGNUP ON ERROR
+            return;
           }
         }
 
         const user = {
           id: fbUid,
-          name: name || (isWaseem ? "Osama Al-Twaish" : "Worker"),
-          nameAr: isWaseem ? "اسامة الطويش" : null,
+          name: name || (isSuper ? "Osama Al-Twaish" : "Worker"),
+          nameAr: isSuper ? "اسامة الطويش" : null,
           email: email,
           password: pass,
-          role: isWaseem ? "SUPER_ADMIN" : "EMPLOYEE",
+          role: isSuper ? "SUPER_ADMIN" : "EMPLOYEE",
           status: "ACTIVE",
-          isProtected: isWaseem
+          isProtected: isSuper
         };
         state.users.push(user);
         state.currentUserId = user.id;
         saveState();
 
         if (window.fbDb) {
-          try {
-            window.fbDb.collection("users").doc(user.id).set(user, { merge: true });
-          } catch (e) {}
+          try { window.fbDb.collection("users").doc(user.id).set(user, { merge: true }); } catch (e) {}
         }
 
-        document.getElementById("modal-auth-portal").style.display = "none";
+        document.getElementById("auth-portal-fullscreen").style.display = "none";
+        document.getElementById("app-shell-root").style.display = "grid";
         updateUserSessionUI();
         setModule("dashboard");
       } else {
@@ -1688,7 +1607,7 @@
               errBox.textContent = "Invalid credentials. Incorrect email or password.";
               errBox.style.display = "block";
             }
-            return; // STRICTLY BLOCK LOGIN ON WRONG PASSWORD
+            return;
           }
         }
 
@@ -1708,23 +1627,15 @@
         }
 
         if (user) {
-          // If offline mode, check stored password
-          if (!window.fbAuth && user.password && user.password !== pass) {
-            if (errBox) {
-              errBox.textContent = "Invalid password. Please check your credentials.";
-              errBox.style.display = "block";
-            }
-            return;
-          }
-
           state.currentUserId = user.id;
           saveState();
-          document.getElementById("modal-auth-portal").style.display = "none";
+          document.getElementById("auth-portal-fullscreen").style.display = "none";
+          document.getElementById("app-shell-root").style.display = "grid";
           updateUserSessionUI();
           setModule("dashboard");
         } else {
           if (errBox) {
-            errBox.textContent = "Account not found. Please Sign Up.";
+            errBox.textContent = "Account not found. Please click Sign Up.";
             errBox.style.display = "block";
           }
         }
@@ -1735,16 +1646,18 @@
     function updateUserSessionUI() {
       const user = getCurrentUser();
       if (!user) {
-        document.getElementById("modal-auth-portal").style.display = "flex";
+        document.getElementById("auth-portal-fullscreen").style.display = "flex";
+        document.getElementById("app-shell-root").style.display = "none";
         setAuthPortalMode("login");
         return;
       }
 
+      const lang = document.documentElement.getAttribute("lang") || "en";
       const nameEl = document.getElementById("sidebar-user-name");
       const roleEl = document.getElementById("sidebar-user-role");
       const avatarEl = document.getElementById("sidebar-user-avatar");
 
-      if (nameEl) nameEl.textContent = user.name;
+      if (nameEl) nameEl.textContent = lang === "ar" && user.nameAr ? user.nameAr : user.name;
       if (roleEl) roleEl.textContent = user.role;
       if (avatarEl) avatarEl.textContent = user.name.charAt(0).toUpperCase();
 
@@ -1766,7 +1679,8 @@
     function userLogout() {
       state.currentUserId = "";
       saveState();
-      document.getElementById("modal-auth-portal").style.display = "flex";
+      document.getElementById("auth-portal-fullscreen").style.display = "flex";
+      document.getElementById("app-shell-root").style.display = "none";
       setAuthPortalMode("login");
     }
     window.userLogout = userLogout;
@@ -1797,7 +1711,7 @@
               updateCounts();
 
               if (window.OstanStyle) {
-                window.OstanStyle.showToast("⚡ Live Real-Time Capture", `New employee captured: ${liveEmp.name} (${liveEmp.email})`);
+                window.OstanStyle.showToast("⚡ Live Capture", `New employee joined: ${liveEmp.name}`);
               }
             }
           }
@@ -1813,12 +1727,15 @@
       });
     }
 
-    // Initialization
+    // App Boot Initialization
     const initialUser = getCurrentUser();
     if (!initialUser) {
-      document.getElementById("modal-auth-portal").style.display = "flex";
+      document.getElementById("auth-portal-fullscreen").style.display = "flex";
+      document.getElementById("app-shell-root").style.display = "none";
       setAuthPortalMode("login");
     } else {
+      document.getElementById("auth-portal-fullscreen").style.display = "none";
+      document.getElementById("app-shell-root").style.display = "grid";
       updateUserSessionUI();
       setModule("dashboard");
     }

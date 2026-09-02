@@ -5,33 +5,23 @@
 (function () {
   const dictionary = {
     en: {
-      // Brand & General
+      // Top Header & General
       app_name: "Ostan",
-      app_subtitle: "",
+      app_subtitle: "Enterprise Management System",
       lang_toggle: "🌐 العربية",
       theme_toggle: "🌓 Theme",
       auth_logout: "Sign Out",
+      search_placeholder: "Search anything across modules...",
 
-      // Status Grid Cards (Matching the Operational List)
-      stat_reminders: "Reminders",
-      stat_tasks: "Tasks",
-      stat_workers: "Workers",
-      stat_warehouse: "Warehouse",
-      stat_completed: "Completed",
-      stat_flagged: "Flagged",
-
-      // Module Nav
+      // Module Navigation
       nav_group_overview: "OVERVIEW",
       nav_dashboard: "Dashboard",
       nav_group_org: "ORGANIZATION",
       nav_employees: "Employees",
       nav_departments: "Departments",
       nav_group_ops: "OPERATIONS",
-      nav_operations_header: "Operations",
       nav_reminders: "Reminders",
       nav_tasks: "Task Management",
-      nav_tasks_employee: "Tasks",
-      nav_workers: "Workers",
       nav_group_inv: "INVENTORY",
       nav_stock: "Stock & Inventory",
       nav_stock_requests: "Stock Requests",
@@ -39,258 +29,147 @@
       nav_reports: "Reports & Analytics",
       nav_audit_logs: "Audit Logs",
       nav_group_sys: "SYSTEM",
-      nav_users: "Users Management",
-      nav_recycle_bin: "Recycle Bin & Restore Log",
       nav_settings: "System Settings",
-      nav_btn_quick_reminder: "+ Create Scheduled Reminder",
 
-      // Section Titles & Descriptions
-      mod_reminders_title: "Reminders & Alerts",
-      mod_reminders_desc: "Create scheduled reminders with live countdown tracking, sound alarms and edit controls.",
-      mod_reminders_btn: "+ New Reminder",
+      // Dashboard Greetings & Cards
+      dash_greeting_morning: "Good morning",
+      dash_greeting_afternoon: "Good afternoon",
+      dash_greeting_evening: "Good evening",
+      dash_subtitle: "Here is your organization's real-time operational overview.",
+      dash_total_employees: "Total Employees",
+      dash_active_on_duty: "Active on Duty",
+      dash_open_tasks: "Open Tasks",
+      dash_tasks_in_progress: "In progress & pending",
+      dash_my_assigned_tasks: "My Assigned Tasks",
+      dash_all_tasks_completed: "All tasks up to date",
+      dash_upcoming_reminders: "Upcoming Reminders",
+      dash_active_alerts: "Active alerts",
+      dash_no_reminders: "No pending alerts",
+      dash_low_stock_items: "Low Stock Items",
+      dash_stock_alert: "Below threshold alert",
+      dash_stock_healthy: "Stock healthy",
 
-      mod_tasks_title: "Tasks & Assignments",
-      mod_tasks_title_employee: "Tasks",
-      mod_tasks_desc: "Assign tasks to specific registered workers with full edit controls.",
-      mod_tasks_desc_employee: "View and update your assigned tasks and execution progress.",
-      mod_tasks_btn: "+ Assign Task",
+      // Quick Operations
+      quick_ops_title: "⚡ Quick Operations",
+      op_tasks_title: "Task Management",
+      op_tasks_desc: "Assign tasks to specific registered workers with full edit controls",
+      op_reminders_title: "Reminders & Sound Alarms",
+      op_reminders_desc: "Create scheduled reminders with live countdown tracking and chime",
+      op_stock_title: "Warehouse & Stock Catalog",
+      op_stock_desc: "Manage inventory counts, safety thresholds, and material requests",
 
-      mod_workers_title: "Workers & Staff Management",
-      mod_workers_desc: "Manage company team, roles, responsibilities, and profiles.",
-      mod_workers_btn: "+ Add Worker",
+      // System Readiness
+      system_readiness_title: "🛡️ System Security & Identity",
+      sys_cloud_firebase: "Firebase Cloud Sync",
+      sys_cloud_active: "Active & Synced",
+      sys_rbac: "Granular RBAC Policies",
+      sys_rbac_active: "Enforced",
+      sys_audit: "Enterprise Audit Trail",
+      sys_audit_active: "Recording",
 
-      mod_warehouse_title: "Warehouse & Stock Management",
-      mod_warehouse_desc: "Track equipment inventory, edit counts and low-stock alerts.",
-      mod_warehouse_btn: "+ Add Item",
+      // Employees Section
+      emp_section_title: "Employees & User Management",
+      emp_section_desc: "Create, edit, and delete real employee accounts with real-time Firebase sync.",
+      btn_add_employee: "+ Add New Employee",
+      search_emp_placeholder: "Search by name, email, or role...",
+      registered_accounts_label: "Live Registered Accounts",
+      protected_admin_badge: "Protected Super Admin",
+      staff_member_badge: "Staff Member",
 
-      mod_users_title: "Users & Accounts Management",
-      mod_users_desc: "Manage system accounts, credentials, pictures, roles, and granular module permissions.",
-      mod_users_btn: "+ Add User Account",
+      // Departments & Console
+      dept_section_title: "Departments & Worker Section Access Control",
+      dept_section_desc: "Select a worker, choose a section, and configure lock or hide policies.",
+      dept_step_1: "1. Select Worker:",
+      dept_step_2: "2. Select Section:",
+      dept_step_3: "3. Choose Policy:",
+      btn_apply_policy: "Apply Policy",
+      policy_accessible: "OK (Full Access)",
+      policy_locked: "LOCKED 🔒",
+      policy_hidden: "HIDDEN 👁️",
+      matrix_worker_col: "Worker / Account",
 
-      mod_recycle_title: "Recycle Bin & Restore Log",
-      mod_recycle_desc: "Audit trail of deleted items with instant one-click restoration to active rosters.",
-      mod_recycle_btn: "Empty Bin",
-
-      mod_settings_title: "System Settings",
-      mod_settings_desc: "Configure theme, language, and audio alarm diagnostics.",
-      mod_settings_btn: "Save",
-
-      // Live Countdown Strings
-      countdown_due_in: "Due in:",
-      countdown_overdue: "🚨 Overdue by:",
-      unit_days: "d",
-      unit_hours: "h",
-      unit_mins: "m",
-      unit_secs: "s",
-      countdown_time_arrived: "⏰ Scheduled time arrived!",
-
-      // 2-Step Confirmation Modal
-      confirm_delete_title: "⚠️ Confirm Deletion",
-      confirm_delete_prompt: "Are you sure you want to delete this item? It will be moved to the Recycle Bin and can be restored at any time.",
-      btn_confirm_delete: "Yes, Move to Bin",
-      btn_confirm_perm_delete: "Permanently Delete",
-
-      // Recycle Bin & Restore
-      recycle_bin_empty: "Recycle Bin is empty. Deleted items will appear here.",
-      btn_restore: "♻️ Restore Item",
-      toast_restored: "Item restored successfully to active view!",
-      toast_deleted: "Item moved to Recycle Bin.",
-      badge_item_type_reminder: "Reminder",
-      badge_item_type_task: "Task",
-      badge_item_type_worker: "Worker",
-      badge_item_type_stock: "Warehouse",
-      badge_item_type_user: "User Account",
-
-      // Users Management Section
-      users_catalog_title: "System User Accounts & Security Credentials",
-      no_users: "No user accounts found. Click \"+ Add User Account\" to create one.",
-      badge_protected: "Protected",
-      badge_active: "Active",
-      badge_suspended: "Suspended",
-      perm_reminders: "Reminders",
-      perm_tasks: "Tasks",
-      perm_workers: "Workers",
-      perm_warehouse: "Warehouse",
-      perm_settings: "Settings",
-      perm_users: "Users Mgmt",
-      current_user_label: "Active Session:",
-      switch_user_prompt: "Switch User Role (Test RBAC):",
-
-      // Modals - User
-      modal_user_create_title: "👤 Create User Account",
-      modal_user_edit_title: "✏️ Edit User Account & Permissions",
-      label_user_name: "Full Name *",
-      placeholder_user_name: "e.g. Abdulrahman Al-Harbi",
-      label_user_email: "Email Address *",
-      placeholder_user_email: "e.g. a.harbi@ostan.internal",
-      label_user_password: "Password *",
-      placeholder_user_password: "Enter password (or leave blank to keep unchanged)",
-      label_user_photo: "Profile Picture (Optional)",
-      label_user_role: "System Role *",
-      label_user_status: "Account Status",
-      label_user_permissions: "Module Access Permissions",
-
-      // Reminders Columns & Actions
-      col_action_items: "Action Items",
-      col_timed_scheduled: "Timed & Scheduled",
-      col_completed: "Completed",
-      btn_add_item: "+ Add Item",
-      no_reminders: "No active reminders. Click + Add Item to create one.",
-
-      // Tasks Kanban Columns
-      filter_worker_label: "Filter by Worker:",
-      all_workers_option: "All Workers",
+      // Tasks Section
+      tasks_section_title: "Tasks & Assignments",
+      tasks_section_desc: "Assign and track execution progress across company staff.",
+      tasks_section_desc_emp: "View and execute your assigned tasks and update progress.",
+      btn_assign_task: "+ Assign Task",
+      task_filter_label: "Filter by Assignee:",
+      filter_all_workers: "All Staff",
       col_todo: "To Do",
       col_progress: "In Progress",
       col_done: "Done ✓",
-      btn_assign_task: "+ Assign New Task",
-      no_tasks: "No tasks created yet.",
 
-      // Workers Section
-      registered_staff_title: "Registered Company Workers & Staff",
-      no_workers: "No workers registered yet. Click \"+ Add New Worker\" to add staff.",
-      active_tasks_count: "Active Tasks",
+      // Reminders Section
+      rem_section_title: "Reminders & Alerts",
+      rem_section_desc: "Scheduled reminders with live countdown tracking and 880Hz audio alarm chime.",
+      btn_new_reminder: "+ New Reminder",
+      col_action: "Action Needed",
+      col_scheduled: "Scheduled Ahead",
+      col_completed: "Completed",
 
       // Warehouse Section
-      inventory_catalog_title: "Inventory & Equipment Catalog",
-      no_stock: "No warehouse items in stock. Click \"+ Add Inventory Item\" to track supplies.",
-      badge_low_stock: "Low Stock",
-      badge_in_stock: "In Stock",
-      min_threshold_label: "Min:",
-      label_stock_image: "Item Photo (Optional)",
-      btn_remove_image: "Remove Photo",
-      cat_general: "General",
-      cat_equipment: "Equipment",
-      cat_consumables: "Consumables",
-      cat_tools: "Tools",
+      stock_section_title: "Warehouse & Stock Management",
+      stock_section_desc: "Track equipment catalog, quantities, and low stock threshold alerts.",
+      btn_add_stock: "+ Add Inventory Item",
 
-      // Modals - Reminders
-      modal_rem_create_title: "⏰ Set Scheduled Reminder",
-      modal_rem_edit_title: "✏️ Edit Reminder",
-      label_rem_title: "Reminder Title *",
-      placeholder_rem_title: "e.g. Inspect generator fuel levels...",
-      label_rem_notes: "Notes & Details",
-      placeholder_rem_notes: "e.g. Check fuel tanks at station B...",
-      label_rem_time: "Target Reminder Date & Time * (Alarm will ring)",
-      label_rem_flagged: "Mark as Flagged 🚩",
-      btn_save_reminder: "Save Reminder",
-      btn_update_reminder: "Update Reminder",
+      // Stock Requests Section
+      requests_section_title: "Material & Stock Requests",
+      requests_section_desc: "Submit and review material withdrawal requests.",
+      btn_new_request: "+ Submit Material Request",
 
-      // Modals - Workers
-      modal_worker_create_title: "👥 Register Company Worker",
-      modal_worker_edit_title: "✏️ Edit Worker Profile",
-      label_worker_name: "Worker Name *",
-      placeholder_worker_name: "e.g. Tariq Al-Otaibi",
-      label_worker_resp: "Responsibility / Job Title *",
-      placeholder_worker_resp: "e.g. Electrical Supervisor, Fleet Driver...",
-      label_worker_role: "System Role",
-      label_worker_phone: "Phone / Contact (Optional)",
-      btn_save_worker: "Save Worker",
-      btn_update_worker: "Update Worker",
+      // Reports Section
+      reports_section_title: "Reports & Analytics",
+      reports_section_desc: "Operational telemetry, task completion rates, and inventory flow.",
 
-      // Modals - Tasks
-      modal_task_create_title: "📋 Assign Task to Worker",
-      modal_task_edit_title: "✏️ Edit Task",
-      label_task_worker: "Select Assignee Worker *",
-      select_worker_placeholder: "-- Select a Worker --",
-      label_task_title: "Task Title *",
-      placeholder_task_title: "e.g. Inspect hydraulic generators on site B...",
-      label_task_desc: "Instructions & Details",
-      placeholder_task_desc: "Task execution instructions...",
-      label_task_priority: "Priority",
-      priority_normal: "Normal",
-      priority_high: "High Priority ⚡",
-      priority_urgent: "Urgent / Critical 🚨",
-      label_task_status: "Status",
-      status_todo: "To Do",
-      status_progress: "In Progress",
-      status_completed: "Completed",
-      btn_save_task: "Dispatch & Assign",
-      btn_update_task: "Update Task",
+      // Audit Logs Section
+      audit_section_title: "Enterprise Audit Logs",
+      audit_section_desc: "Immutable activity trail for security compliance and tracking.",
 
-      // Modals - Stock
-      modal_stock_create_title: "📦 Add Warehouse Item",
-      modal_stock_edit_title: "✏️ Edit Inventory Item",
-      label_stock_name: "Item / Product Name *",
-      placeholder_stock_name: "e.g. Safety Helmets (Class E)",
-      label_stock_sku: "SKU / Code",
-      label_stock_cat: "Category",
-      label_stock_qty: "Quantity",
-      label_stock_thresh: "Low-Stock Alert Threshold",
-      btn_save_stock: "Add Item",
-      btn_update_stock: "Update Item",
+      // Settings Section
+      settings_section_title: "System Settings",
+      settings_section_desc: "Customize interface appearance themes and test audio alarm diagnostics.",
+      settings_theme_label: "Theme Mode",
+      settings_audio_label: "Audio Alarm Diagnostics",
+      btn_test_audio: "Test Audio Alarm Chime",
 
-      // Common Actions
+      // Auth Portal
+      auth_title: "Sign in to Ostan",
+      auth_subtitle: "Enterprise Operations & Business Intelligence Platform",
+      tab_login: "Sign In",
+      tab_signup: "Sign Up (New Employee)",
+      label_fullname: "Full Name *",
+      placeholder_fullname: "e.g. Khalid Al-Ghamdi",
+      label_email: "Email Address *",
+      placeholder_email: "khalid@company.com",
+      label_password: "Password *",
+      placeholder_password: "At least 6 characters",
+      btn_submit_login: "Sign In to Platform",
+      btn_submit_signup: "Create Account & Sign In",
+
+      // Modals General
       btn_cancel: "Cancel",
+      btn_save: "Save Changes",
       btn_delete: "Delete",
-      btn_edit: "Edit",
-      btn_save: "Save",
-      btn_close: "Close",
-
-      // Settings
-      settings_appearance_title: "Appearance & Language",
-      btn_dark_theme: "Dark Theme",
-      btn_light_theme: "Light Theme",
-      btn_en_lang: "English (LTR)",
-      btn_ar_lang: "العربية (RTL)",
-      settings_test_alarm_title: "Test Reminder Alarm Chime",
-      settings_test_alarm_desc: "Click to test the in-app audio chime synthesizer and toast notification.",
-      btn_test_alarm: "🔔 Test Audio Alarm Now",
-
-      // Authentication & Sign-Up Portal
-      auth_portal_title: "Sign in to Ostan",
-      auth_portal_subtitle: "Enterprise Business Management Platform",
-      auth_login_tab: "Sign In",
-      auth_signup_tab: "Sign Up (New Account)",
-      auth_fullname_label: "Full Name *",
-      auth_fullname_placeholder: "e.g. Osama Al-Twaish",
-      auth_email_label: "Email Address *",
-      auth_email_placeholder: "waseem.tw@hotmail.com",
-      auth_password_label: "Password *",
-      auth_password_placeholder: "••••••••",
-      auth_btn_login: "Sign In to Platform",
-      auth_btn_signup: "Create Account & Sign In",
-      auth_switch_to_signup: "Don't have an account? Sign Up",
-      auth_switch_to_login: "Already have an account? Sign In",
-      auth_superadmin_promoted_badge: "👑 Auto-Super Admin",
-      auth_auto_superadmin_hint: "Tip: Signing up with waseem.tw@hotmail.com will automatically assign master Super Admin privileges.",
-
-      // 3-State Section Access Control
-      access_state_accessible: "Accessible (Full Access)",
-      access_state_locked: "Locked 🔒 (View with Lock Effect)",
-      access_state_hidden: "Hidden 👁️ (Completely Hidden)",
-      locked_modal_title: "🔒 Department Section Locked",
-      locked_modal_desc: "This department/section has been locked for your account by Administrator (waseem.tw@hotmail.com). Please contact your administrator if you require access.",
-      locked_modal_btn: "Understood",
     },
+
     ar: {
-      // Brand & General
+      // Top Header & General
       app_name: "أستان",
-      app_subtitle: "",
+      app_subtitle: "منظومة إدارة المنشآت الذكية",
       lang_toggle: "🌐 English",
       theme_toggle: "🌓 المظهر",
       auth_logout: "تسجيل الخروج",
+      search_placeholder: "بحث في جميع أقسام المنظومة...",
 
-      // Status Grid Cards (Matching the Operational List)
-      stat_reminders: "التذكيرات",
-      stat_tasks: "المهام",
-      stat_workers: "العمال",
-      stat_warehouse: "المستودع",
-      stat_completed: "المكتملة",
-      stat_flagged: "المميزة",
-
-      // Module Nav
+      // Module Navigation
       nav_group_overview: "الرئيسية",
       nav_dashboard: "لوحة التحكم",
       nav_group_org: "المؤسسة وفريق العمل",
       nav_employees: "الموظفين",
-      nav_departments: "الأقسام",
+      nav_departments: "الأقسام والصلاحيات",
       nav_group_ops: "العمليات والمهام",
-      nav_operations_header: "العمليات والمهام",
       nav_reminders: "التذكيرات",
       nav_tasks: "إدارة المهام",
-      nav_tasks_employee: "المهام",
-      nav_workers: "العمال",
       nav_group_inv: "المستودع والمخزون",
       nav_stock: "المستودع والمخزون",
       nav_stock_requests: "طلبات الصرف",
@@ -298,229 +177,127 @@
       nav_reports: "التقارير والإحصائيات",
       nav_audit_logs: "سجل العمليات",
       nav_group_sys: "النظام",
-      nav_users: "إدارة المستخدمين",
-      nav_recycle_bin: "سجل الاستعادة وسلة المحذوفات",
       nav_settings: "إعدادات النظام",
-      nav_btn_quick_reminder: "+ إنشاء تذكير موقوت",
 
-      // Section Titles & Descriptions
-      mod_reminders_title: "التذكيرات والتنبيهات الموقوتة",
-      mod_reminders_desc: "إنشاء تذكيرات موقوتة مع عداد تنازلي حي وجرس إنذار صوتي وتنبيهات فورية قابلة للتعديل.",
-      mod_reminders_btn: "+ تذكير جديد",
+      // Dashboard Greetings & Cards
+      dash_greeting_morning: "صباح الخير",
+      dash_greeting_afternoon: "مساء الخير",
+      dash_greeting_evening: "مساء الخير",
+      dash_subtitle: "نظرة عامة ومباشرة على العمليات والمهام وفريق العمل.",
+      dash_total_employees: "إجمالي الموظفين",
+      dash_active_on_duty: "على رأس العمل",
+      dash_open_tasks: "المهام المفتوحة",
+      dash_tasks_in_progress: "قيد التنفيذ والمتابعة",
+      dash_my_assigned_tasks: "المهام المسندة إليك",
+      dash_all_tasks_completed: "جميع المهام مكتملة",
+      dash_upcoming_reminders: "التنبيهات القادمة",
+      dash_active_alerts: "تنبيهات مجدولة",
+      dash_no_reminders: "لا توجد تنبيهات معلقة",
+      dash_low_stock_items: "نواقص المخزون",
+      dash_stock_alert: "أصناف دون الحد الأدنى",
+      dash_stock_healthy: "المخزون مكتمل",
 
-      mod_tasks_title: "إدارة المهام وتعيين العمال",
-      mod_tasks_title_employee: "المهام",
-      mod_tasks_desc: "إسناد وتوزيع المهام على العمال المسجلين ومتابعة مراحل التنفيذ والإنجاز.",
-      mod_tasks_desc_employee: "متابعة وإنجاز المهام المسندة إليك وتحديث حالة التنفيذ.",
-      mod_tasks_btn: "+ إسناد مهمة",
+      // Quick Operations
+      quick_ops_title: "⚡ العمليات السريعة",
+      op_tasks_title: "إدارة وتوزيع المهام",
+      op_tasks_desc: "إسناد المهام للعمال ومتابعة مراحل الإنجاز والتحديث الفوري",
+      op_reminders_title: "التذكيرات والمنبه الصوتي",
+      op_reminders_desc: "إنشاء تذكيرات موقوتة مع عداد تنازلي وجرس إنذار صوتي",
+      op_stock_title: "دليل المستودع والمخزون",
+      op_stock_desc: "متابعة كميات الأصناف، وحدود التنبيه، وطلبات الصرف",
 
-      mod_workers_title: "إدارة العمال وفريق العمل",
-      mod_workers_desc: "تسجيل الموظفين والعمال، وتحديد المسمى الوظيفي والأدوار والصلاحيات.",
-      mod_workers_btn: "+ إضافة عامل",
+      // System Readiness
+      system_readiness_title: "🛡️ الأمان وهوية النظام",
+      sys_cloud_firebase: "المزامنة الحية مع Firebase",
+      sys_cloud_active: "متصل ونشط",
+      sys_rbac: "سياسات الأدوار والصلاحيات",
+      sys_rbac_active: "مطبقة بالكامل",
+      sys_audit: "سجل التوثيق والأمان",
+      sys_audit_active: "تسجيل فوري",
 
-      mod_warehouse_title: "المستودع وإدارة المخزون",
-      mod_warehouse_desc: "متابعة دليل المعدات وقطع الغيار، الكميات، وحدود التنبيه لنقص المخزون.",
-      mod_warehouse_btn: "+ إضافة صنف",
+      // Employees Section
+      emp_section_title: "إدارة الموظفين وفريق العمل",
+      emp_section_desc: "إنشاء وتعديل وحذف حسابات الموظفين مع المزامنة اللحظية في Firebase.",
+      btn_add_employee: "+ إضافة موظف جديد",
+      search_emp_placeholder: "بحث بالاسم أو البريد أو الرتبة...",
+      registered_accounts_label: "حسابات مسجلة (مباشر)",
+      protected_admin_badge: "مسؤول متميز رئيسي",
+      staff_member_badge: "عضو فريق العمل",
 
-      mod_users_title: "إدارة حسابات المستخدمين والصلاحيات",
-      mod_users_desc: "إدارة حسابات النظام، بيانات الدخول، الصور، وتحديد الصلاحيات التفصيلية لكل قسم.",
-      mod_users_btn: "+ إضافة حساب مستخدم",
+      // Departments & Console
+      dept_section_title: "الأقسام والتحكم في وصول العمال للأقسام",
+      dept_section_desc: "اختر العامل، وحدد القسم، ثم قم بضبط سياسة القفل أو الإخفاء.",
+      dept_step_1: "1. اختر الموظف:",
+      dept_step_2: "2. اختر القسم:",
+      dept_step_3: "3. حدد السياسة:",
+      btn_apply_policy: "تطبيق السياسة",
+      policy_accessible: "متاح (وصول كامل)",
+      policy_locked: "مقفل 🔒",
+      policy_hidden: "مخفي 👁️",
+      matrix_worker_col: "الموظف / الحساب",
 
-      mod_recycle_title: "سجل الاستعادة وسلة المحذوفات",
-      mod_recycle_desc: "سجل توثيقي لجميع العناصر المحذوفة مع إمكانية استعادتها فوراً بضغطة زر واحدة.",
-      mod_recycle_btn: "إفراغ السلة",
-
-      mod_settings_title: "إعدادات النظام",
-      mod_settings_desc: "تخصيص المظهر، لغة الواجهة، واختبار جرس التنبيه الصوتي.",
-      mod_settings_btn: "حفظ",
-
-      // Live Countdown Strings
-      countdown_due_in: "متبقي:",
-      countdown_overdue: "🚨 متأخر منذ:",
-      unit_days: "يوم",
-      unit_hours: "ساعة",
-      unit_mins: "دقيقة",
-      unit_secs: "ثانية",
-      countdown_time_arrived: "⏰ حان موعد التذكير الآن!",
-
-      // 2-Step Confirmation Modal
-      confirm_delete_title: "⚠️ تأكيد عملية الحذف",
-      confirm_delete_prompt: "هل أنت متأكد من رغبتك في حذف هذا العنصر؟ سيتم نقله إلى سلة المحذوفات ويمكنك استعادته في أي وقت.",
-      btn_confirm_delete: "نعم، نقل لسلة المحذوفات",
-      btn_confirm_perm_delete: "حذف نهائي",
-
-      // Recycle Bin & Restore
-      recycle_bin_empty: "سلة المحذوفات فارغة حالياً. أي عنصر تقوم بحذفه سيظهر هنا مع خيار استعادته.",
-      btn_restore: "♻️ استعادة العنصر",
-      toast_restored: "تم استعادة العنصر بنجاح وإعادته للقائمة النشطة!",
-      toast_deleted: "تم نقل العنصر إلى سلة المحذوفات.",
-      badge_item_type_reminder: "تذكير",
-      badge_item_type_task: "مهمة",
-      badge_item_type_worker: "عامل",
-      badge_item_type_stock: "صنف مخزني",
-      badge_item_type_user: "حساب مستخدم",
-
-      // Users Management Section
-      users_catalog_title: "سجل حسابات المستخدمين وصلاحيات الوصول",
-      no_users: "لا توجد حسابات مسجلة. اضغط \"+ إضافة حساب مستخدم\" لإنشاء حساب.",
-      badge_protected: "محمي",
-      badge_active: "نشط",
-      badge_suspended: "معلق",
-      perm_reminders: "التذكيرات",
-      perm_tasks: "المهام",
-      perm_workers: "العمال",
-      perm_warehouse: "المستودع",
-      perm_settings: "الإعدادات",
-      perm_users: "إدارة المستخدمين",
-      current_user_label: "الجلسة الحالية:",
-      switch_user_prompt: "تبديل الحساب (لاختبار الصلاحيات):",
-
-      // Modals - User
-      modal_user_create_title: "👤 إنشاء حساب مستخدم جديد",
-      modal_user_edit_title: "✏️ تعديل بيانات الحساب والصلاحيات",
-      label_user_name: "الاسم الكامل *",
-      placeholder_user_name: "مثال: عبد الرحمن الحربي",
-      label_user_email: "البريد الإلكتروني *",
-      placeholder_user_email: "مثال: a.harbi@ostan.internal",
-      label_user_password: "كلمة المرور *",
-      placeholder_user_password: "أدخل كلمة المرور (أو اتركها فارغة للإبقاء على الحالية)",
-      label_user_photo: "الصورة الشخصية (اختياري)",
-      label_user_role: "الدور في النظام *",
-      label_user_status: "حالة الحساب",
-      label_user_permissions: "صلاحيات الوصول للأقسام والأنظمة",
-
-      // Reminders Columns & Actions
-      col_action_items: "عناصر العمل",
-      col_timed_scheduled: "المجدولة زمنياً",
-      col_completed: "المكتملة",
-      btn_add_item: "+ إضافة عنصر",
-      no_reminders: "لا توجد تذكيرات جارية حالياً. اضغط + إضافة عنصر لإنشاء تذكير.",
-
-      // Tasks Kanban Columns
-      filter_worker_label: "تصفية حسب العامل:",
-      all_workers_option: "جميع العمال",
+      // Tasks Section
+      tasks_section_title: "إدارة المهام وتعيين العمال",
+      tasks_section_desc: "إسناد ومتابعة مراحل تنفيذ المهام بين أفراد فريق العمل.",
+      tasks_section_desc_emp: "متابعة وتنفيذ المهام المسندة إليك وتحديث حالة الإنجاز.",
+      btn_assign_task: "+ إسناد مهمة",
+      task_filter_label: "تصفية بحسب الموظف:",
+      filter_all_workers: "جميع الموظفين",
       col_todo: "قيد الانتظار",
-      col_progress: "جاري التنفيذ",
+      col_progress: "قيد التنفيذ",
       col_done: "مكتملة ✓",
-      btn_assign_task: "+ إسناد مهمة جديدة",
-      no_tasks: "لم يتم إنشاء أي مهام بعد.",
 
-      // Workers Section
-      registered_staff_title: "قائمة العمال والموظفين المسجلين",
-      no_workers: "لم يتم تسجيل أي عمال بعد. اضغط \"+ إضافة عامل\" لتسجيل أعضاء الفريق.",
-      active_tasks_count: "مهام نشطة",
+      // Reminders Section
+      rem_section_title: "التذكيرات والتنبيهات الموقوتة",
+      rem_section_desc: "تذكيرات موقوتة مع عداد تنازلي حي وجرس إنذار صوتي بتردد 880 هرتز.",
+      btn_new_reminder: "+ تذكير جديد",
+      col_action: "مطلوبة الآن",
+      col_scheduled: "مجدولة قادمة",
+      col_completed: "مكتملة",
 
       // Warehouse Section
-      inventory_catalog_title: "دليل المعدات والأصناف المخزنية",
-      no_stock: "لا توجد أصناف مسجلة في المستودع. اضغط \"+ إضافة صنف\" لإدارة المخزون.",
-      badge_low_stock: "قيد النفاد ⚠️",
-      badge_in_stock: "متوفر بالمستودع",
-      min_threshold_label: "الحد الأدنى:",
-      label_stock_image: "صورة الصنف (اختياري)",
-      btn_remove_image: "حذف الصورة",
-      cat_general: "عام",
-      cat_equipment: "معدات",
-      cat_consumables: "مواد استهلاكية",
-      cat_tools: "أدوات",
+      stock_section_title: "المستودع وإدارة المخزون",
+      stock_section_desc: "متابعة أصناف المعدات، والكميات المتوفرة، وتنبيهات نواقص المخزون.",
+      btn_add_stock: "+ إضافة صنف للمستودع",
 
-      // Modals - Reminders
-      modal_rem_create_title: "⏰ ضبط تذكير موقوت",
-      modal_rem_edit_title: "✏️ تعديل التذكير",
-      label_rem_title: "عنوان التذكير *",
-      placeholder_rem_title: "مثال: فحص مستوى وقود المولدات...",
-      label_rem_notes: "التفاصيل والملاحظات",
-      placeholder_rem_notes: "مثال: مراجعة خزانات الوقود في المحطة ب...",
-      label_rem_time: "تاريخ ووقت التنبيه * (سيرن جرس الإنذار)",
-      label_rem_flagged: "تمييز التذكير بعلم 🚩",
-      btn_save_reminder: "حفظ وجدولة التنبيه",
-      btn_update_reminder: "تحديث التذكير",
+      // Stock Requests Section
+      requests_section_title: "طلبات صرف المواد والمعدات",
+      requests_section_desc: "تقديم ومراجعة واعتماد طلبات صرف المواد من المستودع.",
+      btn_new_request: "+ تقديم طلب صرف جديد",
 
-      // Modals - Workers
-      modal_worker_create_title: "👥 تسجيل عامل / موظف جديد",
-      modal_worker_edit_title: "✏️ تعديل بيانات العامل",
-      label_worker_name: "اسم العامل / الموظف *",
-      placeholder_worker_name: "مثال: طارق العتيبي",
-      label_worker_resp: "المسمى الوظيفي / المسؤولية *",
-      placeholder_worker_resp: "مثال: مشرف كهربائي، سائق، فني ميكانيكا...",
-      label_worker_role: "الدور في النظام",
-      label_worker_phone: "رقم الهاتف / الاتصال (اختياري)",
-      btn_save_worker: "تسجيل العامل",
-      btn_update_worker: "تحديث بيانات العامل",
+      // Reports Section
+      reports_section_title: "التقارير والإحصائيات",
+      reports_section_desc: "مؤشرات الأداء التشغيلي، ومعدلات إنجاز المهام، وحركة المخزون.",
 
-      // Modals - Tasks
-      modal_task_create_title: "📋 إسناد مهمة جديدة لعامل",
-      modal_task_edit_title: "✏️ تعديل المهمة",
-      label_task_worker: "اختر العامل المسند إليه *",
-      select_worker_placeholder: "-- اختر العامل من القائمة --",
-      label_task_title: "عنوان المهمة *",
-      placeholder_task_title: "مثال: فحص المضخات الهيدروليكية في الموقع...",
-      label_task_desc: "تعليمات وتفاصيل التنفيذ",
-      placeholder_task_desc: "تفاصيل تعليمات العمل للعامل...",
-      label_task_priority: "مستوى الأولوية",
-      priority_normal: "عادية",
-      priority_high: "أولوية عالية ⚡",
-      priority_urgent: "حرجة / عاجلة جداً 🚨",
-      label_task_status: "حالة المهمة",
-      status_todo: "قيد الانتظار",
-      status_progress: "جاري التنفيذ",
-      status_completed: "مكتملة",
-      btn_save_task: "إرسال وإسناد المهمة",
-      btn_update_task: "تحديث المهمة",
+      // Audit Logs Section
+      audit_section_title: "سجل العمليات والتوثيق الأمني",
+      audit_section_desc: "سجل غير قابل للتعديل لجميع العمليات لأغراض الامتثال والأمان.",
 
-      // Modals - Stock
-      modal_stock_create_title: "📦 إضافة صنف للمستودع",
-      modal_stock_edit_title: "✏️ تعديل بيانات الصنف",
-      label_stock_name: "اسم الصنف / المعدة *",
-      placeholder_stock_name: "مثال: خوذات السلامة (فئة E)",
-      label_stock_sku: "رمز الصنف (SKU)",
-      label_stock_cat: "التصنيف",
-      label_stock_qty: "الكمية الحالية",
-      label_stock_thresh: "حد التنبيه لانخفاض المخزون",
-      btn_save_stock: "إضافة الصنف",
-      btn_update_stock: "تحديث الصنف",
+      // Settings Section
+      settings_section_title: "إعدادات النظام",
+      settings_section_desc: "تخصيص المظهر العام للنظام واختبار المنبه الصوتي.",
+      settings_theme_label: "نمط العرض",
+      settings_audio_label: "فحص جرس الإنذار الصوتي",
+      btn_test_audio: "فحص جرس الإنذار (880Hz)",
 
-      // Common Actions
+      // Auth Portal
+      auth_title: "تسجيل الدخول إلى أستان",
+      auth_subtitle: "منصة إدارة العمليات والمؤسسات الذكية",
+      tab_login: "تسجيل الدخول",
+      tab_signup: "إنشاء حساب جديد (تسجيل موظف)",
+      label_fullname: "الاسم الكامل *",
+      placeholder_fullname: "مثال: خالد الغامدي",
+      label_email: "البريد الإلكتروني *",
+      placeholder_email: "khalid@company.com",
+      label_password: "كلمة المرور *",
+      placeholder_password: "6 أحرف أو أرقام على الأقل",
+      btn_submit_login: "دخول إلى المنصة",
+      btn_submit_signup: "إنشاء الحساب والدخول",
+
+      // Modals General
       btn_cancel: "إلغاء",
+      btn_save: "حفظ التغييرات",
       btn_delete: "حذف",
-      btn_edit: "تعديل",
-      btn_save: "حفظ",
-      btn_close: "إغلاق",
-
-      // Settings
-      settings_appearance_title: "المظهر واللغة",
-      btn_dark_theme: "المظهر الليلي (Dark)",
-      btn_light_theme: "المظهر النهاري (Light)",
-      btn_en_lang: "English (الإنجليزية)",
-      btn_ar_lang: "العربية (RTL)",
-      settings_test_alarm_title: "اختبار جرس التنبيه الصوتي",
-      settings_test_alarm_desc: "اضغط لتشغيل نغمة التنبيه الصوتي وظهور الإشعار المنبثق.",
-      btn_test_alarm: "🔔 تشغيل نغمة الإنذار الآن",
-
-      // Authentication & Sign-Up Portal
-      auth_portal_title: "تسجيل الدخول إلى أستان",
-      auth_portal_subtitle: "منصة إدارة العمليات والمؤسسات الذكية",
-      auth_login_tab: "تسجيل الدخول",
-      auth_signup_tab: "إنشاء حساب جديد (تسجيل عامل)",
-      auth_fullname_label: "الاسم الكامل *",
-      auth_fullname_placeholder: "مثال: اسامة الطويش",
-      auth_email_label: "البريد الإلكتروني *",
-      auth_email_placeholder: "waseem.tw@hotmail.com",
-      auth_password_label: "كلمة المرور *",
-      auth_password_placeholder: "••••••••",
-      auth_btn_login: "دخول إلى المنصة",
-      auth_btn_signup: "إنشاء الحساب والدخول",
-      auth_switch_to_signup: "ليس لديك حساب؟ إنشاء حساب جديد",
-      auth_switch_to_login: "لديك حساب بالفعل؟ تسجيل الدخول",
-      auth_superadmin_promoted_badge: "👑 مسؤول متميز تلقائي",
-      auth_auto_superadmin_hint: "تنبيه: التسجيل بالبريد waseem.tw@hotmail.com يمنح تلقائياً صلاحيات المسؤول المتميز (Super Admin).",
-
-      // 3-State Section Access Control
-      access_state_accessible: "متاح (وصول كامل)",
-      access_state_locked: "مقفل 🔒 (يظهر تأثير القفل)",
-      access_state_hidden: "مخفي 👁️ (إخفاء تام عن العامل)",
-      locked_modal_title: "🔒 هذا القسم مقفل حالياً",
-      locked_modal_desc: "تم قفل هذا القسم لحسابك من قبل المسؤول (waseem.tw@hotmail.com). يرجى التواصل مع إدارة النظام إذا كنت بحاجة للوصول.",
-      locked_modal_btn: "حسناً، فهمت",
     },
   };
 
@@ -538,6 +315,7 @@
     document.documentElement.setAttribute("dir", isRtl ? "rtl" : "ltr");
     localStorage.setItem("ostan_locale", targetLang);
 
+    // Update all text elements with data-i18n
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       const translation = getTranslation(key, targetLang);
@@ -546,6 +324,7 @@
       }
     });
 
+    // Update all placeholders with data-i18n-placeholder
     document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
       const key = el.getAttribute("data-i18n-placeholder");
       const translation = getTranslation(key, targetLang);
@@ -554,20 +333,9 @@
       }
     });
 
-    // Update category option text if exists
-    const optGeneral = document.getElementById("opt-cat-general");
-    const optEquip = document.getElementById("opt-cat-equipment");
-    const optConsum = document.getElementById("opt-cat-consumables");
-    const optTools = document.getElementById("opt-cat-tools");
-    if (optGeneral) optGeneral.textContent = getTranslation("cat_general", targetLang);
-    if (optEquip) optEquip.textContent = getTranslation("cat_equipment", targetLang);
-    if (optConsum) optConsum.textContent = getTranslation("cat_consumables", targetLang);
-    if (optTools) optTools.textContent = getTranslation("cat_tools", targetLang);
-
-    if (typeof window.applyDynamicLabels === "function") {
-      window.applyDynamicLabels();
-    } else if (typeof window.setModule === "function" && window.state?.activeModule) {
-      window.setModule(window.state.activeModule);
+    // If dynamic view updater exists, call it
+    if (typeof window.renderCurrentModuleView === "function") {
+      window.renderCurrentModuleView();
     }
   }
 
@@ -587,6 +355,7 @@
     },
   };
 
+  // Run on page load
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", function () {
       window.OstanI18n.init();
