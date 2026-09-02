@@ -9,15 +9,15 @@ const PERMISSIONS_LIST = [
   { code: "users:create", name: "Create Users", nameAr: "إضافة مستخدم", category: "Users", description: "Create new employee and user accounts" },
   { code: "users:edit", name: "Edit Users", nameAr: "تعديل المستخدمين", category: "Users", description: "Update profile information and status" },
   { code: "users:delete", name: "Delete Users", nameAr: "حذف المستخدمين", category: "Users", description: "Remove users from the system" },
-  
+
   // Roles & Security
   { code: "roles:manage", name: "Manage Roles", nameAr: "إدارة الأدوار", category: "Security", description: "Assign and configure system roles" },
   { code: "permissions:manage", name: "Manage Permissions", nameAr: "إدارة الصلاحيات", category: "Security", description: "Override user-level permissions" },
-  
+
   // Departments
   { code: "departments:read", name: "View Departments", nameAr: "عرض الأقسام", category: "Departments", description: "View company departments" },
   { code: "departments:manage", name: "Manage Departments", nameAr: "إدارة الأقسام", category: "Departments", description: "Create and update departments" },
-  
+
   // Tasks
   { code: "tasks:read", name: "View Assigned Tasks", nameAr: "عرض المهام المعينة", category: "Tasks", description: "View tasks assigned to oneself" },
   { code: "tasks:view_all", name: "View All Tasks", nameAr: "عرض جميع المهام", category: "Tasks", description: "View department or company-wide tasks" },
@@ -173,7 +173,7 @@ async function main() {
     {
       email: "waseem.tw@hotmail.com",
       password: "OstanAdmin123!",
-      name: "Waseem Al-Otaibi",
+      name: "Osama",
       nameAr: "وسيم العتيبي",
       phone: "+966 50 111 2233",
       nationality: "Saudi Arabian",

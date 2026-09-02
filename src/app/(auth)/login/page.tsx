@@ -95,58 +95,86 @@ export default function LoginPage() {
     setError(null);
     setSuccessMsg(null);
 
+    const normalizedEmail = email.toLowerCase().trim();
+
     try {
-      // 1. Firebase Auth Step
-      try {
-        if (authMode === "signup") {
-          await registerWithFirebase(name, email, password);
-        } else {
-          await loginWithFirebase(email, password);
+      let fbProfile: any = null;
+
+      // 1. STRICT FIREBASE AUTHENTICATION
+      if (authMode === "signup") {
+        if (!name.trim()) {
+          setError(locale === "ar" ? "يرجى إدخال الاسم بالكامل." : "Please enter your full name.");
+          setLoading(false);
+          return;
         }
-      } catch (fbErr: any) {
-        console.warn("Firebase Auth Notice (proceeding with unified server session):", fbErr?.message || fbErr);
+        try {
+          const result = await registerWithFirebase(name, normalizedEmail, password);
+          fbProfile = result.user;
+          if (result.isAutoSuperAdmin) {
+            setSuccessMsg(
+              locale === "ar"
+                ? "🎉 مرحباً بك! تم تسجيلك كمسؤول متميز للنظام (Super Admin) في Firebase بنجاح."
+                : "🎉 Welcome! You have been registered as Super Admin in Firebase."
+            );
+          } else {
+            setSuccessMsg(
+              locale === "ar"
+                ? "✅ تم إنشاء الحساب في Firebase بنجاح! جاري الدخول..."
+                : "✅ Account created in Firebase successfully! Logging in..."
+            );
+          }
+        } catch (fbErr: any) {
+          console.error("Firebase Sign Up Error:", fbErr);
+          let msg = fbErr.message || "Registration failed.";
+          if (fbErr.code === "auth/email-already-in-use") {
+            msg = locale === "ar" ? "البريد الإلكتروني مستخدم بالفعل. يرجى تسجيل الدخول." : "Email is already registered. Please sign in.";
+          } else if (fbErr.code === "auth/weak-password") {
+            msg = locale === "ar" ? "كلمة المرور ضعيفة جداً (يجب ألا تقل عن 6 خانات)." : "Password is too weak (minimum 6 characters).";
+          } else if (fbErr.code === "auth/invalid-email") {
+            msg = locale === "ar" ? "صيغة البريد الإلكتروني غير صالحة." : "Invalid email format.";
+          }
+          setError(msg);
+          setLoading(false);
+          return; // BLOCK SIGN UP
+        }
+      } else {
+        // Sign In
+        try {
+          const result = await loginWithFirebase(normalizedEmail, password);
+          fbProfile = result.user;
+        } catch (fbErr: any) {
+          console.error("Firebase Login Error:", fbErr);
+          let msg = locale === "ar" ? "خطأ في تسجيل الدخول: البريد الإلكتروني أو كلمة المرور غير صحيحة." : "Invalid email or password. Please check your credentials.";
+          if (fbErr.code === "auth/user-not-found" || fbErr.code === "auth/wrong-password" || fbErr.code === "auth/invalid-credential") {
+            msg = locale === "ar" ? "بيانات الدخول غير صحيحة. يرجى التأكد من كلمة المرور." : "Invalid credentials. Incorrect email or password.";
+          }
+          setError(msg);
+          setLoading(false);
+          return; // BLOCK LOGIN IMMEDIATELY
+        }
       }
 
-      // 2. Server Session & HTTP-Only Cookie Step
-      const endpoint = authMode === "signup" ? "/api/auth/register" : "/api/auth/login";
-      const payload = authMode === "signup" ? { name, email, password } : { email, password };
-
-      const res = await fetch(endpoint, {
+      // 2. ESTABLISH SERVER-SIDE SESSION FOR VERIFIED USER
+      const sessionRes = await fetch("/api/auth/firebase-session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          email: normalizedEmail,
+          name: name.trim() || fbProfile?.name,
+          fbUid: fbProfile?.uid,
+        }),
       });
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Authentication failed. Please check your details.");
-        setLoading(false);
-        return;
-      }
-
-      if (authMode === "signup") {
-        if (data.isAutoSuperAdmin) {
-          setSuccessMsg(
-            locale === "ar"
-              ? "🎉 مرحباً بك! تم تعيينك كمسؤول متميز للنظام (Super Admin) بنجاح."
-              : "🎉 Welcome! You have been automatically assigned as Super Admin."
-          );
-        } else {
-          setSuccessMsg(
-            locale === "ar"
-              ? "✅ تم إنشاء الحساب بنجاح! جاري الدخول للمنصة..."
-              : "✅ Account created successfully! Logging in..."
-          );
-        }
+      if (!sessionRes.ok) {
+        throw new Error("Failed to initialize server session");
       }
 
       setTimeout(() => {
         router.push("/dashboard");
         router.refresh();
-      }, 700);
-    } catch {
-      setError("An unexpected network error occurred. Please try again.");
+      }, 600);
+    } catch (err: any) {
+      setError(err?.message || "An unexpected error occurred. Please try again.");
       setLoading(false);
     }
   };
