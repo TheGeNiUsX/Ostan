@@ -10,6 +10,7 @@
       app_subtitle: "",
       lang_toggle: "🌐 العربية",
       theme_toggle: "🌓 Theme",
+      auth_logout: "Sign Out",
 
       // Status Grid Cards (Matching the Operational List)
       stat_reminders: "Reminders",
@@ -268,6 +269,7 @@
       app_subtitle: "",
       lang_toggle: "🌐 English",
       theme_toggle: "🌓 المظهر",
+      auth_logout: "تسجيل الخروج",
 
       // Status Grid Cards (Matching the Operational List)
       stat_reminders: "التذكيرات",

@@ -1140,10 +1140,10 @@
 
     const DEFAULT_USERS = [
       {
-        id: "u-waseem",
-        name: "Waseem Al-Otaibi",
+        id: "u-osama",
+        name: "Osama Al-Twaish",
+        nameAr: "اسامة الطويش",
         email: "waseem.tw@hotmail.com",
-        password: "OstanAdmin123!",
         role: "SUPER_ADMIN",
         status: "ACTIVE",
         isProtected: true,
@@ -1154,45 +1154,35 @@
           warehouse: "accessible",
           settings: "accessible"
         }
-      },
-      {
-        id: "u-admin",
-        name: "Sara Al-Mansoor",
-        email: "admin@ostan.internal",
-        password: "Admin123!",
-        role: "ADMIN",
-        status: "ACTIVE",
-        isProtected: false,
-        sectionAccess: {
-          reminders: "accessible",
-          tasks: "accessible",
-          workers: "accessible",
-          warehouse: "accessible",
-          settings: "accessible"
-        }
-      },
-      {
-        id: "u-emp1",
-        name: "Faisal Al-Harbi (Worker X)",
-        email: "worker.x@ostan.internal",
-        password: "User123!",
-        role: "EMPLOYEE",
-        status: "ACTIVE",
-        isProtected: false,
-        sectionAccess: {
-          reminders: "accessible",
-          tasks: "accessible",
-          workers: "hidden",
-          warehouse: "locked",
-          settings: "accessible"
-        }
       }
     ];
+
+    // Load and sanitize users from localStorage (remove legacy mock seed)
+    let rawStoredUsers = JSON.parse(localStorage.getItem("ostan_users") || "null") || DEFAULT_USERS;
+    let sanitizedUsers = rawStoredUsers.filter(u => !u.email.endsWith("@ostan.internal") && !u.email.endsWith("@company.local"));
+    
+    // Ensure Super Admin has correct name
+    sanitizedUsers = sanitizedUsers.map(u => {
+      if (u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
+        return {
+          ...u,
+          name: "Osama Al-Twaish",
+          nameAr: "اسامة الطويش",
+          role: "SUPER_ADMIN",
+          isProtected: true
+        };
+      }
+      return u;
+    });
+
+    if (!sanitizedUsers.some(u => u.email.toLowerCase().trim() === "waseem.tw@hotmail.com")) {
+      sanitizedUsers.unshift(DEFAULT_USERS[0]);
+    }
 
     let state = {
       activeModule: "dashboard",
       currentUserId: localStorage.getItem("ostan_current_user_id") || "",
-      users: JSON.parse(localStorage.getItem("ostan_users") || "null") || DEFAULT_USERS,
+      users: sanitizedUsers,
       reminders: JSON.parse(localStorage.getItem("ostan_reminders") || "[]"),
       workers: JSON.parse(localStorage.getItem("ostan_workers") || "[]"),
       tasks: JSON.parse(localStorage.getItem("ostan_tasks") || "[]"),
@@ -1338,19 +1328,87 @@
     function renderWorkers() {
       const grid = document.getElementById("workers-grid");
       if (!grid) return;
-      grid.innerHTML = state.users.map(u => `
-        <div class="glass-panel card-hover" style="padding: 1.25rem; display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <div class="user-avatar-circle" style="background: linear-gradient(135deg, #6366f1, #3b82f6);">${u.name.slice(0, 2).toUpperCase()}</div>
-            <div>
-              <div style="font-weight: 700; font-size: 0.92rem;">${u.name}</div>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">${u.email}</div>
-              <span class="badge badge-secondary" style="margin-top: 4px; font-size: 0.68rem;">${u.role}</span>
+      grid.innerHTML = state.users.map(u => {
+        const isMaster = u.email.toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
+        const roleBadgeClass = u.role === "SUPER_ADMIN" ? "badge-rose" : u.role === "ADMIN" ? "badge-primary" : u.role === "MANAGER" ? "badge-emerald" : u.role === "STOCK_MANAGER" ? "badge-amber" : "badge-cyan";
+        
+        return `
+          <div class="glass-panel card-hover" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border: ${isMaster ? '1px solid rgba(244, 63, 94, 0.35)' : '1px solid var(--border-subtle)'};">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+              <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div class="user-avatar-circle" style="background: ${isMaster ? 'linear-gradient(135deg, #f43f5e, #fb7185)' : 'linear-gradient(135deg, #6366f1, #06b6d4)'};">
+                  ${u.name.charAt(0).toUpperCase()}
+                </div>
+                <div>
+                  <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem;">
+                    ${u.nameAr ? `${u.name} (${u.nameAr})` : u.name}
+                    ${isMaster ? '🛡️' : ''}
+                  </div>
+                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${u.email}</div>
+                </div>
+              </div>
+              <span class="badge ${roleBadgeClass}">${u.role}</span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+              <span class="badge badge-secondary" style="font-size: 0.68rem;">${isMaster ? 'Protected Master Admin' : 'Staff Member'}</span>
+              ${!isMaster ? `
+                <button onclick="deleteWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.6rem; color: #fb7185; font-size: 0.78rem;" title="Delete User">
+                  🗑️ Delete
+                </button>
+              ` : ''}
             </div>
           </div>
-        </div>
-      `).join("");
+        `;
+      }).join("");
     }
+
+    function deleteWorkerById(id) {
+      const u = state.users.find(x => x.id === id);
+      if (!u) return;
+      if (u.isProtected || u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
+        alert("The protected Super Admin account cannot be deleted.");
+        return;
+      }
+      if (!confirm(`Are you sure you want to delete ${u.name}?`)) return;
+
+      state.users = state.users.filter(x => x.id !== id);
+      saveState();
+      renderWorkers();
+      if (window.OstanStyle) window.OstanStyle.showToast("User Deleted", `${u.name} removed from roster`);
+    }
+    window.deleteWorkerById = deleteWorkerById;
+
+    function saveWorker(e) {
+      e.preventDefault();
+      const name = document.getElementById("worker-name").value.trim();
+      const email = document.getElementById("worker-email").value.trim().toLowerCase();
+      const role = document.getElementById("worker-role")?.value || "EMPLOYEE";
+      if (!name || !email) return;
+
+      const newUser = {
+        id: "u-" + Date.now(),
+        name,
+        email,
+        role,
+        status: "ACTIVE",
+        isProtected: false,
+        sectionAccess: {
+          reminders: "accessible",
+          tasks: "accessible",
+          workers: role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER" ? "accessible" : "hidden",
+          warehouse: role === "EMPLOYEE" ? "locked" : "accessible",
+          settings: "accessible"
+        }
+      };
+
+      state.users.push(newUser);
+      saveState();
+      closeModals();
+      renderWorkers();
+      if (window.OstanStyle) window.OstanStyle.showToast("Worker Registered", `${name} (${role}) added`);
+    }
+    window.saveWorker = saveWorker;
 
     function renderDepartments() {
       const selectWorker = document.getElementById("dept-ctrl-worker");
