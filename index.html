@@ -657,7 +657,7 @@
             </div>
 
             <!-- Card 2: Open Tasks -->
-            <div class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('tasks')">
+            <div id="card-open-tasks" class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('tasks')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                 <span id="label-stat-tasks" data-i18n="dash_open_tasks" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Open Tasks</span>
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(6, 182, 212, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center;">☑️</div>
@@ -667,7 +667,7 @@
             </div>
 
             <!-- Card 3: Upcoming Reminders -->
-            <div class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('reminders')">
+            <div id="card-upcoming-reminders" class="glass-panel card-hover" style="padding: 1.25rem; cursor: pointer;" onclick="setModule('reminders')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
                 <span data-i18n="dash_upcoming_reminders" style="font-size: 0.85rem; font-weight: 600; color: var(--text-muted);">Upcoming Reminders</span>
                 <div style="width: 36px; height: 36px; border-radius: 8px; background: rgba(245, 158, 11, 0.15); color: #fbbf24; display: flex; align-items: center; justify-content: center;">⏰</div>
@@ -690,7 +690,7 @@
           <!-- Bottom 2-Column Grid: Quick Operations & Active Tasks -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
             <!-- Left: Quick Operations -->
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <div id="dash-quick-ops-card" class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
               <div data-i18n="quick_ops_title" style="font-weight: 700; font-size: 1rem;">⚡ Quick Operations</div>
 
               <div style="display: flex; flex-direction: column; gap: 0.65rem;">
@@ -722,7 +722,7 @@
             </div>
 
             <!-- Right: Active Tasks (Named "Tasks") -->
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <div id="dash-tasks-panel" class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div data-i18n="dash_active_tasks_title" style="font-weight: 700; font-size: 1rem;">Tasks</div>
                 <button onclick="setModule('tasks')" class="btn btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">View All →</button>
@@ -1365,32 +1365,89 @@
         groupEl.style.display = hasVisibleChild ? "flex" : "none";
       });
 
+      // Feature Access Flags (ONLY 'accessible' means visible on the dashboard! If locked or hidden, hide from dashboard!)
+      const stockAccess = getSectionAccess("stock", user);
+      const tasksAccess = getSectionAccess("tasks", user);
+      const remindersAccess = getSectionAccess("reminders", user);
+      const employeesAccess = getSectionAccess("employees", user);
+
+      // Dashboard: HIDE features if they are 'locked' OR 'hidden'
+      const cardLowStock = document.getElementById("card-low-stock");
+      if (cardLowStock) cardLowStock.style.display = (stockAccess === "accessible") ? "block" : "none";
+
+      const quickOpStock = document.getElementById("quick-op-stock");
+      if (quickOpStock) quickOpStock.style.display = (stockAccess === "accessible") ? "flex" : "none";
+
+      const cardTotalEmp = document.getElementById("card-total-employees");
+      if (cardTotalEmp) cardTotalEmp.style.display = (employeesAccess === "accessible") ? "block" : "none";
+
+      const cardTasks = document.getElementById("card-open-tasks");
+      if (cardTasks) cardTasks.style.display = (tasksAccess === "accessible") ? "block" : "none";
+
+      const quickOpTasks = document.getElementById("quick-op-tasks");
+      if (quickOpTasks) quickOpTasks.style.display = (tasksAccess === "accessible") ? "flex" : "none";
+
+      const dashTasksPanel = document.getElementById("dash-tasks-panel");
+      if (dashTasksPanel) dashTasksPanel.style.display = (tasksAccess === "accessible") ? "flex" : "none";
+
+      const cardReminders = document.getElementById("card-upcoming-reminders");
+      if (cardReminders) cardReminders.style.display = (remindersAccess === "accessible") ? "block" : "none";
+
+      const quickOpReminders = document.getElementById("quick-op-reminders");
+      if (quickOpReminders) quickOpReminders.style.display = (remindersAccess === "accessible") ? "flex" : "none";
+
+      // If stock is hidden, hide Stock Requests as well unless explicitly accessible
+      if (stockAccess === "hidden") {
+        const navReq = document.getElementById("nav-stock-requests");
+        if (navReq && (!user.sectionAccess || user.sectionAccess["stock-requests"] !== "accessible")) {
+          navReq.style.display = "none";
+        }
+      }
+
+      // Re-evaluate nav groups after individual overrides
+      groups.forEach(g => {
+        const groupEl = document.getElementById(g.id);
+        if (!groupEl) return;
+        const hasVisibleChild = g.items.some(navId => {
+          const item = document.getElementById(navId);
+          return item && item.style.display !== "none";
+        });
+        groupEl.style.display = hasVisibleChild ? "flex" : "none";
+      });
+
       // Update Task Management label for employees (without task assigning permissions)
       const isEmp = user && user.role === "EMPLOYEE";
       const lang = document.documentElement.getAttribute("lang") || "en";
 
       const navTasksLabel = document.querySelector("#nav-tasks span[data-i18n]");
       if (navTasksLabel) {
+        navTasksLabel.setAttribute("data-i18n", isEmp ? "nav_tasks_emp" : "nav_tasks");
         navTasksLabel.textContent = isEmp ? (lang === "ar" ? "المهام" : "Tasks") : (lang === "ar" ? "إدارة المهام" : "Task Management");
       }
 
-      const quickOpTasksTitle = document.querySelector("#quick-op-tasks div[data-i18n='op_tasks_title']");
+      const quickOpTasksTitle = document.querySelector("#quick-op-tasks div[data-i18n]");
       if (quickOpTasksTitle) {
+        quickOpTasksTitle.setAttribute("data-i18n", isEmp ? "op_tasks_title_emp" : "op_tasks_title");
         quickOpTasksTitle.textContent = isEmp ? (lang === "ar" ? "المهام" : "Tasks") : (lang === "ar" ? "إدارة وتوزيع المهام" : "Task Management");
       }
 
-      const quickOpTasksDesc = document.querySelector("#quick-op-tasks div[data-i18n='op_tasks_desc']");
+      const quickOpTasksDesc = document.querySelector("#quick-op-tasks div[data-i18n*='desc']");
       if (quickOpTasksDesc) {
+        quickOpTasksDesc.setAttribute("data-i18n", isEmp ? "op_tasks_desc_emp" : "op_tasks_desc");
         quickOpTasksDesc.textContent = isEmp ? (lang === "ar" ? "استعراض وتحديث المهام المسندة إليك ومتابعة حالة التنفيذ." : "View and update your assigned tasks and track execution status.") : (lang === "ar" ? "إسناد المهام للعمال ومتابعة مراحل الإنجاز والتحديث الفوري" : "Assign tasks to specific registered workers with full edit controls");
       }
 
-      // Dashboard low stock card and quick-op warehouse visibility
-      const hasStockAccess = getSectionAccess("stock", user) !== "hidden";
-      const cardLowStock = document.getElementById("card-low-stock");
-      if (cardLowStock) cardLowStock.style.display = hasStockAccess ? "block" : "none";
+      const taskHeaderTitle = document.getElementById("tasks-header-title");
+      if (taskHeaderTitle) {
+        taskHeaderTitle.setAttribute("data-i18n", isEmp ? "tasks_section_title_emp" : "tasks_section_title");
+        taskHeaderTitle.textContent = isEmp ? (lang === "ar" ? "المهام" : "Tasks") : (lang === "ar" ? "إدارة المهام وتعيين العمال" : "Tasks & Assignments");
+      }
 
-      const quickOpStock = document.getElementById("quick-op-stock");
-      if (quickOpStock) quickOpStock.style.display = hasStockAccess ? "flex" : "none";
+      const taskDescText = document.getElementById("tasks-desc-text");
+      if (taskDescText) {
+        taskDescText.setAttribute("data-i18n", isEmp ? "tasks_section_desc_emp" : "tasks_section_desc");
+        taskDescText.textContent = isEmp ? (lang === "ar" ? "استعراض وتحديث المهام المسندة إليك ومتابعة حالة التنفيذ." : "View and update your assigned tasks and track execution status.") : (lang === "ar" ? "إسناد ومتابعة مراحل تنفيذ المهام بين أفراد فريق العمل." : "Assign and track execution progress across company staff.");
+      }
     }
 
     function renderDashboard() {
@@ -1567,8 +1624,8 @@
             employees: role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER" ? "accessible" : "hidden",
             departments: role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER" ? "accessible" : "hidden",
             tasks: "accessible",
-            stock: role === "EMPLOYEE" ? "locked" : "accessible",
-            "stock-requests": "accessible",
+            stock: (role === "SUPER_ADMIN" || role === "ADMIN" || role === "STOCK_MANAGER") ? "accessible" : "hidden",
+            "stock-requests": (role === "SUPER_ADMIN" || role === "ADMIN" || role === "STOCK_MANAGER") ? "accessible" : "hidden",
             reports: role === "SUPER_ADMIN" || role === "ADMIN" ? "accessible" : "hidden",
             "audit-logs": role === "SUPER_ADMIN" || role === "ADMIN" ? "accessible" : "hidden",
             settings: "accessible"
@@ -1664,6 +1721,17 @@
       renderDepartments();
       applyModuleVisibility();
       if (window.OstanStyle) window.OstanStyle.showToast("Access Updated", `${u.name} -> ${sectionKey}: ${next}`);
+
+      // SYNC LIVE TO FIRESTORE SO WORKER CLIENTS UPDATE IN REAL TIME
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("users").doc(u.id).set({
+            sectionAccess: u.sectionAccess
+          }, { merge: true });
+        } catch (e) {
+          console.error("Firestore access sync failed:", e);
+        }
+      }
     }
     window.cycleWorkerAccess = cycleWorkerAccess;
 
@@ -1681,6 +1749,17 @@
         renderDepartments();
         applyModuleVisibility();
         if (window.OstanStyle) window.OstanStyle.showToast("Policy Applied", `Updated access for ${worker.name}`);
+
+        // SYNC LIVE TO FIRESTORE SO WORKER CLIENTS UPDATE IN REAL TIME
+        if (window.fbDb) {
+          try {
+            window.fbDb.collection("users").doc(worker.id).set({
+              sectionAccess: worker.sectionAccess
+            }, { merge: true });
+          } catch (e) {
+            console.error("Firestore policy sync failed:", e);
+          }
+        }
       }
     }
     window.applyDeptPolicyFromForm = applyDeptPolicyFromForm;
@@ -2445,29 +2524,46 @@
           const docData = change.doc.data();
           const docId = change.doc.id;
 
-          if (change.type === "added" && initialLoadDone) {
-            const exists = state.users.some(u => u.email.toLowerCase() === (docData.email || "").toLowerCase());
-            if (!exists && docData.email) {
-              const liveEmp = {
+          let targetUser = state.users.find(u => u.id === docId || (docData.email && u.email.toLowerCase() === docData.email.toLowerCase()));
+
+          if (change.type === "added" || change.type === "modified") {
+            if (targetUser) {
+              targetUser.name = docData.name || targetUser.name;
+              targetUser.nameAr = docData.nameAr || targetUser.nameAr;
+              targetUser.role = docData.role || targetUser.role;
+              if (docData.sectionAccess) {
+                targetUser.sectionAccess = { ...targetUser.sectionAccess, ...docData.sectionAccess };
+              }
+            } else if (docData.email) {
+              const isSuper = docData.email?.toLowerCase().trim() === "waseem.tw@hotmail.com";
+              targetUser = {
                 id: docId,
                 name: docData.name || "New Employee",
                 nameAr: docData.nameAr || null,
                 email: docData.email,
                 role: docData.role || "EMPLOYEE",
                 status: "ACTIVE",
-                isProtected: docData.email?.toLowerCase().trim() === "waseem.tw@hotmail.com"
+                isProtected: isSuper,
+                sectionAccess: docData.sectionAccess || {
+                  reminders: "accessible",
+                  tasks: "accessible",
+                  employees: isSuper ? "accessible" : "hidden",
+                  departments: isSuper ? "accessible" : "hidden",
+                  stock: isSuper ? "accessible" : "hidden",
+                  "stock-requests": isSuper ? "accessible" : "hidden",
+                  reports: isSuper ? "accessible" : "hidden",
+                  "audit-logs": isSuper ? "accessible" : "hidden",
+                  settings: "accessible"
+                }
               };
-              state.users.push(liveEmp);
-              saveState();
-              renderWorkers();
-              renderDepartments();
-              updateCounts();
+              state.users.push(targetUser);
 
-              // ONLY show alert if current user has access to employees section
-              const currentUser = getCurrentUser();
-              if (currentUser && getSectionAccess("employees", currentUser) === "accessible") {
-                if (window.OstanStyle) {
-                  window.OstanStyle.showToast("⚡ Live Capture", `New employee joined: ${liveEmp.name}`);
+              if (initialLoadDone && change.type === "added") {
+                const currentUser = getCurrentUser();
+                if (currentUser && getSectionAccess("employees", currentUser) === "accessible") {
+                  if (window.OstanStyle) {
+                    window.OstanStyle.showToast("⚡ Live Capture", `New employee joined: ${targetUser.name}`);
+                  }
                 }
               }
             }
@@ -2475,13 +2571,16 @@
 
           if (change.type === "removed") {
             state.users = state.users.filter(u => u.id !== docId && u.email !== docData.email);
-            saveState();
-            renderWorkers();
-            renderDepartments();
-            updateCounts();
           }
         });
+
         initialLoadDone = true;
+        saveState();
+        applyModuleVisibility();
+        renderDashboard();
+        renderWorkers();
+        renderDepartments();
+        updateCounts();
       });
     }
 
