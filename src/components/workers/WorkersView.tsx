@@ -2,6 +2,15 @@
 
 import React, { useState, useEffect } from "react";
 import { useI18n } from "@/lib/i18n/context";
+import { db } from "@/lib/firebase/config";
+import {
+  collection,
+  onSnapshot,
+  doc,
+  setDoc,
+  deleteDoc,
+  serverTimestamp,
+} from "firebase/firestore";
 import {
   Users,
   Plus,
@@ -9,10 +18,9 @@ import {
   Edit2,
   Phone,
   Mail,
-  Shield,
   ShieldAlert,
   X,
-  Lock,
+  Radio,
   CheckCircle2,
   Search,
 } from "lucide-react";
@@ -49,25 +57,120 @@ export function WorkersView() {
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [liveToast, setLiveToast] = useState<string | null>(null);
 
-  const fetchUsers = async () => {
+  // Initial Fetch from PostgreSQL DB
+  const fetchDbUsers = async () => {
     try {
       const res = await fetch("/api/users");
       const data = await res.json();
       if (res.ok && data.users) {
-        setUsers(data.users);
+        return data.users as UserItem[];
       }
     } catch (e) {
-      console.error("Failed to fetch users:", e);
-    } finally {
-      setLoading(false);
+      console.error("Failed to fetch database users:", e);
     }
+    return [];
   };
 
+  // Setup Real-Time Cloud Firestore Listener
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    let isInitialLoad = true;
+
+    // First load from database
+    fetchDbUsers().then((dbUsers) => {
+      setUsers(dbUsers);
+      setLoading(false);
+    });
+
+    // Real-Time Listener on Firestore 'users' collection
+    const unsubscribe = onSnapshot(
+      collection(db, "users"),
+      (snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          const docData = change.doc.data();
+          const docId = change.doc.id;
+
+          if (change.type === "added" && !isInitialLoad) {
+            // Live capture: new user signed up or created!
+            const newEmployee: UserItem = {
+              id: docId,
+              name: docData.name || "New Employee",
+              nameAr: docData.nameAr || null,
+              email: docData.email || "",
+              role: docData.role || "EMPLOYEE",
+              status: "ACTIVE",
+              isProtected: docData.email?.toLowerCase().trim() === "waseem.tw@hotmail.com",
+              phone: docData.phone || null,
+              department: docData.department ? { id: docData.department, name: docData.department } : null,
+              createdAt: new Date().toISOString(),
+            };
+
+            setUsers((prev) => {
+              if (prev.some((u) => u.email.toLowerCase() === newEmployee.email.toLowerCase())) {
+                return prev;
+              }
+              return [newEmployee, ...prev];
+            });
+
+            // Live Audio Notification & Toast
+            try {
+              const AudioContext = window.AudioContext || (window as any).webkitAudioContext;
+              if (AudioContext) {
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = "sine";
+                osc.frequency.setValueAtTime(587.33, ctx.currentTime);
+                osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+                gain.gain.setValueAtTime(0.2, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+              }
+            } catch (e) {}
+
+            setLiveToast(
+              locale === "ar"
+                ? `⚡ رصد فوري: تم تسجيل موظف جديد في النظام: ${newEmployee.name} (${newEmployee.email})`
+                : `⚡ Live Capture: New employee registered: ${newEmployee.name} (${newEmployee.email})`
+            );
+            setTimeout(() => setLiveToast(null), 5000);
+          }
+
+          if (change.type === "removed") {
+            // Live deletion: instantly remove from screen
+            setUsers((prev) => prev.filter((u) => u.id !== docId && u.email !== docData.email));
+          }
+
+          if (change.type === "modified") {
+            setUsers((prev) =>
+              prev.map((u) =>
+                u.id === docId || u.email === docData.email
+                  ? {
+                      ...u,
+                      name: docData.name || u.name,
+                      nameAr: docData.nameAr || u.nameAr,
+                      role: docData.role || u.role,
+                      phone: docData.phone || u.phone,
+                    }
+                  : u
+              )
+            );
+          }
+        });
+
+        isInitialLoad = false;
+      },
+      (err) => {
+        console.warn("Firestore onSnapshot notice:", err);
+      }
+    );
+
+    return () => unsubscribe();
+  }, [locale]);
 
   const openNewModal = () => {
     setEditingUser(null);
@@ -100,7 +203,7 @@ export function WorkersView() {
 
     try {
       if (editingUser) {
-        // Edit existing user
+        // Edit existing user in API & Firestore
         const res = await fetch(`/api/users/${editingUser.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -115,13 +218,27 @@ export function WorkersView() {
         });
 
         const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to update user");
-        }
+        if (!res.ok) throw new Error(data.error || "Failed to update user");
 
-        setSuccessMsg(locale === "ar" ? "تم تحديث بيانات المستخدم في النظام و Firebase بنجاح!" : "User updated successfully in Database & Firebase!");
+        // Sync update to Cloud Firestore
+        try {
+          await setDoc(
+            doc(db, "users", editingUser.id),
+            {
+              name,
+              nameAr,
+              email,
+              role,
+              phone,
+              updatedAt: serverTimestamp(),
+            },
+            { merge: true }
+          );
+        } catch (e) {}
+
+        setLiveToast(locale === "ar" ? "تم تحديث بيانات الموظف ومزامنتها لحظياً!" : "Employee updated and synced live!");
       } else {
-        // Create new user (DB + Firebase Auth)
+        // Create new user (API + Firebase Auth + Cloud Firestore)
         if (!password.trim()) {
           setError(locale === "ar" ? "يرجى تحديد كلمة المرور للحساب." : "Password is required for new accounts.");
           setSaving(false);
@@ -142,16 +259,32 @@ export function WorkersView() {
         });
 
         const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || "Failed to create user");
-        }
+        if (!res.ok) throw new Error(data.error || "Failed to create user");
 
-        setSuccessMsg(locale === "ar" ? "تم إنشاء الحساب في النظام و Firebase بنجاح!" : "User created & registered in Firebase successfully!");
+        const createdId = data.user?.id || `user_${Date.now()}`;
+
+        // Sync directly to Cloud Firestore for immediate real-time broadcast
+        try {
+          await setDoc(doc(db, "users", createdId), {
+            uid: createdId,
+            name,
+            nameAr,
+            email: email.toLowerCase().trim(),
+            role,
+            phone,
+            createdAt: serverTimestamp(),
+          });
+        } catch (e) {}
+
+        setLiveToast(
+          locale === "ar"
+            ? "تم إنشاء الحساب وبثه لحظياً عبر Firebase!"
+            : "User created & broadcast live across all screens!"
+        );
       }
 
       setIsModalOpen(false);
-      fetchUsers();
-      setTimeout(() => setSuccessMsg(null), 3500);
+      setTimeout(() => setLiveToast(null), 4000);
     } catch (err: any) {
       setError(err.message || "An error occurred");
     } finally {
@@ -166,20 +299,24 @@ export function WorkersView() {
     }
 
     const confirmMsg = locale === "ar"
-      ? `هل أنت متأكد من حذف ${u.name}؟ سيتم حذف الحساب نهائياً من النظام و Firebase وتحرير البريد الإلكتروني فوراً.`
-      : `Are you sure you want to delete ${u.name}? This will permanently remove the account from Database and Firebase Auth, freeing the email for registration.`;
+      ? `هل أنت متأكد من حذف ${u.name}؟ سيتم حذف الحساب لحظياً من جميع الشاشات وتحرير البريد في Firebase.`
+      : `Are you sure you want to delete ${u.name}? This will delete the account in real-time across all screens and free up the email.`;
 
     if (!confirm(confirmMsg)) return;
 
     try {
+      // 1. Delete from Cloud Firestore immediately
+      try {
+        await deleteDoc(doc(db, "users", u.id));
+      } catch (e) {}
+
+      // 2. Delete from DB & Firebase Auth
       const res = await fetch(`/api/users/${u.id}`, { method: "DELETE" });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to delete user");
-      }
-      setSuccessMsg(locale === "ar" ? "تم حذف الحساب من النظام و Firebase بنجاح!" : "User deleted from Database & Firebase Auth!");
-      fetchUsers();
-      setTimeout(() => setSuccessMsg(null), 3500);
+      if (!res.ok) throw new Error(data.error || "Failed to delete user");
+
+      setLiveToast(locale === "ar" ? "تم حذف الحساب وتحديث الشاشات لحظياً!" : "User deleted and broadcast live!");
+      setTimeout(() => setLiveToast(null), 4000);
     } catch (err: any) {
       alert(err.message || "Failed to delete user");
     }
@@ -226,13 +363,42 @@ export function WorkersView() {
             <Users size={26} />
           </div>
           <div>
-            <h1 style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-main)", letterSpacing: "-0.02em" }}>
-              {locale === "ar" ? "إدارة الموظفين وفريق العمل" : "Employees & User Management"}
-            </h1>
+            <div style={{ display: "flex", alignItems: "center", gap: "0.6rem" }}>
+              <h1 style={{ fontSize: "1.45rem", fontWeight: 800, color: "var(--text-main)", letterSpacing: "-0.02em" }}>
+                {locale === "ar" ? "إدارة الموظفين وفريق العمل" : "Employees & User Management"}
+              </h1>
+              <span
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "0.35rem",
+                  padding: "0.2rem 0.6rem",
+                  borderRadius: "var(--radius-full)",
+                  background: "rgba(16, 185, 129, 0.15)",
+                  border: "1px solid rgba(16, 185, 129, 0.3)",
+                  color: "#34d399",
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.03em",
+                }}
+              >
+                <span
+                  style={{
+                    width: "7px",
+                    height: "7px",
+                    borderRadius: "50%",
+                    backgroundColor: "#10b981",
+                    boxShadow: "0 0 8px #10b981",
+                    animation: "pulse 1.5s infinite",
+                  }}
+                />
+                LIVE REAL-TIME CAPTURE
+              </span>
+            </div>
             <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "2px" }}>
               {locale === "ar"
-                ? "إنشاء وإدارة حسابات الموظفين مع المزامنة الفورية في Firebase Authentication."
-                : "Create, edit, and delete real employee accounts with real-time Firebase Auth synchronization."}
+                ? "رصد ومزامنة فورية: أي حساب يتم إنشاؤه بواسطة أي موظف يظهر تلقائياً ولحظياً على شاشتك."
+                : "Live tracking & real-time capture: When any employee creates an account, it instantly appears on your screen."}
             </p>
           </div>
         </div>
@@ -243,24 +409,26 @@ export function WorkersView() {
         </button>
       </div>
 
-      {/* Success Notification */}
-      {successMsg && (
+      {/* Live Toast Notification Banner */}
+      {liveToast && (
         <div
           style={{
             padding: "0.85rem 1.25rem",
-            background: "rgba(16, 185, 129, 0.15)",
-            border: "1px solid rgba(16, 185, 129, 0.35)",
+            background: "linear-gradient(90deg, rgba(16, 185, 129, 0.2) 0%, rgba(6, 182, 212, 0.2) 100%)",
+            border: "1px solid rgba(16, 185, 129, 0.4)",
             borderRadius: "var(--radius-md)",
             color: "#34d399",
             display: "flex",
             alignItems: "center",
-            gap: "0.6rem",
-            fontSize: "0.88rem",
-            fontWeight: 600,
+            gap: "0.75rem",
+            fontSize: "0.9rem",
+            fontWeight: 700,
+            boxShadow: "0 0 25px rgba(16, 185, 129, 0.2)",
+            animation: "fadeIn 0.3s ease-out",
           }}
         >
-          <CheckCircle2 size={18} />
-          <span>{successMsg}</span>
+          <Radio size={20} color="#10b981" />
+          <span>{liveToast}</span>
         </div>
       )}
 
@@ -284,7 +452,7 @@ export function WorkersView() {
           style={{ maxWidth: "380px" }}
         />
         <div style={{ marginInlineStart: "auto", fontSize: "0.82rem", color: "var(--text-muted)" }}>
-          {filteredUsers.length} {locale === "ar" ? "مستخدمين مسجلين" : "Registered Accounts"}
+          {filteredUsers.length} {locale === "ar" ? "حسابات مسجلة (مباشر)" : "Live Registered Accounts"}
         </div>
       </div>
 
@@ -311,8 +479,8 @@ export function WorkersView() {
                   <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
                     <div
                       style={{
-                        width: "40px",
-                        height: "40px",
+                        width: "42px",
+                        height: "42px",
                         borderRadius: "var(--radius-full)",
                         background: isMasterAdmin
                           ? "linear-gradient(135deg, #f43f5e, #fb7185)"
@@ -376,7 +544,7 @@ export function WorkersView() {
                 }}
               >
                 <span className="badge badge-secondary" style={{ fontSize: "0.68rem" }}>
-                  {u.department ? u.department.name : "General Staff"}
+                  {isMasterAdmin ? "Protected Super Admin" : u.department ? u.department.name : "Staff Member"}
                 </span>
 
                 <div style={{ display: "flex", gap: "0.4rem" }}>
@@ -394,7 +562,7 @@ export function WorkersView() {
                       onClick={() => handleDeleteUser(u)}
                       className="btn btn-ghost"
                       style={{ padding: "0.35rem", color: "#fb7185" }}
-                      title="Delete User from Database & Firebase"
+                      title="Delete User in Real-Time"
                     >
                       <Trash2 size={16} />
                     </button>
@@ -434,7 +602,7 @@ export function WorkersView() {
               <h2 style={{ fontSize: "1.25rem", fontWeight: 800 }}>
                 {editingUser
                   ? (locale === "ar" ? "تعديل حساب موظف" : "Edit Employee Account")
-                  : (locale === "ar" ? "إضافة موظف جديد (تسجيل في Firebase)" : "Create User (Sync with Firebase)")}
+                  : (locale === "ar" ? "إضافة موظف جديد (مزامنة فورية)" : "Create User (Live Sync with Firebase)")}
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="btn btn-ghost" style={{ padding: "0.3rem" }}>
                 <X size={18} />
@@ -554,7 +722,7 @@ export function WorkersView() {
                   Cancel
                 </button>
                 <button type="submit" disabled={saving} className="btn btn-primary">
-                  {saving ? "Saving..." : editingUser ? "Save Changes" : "Create & Register in Firebase"}
+                  {saving ? "Saving..." : editingUser ? "Save Changes" : "Create & Broadcast Live"}
                 </button>
               </div>
             </form>

@@ -1656,7 +1656,8 @@
 
         const user = {
           id: fbUid,
-          name: name || (isWaseem ? "Waseem Al-Otaibi" : "Worker"),
+          name: name || (isWaseem ? "Osama Al-Twaish" : "Worker"),
+          nameAr: isWaseem ? "اسامة الطويش" : null,
           email: email,
           password: pass,
           role: isWaseem ? "SUPER_ADMIN" : "EMPLOYEE",
@@ -1694,8 +1695,9 @@
         let user = state.users.find(u => u.email.toLowerCase() === email);
         if (!user && email === "waseem.tw@hotmail.com") {
           user = {
-            id: "u-waseem",
-            name: "Waseem Al-Otaibi",
+            id: "u-osama",
+            name: "Osama Al-Twaish",
+            nameAr: "اسامة الطويش",
             email: "waseem.tw@hotmail.com",
             password: pass,
             role: "SUPER_ADMIN",
@@ -1768,6 +1770,48 @@
       setAuthPortalMode("login");
     }
     window.userLogout = userLogout;
+
+    // Real-Time Live Cloud Firestore Sync & Live Capture
+    if (window.fbDb) {
+      let initialLoadDone = false;
+      window.fbDb.collection("users").onSnapshot((snapshot) => {
+        snapshot.docChanges().forEach((change) => {
+          const docData = change.doc.data();
+          const docId = change.doc.id;
+
+          if (change.type === "added" && initialLoadDone) {
+            const exists = state.users.some(u => u.email.toLowerCase() === (docData.email || "").toLowerCase());
+            if (!exists && docData.email) {
+              const liveEmp = {
+                id: docId,
+                name: docData.name || "New Employee",
+                nameAr: docData.nameAr || null,
+                email: docData.email,
+                role: docData.role || "EMPLOYEE",
+                status: "ACTIVE",
+                isProtected: docData.email?.toLowerCase().trim() === "waseem.tw@hotmail.com"
+              };
+              state.users.push(liveEmp);
+              saveState();
+              renderWorkers();
+              updateCounts();
+
+              if (window.OstanStyle) {
+                window.OstanStyle.showToast("⚡ Live Real-Time Capture", `New employee captured: ${liveEmp.name} (${liveEmp.email})`);
+              }
+            }
+          }
+
+          if (change.type === "removed") {
+            state.users = state.users.filter(u => u.id !== docId && u.email !== docData.email);
+            saveState();
+            renderWorkers();
+            updateCounts();
+          }
+        });
+        initialLoadDone = true;
+      });
+    }
 
     // Initialization
     const initialUser = getCurrentUser();
