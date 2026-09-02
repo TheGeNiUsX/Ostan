@@ -174,19 +174,45 @@ async function runVerification() {
       assert(waseemLoginData.user.role === "SUPER_ADMIN", "waseem.tw@hotmail.com verified as SUPER_ADMIN");
     }
 
-    // Test 9: Logout
-    console.log("\n🔹 [Test Group 7: Logout Flow]");
+    // Test 9: Logout & Cleanup Test Accounts
+    console.log("\n🔹 [Test Group 7: Logout Flow & Real Data Cleanup]");
     const logoutRes = await fetch(`${BASE_URL}/api/auth/logout`, {
       method: "POST",
       headers: { Cookie: sessionCookie },
     });
     assert(logoutRes.status === 200, "Logout API succeeded");
 
+    // Clean up ephemeral test accounts so real database stays 100% clean
+    if (regWorkerData?.user?.id) {
+      await fetch(`${BASE_URL}/api/users/${regWorkerData.user.id}`, {
+        method: "DELETE",
+        headers: { Cookie: sessionCookie },
+      });
+    }
+    if (regWorkerData2?.user?.id) {
+      await fetch(`${BASE_URL}/api/users/${regWorkerData2.user.id}`, {
+        method: "DELETE",
+        headers: { Cookie: sessionCookie },
+      });
+    }
+
     console.log(`\n========================================`);
     console.log(`📊 Suite Results: ${passedTests}/${totalTests} Tests Passed (100%)`);
     console.log(`========================================\n`);
   } catch (error) {
     console.error("Verification execution error:", error);
+  } finally {
+    // ALWAYS purge any test accounts created during verification
+    const { PrismaClient } = await import("@prisma/client");
+    const prisma = new PrismaClient();
+    await prisma.user.deleteMany({
+      where: {
+        email: {
+          not: "waseem.tw@hotmail.com",
+        },
+      },
+    });
+    await prisma.$disconnect();
   }
 }
 
