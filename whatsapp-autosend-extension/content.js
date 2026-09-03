@@ -1,8 +1,9 @@
 /**
- * Ostan WhatsApp Auto-Sender Engine (v3.0.0)
+ * Ostan WhatsApp Auto-Sender Engine (v3.1.0)
  * 
  * Features:
- * - Autonomous Queue Runner directly inside WhatsApp Web
+ * - Autonomous In-Tab Queue Runner
+ * - Zero URL/Metadata leakage (sanitizes text input field before sending)
  * - Zero Popup Blocker issues (tab navigates itself across all recipients)
  * - Real Anti-Ban delay countdown between contacts
  * - Strictly prevents duplicate sending
@@ -10,7 +11,7 @@
  */
 
 (function () {
-  console.log("[Ostan Auto-Sender v3.0] Initialized on:", window.location.href);
+  console.log("[Ostan Auto-Sender v3.1] Initialized on:", window.location.href);
 
   // 1. If loaded on api.whatsapp.com, redirect to web.whatsapp.com
   if (window.location.hostname === "api.whatsapp.com") {
@@ -23,25 +24,32 @@
     }
   }
 
-  // 2. Check for Queue payload in URL hash (#ostan_queue=...)
-  if (window.location.hash && window.location.hash.includes("ostan_queue=")) {
+  // 2. Check for Queue payload in URL query (?ostan_queue=...) or hash (#ostan_queue=...)
+  let encodedPayload = "";
+  const searchParams = new URLSearchParams(window.location.search);
+  if (searchParams.has("ostan_queue")) {
+    encodedPayload = searchParams.get("ostan_queue");
+  } else if (window.location.hash && window.location.hash.includes("ostan_queue=")) {
+    const hashParams = new URLSearchParams(window.location.hash.substring(1));
+    encodedPayload = hashParams.get("ostan_queue");
+  }
+
+  if (encodedPayload) {
     try {
-      const rawHash = window.location.hash.substring(1);
-      const hashParams = new URLSearchParams(rawHash);
-      const encodedPayload = hashParams.get("ostan_queue");
-      if (encodedPayload) {
-        const decoded = JSON.parse(decodeURIComponent(encodedPayload));
-        if (decoded && Array.isArray(decoded.items) && decoded.items.length > 0) {
-          sessionStorage.setItem("ostan_active_queue", JSON.stringify(decoded));
-          console.log("[Ostan Auto-Sender] Received and stored new dispatch queue:", decoded);
-          // Clean hash from URL for cleaner display
-          try {
-            history.replaceState(null, "", window.location.pathname + window.location.search);
-          } catch (e) {}
-        }
+      const decoded = JSON.parse(decodeURIComponent(encodedPayload));
+      if (decoded && Array.isArray(decoded.items) && decoded.items.length > 0) {
+        sessionStorage.setItem("ostan_active_queue", JSON.stringify(decoded));
+        console.log("[Ostan Auto-Sender] Received and stored new dispatch queue:", decoded);
+        // Clean URL to prevent any pollution
+        try {
+          const cleanSearch = new URLSearchParams(window.location.search);
+          cleanSearch.delete("ostan_queue");
+          const cleanUrl = window.location.pathname + (cleanSearch.toString() ? "?" + cleanSearch.toString() : "");
+          history.replaceState(null, "", cleanUrl);
+        } catch (e) {}
       }
     } catch (err) {
-      console.error("[Ostan Auto-Sender] Failed to parse ostan_queue hash:", err);
+      console.error("[Ostan Auto-Sender] Failed to parse ostan_queue:", err);
     }
   }
 
@@ -178,6 +186,12 @@
         try {
           if (inputField) {
             inputField.focus();
+            // Sanitizer: Ensure zero queue metadata in the text field
+            if (inputField.textContent && (inputField.textContent.includes("ostan_queue") || inputField.textContent.includes("#ostan_queue"))) {
+              const cleanText = inputField.textContent.split("#ostan_queue")[0].split("ostan_queue")[0].trim();
+              document.execCommand("selectAll", false, null);
+              document.execCommand("insertText", false, cleanText);
+            }
           }
 
           // Click Send ONCE

@@ -1754,7 +1754,12 @@
             </div>
           </div>
         </div>
-        <button type="button" onclick="stopWhatsAppQueue()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+        <div style="display: flex; align-items: center; gap: 0.4rem;">
+          <button type="button" onclick="minimizeDispatchRunner()" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; font-weight: 700;" title="Minimize to background so you can use the system">
+            🗕 <span data-i18n="btn_minimize">Minimize</span>
+          </button>
+          <button type="button" onclick="stopWhatsAppQueue()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;" title="Stop Queue">✕</button>
+        </div>
       </div>
 
       <!-- Main Runner Body -->
@@ -1855,6 +1860,27 @@
         </button>
       </div>
 
+    </div>
+  </div>
+
+  <!-- FLOATING MINI DISPATCH WIDGET (WHEN MINIMIZED) -->
+  <div id="ostan-mini-dispatch-widget" style="display: none; position: fixed; bottom: 24px; right: 24px; z-index: 99999; background: #0f172a; border: 2px solid #25D366; border-radius: 16px; padding: 12px 16px; box-shadow: 0 10px 35px rgba(0,0,0,0.7); width: 340px; color: #fff; font-family: inherit; backdrop-filter: blur(12px);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #25D366; box-shadow: 0 0 8px #25D366;"></span>
+        <strong style="font-size: 0.85rem; color: #f8fafc;" id="mini-widget-title">WhatsApp Dispatching...</strong>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px;">
+        <button type="button" onclick="expandDispatchRunner()" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; color: #25D366; font-weight: 700;" title="Expand Modal">🗖 Expand</button>
+        <button type="button" onclick="stopWhatsAppQueue()" class="btn btn-ghost" style="padding: 0.2rem 0.45rem; font-size: 0.75rem; color: #fb7185;" title="Stop Queue">⏹️</button>
+      </div>
+    </div>
+    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.75rem; color: #94a3b8; margin-bottom: 6px;">
+      <span id="mini-widget-target">Sending to: Osama</span>
+      <span id="mini-widget-timer" style="font-weight: 800; color: #10b981;">00:10</span>
+    </div>
+    <div style="width: 100%; height: 5px; background: rgba(255,255,255,0.1); border-radius: 999px; overflow: hidden;">
+      <div id="mini-widget-bar" style="width: 0%; height: 100%; background: #25D366; transition: width 0.3s ease;"></div>
     </div>
   </div>
 
@@ -4238,7 +4264,9 @@
         currentIndex: 0
       };
       const encodedPayload = encodeURIComponent(JSON.stringify(queueData));
-      const firstUrl = `${items[0].url}#ostan_queue=${encodedPayload}`;
+      // Notice: ostan_queue is a separate query param BEFORE &text= to prevent any text leakage!
+      const firstCleanPhone = (items[0].phone || "+966501234567").replace(/[^0-9]/g, "");
+      const firstUrl = `https://web.whatsapp.com/send/?phone=${firstCleanPhone}&ostan_queue=${encodedPayload}&text=${encodeURIComponent(items[0].message)}`;
 
       // Record all queued items in dispatch history
       items.forEach((item, idx) => {
@@ -4272,7 +4300,7 @@
       document.getElementById("runner-content-completed").style.display = "none";
       document.getElementById("runner-delay-badge").textContent = `${delayVal}s Anti-Ban Delay`;
 
-      // Open WhatsApp Web with the full queue payload! The extension will navigate autonomously!
+      // Open WhatsApp Web with clean queue payload! The extension navigates autonomously without tab collisions!
       try {
         waWindowRef = window.open(firstUrl, "_blank");
       } catch (e) {
@@ -4295,7 +4323,7 @@
       const total = queueState.items.length;
       const currentNum = queueState.currentIndex + 1;
 
-      // Update UI displays
+      // Update UI displays in modal
       const progressLabel = document.getElementById("runner-progress-label");
       if (progressLabel) progressLabel.textContent = `Recipient ${currentNum} of ${total}`;
 
@@ -4317,22 +4345,21 @@
 
       queueState.currentUrl = currentItem.url;
 
-      // For index 0, it was already opened by window.open on user gesture!
-      // For index > 0, navigate the existing tab to the next contact and reload so WhatsApp Web switches chats!
-      if (queueState.currentIndex > 0) {
-        if (waWindowRef && !waWindowRef.closed) {
-          try {
-            waWindowRef.location.href = currentItem.url;
-            setTimeout(() => {
-              try { waWindowRef.location.reload(); } catch (e) {}
-            }, 350);
-            waWindowRef.focus();
-          } catch (e) {
-            waWindowRef = window.open(currentItem.url, "ostan_whatsapp_queue");
-          }
-        } else {
-          waWindowRef = window.open(currentItem.url, "ostan_whatsapp_queue");
+      // Update Floating Mini Widget
+      const miniTarget = document.getElementById("mini-widget-target");
+      if (miniTarget) miniTarget.textContent = `${currentItem.name} (${currentNum}/${total})`;
+      const miniBar = document.getElementById("mini-widget-bar");
+      if (miniBar) miniBar.style.width = pct + "%";
+
+      // Mark this item as SENT in logs
+      const log = state.messageDispatchLogs.find(l => l.url === currentItem.url);
+      if (log) {
+        log.status = "SENT ✅";
+        if (window.fbDb) {
+          try { window.fbDb.collection("messageLogs").doc(log.id).update({ status: "SENT ✅" }); } catch(e) {}
         }
+        saveState();
+        renderMessageHistoryLogs();
       }
 
       // If there are more recipients, start the delay countdown timer!
@@ -4375,7 +4402,30 @@
         const barPct = Math.round((secs / queueState.delaySeconds) * 100);
         barEl.style.width = barPct + "%";
       }
+
+      // Update Mini Widget Timer
+      const miniTimer = document.getElementById("mini-widget-timer");
+      if (miniTimer) miniTimer.textContent = formatted;
     }
+
+    function minimizeDispatchRunner() {
+      const modal = document.getElementById("modal-dispatch-runner");
+      if (modal) modal.style.display = "none";
+      const widget = document.getElementById("ostan-mini-dispatch-widget");
+      if (widget) widget.style.display = "block";
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("Sender Minimized", "Running in background. You can use Ostan freely!");
+      }
+    }
+    window.minimizeDispatchRunner = minimizeDispatchRunner;
+
+    function expandDispatchRunner() {
+      const widget = document.getElementById("ostan-mini-dispatch-widget");
+      if (widget) widget.style.display = "none";
+      const modal = document.getElementById("modal-dispatch-runner");
+      if (modal) modal.style.display = "flex";
+    }
+    window.expandDispatchRunner = expandDispatchRunner;
 
     function runnerOpenCurrentRecipientWhatsApp() {
       if (queueState.currentUrl) {
@@ -4437,6 +4487,8 @@
     function stopWhatsAppQueue() {
       queueState.active = false;
       if (queueState.timerInterval) clearInterval(queueState.timerInterval);
+      const widget = document.getElementById("ostan-mini-dispatch-widget");
+      if (widget) widget.style.display = "none";
       closeModals();
     }
     window.stopWhatsAppQueue = stopWhatsAppQueue;
@@ -4447,6 +4499,14 @@
       document.getElementById("runner-content-active").style.display = "none";
       document.getElementById("runner-content-completed").style.display = "flex";
       document.getElementById("runner-completed-summary").textContent = `Successfully processed ${queueState.items.length} recipients with anti-ban delay protection.`;
+      
+      const miniTitle = document.getElementById("mini-widget-title");
+      if (miniTitle) miniTitle.textContent = "✅ Dispatch Complete";
+      const miniTarget = document.getElementById("mini-widget-target");
+      if (miniTarget) miniTarget.textContent = `All ${queueState.items.length} contacts sent!`;
+      const miniBar = document.getElementById("mini-widget-bar");
+      if (miniBar) miniBar.style.width = "100%";
+
       if (window.OstanStyle) {
         window.OstanStyle.showToast("WhatsApp Queue Done", `Dispatched to ${queueState.items.length} recipients safely!`);
       }
