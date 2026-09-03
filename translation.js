@@ -274,6 +274,7 @@
       stat_deleted_stock: "Stock Items",
       audit_item_restored_toast: "Item Restored Successfully",
       audit_item_perm_deleted_toast: "Item Permanently Deleted",
+      btn_reopen_active: "↶ Reopen to Active",
     },
 
     ar: {
@@ -546,6 +547,7 @@
       stat_deleted_stock: "عناصر المخزون",
       audit_item_restored_toast: "تمت استعادة العنصر بنجاح",
       audit_item_perm_deleted_toast: "تم الحذف النهائي للعنصر",
+      btn_reopen_active: "↶ إعادة للتفعيل",
     },
   };
 

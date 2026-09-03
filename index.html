@@ -1678,6 +1678,14 @@
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Assign to Worker *</label>
           <select id="task-worker-select" class="input-field"></select>
         </div>
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Task Status / الحالة</label>
+          <select id="task-status-select" class="input-field">
+            <option value="TODO">To Do (قيد الانتظار / نشطة)</option>
+            <option value="PROGRESS">In Progress (قيد التنفيذ / نشطة)</option>
+            <option value="DONE">Completed (مكتملة)</option>
+          </select>
+        </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
           <button type="button" onclick="closeModals()" class="btn btn-secondary">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Task</button>
@@ -3788,16 +3796,16 @@
           <div class="glass-panel card-hover" style="padding: 0.95rem; background: var(--bg-surface-elevated); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">${t.title}</div>
-              ${(!isDone && canEditTask) ? `<button onclick="editTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Edit Task">✏️</button>` : ''}
+              ${canEditTask ? `<button onclick="editTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Edit Task">✏️</button>` : ''}
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">👤 ${t.workerName || 'Staff'}</div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem;">
-              <div style="display: flex; gap: 0.35rem;">
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
                 ${canChangeStatus ? (
                   isDone ? `
-                    <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">↶ ${lang === 'ar' ? 'انتظار' : 'To Do'}</button>
-                    <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
+                    <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 700;" title="Revert to To Do">↶ ${lang === 'ar' ? 'إعادة للتفعيل' : 'Reopen to Active'}</button>
+                    <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; color: #fbbf24; border-color: rgba(251, 191, 36, 0.4);" title="Move to In Progress">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
                   ` : isProgress ? `
                     <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">↶ ${lang === 'ar' ? 'انتظار' : 'To Do'}</button>
                     <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
@@ -3805,7 +3813,11 @@
                     <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
                     <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
                   `
-                ) : ''}
+                ) : (isDone ? `
+                  <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; color: #38bdf8; font-weight: 700;" title="Reopen Task">
+                    ↶ ${lang === 'ar' ? 'إعادة للتفعيل' : 'Reopen to Active'}
+                  </button>
+                ` : '')}
               </div>
               ${canCancel ? `
                 <button onclick="cancelTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; color: #fb7185; font-size: 0.7rem;">
@@ -3832,15 +3844,13 @@
       }
       const t = state.tasks.find(x => x.id === id);
       if (!t) return;
-      if (t.status === "DONE") {
-        alert("Completed tasks are locked and cannot be edited.");
-        return;
-      }
       document.getElementById("task-edit-id").value = t.id;
       document.getElementById("task-title").value = t.title;
       openTaskHUD();
       document.getElementById("modal-task-heading").textContent = "✏️ Edit Task";
       document.getElementById("task-worker-select").value = t.workerName;
+      const statusSelect = document.getElementById("task-status-select");
+      if (statusSelect) statusSelect.value = t.status || "TODO";
     }
     window.editTaskById = editTaskById;
 
@@ -3958,7 +3968,14 @@
                 <button onclick="markReminderDone('${r.id}')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">
                   ✓ Mark Done
                 </button>
-              ` : `<span class="badge badge-emerald">COMPLETED</span>`}
+              ` : `
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span class="badge badge-emerald" style="font-size: 0.68rem;">COMPLETED</span>
+                  <button onclick="toggleReminderCompleted('${r.id}')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 700;" title="Reopen Reminder to Active">
+                    ↶ Reopen to Active
+                  </button>
+                </div>
+              `}
             </div>
           </div>
         `;
@@ -4014,12 +4031,38 @@
     }
     window.deleteReminderById = deleteReminderById;
 
+    function toggleReminderCompleted(id) {
+      const r = state.reminders.find(x => x.id === id);
+      if (!r) return;
+      r.completed = !r.completed;
+      saveState();
+      renderReminders();
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("reminders").doc(r.id).set(r, { merge: true });
+        } catch (e) {}
+      }
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast(
+          r.completed ? (lang === "ar" ? "اكتمل التذكير" : "Reminder Completed") : (lang === "ar" ? "تمت إعادة التفعيل" : "Reminder Reopened to Active"),
+          r.title
+        );
+      }
+    }
+    window.toggleReminderCompleted = toggleReminderCompleted;
+
     function markReminderDone(id) {
       const r = state.reminders.find(x => x.id === id);
       if (r) {
         r.completed = true;
         saveState();
         renderReminders();
+        if (window.fbDb) {
+          try {
+            window.fbDb.collection("reminders").doc(r.id).set(r, { merge: true });
+          } catch (e) {}
+        }
         if (window.OstanStyle) window.OstanStyle.showToast("Reminder Completed", r.title);
       }
     }
@@ -4445,6 +4488,10 @@
         if (t) {
           t.title = title;
           t.workerName = workerName;
+          const statusSelect = document.getElementById("task-status-select");
+          if (statusSelect && statusSelect.value) {
+            t.status = statusSelect.value;
+          }
           syncTaskToFirestore(t);
         }
       } else {
@@ -4452,7 +4499,9 @@
           alert("Permission denied: You do not have permission to assign tasks.");
           return;
         }
-        const newTask = { id: "task-" + Date.now(), title, workerName, status: "TODO", createdAt: new Date().toISOString() };
+        const statusSelect = document.getElementById("task-status-select");
+        const status = (statusSelect && statusSelect.value) ? statusSelect.value : "TODO";
+        const newTask = { id: "task-" + Date.now(), title, workerName, status, createdAt: new Date().toISOString() };
         state.tasks.unshift(newTask);
         syncTaskToFirestore(newTask);
       }
