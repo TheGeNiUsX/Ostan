@@ -1761,8 +1761,11 @@
           phone: u.phone || "+966 50 123 4567"
         };
       }
+      delete u.password;
       return u;
     });
+
+    sanitizedUsers.forEach(u => delete u.password);
 
     if (!sanitizedUsers.some(u => u.email.toLowerCase().trim() === "waseem.tw@hotmail.com")) {
       sanitizedUsers.unshift(DEFAULT_USERS[0]);
@@ -1825,14 +1828,45 @@
       return u || null;
     }
 
-    function syncUserToFirestore(targetUser) {
+    async function hashPassword(plainPassword) {
+      if (!plainPassword) return "";
+      try {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(plainPassword + "_ostan_sec_salt_98412_");
+        const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+      } catch (e) {
+        let hash = 0;
+        for (let i = 0; i < plainPassword.length; i++) {
+          hash = ((hash << 5) - hash) + plainPassword.charCodeAt(i);
+          hash |= 0;
+        }
+        return "h_" + Math.abs(hash).toString(16);
+      }
+    }
+    window.hashPassword = hashPassword;
+
+    async function syncUserToFirestore(targetUser) {
       if (!window.fbDb || !targetUser || !targetUser.email) return;
       const cleanEmail = targetUser.email.toLowerCase().trim();
+      const phone = targetUser.phone || "+966 50 123 4567";
+      const compactPhone = targetUser.compactPhone || phone.replace(/[\s\-\(\)]/g, "");
+
+      let passwordHash = targetUser.passwordHash || null;
+      if (!passwordHash && targetUser.password) {
+        passwordHash = await hashPassword(targetUser.password);
+        targetUser.passwordHash = passwordHash;
+        delete targetUser.password;
+      }
+
       const payload = {
         email: cleanEmail,
-        name: targetUser.name,
+        name: targetUser.name || "Employee",
         nameAr: targetUser.nameAr || null,
-        role: targetUser.role,
+        role: targetUser.role || "EMPLOYEE",
+        phone: phone,
+        compactPhone: compactPhone,
         isProtected: !!targetUser.isProtected,
         status: targetUser.status || "ACTIVE",
         sectionAccess: targetUser.sectionAccess || {},
@@ -1840,14 +1874,27 @@
         updatedAt: new Date().toISOString()
       };
 
+      if (passwordHash) {
+        payload.passwordHash = passwordHash;
+      }
+
+      // Explicitly delete plaintext password from Firestore
+      if (typeof firebase !== "undefined" && firebase.firestore && firebase.firestore.FieldValue) {
+        payload.password = firebase.firestore.FieldValue.delete();
+      }
+
       try {
-        if (targetUser.id) {
-          window.fbDb.collection("users").doc(targetUser.id).set(payload, { merge: true });
+        if (targetUser.id && !targetUser.id.startsWith("u-")) {
+          window.fbDb.collection("users").doc(targetUser.id).set(payload, { merge: true }).catch(() => {});
         }
         window.fbDb.collection("users").where("email", "==", cleanEmail).get().then(snap => {
-          snap.forEach(docSnap => {
-            docSnap.ref.set(payload, { merge: true });
-          });
+          if (!snap.empty) {
+            snap.forEach(docSnap => {
+              docSnap.ref.set(payload, { merge: true });
+            });
+          } else if (targetUser.id) {
+            window.fbDb.collection("users").doc(targetUser.id).set(payload, { merge: true });
+          }
         }).catch(err => console.warn("Firestore sync email notice:", err));
       } catch (e) {
         console.error("Firestore syncUser error:", e);
@@ -2315,6 +2362,8 @@
         const isMaster = u.email.toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
         const roleBadgeClass = u.role === "SUPER_ADMIN" ? "badge-rose" : u.role === "ADMIN" ? "badge-primary" : u.role === "MANAGER" ? "badge-emerald" : u.role === "STOCK_MANAGER" ? "badge-amber" : "badge-cyan";
         const displayName = lang === "ar" && u.nameAr ? u.nameAr : u.name;
+        const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
+        const canEditThis = canEdit || isSelf;
 
         return `
           <div class="glass-panel card-hover" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border: ${isMaster ? '1px solid rgba(244, 63, 94, 0.35)' : '1px solid var(--border-subtle)'};">
@@ -2340,7 +2389,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
               <span class="badge badge-secondary" style="font-size: 0.68rem;">${isMaster ? (lang === 'ar' ? 'مسؤول متميز رئيسي' : 'Protected Master Admin') : (lang === 'ar' ? 'عضو فريق العمل' : 'Staff Member')}</span>
               <div style="display: flex; gap: 0.35rem;">
-                ${canEdit ? `
+                ${canEditThis ? `
                   <button onclick="editWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem;" title="Edit">
                     ✏️
                   </button>
@@ -2358,18 +2407,30 @@
     }
 
     function editWorkerById(id) {
-      if (!hasUserPermission("employees", "edit")) {
-        alert("Permission denied: You do not have permission to edit employees.");
-        return;
-      }
+      const currentUser = getCurrentUser();
       const u = state.users.find(x => x.id === id);
       if (!u) return;
+
+      const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
+      const hasAdminEdit = hasUserPermission("employees", "edit", currentUser);
+
+      if (!hasAdminEdit && !isSelf) {
+        alert("Permission denied: You do not have permission to edit other employees.");
+        return;
+      }
+
       document.getElementById("worker-edit-id").value = u.id;
       document.getElementById("worker-name").value = u.name;
       document.getElementById("worker-email").value = u.email;
       document.getElementById("worker-phone").value = u.phone || "+966 ";
-      document.getElementById("worker-role").value = u.role;
-      document.getElementById("modal-worker-heading").textContent = "✏️ Edit Employee Profile";
+
+      const roleSelect = document.getElementById("worker-role");
+      if (roleSelect) {
+        roleSelect.value = u.role;
+        roleSelect.disabled = !hasAdminEdit;
+      }
+
+      document.getElementById("modal-worker-heading").textContent = isSelf ? "✏️ Edit My Profile & Phone" : "✏️ Edit Employee Profile";
       document.getElementById("modal-worker").style.display = "flex";
     }
     window.editWorkerById = editWorkerById;
@@ -2401,6 +2462,7 @@
 
     function saveWorker(e) {
       e.preventDefault();
+      const currentUser = getCurrentUser();
       const editId = document.getElementById("worker-edit-id").value;
       const name = document.getElementById("worker-name").value.trim();
       const email = document.getElementById("worker-email").value.trim().toLowerCase();
@@ -2421,14 +2483,21 @@
       if (editId) {
         const u = state.users.find(x => x.id === editId);
         if (u) {
+          const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
+          const hasAdminEdit = hasUserPermission("employees", "edit", currentUser);
+          if (!hasAdminEdit && !isSelf) {
+            alert("Permission denied.");
+            return;
+          }
+
           u.name = name;
-          u.email = email;
           u.phone = phone;
           u.compactPhone = compactPhone;
-          u.role = role;
-          if (window.fbDb) {
-            try { window.fbDb.collection("users").doc(u.id).set(u, { merge: true }); } catch (e) {}
+          if (hasAdminEdit) {
+            u.email = email;
+            u.role = role;
           }
+          syncUserToFirestore(u);
         }
       } else {
         const newUser = {
@@ -2455,9 +2524,7 @@
         };
 
         state.users.push(newUser);
-        if (window.fbDb) {
-          try { window.fbDb.collection("users").doc(newUser.id).set(newUser, { merge: true }); } catch (e) {}
-        }
+        syncUserToFirestore(newUser);
       }
 
       saveState();
@@ -4084,12 +4151,14 @@
           }
         }
 
+        const passHash = await hashPassword(pass);
         const user = {
           id: fbUid,
           name: name || (isSuper ? "Osama Al-Twaish" : "Worker"),
           nameAr: isSuper ? "اسامة الطويش" : null,
           email: email,
-          password: pass,
+          phone: "+966 5" + (Math.abs(fbUid.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000),
+          passwordHash: passHash,
           role: isSuper ? "SUPER_ADMIN" : "EMPLOYEE",
           status: "ACTIVE",
           isProtected: isSuper
@@ -4098,9 +4167,7 @@
         state.currentUserId = user.id;
         saveState();
 
-        if (window.fbDb) {
-          try { window.fbDb.collection("users").doc(user.id).set(user, { merge: true }); } catch (e) {}
-        }
+        syncUserToFirestore(user);
 
         document.getElementById("auth-portal-fullscreen").style.display = "none";
         document.getElementById("app-shell-root").style.display = "grid";
@@ -4150,13 +4217,17 @@
 
         if (user) {
           if (docId) user.id = docId;
+          delete user.password;
+          if (!user.passwordHash) user.passwordHash = await hashPassword(pass);
           if (docData) {
             user.name = docData.name || user.name;
             user.nameAr = docData.nameAr || user.nameAr;
             user.role = docData.role || user.role;
+            if (docData.phone) user.phone = docData.phone;
             if (docData.permissions) user.permissions = docData.permissions;
             if (docData.sectionAccess) user.sectionAccess = docData.sectionAccess;
           }
+          syncUserToFirestore(user);
         } else if (authUserCred && authUserCred.user) {
           const isSuper = email === "waseem.tw@hotmail.com";
           user = {
@@ -4164,6 +4235,8 @@
             name: (docData && docData.name) || authUserCred.user.displayName || email.split('@')[0],
             nameAr: (docData && docData.nameAr) || (isSuper ? "اسامة الطويش" : null),
             email: email,
+            phone: (docData && docData.phone) || ("+966 5" + (Math.abs((docId || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000)),
+            passwordHash: await hashPassword(pass),
             role: (docData && docData.role) || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
             status: "ACTIVE",
             isProtected: isSuper,
@@ -4181,6 +4254,7 @@
             permissions: (docData && docData.permissions) || null
           };
           state.users.push(user);
+          syncUserToFirestore(user);
         }
 
         if (!user && email === "waseem.tw@hotmail.com") {
@@ -4189,7 +4263,8 @@
             name: "Osama Al-Twaish",
             nameAr: "اسامة الطويش",
             email: "waseem.tw@hotmail.com",
-            password: pass,
+            phone: "+966 50 123 4567",
+            passwordHash: await hashPassword(pass),
             role: "SUPER_ADMIN",
             status: "ACTIVE",
             isProtected: true,
@@ -4206,6 +4281,7 @@
             }
           };
           state.users.unshift(user);
+          syncUserToFirestore(user);
         }
 
         if (user) {
@@ -4487,25 +4563,79 @@
       applyModuleVisibility();
       setModule("dashboard");
 
-      // Pull latest user permissions from Firestore on boot
-      if (window.fbDb && initialUser.email) {
-        window.fbDb.collection("users").where("email", "==", initialUser.email.toLowerCase().trim()).get().then(snap => {
+      // Pull latest user profiles, phone numbers, and permissions for all staff on boot + scrub plaintext passwords
+      if (window.fbDb) {
+        window.fbDb.collection("users").get().then(snap => {
           if (!snap.empty) {
-            const data = snap.docs[0].data();
-            if (data) {
-              if (data.permissions) initialUser.permissions = data.permissions;
-              if (data.sectionAccess) initialUser.sectionAccess = data.sectionAccess;
-              if (data.role) initialUser.role = data.role;
-              if (data.name) initialUser.name = data.name;
-              if (data.phone) initialUser.phone = data.phone;
+            let changed = false;
+            snap.forEach(async docSnap => {
+              const d = docSnap.data();
+              if (!d) return;
+              const dEmail = (d.email || "").toLowerCase().trim();
+
+              // Automatically scrub & hash any plaintext passwords found in Firestore!
+              if (d.password) {
+                const h = await hashPassword(d.password);
+                const scrub = { passwordHash: h };
+                if (typeof firebase !== "undefined" && firebase.firestore && firebase.firestore.FieldValue) {
+                  scrub.password = firebase.firestore.FieldValue.delete();
+                }
+                docSnap.ref.update(scrub).catch(() => {});
+              }
+
+              let u = state.users.find(x => x.id === docSnap.id || (dEmail && x.email && x.email.toLowerCase().trim() === dEmail));
+              if (u) {
+                if (d.phone && u.phone !== d.phone) {
+                  u.phone = d.phone;
+                  u.compactPhone = d.compactPhone || d.phone;
+                  changed = true;
+                }
+                if (d.name && u.name !== d.name) {
+                  u.name = d.name;
+                  changed = true;
+                }
+                if (d.role && u.role !== d.role) {
+                  u.role = d.role;
+                  changed = true;
+                }
+                if (d.permissions) u.permissions = d.permissions;
+                if (d.sectionAccess) u.sectionAccess = d.sectionAccess;
+                delete u.password;
+              } else if (dEmail) {
+                state.users.push({
+                  id: docSnap.id,
+                  name: d.name || "Employee",
+                  nameAr: d.nameAr || null,
+                  email: dEmail,
+                  phone: d.phone || "+966 50 123 4567",
+                  compactPhone: d.compactPhone || "+966501234567",
+                  role: d.role || "EMPLOYEE",
+                  status: "ACTIVE",
+                  isProtected: dEmail === "waseem.tw@hotmail.com",
+                  sectionAccess: d.sectionAccess || {},
+                  permissions: d.permissions || null
+                });
+                changed = true;
+              }
+
+              if (initialUser && dEmail && initialUser.email && initialUser.email.toLowerCase().trim() === dEmail) {
+                if (d.phone) initialUser.phone = d.phone;
+                if (d.name) initialUser.name = d.name;
+                if (d.role) initialUser.role = d.role;
+                if (d.permissions) initialUser.permissions = d.permissions;
+                if (d.sectionAccess) initialUser.sectionAccess = d.sectionAccess;
+                delete initialUser.password;
+              }
+            });
+
+            if (changed) {
               saveState();
               updateUserSessionUI();
               applyModuleVisibility();
+              renderWorkers();
+              renderDepartments();
               renderDashboard();
-              renderWarehouse();
-              renderTasks();
-              renderReminders();
-              renderStockRequests();
+              updateCounts();
               if (state.activeModule === "messages") renderMessagesSender();
             }
           }
