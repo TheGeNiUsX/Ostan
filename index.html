@@ -1186,6 +1186,32 @@
             </div>
           </div>
 
+          <!-- 100% FULLY AUTOMATED SENDER BANNER -->
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; background: linear-gradient(135deg, rgba(37, 211, 102, 0.12) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(37, 211, 102, 0.35); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; gap: 0.9rem;">
+              <div style="width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, #25D366, #128C7E); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35); flex-shrink: 0;">
+                ⚡
+              </div>
+              <div>
+                <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                  <span data-i18n="auto_mode_banner_title">⚡ 100% Hands-Free Automated Sender Mode</span>
+                  <span class="badge badge-emerald" style="font-size: 0.68rem;">Auto-Clicks Send</span>
+                </div>
+                <div data-i18n="auto_mode_banner_desc" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+                  Enables hands-free dispatching: automatically clicks the Send button and closes tabs for all selected contacts.
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+              <a href="whatsapp-autosend-extension.zip" download="ostan-whatsapp-autosender.zip" class="btn btn-primary" style="background: #25D366; border-color: #25D366; font-size: 0.82rem; font-weight: 700; padding: 0.5rem 1rem; text-decoration: none; display: flex; align-items: center; gap: 0.4rem;">
+                <span data-i18n="btn_download_extension">📥 Download Auto-Sender Extension (.ZIP)</span>
+              </a>
+              <button type="button" onclick="openExtensionGuideModal()" class="btn btn-secondary" style="font-size: 0.82rem; font-weight: 700; padding: 0.5rem 0.9rem;">
+                <span data-i18n="btn_setup_guide">📖 Setup Guide (3 Steps)</span>
+              </button>
+            </div>
+          </div>
+
           <!-- Top Grid: QR Pairing Studio (Left) + Audience Selector (Right) -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
             
@@ -1870,6 +1896,74 @@
 
         <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
           <button type="button" onclick="document.getElementById('modal-auto-send-tool').style.display='none'" class="btn btn-secondary">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EXTENSION SETUP GUIDE -->
+  <div id="modal-extension-guide" class="hud-modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10000;">
+    <div class="hud-modal-box" style="max-width: 580px; width: 95%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.5rem;">⚡</span>
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">100% Fully Automated WhatsApp Setup</h2>
+            <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Hands-free dispatching in 3 easy steps</div>
+          </div>
+        </div>
+        <button type="button" onclick="document.getElementById('modal-extension-guide').style.display='none'" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 1rem; font-size: 0.85rem; line-height: 1.5; color: var(--text-main);">
+        <p style="color: var(--text-muted); font-size: 0.82rem;">
+          By installing this lightweight extension on Google Chrome or Microsoft Edge, WhatsApp Web will automatically click the green Send button and close tabs for every contact dispatched from Ostan.
+        </p>
+
+        <!-- Step 1 -->
+        <div style="background: var(--bg-surface-elevated); padding: 0.9rem 1.1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; gap: 0.85rem;">
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: #25D366; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">1</div>
+          <div>
+            <div style="font-weight: 700; color: var(--text-main);">Download or Locate the Extension Folder</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+              Folder is already located inside your project at:
+              <code style="background: var(--bg-surface); padding: 2px 6px; border-radius: 4px; color: #10b981; font-weight: 600; display: inline-block; margin-top: 4px;">whatsapp-autosend-extension</code>
+              <div style="margin-top: 4px;">Or click: <a href="whatsapp-autosend-extension.zip" download="ostan-whatsapp-autosender.zip" style="color: #25D366; text-decoration: underline; font-weight: 700;">Download .ZIP</a> and extract it.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div style="background: var(--bg-surface-elevated); padding: 0.9rem 1.1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; gap: 0.85rem;">
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: #25D366; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">2</div>
+          <div>
+            <div style="font-weight: 700; color: var(--text-main);">Open Extensions Page in Browser</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+              In <strong>Chrome</strong> go to: <code style="background: var(--bg-surface); padding: 1px 5px; border-radius: 4px;">chrome://extensions</code><br>
+              In <strong>Edge</strong> go to: <code style="background: var(--bg-surface); padding: 1px 5px; border-radius: 4px;">edge://extensions</code><br>
+              Then turn <strong>ON</strong> the <strong style="color: var(--text-main);">"Developer mode"</strong> switch (top right).
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div style="background: var(--bg-surface-elevated); padding: 0.9rem 1.1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; gap: 0.85rem;">
+          <div style="width: 28px; height: 28px; border-radius: 50%; background: #25D366; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">3</div>
+          <div>
+            <div style="font-weight: 700; color: var(--text-main);">Click "Load Unpacked"</div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+              Click the button <strong>"Load unpacked"</strong> in your browser, select the <code style="background: var(--bg-surface); padding: 1px 5px; border-radius: 4px;">whatsapp-autosend-extension</code> folder, and click Select.
+            </div>
+          </div>
+        </div>
+
+        <!-- Done -->
+        <div style="background: rgba(37, 211, 102, 0.1); border: 1px solid rgba(37, 211, 102, 0.3); border-radius: var(--radius-md); padding: 0.85rem 1rem; font-size: 0.8rem; color: #10b981; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+          <span>🎉</span> <span>You are all set! From now on, whenever you dispatch messages in Ostan, WhatsApp Web will click Send and close tabs automatically!</span>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+          <button type="button" onclick="document.getElementById('modal-extension-guide').style.display='none'" class="btn btn-primary" style="padding: 0.45rem 1.5rem;">Got It</button>
         </div>
       </div>
     </div>
@@ -4294,6 +4388,12 @@
       if (m) m.style.display = "flex";
     }
     window.openAutoSendHelperModal = openAutoSendHelperModal;
+
+    function openExtensionGuideModal() {
+      const m = document.getElementById("modal-extension-guide");
+      if (m) m.style.display = "flex";
+    }
+    window.openExtensionGuideModal = openExtensionGuideModal;
 
     function skipToNextRecipient() {
       if (queueState.timerInterval) clearInterval(queueState.timerInterval);
