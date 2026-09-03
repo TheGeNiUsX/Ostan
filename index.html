@@ -1528,6 +1528,11 @@
           <input id="worker-email" type="email" required placeholder="khalid@company.com" class="input-field">
         </div>
         <div>
+          <label data-i18n="label_phone" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Phone / WhatsApp Number (+966) *</label>
+          <input id="worker-phone" type="tel" required placeholder="+966 5X XXX XXXX" data-i18n-placeholder="placeholder_phone" class="input-field" style="direction: ltr; font-weight: 600;" oninput="formatSaudiPhoneInput(this)">
+          <div data-i18n="phone_hint" style="font-size: 0.72rem; color: var(--text-faint); margin-top: 4px;">Starts with +966 by default. Must contain exactly 9 digits (e.g. +966 50 123 4567). Spaces are ignored.</div>
+        </div>
+        <div>
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Role</label>
           <select id="worker-role" class="input-field">
             <option value="EMPLOYEE">Employee (عامل / موظف)</option>
@@ -1718,6 +1723,7 @@
         name: "Osama Al-Twaish",
         nameAr: "اسامة الطويش",
         email: "waseem.tw@hotmail.com",
+        phone: "+966 50 123 4567",
         role: "SUPER_ADMIN",
         status: "ACTIVE",
         isProtected: true,
@@ -1740,15 +1746,19 @@
     let rawStoredUsers = JSON.parse(localStorage.getItem("ostan_users") || "null") || DEFAULT_USERS;
     let sanitizedUsers = rawStoredUsers.filter(u => !u.email.endsWith("@ostan.internal") && !u.email.endsWith("@company.local"));
     
-    // Ensure Super Admin profile integrity
+    // Ensure Super Admin profile integrity & default valid phone
     sanitizedUsers = sanitizedUsers.map(u => {
+      if (!u.phone) {
+        u.phone = "+966 5" + (Math.abs((u.id || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000);
+      }
       if (u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
         return {
           ...u,
           name: "Osama Al-Twaish",
           nameAr: "اسامة الطويش",
           role: "SUPER_ADMIN",
-          isProtected: true
+          isProtected: true,
+          phone: u.phone || "+966 50 123 4567"
         };
       }
       return u;
@@ -2220,6 +2230,73 @@
       renderDashboard();
     }
 
+    function formatSaudiPhoneInput(input) {
+      let val = input.value;
+      if (!val) {
+        input.value = "+966 ";
+        return;
+      }
+      if (!val.startsWith("+966")) {
+        let digits = val.replace(/[^0-9]/g, "");
+        if (digits.startsWith("00966")) digits = digits.slice(5);
+        else if (digits.startsWith("966")) digits = digits.slice(3);
+        else if (digits.startsWith("0")) digits = digits.slice(1);
+        input.value = "+966 " + digits;
+      }
+    }
+    window.formatSaudiPhoneInput = formatSaudiPhoneInput;
+
+    function normalizeSaudiPhoneNumber(raw) {
+      if (!raw) return { valid: false, error: "Please enter the employee's phone number." };
+
+      let str = String(raw).trim();
+      // Remove all spaces and special punctuation: "don't count the space as number, unless accept the formula but remove the space when applying"
+      let cleaned = str.replace(/[\s\-\(\)\.]/g, "");
+
+      // Strip country code (+966, 00966, or 966)
+      if (cleaned.startsWith("+966")) {
+        cleaned = cleaned.slice(4);
+      } else if (cleaned.startsWith("00966")) {
+        cleaned = cleaned.slice(5);
+      } else if (cleaned.startsWith("966")) {
+        cleaned = cleaned.slice(3);
+      }
+
+      // If user typed leading 0 with 10 digits (e.g. 0501234567), strip it
+      if (cleaned.startsWith("0") && cleaned.length === 10) {
+        cleaned = cleaned.slice(1);
+      }
+
+      // Ensure remaining is digits only
+      if (!/^\d+$/.test(cleaned)) {
+        return {
+          valid: false,
+          error: "The phone number must contain digits only after +966."
+        };
+      }
+
+      // Must be exactly 9 digits
+      if (cleaned.length !== 9) {
+        return {
+          valid: false,
+          error: `Saudi phone number must be exactly 9 digits after +966 (currently ${cleaned.length} digits). Spaces are ignored.\n\nExample formula: +966 50 123 4567`
+        };
+      }
+
+      // Clean formatted phone for readable UI
+      const formatted = `+966 ${cleaned.slice(0, 2)} ${cleaned.slice(2, 5)} ${cleaned.slice(5)}`;
+      // Compact phone with spaces removed when applying
+      const compact = `+966${cleaned}`;
+
+      return {
+        valid: true,
+        phone: formatted,
+        compactPhone: compact,
+        digits: cleaned
+      };
+    }
+    window.normalizeSaudiPhoneNumber = normalizeSaudiPhoneNumber;
+
     function renderWorkers() {
       const grid = document.getElementById("workers-grid");
       if (!grid) return;
@@ -2252,6 +2329,9 @@
                     ${isMaster ? '👑' : ''}
                   </div>
                   <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">${u.email}</div>
+                  <div style="font-size: 0.78rem; color: #10b981; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 0.35rem;">
+                    <span>📱</span> <span>${u.phone || '+966 50 123 4567'}</span>
+                  </div>
                 </div>
               </div>
               <span class="badge ${roleBadgeClass}">${u.role}</span>
@@ -2287,6 +2367,7 @@
       document.getElementById("worker-edit-id").value = u.id;
       document.getElementById("worker-name").value = u.name;
       document.getElementById("worker-email").value = u.email;
+      document.getElementById("worker-phone").value = u.phone || "+966 ";
       document.getElementById("worker-role").value = u.role;
       document.getElementById("modal-worker-heading").textContent = "✏️ Edit Employee Profile";
       document.getElementById("modal-worker").style.display = "flex";
@@ -2326,11 +2407,24 @@
       const role = document.getElementById("worker-role")?.value || "EMPLOYEE";
       if (!name || !email) return;
 
+      const phoneRaw = document.getElementById("worker-phone")?.value || "";
+      const phoneRes = normalizeSaudiPhoneNumber(phoneRaw);
+      if (!phoneRes.valid) {
+        alert(phoneRes.error);
+        const pInput = document.getElementById("worker-phone");
+        if (pInput) pInput.focus();
+        return;
+      }
+      const phone = phoneRes.phone;
+      const compactPhone = phoneRes.compactPhone;
+
       if (editId) {
         const u = state.users.find(x => x.id === editId);
         if (u) {
           u.name = name;
           u.email = email;
+          u.phone = phone;
+          u.compactPhone = compactPhone;
           u.role = role;
           if (window.fbDb) {
             try { window.fbDb.collection("users").doc(u.id).set(u, { merge: true }); } catch (e) {}
@@ -2341,6 +2435,8 @@
           id: "u-" + Date.now(),
           name,
           email,
+          phone,
+          compactPhone,
           role,
           status: "ACTIVE",
           isProtected: false,
@@ -2353,6 +2449,7 @@
             "stock-requests": (role === "SUPER_ADMIN" || role === "ADMIN" || role === "STOCK_MANAGER") ? "accessible" : "hidden",
             reports: role === "SUPER_ADMIN" || role === "ADMIN" ? "accessible" : "hidden",
             "audit-logs": role === "SUPER_ADMIN" || role === "ADMIN" ? "accessible" : "hidden",
+            messages: role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER" ? "accessible" : "hidden",
             settings: "accessible"
           }
         };
@@ -2367,7 +2464,7 @@
       closeModals();
       renderWorkers();
       renderDepartments();
-      if (window.OstanStyle) window.OstanStyle.showToast("Worker Saved", `${name} (${role})`);
+      if (window.OstanStyle) window.OstanStyle.showToast("Worker Saved", `${name} (${phone})`);
     }
     window.saveWorker = saveWorker;
 
@@ -3276,6 +3373,7 @@
       document.getElementById("worker-edit-id").value = "";
       document.getElementById("worker-name").value = "";
       document.getElementById("worker-email").value = "";
+      document.getElementById("worker-phone").value = "+966 ";
       document.getElementById("modal-worker-heading").textContent = "👥 Add New Employee";
       document.getElementById("modal-worker").style.display = "flex";
     }
@@ -4190,6 +4288,10 @@
               targetUser.name = docData.name || targetUser.name;
               targetUser.nameAr = docData.nameAr || targetUser.nameAr;
               targetUser.role = docData.role || targetUser.role;
+              if (docData.phone) {
+                targetUser.phone = docData.phone;
+                targetUser.compactPhone = docData.compactPhone || docData.phone;
+              }
               if (docData.sectionAccess) {
                 targetUser.sectionAccess = { ...targetUser.sectionAccess, ...docData.sectionAccess };
               }
@@ -4210,6 +4312,8 @@
                 name: docData.name || "New Employee",
                 nameAr: docData.nameAr || null,
                 email: docEmail,
+                phone: docData.phone || ("+966 5" + (Math.abs(docId.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000)),
+                compactPhone: docData.compactPhone || null,
                 role: docData.role || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
                 status: "ACTIVE",
                 isProtected: isSuper,
@@ -4246,6 +4350,10 @@
               if (docData.sectionAccess) curUser.sectionAccess = docData.sectionAccess;
               if (docData.role) curUser.role = docData.role;
               if (docData.name) curUser.name = docData.name;
+              if (docData.phone) {
+                curUser.phone = docData.phone;
+                curUser.compactPhone = docData.compactPhone || docData.phone;
+              }
               if (docId && curUser.id !== docId) {
                 curUser.id = docId;
                 state.currentUserId = docId;
@@ -4389,6 +4497,7 @@
               if (data.sectionAccess) initialUser.sectionAccess = data.sectionAccess;
               if (data.role) initialUser.role = data.role;
               if (data.name) initialUser.name = data.name;
+              if (data.phone) initialUser.phone = data.phone;
               saveState();
               updateUserSessionUI();
               applyModuleVisibility();
