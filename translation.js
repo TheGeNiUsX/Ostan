@@ -276,6 +276,11 @@
       audit_item_restored_toast: "Item Restored Successfully",
       audit_item_perm_deleted_toast: "Item Permanently Deleted",
       btn_reopen_active: "↶ Reopen to Active",
+      btn_block_employee: "🚫 Block",
+      btn_unblock_employee: "✅ Unblock",
+      status_blocked: "BLOCKED",
+      status_active: "ACTIVE",
+      auth_err_account_blocked: "That account is blocked Please contact the Administrator",
     },
 
     ar: {
@@ -550,6 +555,11 @@
       audit_item_restored_toast: "تمت استعادة العنصر بنجاح",
       audit_item_perm_deleted_toast: "تم الحذف النهائي للعنصر",
       btn_reopen_active: "↶ إعادة للتفعيل",
+      btn_block_employee: "🚫 حظر",
+      btn_unblock_employee: "✅ إلغاء الحظر",
+      status_blocked: "محظور",
+      status_active: "نشط",
+      auth_err_account_blocked: "تم حظر هذا الحساب، يرجى التواصل مع الإدارة",
     },
   };
 

@@ -1725,6 +1725,13 @@
             <option value="ADMIN">Administrator (مدير النظام)</option>
           </select>
         </div>
+        <div id="worker-status-group">
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Account Status (حالة الحساب)</label>
+          <select id="worker-status" class="input-field">
+            <option value="ACTIVE">✅ Active (نشط ومصرح له بالدخول)</option>
+            <option value="BLOCKED">🚫 Blocked (محظور وممنوع من تسجيل الدخول)</option>
+          </select>
+        </div>
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
           <button type="button" onclick="closeModals()" class="btn btn-secondary">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Employee</button>
@@ -2882,12 +2889,20 @@
                   </div>
                 </div>
               </div>
-              <span class="badge ${roleBadgeClass}">${u.role}</span>
+              <div style="display: flex; gap: 0.4rem; align-items: center;">
+                ${u.status === 'BLOCKED' || u.isBlocked ? `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700; font-size: 0.68rem;">🚫 ${lang === 'ar' ? 'محظور' : 'BLOCKED'}</span>` : ''}
+                <span class="badge ${roleBadgeClass}">${u.role}</span>
+              </div>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
               <span class="badge badge-secondary" style="font-size: 0.68rem;">${isMaster ? (lang === 'ar' ? 'مسؤول متميز رئيسي' : 'Protected Master Admin') : (lang === 'ar' ? 'عضو فريق العمل' : 'Staff Member')}</span>
               <div style="display: flex; gap: 0.35rem;">
+                ${(!isMaster && (currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'ADMIN' || canEdit))) ? `
+                  <button onclick="toggleBlockWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem; color: ${u.status === 'BLOCKED' || u.isBlocked ? '#34d399' : '#f59e0b'};" title="${u.status === 'BLOCKED' || u.isBlocked ? (lang === 'ar' ? 'إلغاء حظر الموظف' : 'Unblock Employee') : (lang === 'ar' ? 'حظر الموظف' : 'Block Employee')}">
+                    ${u.status === 'BLOCKED' || u.isBlocked ? '✅' : '🚫'}
+                  </button>
+                ` : ''}
                 ${canEditThis ? `
                   <button onclick="editWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem;" title="Edit">
                     ✏️
@@ -2904,6 +2919,46 @@
         `;
       }).join("");
     }
+
+    function toggleBlockWorkerById(id) {
+      const currentUser = getCurrentUser();
+      if (!currentUser || (currentUser.role !== "SUPER_ADMIN" && currentUser.role !== "ADMIN" && !hasUserPermission("employees", "edit", currentUser))) {
+        alert("Permission denied: Only administrators can block or unblock employees.");
+        return;
+      }
+      const u = state.users.find(x => x.id === id);
+      if (!u) return;
+      if (u.isProtected || u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
+        alert("The Master Super Admin account cannot be blocked.");
+        return;
+      }
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const willBlock = u.status !== "BLOCKED" && !u.isBlocked;
+      u.status = willBlock ? "BLOCKED" : "ACTIVE";
+      u.isBlocked = willBlock;
+
+      saveState();
+      renderWorkers();
+
+      // Sync to Cloud Firestore users collection
+      if (window.fbDb) {
+        try {
+          const cleanUser = JSON.parse(JSON.stringify(u));
+          window.fbDb.collection("users").doc(u.id).set(cleanUser, { merge: true }).catch(() => {});
+        } catch(e) {
+          console.warn("Firestore user block sync error:", e);
+        }
+      }
+
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast(
+          willBlock ? (lang === "ar" ? "تم حظر الموظف" : "Employee Blocked") : (lang === "ar" ? "تم إلغاء الحظر" : "Employee Unblocked"),
+          `${u.name} ${willBlock ? (lang === "ar" ? "تم حظره من الدخول للنظام" : "is now blocked from platform access") : (lang === "ar" ? "تمت إعادته للحالة النشطة" : "is now active")}`
+        );
+      }
+    }
+    window.toggleBlockWorkerById = toggleBlockWorkerById;
 
     function editWorkerById(id) {
       const currentUser = getCurrentUser();
@@ -2927,6 +2982,12 @@
       if (roleSelect) {
         roleSelect.value = u.role;
         roleSelect.disabled = !hasAdminEdit;
+      }
+
+      const statusSelect = document.getElementById("worker-status");
+      if (statusSelect) {
+        statusSelect.value = (u.status === "BLOCKED" || u.isBlocked) ? "BLOCKED" : "ACTIVE";
+        statusSelect.disabled = !hasAdminEdit || u.isProtected || u.email.toLowerCase().trim() === "waseem.tw@hotmail.com";
       }
 
       document.getElementById("modal-worker-heading").textContent = isSelf ? "✏️ Edit My Profile & Phone" : "✏️ Edit Employee Profile";
@@ -3035,6 +3096,8 @@
 
       if (item.type === "USER") {
         const uData = item.data;
+        uData.status = "ACTIVE";
+        uData.isBlocked = false;
         const exists = state.users.some(u => u.id === uData.id || (u.email && uData.email && u.email.toLowerCase().trim() === uData.email.toLowerCase().trim()));
         if (exists) {
           alert(lang === "ar" ? "الموظف موجود بالفعل في القائمة!" : "An employee with this email already exists!");
@@ -3380,6 +3443,11 @@
               console.warn("Firestore user delete error:", e);
             }
           }
+
+          // 4. Delete from Backend Database API if available
+          try {
+            fetch(`/api/users/${id}`, { method: "DELETE" }).catch(() => {});
+          } catch(e) {}
         }
       });
     }
@@ -3421,10 +3489,16 @@
           if (hasAdminEdit) {
             u.email = email;
             u.role = role;
+            if (!u.isProtected && u.email.toLowerCase().trim() !== "waseem.tw@hotmail.com") {
+              const statusVal = document.getElementById("worker-status")?.value || "ACTIVE";
+              u.status = statusVal;
+              u.isBlocked = (statusVal === "BLOCKED");
+            }
           }
           syncUserToFirestore(u);
         }
       } else {
+        const statusVal = document.getElementById("worker-status")?.value || "ACTIVE";
         const newUser = {
           id: "u-" + Date.now(),
           name,
@@ -3432,7 +3506,8 @@
           phone,
           compactPhone,
           role,
-          status: "ACTIVE",
+          status: statusVal,
+          isBlocked: (statusVal === "BLOCKED"),
           isProtected: false,
           sectionAccess: {
             reminders: "accessible",
@@ -4435,6 +4510,11 @@
       document.getElementById("worker-name").value = "";
       document.getElementById("worker-email").value = "";
       document.getElementById("worker-phone").value = "+966 ";
+      const statusSelect = document.getElementById("worker-status");
+      if (statusSelect) {
+        statusSelect.value = "ACTIVE";
+        statusSelect.disabled = false;
+      }
       document.getElementById("modal-worker-heading").textContent = "👥 Add New Employee";
       document.getElementById("modal-worker").style.display = "flex";
     }
@@ -5396,37 +5476,53 @@
       const name = document.getElementById("auth-input-name")?.value.trim() || "";
 
       // =========================================================================
-      // STRICT RECYCLE BIN GUARD: BLOCKS DELETED USERS FROM LOGIN OR REGISTRATION
+      // STRICT BLOCK & DELETED ACCOUNT GUARD: BLOCKS RESTRICTED USERS
       // =========================================================================
+      const isBlockedLocally = (state.users || []).some(u => 
+        (u.email && u.email.toLowerCase().trim() === email) && (u.status === "BLOCKED" || u.isBlocked === true)
+      );
       const isDeletedLocally = (state.recycleBin || []).some(b => b.type === "USER" && (
         (b.data && b.data.email && b.data.email.toLowerCase().trim() === email) ||
         (b.name && b.name.toLowerCase().trim() === email)
       ));
 
+      let isBlockedInFirestore = false;
       let isDeletedInFirestore = false;
-      if (window.fbDb && !isDeletedLocally) {
+
+      if (window.fbDb) {
         try {
-          const binSnap = await window.fbDb.collection("recycleBin")
-            .where("type", "==", "USER")
-            .where("data.email", "==", email)
-            .get();
-          if (!binSnap.empty) {
-            isDeletedInFirestore = true;
+          if (!isBlockedLocally) {
+            const userSnap = await window.fbDb.collection("users").where("email", "==", email).get();
+            if (!userSnap.empty) {
+              const uDoc = userSnap.docs[0].data();
+              if (uDoc && (uDoc.status === "BLOCKED" || uDoc.isBlocked === true)) {
+                isBlockedInFirestore = true;
+              }
+            }
+          }
+          if (!isDeletedLocally) {
+            const binSnap = await window.fbDb.collection("recycleBin")
+              .where("type", "==", "USER")
+              .where("data.email", "==", email)
+              .get();
+            if (!binSnap.empty) {
+              isDeletedInFirestore = true;
+            }
           }
         } catch (e) {
-          console.warn("Firestore bin check notice:", e);
+          console.warn("Firestore access check notice:", e);
         }
       }
 
-      if (isDeletedLocally || isDeletedInFirestore) {
+      if (isBlockedLocally || isBlockedInFirestore || isDeletedLocally || isDeletedInFirestore) {
         if (window.fbAuth) {
           try { await window.fbAuth.signOut(); } catch(e) {}
         }
         const lang = document.documentElement.getAttribute("lang") || "en";
         if (errBox) {
           errBox.textContent = lang === "ar"
-            ? "⚠️ هذا الحساب تم حذفه بواسطة إدارة المنشأة وهو موجود في سلة المحذوفات. لا يمكنك تسجيل الدخول ما لم يقم المسؤول باستعادة حسابك."
-            : "⚠️ This account has been deleted by an administrator and is in the Recycle Bin. Access is blocked until an administrator restores your account.";
+            ? "تم حظر هذا الحساب، يرجى التواصل مع الإدارة"
+            : "That account is blocked Please contact the Administrator";
           errBox.style.display = "block";
         }
         return;
@@ -5747,6 +5843,14 @@
             // Live sync session if current logged in user was modified
             const curUser = getCurrentUser();
             if (curUser && docEmail && curUser.email && curUser.email.toLowerCase().trim() === docEmail) {
+              if ((docData.status === "BLOCKED" || docData.isBlocked === true) && !isMasterSuperAdmin(curUser)) {
+                userLogout();
+                const lang = document.documentElement.getAttribute("lang") || "en";
+                alert(lang === "ar" ? "تم حظر هذا الحساب، يرجى التواصل مع الإدارة" : "That account is blocked Please contact the Administrator");
+                return;
+              }
+              curUser.status = docData.status || "ACTIVE";
+              curUser.isBlocked = !!docData.isBlocked;
               if (docData.permissions) curUser.permissions = docData.permissions;
               if (docData.sectionAccess) curUser.sectionAccess = docData.sectionAccess;
               if (docData.role) curUser.role = docData.role;
