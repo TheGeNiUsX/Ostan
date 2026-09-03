@@ -2210,6 +2210,10 @@
       saveState();
       renderDepartments();
       applyModuleVisibility();
+      renderWarehouse();
+      renderTasks();
+      renderReminders();
+      renderStockRequests();
 
       if (window.OstanStyle) {
         window.OstanStyle.showToast("Permissions Saved", `Updated granular permissions for ${user.name}`);
@@ -3376,6 +3380,13 @@
                 curUser.id = docId;
                 state.currentUserId = docId;
               }
+              if (initialLoadDone && window.OstanStyle) {
+                const lang = document.documentElement.getAttribute("lang") || "en";
+                window.OstanStyle.showToast(
+                  lang === "ar" ? "⚡ تحديث الصلاحيات" : "⚡ Permissions Updated",
+                  lang === "ar" ? "تم تحديث الصلاحيات فورا!" : "Your permissions have been updated in real-time!"
+                );
+              }
             }
           }
 
@@ -3391,6 +3402,10 @@
           updateUserSessionUI();
           applyModuleVisibility();
           renderDashboard();
+          renderWarehouse();
+          renderTasks();
+          renderReminders();
+          renderStockRequests();
           renderWorkers();
           renderDepartments();
           updateCounts();
@@ -3493,6 +3508,10 @@
               updateUserSessionUI();
               applyModuleVisibility();
               renderDashboard();
+              renderWarehouse();
+              renderTasks();
+              renderReminders();
+              renderStockRequests();
             }
           }
         }).catch(err => console.warn("Boot sync notice:", err));
