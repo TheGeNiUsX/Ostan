@@ -1622,9 +1622,17 @@
       const access = getSectionAccess(mod);
       if (access === "locked") {
         document.getElementById("modal-section-locked").style.display = "flex";
+        if (state.activeModule && getSectionAccess(state.activeModule) !== "accessible") {
+          setModule("dashboard");
+        }
         return;
       }
-      if (access === "hidden") return;
+      if (access === "hidden") {
+        if (state.activeModule === mod || (state.activeModule && getSectionAccess(state.activeModule) !== "accessible")) {
+          setModule("dashboard");
+        }
+        return;
+      }
 
       state.activeModule = mod;
       
@@ -1784,6 +1792,20 @@
       if (taskDescText) {
         taskDescText.setAttribute("data-i18n", isEmp ? "tasks_section_desc_emp" : "tasks_section_desc");
         taskDescText.textContent = isEmp ? (lang === "ar" ? "استعراض وتحديث المهام المسندة إليك ومتابعة حالة التنفيذ." : "View and update your assigned tasks and track execution status.") : (lang === "ar" ? "إسناد ومتابعة مراحل تنفيذ المهام بين أفراد فريق العمل." : "Assign and track execution progress across company staff.");
+      }
+
+      // Real-time access enforcement: Kick user to dashboard if current page access was revoked!
+      if (user && state.activeModule && state.activeModule !== "dashboard") {
+        const currentActiveAccess = getSectionAccess(state.activeModule, user);
+        if (currentActiveAccess !== "accessible") {
+          setModule("dashboard");
+          if (window.OstanStyle) {
+            window.OstanStyle.showToast(
+              lang === "ar" ? "تنبيه الصلاحيات" : "Access Restricted",
+              lang === "ar" ? "تم سحب صلاحية الوصول لهذا القسم، تم توجيهك للوحة التحكم." : "Access revoked. You have been redirected to the Dashboard."
+            );
+          }
+        }
       }
     }
 
