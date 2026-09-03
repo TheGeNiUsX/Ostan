@@ -1845,9 +1845,9 @@
           ✅
         </div>
         <div>
-          <div style="font-weight: 800; font-size: 1.25rem; color: var(--text-main);">Queue Completed Successfully!</div>
+          <div style="font-weight: 800; font-size: 1.25rem; color: var(--text-main);">Dispatch Queue Finished</div>
           <div id="runner-completed-summary" style="font-size: 0.85rem; color: var(--text-muted); margin-top: 4px;">
-            All selected contacts were dispatched safely with anti-ban delay protection.
+            All selected contacts were dispatched to WhatsApp Web. Use the Auto-Sender Extension or confirm messages sent below.
           </div>
         </div>
         <button type="button" onclick="closeModals()" class="btn btn-primary" style="margin-top: 0.5rem; padding: 0.5rem 1.5rem;">
@@ -4209,7 +4209,7 @@
       selectedUsers.forEach(u => {
         const cleanPhone = (u.phone || "+966501234567").replace(/[^0-9]/g, "");
         const personalized = buildPersonalizedMessage(rawText, u);
-        const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(personalized)}`;
+        const waUrl = `https://web.whatsapp.com/send/?phone=${cleanPhone}&text=${encodeURIComponent(personalized)}`;
         items.push({
           user: u,
           name: u.name,
@@ -4222,7 +4222,7 @@
       manualRecipients.forEach(p => {
         const cleanPhone = p.replace(/[^0-9]/g, "");
         const personalized = buildPersonalizedMessage(rawText, null);
-        const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(personalized)}`;
+        const waUrl = `https://web.whatsapp.com/send/?phone=${cleanPhone}&text=${encodeURIComponent(personalized)}`;
         items.push({
           user: null,
           name: "External Recipient",
@@ -4286,14 +4286,14 @@
       // Automatically launch WhatsApp for this recipient!
       window.open(currentItem.url, "_blank");
 
-      // Record in dispatch logs
+      // Record in dispatch logs (Initial status is PENDING until sent)
       const logEntry = {
         id: "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
         recipientName: currentItem.name,
         phone: currentItem.phone,
         message: currentItem.message,
         timestamp: new Date().toLocaleTimeString() + " • " + new Date().toISOString().split("T")[0],
-        status: "SENT",
+        status: "PENDING ⏳",
         url: currentItem.url
       };
       state.messageDispatchLogs.unshift(logEntry);
@@ -4520,9 +4520,16 @@
                 <td style="font-size: 0.75rem; color: var(--text-faint);">${log.timestamp}</td>
                 <td><span class="badge ${log.status && log.status.includes('SENT') ? 'badge-emerald' : 'badge-amber'}" style="font-size: 0.65rem;">${log.status || 'OPENED IN WA 💬'}</span></td>
                 <td>
-                  <a href="${log.url}" target="_blank" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #25D366; text-decoration: none;">
-                    💬 Open WA
-                  </a>
+                  <div style="display: flex; align-items: center; gap: 0.35rem;">
+                    <a href="${log.url}" target="_blank" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #25D366; text-decoration: none;">
+                      💬 Open Web
+                    </a>
+                    ${(!log.status || !log.status.includes('SENT')) ? `
+                      <button type="button" onclick="markMessageAsSent('${log.id}')" class="btn btn-secondary" style="padding: 0.2rem 0.45rem; font-size: 0.68rem; font-weight: 700; color: #10b981; border-color: rgba(16, 185, 129, 0.4);" title="Mark as confirmed sent">
+                        ✅ Confirm Sent
+                      </button>
+                    ` : ''}
+                  </div>
                 </td>
               </tr>
             `).join("")}
@@ -4530,6 +4537,20 @@
         </table>
       `;
     }
+
+    function markMessageAsSent(logId) {
+      const log = state.messageDispatchLogs.find(l => l.id === logId);
+      if (log) {
+        log.status = "SENT ✅";
+        if (window.fbDb) {
+          try { window.fbDb.collection("messageLogs").doc(log.id).update({ status: "SENT ✅" }); } catch(e) {}
+        }
+        saveState();
+        renderMessageHistoryLogs();
+        if (window.OstanStyle) window.OstanStyle.showToast("Status Confirmed", `${log.recipientName}: Marked as SENT ✅`);
+      }
+    }
+    window.markMessageAsSent = markMessageAsSent;
 
     function clearMessageHistoryLogs() {
       if (!confirm("Clear all dispatched messages history?")) return;
