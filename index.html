@@ -2291,6 +2291,32 @@
       updateCounts();
     }
 
+    function purgeDeletedUsersFromActiveState() {
+      if (!state.recycleBin || state.recycleBin.length === 0) return false;
+      const binUserEmails = new Set(
+        state.recycleBin
+          .filter(b => b.type === "USER" && b.data && b.data.email)
+          .map(b => b.data.email.toLowerCase().trim())
+      );
+      const binUserIds = new Set(
+        state.recycleBin.filter(b => b.type === "USER").map(b => b.originalId).filter(Boolean)
+      );
+
+      const beforeLen = state.users.length;
+      state.users = state.users.filter(u => {
+        const uEmail = (u.email || "").toLowerCase().trim();
+        return !binUserEmails.has(uEmail) && !binUserIds.has(u.id);
+      });
+
+      if (state.users.length !== beforeLen) {
+        saveState();
+        return true;
+      }
+      return false;
+    }
+    window.purgeDeletedUsersFromActiveState = purgeDeletedUsersFromActiveState;
+    purgeDeletedUsersFromActiveState();
+
     function getCurrentUser() {
       if (!state.currentUserId) return null;
       let u = state.users.find(x => x.id === state.currentUserId);
@@ -3023,7 +3049,8 @@
         // Restore to Cloud Firestore users collection!
         if (window.fbDb) {
           try {
-            window.fbDb.collection("users").doc(uData.id).set(uData, { merge: true });
+            const cleanUser = JSON.parse(JSON.stringify(uData));
+            window.fbDb.collection("users").doc(uData.id).set(cleanUser, { merge: true });
           } catch(e) {
             console.warn("Firestore user restore error:", e);
           }
@@ -3038,7 +3065,8 @@
           updateCounts();
           if (window.fbDb) {
             try {
-              window.fbDb.collection("tasks").doc(tData.id).set(tData, { merge: true });
+              const cleanTask = JSON.parse(JSON.stringify(tData));
+              window.fbDb.collection("tasks").doc(tData.id).set(cleanTask, { merge: true });
             } catch(e) {}
           }
         }
@@ -3052,7 +3080,8 @@
           updateCounts();
           if (window.fbDb) {
             try {
-              window.fbDb.collection("reminders").doc(rData.id).set(rData, { merge: true });
+              const cleanRem = JSON.parse(JSON.stringify(rData));
+              window.fbDb.collection("reminders").doc(rData.id).set(cleanRem, { merge: true });
             } catch(e) {}
           }
         }
@@ -3067,7 +3096,8 @@
           updateCounts();
           if (window.fbDb) {
             try {
-              window.fbDb.collection("inventory").doc(sData.id).set(sData, { merge: true });
+              const cleanStock = JSON.parse(JSON.stringify(sData));
+              window.fbDb.collection("inventory").doc(sData.id).set(cleanStock, { merge: true });
             } catch(e) {}
           }
         }
@@ -3167,7 +3197,7 @@
       if (elTasks) elTasks.textContent = tasksCount;
       if (elReminders) elReminders.textContent = remindersCount;
       if (elStock) elStock.textContent = stockCount;
-      if (elTotalPill) elTotalPill.textContent = `${total} Items in Bin`;
+      if (elTotalPill) elTotalPill.textContent = `${total} ${lang === 'ar' ? 'عنصر في السلة' : 'Items in Bin'}`;
 
       // Update filter tab count badges
       const cAll = document.getElementById("count-filter-all");
@@ -5365,6 +5395,43 @@
       const pass = document.getElementById("auth-input-password").value;
       const name = document.getElementById("auth-input-name")?.value.trim() || "";
 
+      // =========================================================================
+      // STRICT RECYCLE BIN GUARD: BLOCKS DELETED USERS FROM LOGIN OR REGISTRATION
+      // =========================================================================
+      const isDeletedLocally = (state.recycleBin || []).some(b => b.type === "USER" && (
+        (b.data && b.data.email && b.data.email.toLowerCase().trim() === email) ||
+        (b.name && b.name.toLowerCase().trim() === email)
+      ));
+
+      let isDeletedInFirestore = false;
+      if (window.fbDb && !isDeletedLocally) {
+        try {
+          const binSnap = await window.fbDb.collection("recycleBin")
+            .where("type", "==", "USER")
+            .where("data.email", "==", email)
+            .get();
+          if (!binSnap.empty) {
+            isDeletedInFirestore = true;
+          }
+        } catch (e) {
+          console.warn("Firestore bin check notice:", e);
+        }
+      }
+
+      if (isDeletedLocally || isDeletedInFirestore) {
+        if (window.fbAuth) {
+          try { await window.fbAuth.signOut(); } catch(e) {}
+        }
+        const lang = document.documentElement.getAttribute("lang") || "en";
+        if (errBox) {
+          errBox.textContent = lang === "ar"
+            ? "⚠️ هذا الحساب تم حذفه بواسطة إدارة المنشأة وهو موجود في سلة المحذوفات. لا يمكنك تسجيل الدخول ما لم يقم المسؤول باستعادة حسابك."
+            : "⚠️ This account has been deleted by an administrator and is in the Recycle Bin. Access is blocked until an administrator restores your account.";
+          errBox.style.display = "block";
+        }
+        return;
+      }
+
       if (authPortalMode === "signup") {
         if (!name) {
           if (errBox) { errBox.textContent = "Please enter your full name."; errBox.style.display = "block"; }
@@ -5458,6 +5525,21 @@
 
         let user = state.users.find(u => u.email.toLowerCase() === email || (docId && u.id === docId));
 
+        // Block unauthorized login if user does NOT exist in active roster AND is not in Firestore users!
+        if (!user && !docData && email !== "waseem.tw@hotmail.com") {
+          if (window.fbAuth) {
+            try { await window.fbAuth.signOut(); } catch(e) {}
+          }
+          const lang = document.documentElement.getAttribute("lang") || "en";
+          if (errBox) {
+            errBox.textContent = lang === "ar"
+              ? "لا يوجد حساب موظف نشط مسجل لهذا البريد الإلكتروني. يرجى مراجعة إدارة المنشأة."
+              : "No active employee record found for this account. Please contact your manager.";
+            errBox.style.display = "block";
+          }
+          return;
+        }
+
         if (user) {
           if (docId) user.id = docId;
           delete user.password;
@@ -5471,19 +5553,19 @@
             if (docData.sectionAccess) user.sectionAccess = docData.sectionAccess;
           }
           syncUserToFirestore(user);
-        } else if (authUserCred && authUserCred.user) {
+        } else if (docData && (authUserCred || email === "waseem.tw@hotmail.com")) {
           const isSuper = email === "waseem.tw@hotmail.com";
           user = {
-            id: docId || authUserCred.user.uid,
-            name: (docData && docData.name) || authUserCred.user.displayName || email.split('@')[0],
-            nameAr: (docData && docData.nameAr) || (isSuper ? "اسامة الطويش" : null),
+            id: docId || (authUserCred && authUserCred.user && authUserCred.user.uid) || ("u-" + Date.now()),
+            name: docData.name || (authUserCred && authUserCred.user && authUserCred.user.displayName) || email.split('@')[0],
+            nameAr: docData.nameAr || (isSuper ? "اسامة الطويش" : null),
             email: email,
-            phone: (docData && docData.phone) || ("+966 5" + (Math.abs((docId || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000)),
-            passwordHash: await hashPassword(pass),
-            role: (docData && docData.role) || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
+            phone: docData.phone || ("+966 5" + (Math.abs((docId || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000)),
+            passwordHash: docData.passwordHash || await hashPassword(pass),
+            role: docData.role || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
             status: "ACTIVE",
             isProtected: isSuper,
-            sectionAccess: (docData && docData.sectionAccess) || {
+            sectionAccess: docData.sectionAccess || {
               reminders: "accessible",
               tasks: "accessible",
               employees: isSuper ? "accessible" : "hidden",
@@ -5494,7 +5576,7 @@
               "audit-logs": isSuper ? "accessible" : "hidden",
               settings: "accessible"
             },
-            permissions: (docData && docData.permissions) || null
+            permissions: docData.permissions || null
           };
           state.users.push(user);
           syncUserToFirestore(user);
@@ -5694,6 +5776,7 @@
         });
 
         initialLoadDone = true;
+        purgeDeletedUsersFromActiveState();
         if (stateChanged) {
           saveState();
           updateUserSessionUI();
@@ -5812,6 +5895,25 @@
             } catch(e) {}
           });
         }
+        const changed = purgeDeletedUsersFromActiveState();
+        if (changed) {
+          renderWorkers();
+          renderDepartments();
+          updateCounts();
+        }
+
+        // Live session kick: If the currently logged-in user was deleted, immediately sign them out
+        const curUser = getCurrentUser();
+        if (curUser && !isMasterSuperAdmin(curUser)) {
+          const isCurrDeleted = state.recycleBin.some(b => b.type === "USER" && (
+            b.originalId === curUser.id ||
+            (b.data && b.data.email && b.data.email.toLowerCase().trim() === curUser.email.toLowerCase().trim())
+          ));
+          if (isCurrDeleted) {
+            userLogout();
+          }
+        }
+
         if (state.activeModule === "audit-logs") {
           renderAuditLogsView();
         }
