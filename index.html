@@ -4290,16 +4290,22 @@
 
       queueState.currentUrl = currentItem.url;
 
-      // Navigate existing WhatsApp Web tab without triggering popup blocker!
-      if (waWindowRef && !waWindowRef.closed) {
-        try {
-          waWindowRef.location.href = currentItem.url;
-          waWindowRef.focus();
-        } catch (e) {
+      // For index 0, it was already opened by window.open on user gesture!
+      // For index > 0, navigate the existing tab to the next contact and reload so WhatsApp Web switches chats!
+      if (queueState.currentIndex > 0) {
+        if (waWindowRef && !waWindowRef.closed) {
+          try {
+            waWindowRef.location.href = currentItem.url;
+            setTimeout(() => {
+              try { waWindowRef.location.reload(); } catch (e) {}
+            }, 350);
+            waWindowRef.focus();
+          } catch (e) {
+            waWindowRef = window.open(currentItem.url, "ostan_whatsapp_queue");
+          }
+        } else {
           waWindowRef = window.open(currentItem.url, "ostan_whatsapp_queue");
         }
-      } else {
-        waWindowRef = window.open(currentItem.url, "ostan_whatsapp_queue");
       }
 
       // Record in dispatch logs (Initial status is PENDING until sent)

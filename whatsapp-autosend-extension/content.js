@@ -1,14 +1,14 @@
 /**
- * Ostan WhatsApp Auto-Sender Content Script (v2.0.0)
- * - Prevents double-sending to the same contact
- * - Supports continuous multi-recipient queue navigation in the same tab
+ * Ostan WhatsApp Auto-Sender Content Script (v2.1.0)
+ * - Session-storage deduplication: strictly prevents sending duplicate messages to the same contact
+ * - Reload-aware: cleanly handles queue reloads across different recipients
  * - Intercepts api.whatsapp.com and forces web.whatsapp.com without desktop app
  */
 
 (function () {
-  console.log("[Ostan Auto-Sender v2.0.0] Active and monitoring.");
+  console.log("[Ostan Auto-Sender v2.1.0] Loaded on:", window.location.href);
 
-  // 1. If loaded on api.whatsapp.com, immediately redirect to web.whatsapp.com so Windows Desktop app never opens!
+  // 1. If loaded on api.whatsapp.com, redirect to web.whatsapp.com
   if (window.location.hostname === "api.whatsapp.com") {
     const urlParams = new URLSearchParams(window.location.search);
     const phone = urlParams.get("phone") || "";
@@ -19,7 +19,11 @@
     }
   }
 
-  // Create floating status pill HUD
+  const urlParams = new URLSearchParams(window.location.search);
+  const targetPhone = urlParams.get("phone") || "";
+  const targetText = urlParams.get("text") || "";
+
+  // Floating status pill HUD
   let hud = document.getElementById("ostan-auto-sender-hud");
   if (!hud) {
     hud = document.createElement("div");
@@ -46,7 +50,7 @@
     `;
     hud.innerHTML = `
       <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #25D366; box-shadow: 0 0 8px #25D366;"></span>
-      <span id="ostan-hud-text">🟢 Ostan Auto-Sender: Ready</span>
+      <span id="ostan-hud-text">${targetPhone ? `⚡ Ostan Auto-Sender: Preparing ${targetPhone}...` : "🟢 Ostan Auto-Sender: Ready"}</span>
     `;
     document.body.appendChild(hud);
   }
@@ -56,6 +60,23 @@
     if (textEl) textEl.textContent = text;
     if (hud) hud.style.borderColor = color;
   }
+
+  if (!targetPhone) {
+    return;
+  }
+
+  // Session-storage deduplication: guarantees a contact never receives the same text twice in this session
+  const cleanPhone = targetPhone.replace(/[^0-9]/g, "");
+  const sendKey = `ostan_sent_${cleanPhone}_${encodeURIComponent(targetText.substring(0, 20))}`;
+  if (sessionStorage.getItem(sendKey)) {
+    console.log("[Ostan Auto-Sender] Already dispatched to this contact in this session. Guard active.");
+    updateHud(`✅ Already sent to ${targetPhone}. Waiting for next recipient...`, "#25D366");
+    return;
+  }
+
+  let attempts = 0;
+  const maxAttempts = 120;
+  let hasSent = false;
 
   function findSendButton() {
     return (
@@ -77,13 +98,15 @@
     );
   }
 
-  let lastSentSignature = "";
-  let isSendingInProgress = false;
-  let currentAttempt = 0;
+  const pollInterval = setInterval(() => {
+    attempts++;
 
-  // Continuous loop to support queue navigation across multiple contacts in the same tab
-  setInterval(() => {
-    // Check for intermediate landing pages ("Continue to Chat" or "use WhatsApp Web")
+    if (hasSent) {
+      clearInterval(pollInterval);
+      return;
+    }
+
+    // Auto-click intermediate buttons if present
     const actionBtn = document.getElementById("action-button");
     if (actionBtn && actionBtn.offsetParent !== null) {
       updateHud("⚡ Clicking 'Continue to Chat'...", "#10b981");
@@ -96,34 +119,16 @@
       useWebLink.click();
     }
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const phone = urlParams.get("phone") || "";
-    const text = urlParams.get("text") || "";
-
-    if (!phone) {
-      return;
-    }
-
-    const currentSignature = `${phone}:::${text}`;
-
-    // Already sent to this contact with this text?
-    if (currentSignature === lastSentSignature) {
-      return;
-    }
-
-    if (isSendingInProgress) {
-      return;
-    }
-
-    currentAttempt++;
-
     const sendBtn = findSendButton();
     const inputField = findMessageInput();
     const hasText = inputField && inputField.textContent && inputField.textContent.trim().length > 0;
 
-    if (sendBtn && (hasText || currentAttempt > 10)) {
-      isSendingInProgress = true;
-      updateHud(`⚡ Sending message to ${phone}...`, "#10b981");
+    if (sendBtn && (hasText || attempts > 10)) {
+      clearInterval(pollInterval);
+      hasSent = true;
+      sessionStorage.setItem(sendKey, "true");
+
+      updateHud(`⚡ Sending message to ${targetPhone}...`, "#10b981");
 
       setTimeout(() => {
         try {
@@ -131,26 +136,23 @@
             inputField.focus();
           }
 
-          // Click Send button ONCE (Do NOT fire Enter key afterwards to prevent double sending!)
+          // Single Send click (No duplicate Enter events)
           sendBtn.click();
-          lastSentSignature = currentSignature;
-          console.log(`[Ostan Auto-Sender] Message successfully sent to ${phone}!`);
+          console.log(`[Ostan Auto-Sender] Single Send click executed for ${targetPhone}!`);
 
-          updateHud(`✅ Sent to ${phone}! Waiting for next recipient...`, "#25D366");
-
-          // Reset sending flag after delay to allow next queued recipient to process
-          setTimeout(() => {
-            isSendingInProgress = false;
-            currentAttempt = 0;
-          }, 3000);
+          updateHud(`✅ Sent to ${targetPhone}! Waiting for next recipient...`, "#25D366");
         } catch (err) {
           console.error("[Ostan Auto-Sender] Error clicking send:", err);
-          isSendingInProgress = false;
-          updateHud("⚠️ Error auto-clicking. Please click send.", "#f59e0b");
+          updateHud("⚠️ Please click Send manually.", "#f59e0b");
         }
       }, 700);
     } else {
-      updateHud(`⏳ Loading contact ${phone} (${Math.round(currentAttempt / 2)}s)...`, "#f59e0b");
+      updateHud(`⏳ Loading chat for ${targetPhone} (${Math.round(attempts / 2)}s)...`, "#f59e0b");
+    }
+
+    if (attempts >= maxAttempts) {
+      clearInterval(pollInterval);
+      updateHud("⚠️ Timeout. Please click Send manually.", "#ef4444");
     }
   }, 500);
 })();
