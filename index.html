@@ -4245,6 +4245,13 @@
       document.getElementById("runner-content-completed").style.display = "none";
       document.getElementById("runner-delay-badge").textContent = `${delayVal}s Anti-Ban Delay`;
 
+      // Open dedicated WhatsApp Web tab directly on user click to avoid browser popup blockers!
+      try {
+        waWindowRef = window.open(items[0].url, "ostan_whatsapp_queue");
+      } catch (e) {
+        waWindowRef = null;
+      }
+
       processCurrentQueueItem();
     }
     window.startWhatsAppQueueDispatch = startWhatsAppQueueDispatch;
@@ -4283,8 +4290,17 @@
 
       queueState.currentUrl = currentItem.url;
 
-      // Automatically launch WhatsApp for this recipient!
-      window.open(currentItem.url, "_blank");
+      // Navigate existing WhatsApp Web tab without triggering popup blocker!
+      if (waWindowRef && !waWindowRef.closed) {
+        try {
+          waWindowRef.location.href = currentItem.url;
+          waWindowRef.focus();
+        } catch (e) {
+          waWindowRef = window.open(currentItem.url, "ostan_whatsapp_queue");
+        }
+      } else {
+        waWindowRef = window.open(currentItem.url, "ostan_whatsapp_queue");
+      }
 
       // Record in dispatch logs (Initial status is PENDING until sent)
       const logEntry = {
