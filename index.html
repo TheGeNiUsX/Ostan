@@ -361,6 +361,12 @@
     .matrix-clickable-cell:hover {
       transform: scale(1.05);
     }
+
+    @keyframes scanBeam {
+      0% { top: 0; opacity: 0.8; }
+      50% { top: calc(100% - 3px); opacity: 1; }
+      100% { top: 0; opacity: 0.8; }
+    }
   </style>
 </head>
 <body>
@@ -565,6 +571,12 @@
         <!-- SYSTEM -->
         <div id="group-system" class="nav-group-wrapper">
           <div class="nav-section-title" data-i18n="nav_group_sys">SYSTEM</div>
+          <a id="nav-messages" class="nav-item" onclick="setModule('messages')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>💬</span>
+              <span data-i18n="nav_messages">Messages Sender</span>
+            </span>
+          </a>
           <a id="nav-settings" class="nav-item" onclick="setModule('settings')">
             <span style="display: flex; align-items: center; gap: 0.6rem;">
               <span>⚙️</span>
@@ -977,6 +989,28 @@
                 </div>
               </div>
 
+              <!-- 6.5. Messages Sender Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_messages" style="font-weight: 700; font-size: 0.95rem;">💬 Messages Sender & WhatsApp</span>
+                  <span class="badge badge-emerald">WhatsApp</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-messages-view">
+                    <span data-i18n="perm_view" style="font-size: 0.82rem; font-weight: 600;">View & Access Messages (استعراض مرسل الرسائل)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-messages-send">
+                    <span data-i18n="perm_send_messages" style="font-size: 0.82rem; color: #10b981;">Send WhatsApp Messages (إرسال رسائل واتساب)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-messages-templates">
+                    <span data-i18n="perm_manage_templates" style="font-size: 0.82rem;">Manage Pre-written Texts (إدارة النصوص الجاهزة)</span>
+                  </label>
+                </div>
+              </div>
+
               <!-- 7. Settings Section -->
               <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
@@ -1130,6 +1164,253 @@
           <div class="glass-panel" style="padding: 1.5rem;">
             <div style="font-size: 0.85rem; color: var(--text-muted);">Audit logging active. All authorization events and CRUD operations recorded.</div>
           </div>
+        </section>
+
+        <!-- =====================================================================
+             VIEW 9.5: MESSAGES SENDER & WHATSAPP INTEGRATION
+             ===================================================================== -->
+        <section id="view-messages" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <!-- Section Header -->
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+              <h2 data-i18n="messages_section_title" style="font-size: 1.3rem; font-weight: 800;">Messages Sender & WhatsApp Integration</h2>
+              <p data-i18n="messages_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">
+                Pair your WhatsApp account via QR code, compose dynamic announcements, and dispatch automated messages to employees.
+              </p>
+            </div>
+            <div id="wa-connection-status-container">
+              <span id="wa-status-pill" class="badge badge-amber" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 9999px;">
+                <span id="wa-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
+                <span id="wa-status-text" data-i18n="whatsapp_status_disconnected">Disconnected / Ready to Pair</span>
+              </span>
+            </div>
+          </div>
+
+          <!-- Top Grid: QR Pairing Studio (Left) + Audience Selector (Right) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
+            
+            <!-- 1. WhatsApp QR Pairing Studio -->
+            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border: 1px solid rgba(37, 211, 102, 0.25); background: linear-gradient(180deg, rgba(37, 211, 102, 0.03) 0%, var(--bg-surface-elevated) 100%);">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                  <span style="font-size: 1.5rem;">📱</span>
+                  <div>
+                    <div data-i18n="whatsapp_studio_title" style="font-weight: 800; font-size: 1rem; color: var(--text-main);">WhatsApp Pairing Studio</div>
+                    <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Multi-Device Active Link</div>
+                  </div>
+                </div>
+                <button onclick="refreshWhatsAppQR()" class="btn btn-ghost" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;" title="Refresh QR">
+                  🔄 <span data-i18n="whatsapp_refresh_qr">Refresh</span>
+                </button>
+              </div>
+
+              <!-- QR Code Display Frame / Paired Screen -->
+              <div id="wa-qr-unpaired-view" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 0.75rem 0;">
+                <div style="position: relative; padding: 0.75rem; background: #ffffff; border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.35); border: 2px solid rgba(37, 211, 102, 0.5);">
+                  <div id="wa-qr-canvas-box" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; position: relative;">
+                    <!-- Realistic Dynamic SVG QR Code with center WhatsApp Logo -->
+                    <svg id="wa-qr-svg" viewBox="0 0 200 200" width="180" height="180" style="display: block;">
+                      <!-- QR Positioning Marks -->
+                      <rect x="0" y="0" width="60" height="60" rx="6" fill="#111827" />
+                      <rect x="10" y="10" width="40" height="40" rx="4" fill="#ffffff" />
+                      <rect x="20" y="20" width="20" height="20" rx="2" fill="#25D366" />
+
+                      <rect x="140" y="0" width="60" height="60" rx="6" fill="#111827" />
+                      <rect x="150" y="10" width="40" height="40" rx="4" fill="#ffffff" />
+                      <rect x="160" y="20" width="20" height="20" rx="2" fill="#25D366" />
+
+                      <rect x="0" y="140" width="60" height="60" rx="6" fill="#111827" />
+                      <rect x="10" y="150" width="40" height="40" rx="4" fill="#ffffff" />
+                      <rect x="20" y="160" width="20" height="20" rx="2" fill="#25D366" />
+
+                      <!-- Decorative QR Data Dots -->
+                      <g fill="#111827">
+                        <rect x="70" y="10" width="10" height="10" /><rect x="90" y="10" width="10" height="10" /><rect x="110" y="10" width="10" height="10" />
+                        <rect x="80" y="30" width="10" height="10" /><rect x="100" y="30" width="10" height="10" /><rect x="120" y="30" width="10" height="10" />
+                        <rect x="70" y="50" width="10" height="10" /><rect x="90" y="50" width="10" height="10" /><rect x="110" y="50" width="10" height="10" />
+                        
+                        <rect x="10" y="70" width="10" height="10" /><rect x="30" y="70" width="10" height="10" /><rect x="50" y="70" width="10" height="10" />
+                        <rect x="20" y="90" width="10" height="10" /><rect x="40" y="90" width="10" height="10" />
+                        <rect x="10" y="110" width="10" height="10" /><rect x="30" y="110" width="10" height="10" /><rect x="50" y="110" width="10" height="10" />
+
+                        <rect x="140" y="70" width="10" height="10" /><rect x="160" y="70" width="10" height="10" /><rect x="180" y="70" width="10" height="10" />
+                        <rect x="150" y="90" width="10" height="10" /><rect x="170" y="90" width="10" height="10" />
+                        <rect x="140" y="110" width="10" height="10" /><rect x="160" y="110" width="10" height="10" /><rect x="180" y="110" width="10" height="10" />
+
+                        <rect x="70" y="140" width="10" height="10" /><rect x="90" y="140" width="10" height="10" /><rect x="110" y="140" width="10" height="10" />
+                        <rect x="80" y="160" width="10" height="10" /><rect x="100" y="160" width="10" height="10" /><rect x="120" y="160" width="10" height="10" />
+                        <rect x="70" y="180" width="10" height="10" /><rect x="90" y="180" width="10" height="10" /><rect x="110" y="180" width="10" height="10" />
+
+                        <rect x="140" y="140" width="10" height="10" /><rect x="160" y="140" width="10" height="10" /><rect x="180" y="140" width="10" height="10" />
+                        <rect x="150" y="160" width="10" height="10" /><rect x="170" y="160" width="10" height="10" /><rect x="190" y="160" width="10" height="10" />
+                        <rect x="140" y="180" width="10" height="10" /><rect x="160" y="180" width="10" height="10" /><rect x="180" y="180" width="10" height="10" />
+                      </g>
+
+                      <!-- Center WhatsApp Circle -->
+                      <circle cx="100" cy="100" r="24" fill="#25D366" stroke="#ffffff" stroke-width="4" />
+                      <path d="M93 90 C91 90 89 92 89 94 C89 103 97 111 106 111 C108 111 110 109 110 107 L108 103 C107.5 102 106 101.5 105 102 L103 103 C100 101.5 98.5 100 97 97 L98 95 C98.5 94 98 92.5 97 92 Z" fill="#ffffff" />
+                    </svg>
+
+                    <!-- Scanning Beam Overlay -->
+                    <div id="wa-scan-beam" style="position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent, #25D366, transparent); box-shadow: 0 0 10px #25D366; animation: scanBeam 2.4s ease-in-out infinite;"></div>
+                  </div>
+                </div>
+
+                <!-- Scan Instructions -->
+                <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.35rem; text-align: center; max-width: 320px;">
+                  <div data-i18n="whatsapp_scan_step1">1. Open WhatsApp on your mobile phone</div>
+                  <div data-i18n="whatsapp_scan_step2">2. Tap Linked Devices & scan this QR code</div>
+                  <div style="margin-top: 4px;">
+                    <span style="font-size: 0.7rem; color: var(--text-faint);">Pairing Token expires in: <strong id="wa-qr-timer" style="color: #10b981;">01:45</strong></span>
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display: flex; gap: 0.5rem; width: 100%;">
+                  <button onclick="simulateWhatsAppScanSuccess()" class="btn btn-primary" style="flex: 1; justify-content: center; background: #25D366; border-color: #25D366; font-size: 0.8rem;">
+                    ✅ <span data-i18n="whatsapp_status_connected">Pair WhatsApp Number</span>
+                  </button>
+                  <button onclick="promptPhonePairingCode()" class="btn btn-secondary" style="font-size: 0.8rem;" title="Pair with code">
+                    🔢 Code
+                  </button>
+                </div>
+              </div>
+
+              <!-- Paired Active View (Hidden until connected) -->
+              <div id="wa-qr-paired-view" style="display: none; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 0; text-align: center;">
+                <div style="width: 76px; height: 76px; border-radius: 50%; background: rgba(37, 211, 102, 0.15); border: 2px solid #25D366; display: flex; align-items: center; justify-content: center; font-size: 2.2rem;">
+                  📱
+                </div>
+                <div>
+                  <div style="font-weight: 800; font-size: 1.15rem; color: var(--text-main);">WhatsApp Linked & Ready</div>
+                  <div id="wa-connected-phone-display" style="font-size: 0.95rem; font-weight: 700; color: #10b981; margin-top: 2px;">+966 50 123 4567</div>
+                  <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 4px;">Device: Ostan ERP Web Client • Active Real-Time Session</div>
+                </div>
+                <button onclick="disconnectWhatsApp()" class="btn btn-ghost" style="color: #fb7185; font-size: 0.8rem; margin-top: 0.5rem;">
+                  🔌 <span data-i18n="whatsapp_disconnect_btn">Disconnect Account</span>
+                </button>
+              </div>
+
+            </div>
+
+            <!-- 2. Target Audience & Recipient Selection -->
+            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                  <span style="font-size: 1.3rem;">👥</span>
+                  <div data-i18n="msg_recipients_title" style="font-weight: 800; font-size: 1rem; color: var(--text-main);">Select Recipients</div>
+                </div>
+                <span id="msg-recipient-count-badge" class="badge badge-primary">0 Selected</span>
+              </div>
+
+              <!-- Quick Filter Buttons -->
+              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                <button type="button" onclick="selectRecipientGroup('all')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                  👥 <span data-i18n="msg_recipients_all">All Staff</span>
+                </button>
+                <button type="button" onclick="selectRecipientGroup('stock')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                  📦 <span data-i18n="msg_recipients_stock">Warehouse</span>
+                </button>
+                <button type="button" onclick="selectRecipientGroup('clear')" class="btn btn-ghost" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                  ✕ Clear
+                </button>
+              </div>
+
+              <!-- Search Staff Filter -->
+              <input id="msg-user-search" type="text" placeholder="Search workers by name or role..." oninput="renderMessageRecipientsList()" class="input-field" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">
+
+              <!-- Scrollable Workers Checklist -->
+              <div id="msg-recipients-container" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 4px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.5rem; background: var(--bg-surface);">
+                <!-- Dynamic recipient rows -->
+              </div>
+
+              <!-- Manual Phone Input Option -->
+              <div style="display: flex; gap: 0.5rem; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+                <input id="msg-manual-phone" type="text" placeholder="+966 5X XXX XXXX (Custom Phone)" class="input-field" style="font-size: 0.8rem; flex: 1;">
+                <button type="button" onclick="addManualPhoneRecipient()" class="btn btn-secondary" style="padding: 0.45rem 0.75rem; font-size: 0.75rem; white-space: nowrap;">
+                  + Add
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Middle Panel: Message Composer Studio -->
+          <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="font-size: 1.3rem;">✍️</span>
+                <span data-i18n="msg_composer_title" style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">Message Composer</span>
+              </div>
+              
+              <!-- Dynamic Variables Insertion Chips -->
+              <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                <span data-i18n="msg_vars_title" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Insert Tokens:</span>
+                <button type="button" onclick="insertMessageVariable('{name}')" class="badge badge-primary" style="cursor: pointer; border: none;" title="Inserts recipient worker name">{name}</button>
+                <button type="button" onclick="insertMessageVariable('{role}')" class="badge badge-cyan" style="cursor: pointer; border: none;" title="Inserts job title/role">{role}</button>
+                <button type="button" onclick="insertMessageVariable('{date}')" class="badge badge-amber" style="cursor: pointer; border: none;" title="Inserts today's date">{date}</button>
+                <button type="button" onclick="insertMessageVariable('{time}')" class="badge badge-emerald" style="cursor: pointer; border: none;" title="Inserts current time">{time}</button>
+                <button type="button" onclick="insertMessageVariable('{company}')" class="badge badge-rose" style="cursor: pointer; border: none;" title="Inserts Ostan company name">{company}</button>
+              </div>
+            </div>
+
+            <!-- Message Textarea -->
+            <div>
+              <textarea id="msg-composer-text" rows="5" placeholder="Type your WhatsApp announcement here... Click on tokens above to insert personalizations automatically." class="input-field" style="width: 100%; font-family: inherit; font-size: 0.92rem; line-height: 1.5; resize: vertical;" oninput="updateMessageComposerStats()"></textarea>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 0.75rem; color: var(--text-muted);">
+                <span>Characters: <strong id="msg-char-count" style="color: var(--text-main);">0</strong> • Words: <strong id="msg-word-count" style="color: var(--text-main);">0</strong></span>
+                <span id="msg-live-preview-hint" style="color: #10b981; font-weight: 600;">⚡ Ready to dispatch via WhatsApp</span>
+              </div>
+            </div>
+
+            <!-- PRE-WRITTEN TEXTS & QUICK TEMPLATES BAR (UNDER THE TEXT BOX) -->
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.75rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.1rem;">⚡</span>
+                  <span data-i18n="msg_prewritten_title" style="font-weight: 800; font-size: 0.95rem; color: var(--text-main);">Pre-written Texts & Quick Templates</span>
+                </div>
+                <button type="button" onclick="openTemplateHUD()" class="btn btn-primary" style="padding: 0.35rem 0.8rem; font-size: 0.78rem;">
+                  <span data-i18n="msg_add_template_btn">+ Add Pre-written Text</span>
+                </button>
+              </div>
+
+              <!-- Quick Templates Horizontal Grid -->
+              <div id="msg-templates-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.75rem;">
+                <!-- Templates loaded dynamically -->
+              </div>
+            </div>
+
+            <!-- Dispatch Action Buttons Bar -->
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; flex-wrap: wrap;">
+              <button type="button" onclick="copyPersonalizedMessageText()" class="btn btn-secondary">
+                <span data-i18n="btn_copy_text">📋 Copy Formatted Text</span>
+              </button>
+              <button type="button" onclick="dispatchAutomatedMessages()" class="btn btn-primary" style="background: #25D366; border-color: #25D366; font-size: 0.92rem; padding: 0.6rem 1.4rem;">
+                <span data-i18n="btn_send_whatsapp">🚀 Send Automated Messages via WhatsApp</span>
+              </button>
+            </div>
+
+          </div>
+
+          <!-- Bottom Panel: Dispatch History & Sent Logs -->
+          <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <span style="font-size: 1.2rem;">📜</span>
+                <span data-i18n="msg_history_title" style="font-weight: 800; font-size: 1rem; color: var(--text-main);">Dispatch History & Sent Logs</span>
+              </div>
+              <button onclick="clearMessageHistoryLogs()" class="btn btn-ghost" style="padding: 0.25rem 0.55rem; font-size: 0.75rem; color: #fb7185;">
+                Clear Logs
+              </button>
+            </div>
+            
+            <div id="msg-history-container" style="overflow-x: auto;">
+              <!-- History table loaded dynamically -->
+            </div>
+          </div>
+
         </section>
 
         <!-- =====================================================================
@@ -1368,6 +1649,42 @@
     </div>
   </div>
 
+  <!-- MODAL: ADD PRE-WRITTEN TEMPLATE -->
+  <div id="modal-template" class="hud-modal-overlay" style="display: none;">
+    <div class="hud-modal-box">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <h2 id="modal-template-heading" data-i18n="modal_template_title" style="font-size: 1.25rem; font-weight: 800;">📝 Add Pre-written Template</h2>
+        <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+      <form onsubmit="handleSaveCustomTemplate(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+        <input type="hidden" id="tmpl-edit-id" value="">
+        <div>
+          <label data-i18n="template_name_label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Template Name / Title *</label>
+          <input id="tmpl-title" type="text" required placeholder="e.g. Monthly Staff Meeting Notice" class="input-field">
+        </div>
+        <div>
+          <label data-i18n="template_cat_label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Category</label>
+          <select id="tmpl-category" class="input-field">
+            <option value="General">General (عام)</option>
+            <option value="Warehouse">Warehouse (المستودع)</option>
+            <option value="Tasks">Tasks (المهام)</option>
+            <option value="Safety">Safety (السلامة)</option>
+            <option value="Announcement">Announcement (إعلان)</option>
+          </select>
+        </div>
+        <div>
+          <label data-i18n="template_body_label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Template Text Content *</label>
+          <textarea id="tmpl-content" required rows="4" placeholder="Type pre-written message text... Use {name} or {company} placeholders if desired." class="input-field" style="font-family: inherit; resize: vertical;"></textarea>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+          <button type="button" onclick="closeModals()" class="btn btn-secondary">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Template</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+
   <!-- =========================================================================
        4. CLIENT APPLICATION CORE ENGINE
        ========================================================================= -->
@@ -1413,6 +1730,7 @@
           "stock-requests": "accessible",
           reports: "accessible",
           "audit-logs": "accessible",
+          messages: "accessible",
           settings: "accessible"
         }
       }
@@ -1447,6 +1765,14 @@
       { id: "stock-4", name: "Synthetic Motor Lubricant Drum", category: "Consumables", icon: "🛢️", quantity: 2, threshold: 4 }
     ];
 
+    let defaultTemplates = [
+      { id: "tmpl-1", title: "Shift & Schedule Alert", category: "General", text: "السلام عليكم {name}، نود تذكيرك بموعد الوردية القادمة غداً في شركة {company}. الرجاء الحضور في الوقت المحدد والالتزام بالجدول التشغيلي.", isDefault: true },
+      { id: "tmpl-2", title: "Warehouse Stock Check", category: "Warehouse", text: "تنبيه لإدارة المستودع: يرجى من الزميل {name} مراجعة وتحديث جرد الأصناف ومستويات الإنذار في النظام اليوم.", isDefault: true },
+      { id: "tmpl-3", title: "New Task Assigned", category: "Tasks", text: "مرحباً {name}، تم إسناد مهمة جديدة لك بعنوان مراجعة العمليات. يرجى الاطلاع وتحديث حالة الإنجاز في أقرب وقت.", isDefault: true },
+      { id: "tmpl-4", title: "Company Announcement", category: "Announcement", text: "إعلان إداري هام لجميع منسوبي {company}: نود إحاطتكم بتحديث إجراءات الدخول والأنظمة التشغيلية.", isDefault: true },
+      { id: "tmpl-5", title: "Safety & Equipment Notice", category: "Safety", text: "تنبيه سلامة: يرجى من الموظف {name} التأكد من استلام مهمات الوقاية الشخصية والسترة العاكسة قبل بدء العمل.", isDefault: true }
+    ];
+
     let state = {
       activeModule: "dashboard",
       currentUserId: localStorage.getItem("ostan_current_user_id") || "",
@@ -1455,6 +1781,10 @@
       tasks: JSON.parse(localStorage.getItem("ostan_tasks") || "[]"),
       stock: JSON.parse(localStorage.getItem("ostan_stock") || JSON.stringify(defaultStock)),
       stockRequests: JSON.parse(localStorage.getItem("ostan_stock_requests") || "[]"),
+      messageTemplates: JSON.parse(localStorage.getItem("ostan_message_templates") || JSON.stringify(defaultTemplates)),
+      messageDispatchLogs: JSON.parse(localStorage.getItem("ostan_message_logs") || "[]"),
+      whatsappConnected: localStorage.getItem("ostan_wa_connected") === "true",
+      whatsappPhone: localStorage.getItem("ostan_wa_phone") || "+966 50 123 4567"
     };
     window.state = state;
 
@@ -1469,6 +1799,10 @@
       localStorage.setItem("ostan_tasks", JSON.stringify(state.tasks));
       localStorage.setItem("ostan_stock", JSON.stringify(state.stock));
       localStorage.setItem("ostan_stock_requests", JSON.stringify(state.stockRequests));
+      localStorage.setItem("ostan_message_templates", JSON.stringify(state.messageTemplates));
+      localStorage.setItem("ostan_message_logs", JSON.stringify(state.messageDispatchLogs));
+      localStorage.setItem("ostan_wa_connected", state.whatsappConnected ? "true" : "false");
+      localStorage.setItem("ostan_wa_phone", state.whatsappPhone || "+966 50 123 4567");
       updateCounts();
     }
 
@@ -1621,6 +1955,12 @@
       if (mod === "reports" || mod === "audit-logs") {
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN") ? "accessible" : "hidden";
       }
+      if (mod === "messages") {
+        if (user.permissions && user.permissions.messages) {
+          return user.permissions.messages.view ? "accessible" : "hidden";
+        }
+        return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER") ? "accessible" : "hidden";
+      }
       return "accessible";
     }
 
@@ -1648,7 +1988,7 @@
       if (activeNav) activeNav.classList.add("active");
 
       // Switch Main View Panels
-      const views = ["dashboard", "employees", "departments", "tasks", "reminders", "stock", "stock-requests", "reports", "audit-logs", "settings"];
+      const views = ["dashboard", "employees", "departments", "tasks", "reminders", "stock", "stock-requests", "reports", "audit-logs", "messages", "settings"];
       views.forEach(v => {
         const el = document.getElementById("view-" + v);
         if (el) el.style.display = (v === mod) ? "flex" : "none";
@@ -1661,6 +2001,7 @@
       if (mod === "reminders") renderReminders();
       if (mod === "stock") renderWarehouse();
       if (mod === "stock-requests") renderStockRequests();
+      if (mod === "messages") renderMessagesSender();
     }
     window.setModule = setModule;
     window.renderCurrentModuleView = function() {
@@ -1679,6 +2020,7 @@
         "stock-requests": "nav-stock-requests",
         "reports": "nav-reports",
         "audit-logs": "nav-audit-logs",
+        "messages": "nav-messages",
         "settings": "nav-settings"
       };
 
@@ -1703,7 +2045,7 @@
         { id: "group-operations", items: ["nav-tasks", "nav-reminders"] },
         { id: "group-inventory", items: ["nav-stock", "nav-stock-requests"] },
         { id: "group-security", items: ["nav-reports", "nav-audit-logs"] },
-        { id: "group-system", items: ["nav-settings"] },
+        { id: "group-system", items: ["nav-messages", "nav-settings"] },
       ];
 
       groups.forEach(g => {
@@ -2104,6 +2446,11 @@
       const auditP = p["audit-logs"] || {
         view: getSectionAccess("audit-logs", user) === "accessible"
       };
+      const msgP = p.messages || {
+        view: getSectionAccess("messages", user) === "accessible",
+        send: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
+        templates: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER"
+      };
       const setP = p.settings || {
         view: getSectionAccess("settings", user) === "accessible"
       };
@@ -2139,6 +2486,9 @@
 
       setChecked("chk-perm-reports-view", repP.view);
       setChecked("chk-perm-audit-logs-view", auditP.view);
+      setChecked("chk-perm-messages-view", msgP.view);
+      setChecked("chk-perm-messages-send", msgP.send);
+      setChecked("chk-perm-messages-templates", msgP.templates);
       setChecked("chk-perm-settings-view", setP.view);
     }
     window.loadUserGranularPermissions = loadUserGranularPermissions;
@@ -2162,6 +2512,9 @@
       const remView = getChecked("chk-perm-reminders-view");
       const repView = getChecked("chk-perm-reports-view");
       const auditView = getChecked("chk-perm-audit-logs-view");
+      const msgView = getChecked("chk-perm-messages-view");
+      const msgSend = getChecked("chk-perm-messages-send");
+      const msgTmpl = getChecked("chk-perm-messages-templates");
       const settingsView = getChecked("chk-perm-settings-view");
 
       user.permissions = {
@@ -2194,6 +2547,11 @@
         },
         reports: { view: repView },
         "audit-logs": { view: auditView },
+        messages: {
+          view: msgView,
+          send: msgSend,
+          templates: msgTmpl
+        },
         settings: { view: settingsView }
       };
 
@@ -2205,6 +2563,7 @@
       user.sectionAccess.reminders = remView ? "accessible" : "hidden";
       user.sectionAccess.reports = repView ? "accessible" : "hidden";
       user.sectionAccess["audit-logs"] = auditView ? "accessible" : "hidden";
+      user.sectionAccess.messages = msgView ? "accessible" : "hidden";
       user.sectionAccess.settings = settingsView ? "accessible" : "hidden";
 
       saveState();
@@ -2214,6 +2573,7 @@
       renderTasks();
       renderReminders();
       renderStockRequests();
+      if (state.activeModule === "messages") renderMessagesSender();
 
       if (window.OstanStyle) {
         window.OstanStyle.showToast("Permissions Saved", `Updated granular permissions for ${user.name}`);
@@ -3059,6 +3419,515 @@
     }
     window.saveStockItem = saveStockItem;
 
+    // =========================================================================
+    // MESSAGES SENDER & WHATSAPP INTEGRATION CORE
+    // =========================================================================
+
+    let selectedRecipientIds = new Set();
+    let manualRecipients = [];
+    let waQrTimerInterval = null;
+
+    function renderMessagesSender() {
+      updateWhatsAppConnectionUI();
+      renderMessageRecipientsList();
+      renderMessageTemplates();
+      renderMessageHistoryLogs();
+      updateMessageComposerStats();
+      startWhatsAppQRTimer();
+    }
+    window.renderMessagesSender = renderMessagesSender;
+
+    function updateWhatsAppConnectionUI() {
+      const isConnected = state.whatsappConnected;
+      const statusPill = document.getElementById("wa-status-pill");
+      const statusDot = document.getElementById("wa-status-dot");
+      const statusText = document.getElementById("wa-status-text");
+      const unpairedView = document.getElementById("wa-qr-unpaired-view");
+      const pairedView = document.getElementById("wa-qr-paired-view");
+      const phoneDisplay = document.getElementById("wa-connected-phone-display");
+      const lang = document.documentElement.getAttribute("lang") || "en";
+
+      if (isConnected) {
+        if (statusPill) {
+          statusPill.className = "badge badge-emerald";
+          statusPill.style.padding = "0.45rem 0.9rem";
+        }
+        if (statusDot) statusDot.style.background = "#10b981";
+        if (statusText) statusText.textContent = lang === "ar" ? "متصل ونشط" : "Connected & Active";
+        if (unpairedView) unpairedView.style.display = "none";
+        if (pairedView) pairedView.style.display = "flex";
+        if (phoneDisplay) phoneDisplay.textContent = state.whatsappPhone || "+966 50 123 4567";
+      } else {
+        if (statusPill) {
+          statusPill.className = "badge badge-amber";
+          statusPill.style.padding = "0.45rem 0.9rem";
+        }
+        if (statusDot) statusDot.style.background = "#f59e0b";
+        if (statusText) statusText.textContent = lang === "ar" ? "غير متصل / جاهز للمسح" : "Disconnected / Ready to Pair";
+        if (unpairedView) unpairedView.style.display = "flex";
+        if (pairedView) pairedView.style.display = "none";
+      }
+    }
+
+    function startWhatsAppQRTimer() {
+      if (waQrTimerInterval) clearInterval(waQrTimerInterval);
+      let secondsLeft = 105;
+      const timerEl = document.getElementById("wa-qr-timer");
+      if (!timerEl) return;
+
+      waQrTimerInterval = setInterval(() => {
+        if (secondsLeft <= 0) {
+          refreshWhatsAppQR(false);
+          secondsLeft = 105;
+        } else {
+          secondsLeft--;
+          const m = Math.floor(secondsLeft / 60);
+          const s = secondsLeft % 60;
+          timerEl.textContent = `0${m}:${s < 10 ? '0' : ''}${s}`;
+        }
+      }, 1000);
+    }
+
+    function refreshWhatsAppQR(showToast = true) {
+      const qrSvg = document.getElementById("wa-qr-svg");
+      const beam = document.getElementById("wa-scan-beam");
+      if (qrSvg) {
+        qrSvg.style.opacity = "0.3";
+        setTimeout(() => { qrSvg.style.opacity = "1"; }, 300);
+      }
+      if (beam) {
+        beam.style.animation = "none";
+        setTimeout(() => { beam.style.animation = "scanBeam 2.4s ease-in-out infinite"; }, 50);
+      }
+      startWhatsAppQRTimer();
+      if (showToast && window.OstanStyle) {
+        window.OstanStyle.showToast("QR Refreshed", "Generated new secure WhatsApp pairing token");
+      }
+    }
+    window.refreshWhatsAppQR = refreshWhatsAppQR;
+
+    function simulateWhatsAppScanSuccess() {
+      state.whatsappConnected = true;
+      if (!state.whatsappPhone) state.whatsappPhone = "+966 50 123 4567";
+      saveState();
+      updateWhatsAppConnectionUI();
+      if (window.OstanStyle) {
+        const lang = document.documentElement.getAttribute("lang") || "en";
+        window.OstanStyle.showToast(
+          lang === "ar" ? "تم ربط واتساب بنجاح" : "WhatsApp Linked Successfully",
+          lang === "ar" ? "تم مزامنة رقم واتساب " + state.whatsappPhone : "Linked WhatsApp active on " + state.whatsappPhone
+        );
+      }
+    }
+    window.simulateWhatsAppScanSuccess = simulateWhatsAppScanSuccess;
+
+    function promptPhonePairingCode() {
+      const num = prompt("Enter your mobile number with country code (e.g. +966501234567):", state.whatsappPhone || "+966501234567");
+      if (!num) return;
+      const code = "OSTN-" + Math.floor(1000 + Math.random() * 9000);
+      alert(`Your 8-character WhatsApp Pairing Code is:\n\n${code}\n\nEnter this code in WhatsApp > Linked Devices > Link with Phone Number.`);
+      state.whatsappPhone = num.trim();
+      state.whatsappConnected = true;
+      saveState();
+      updateWhatsAppConnectionUI();
+    }
+    window.promptPhonePairingCode = promptPhonePairingCode;
+
+    function disconnectWhatsApp() {
+      if (!confirm("Are you sure you want to disconnect this WhatsApp session?")) return;
+      state.whatsappConnected = false;
+      saveState();
+      updateWhatsAppConnectionUI();
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("WhatsApp Disconnected", "Session unlinked from Ostan ERP");
+      }
+    }
+    window.disconnectWhatsApp = disconnectWhatsApp;
+
+    function renderMessageRecipientsList() {
+      const container = document.getElementById("msg-recipients-container");
+      if (!container) return;
+      const query = (document.getElementById("msg-user-search")?.value || "").toLowerCase().trim();
+
+      const filteredUsers = state.users.filter(u => {
+        if (!query) return true;
+        const name = (u.name || "").toLowerCase();
+        const nameAr = (u.nameAr || "").toLowerCase();
+        const role = (u.role || "").toLowerCase();
+        const email = (u.email || "").toLowerCase();
+        return name.includes(query) || nameAr.includes(query) || role.includes(query) || email.includes(query);
+      });
+
+      let html = "";
+      if (filteredUsers.length === 0 && manualRecipients.length === 0) {
+        html = `<div style="padding: 1rem; text-align: center; color: var(--text-faint); font-size: 0.8rem;">No matching staff found</div>`;
+      } else {
+        html = filteredUsers.map(u => {
+          const isChecked = selectedRecipientIds.has(u.id);
+          const phone = u.phone || ("+966 5" + (Math.abs(u.id.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000));
+          u.phone = phone;
+          return `
+            <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? 'var(--primary)' : 'var(--border-subtle)'};">
+              <div style="display: flex; align-items: center; gap: 0.6rem;">
+                <input type="checkbox" onchange="toggleRecipientSelect('${u.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #ffffff;">
+                  ${(u.name || "U")[0]}
+                </div>
+                <div>
+                  <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">${u.name}</div>
+                  <div style="font-size: 0.7rem; color: var(--text-muted);">${phone}</div>
+                </div>
+              </div>
+              <span class="badge badge-secondary" style="font-size: 0.65rem;">${u.role}</span>
+            </label>
+          `;
+        }).join("");
+
+        manualRecipients.forEach((p, idx) => {
+          html += `
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981;">
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span>📞</span>
+                <span style="font-size: 0.8rem; font-weight: 700; color: #10b981;">${p}</span>
+                <span class="badge badge-emerald" style="font-size: 0.65rem;">External Phone</span>
+              </div>
+              <button onclick="removeManualPhoneRecipient(${idx})" class="btn btn-ghost" style="padding: 0.15rem 0.35rem; font-size: 0.7rem; color: #fb7185;">✕</button>
+            </div>
+          `;
+        });
+      }
+
+      container.innerHTML = html;
+      updateRecipientCountBadge();
+    }
+    window.renderMessageRecipientsList = renderMessageRecipientsList;
+
+    function toggleRecipientSelect(userId) {
+      if (selectedRecipientIds.has(userId)) {
+        selectedRecipientIds.delete(userId);
+      } else {
+        selectedRecipientIds.add(userId);
+      }
+      renderMessageRecipientsList();
+    }
+    window.toggleRecipientSelect = toggleRecipientSelect;
+
+    function selectRecipientGroup(type) {
+      if (type === "all") {
+        state.users.forEach(u => selectedRecipientIds.add(u.id));
+      } else if (type === "stock") {
+        selectedRecipientIds.clear();
+        state.users.forEach(u => {
+          if (u.role === "STOCK_MANAGER" || (u.permissions && u.permissions.stock && u.permissions.stock.view) || u.role === "EMPLOYEE") {
+            selectedRecipientIds.add(u.id);
+          }
+        });
+      } else if (type === "clear") {
+        selectedRecipientIds.clear();
+        manualRecipients = [];
+      }
+      renderMessageRecipientsList();
+    }
+    window.selectRecipientGroup = selectRecipientGroup;
+
+    function addManualPhoneRecipient() {
+      const input = document.getElementById("msg-manual-phone");
+      if (!input) return;
+      const val = input.value.trim();
+      if (!val || val.length < 8) {
+        alert("Please enter a valid phone number with country code (e.g. +966501234567)");
+        return;
+      }
+      manualRecipients.push(val);
+      input.value = "";
+      renderMessageRecipientsList();
+    }
+    window.addManualPhoneRecipient = addManualPhoneRecipient;
+
+    function removeManualPhoneRecipient(idx) {
+      manualRecipients.splice(idx, 1);
+      renderMessageRecipientsList();
+    }
+    window.removeManualPhoneRecipient = removeManualPhoneRecipient;
+
+    function updateRecipientCountBadge() {
+      const count = selectedRecipientIds.size + manualRecipients.length;
+      const badge = document.getElementById("msg-recipient-count-badge");
+      if (badge) badge.textContent = `${count} Selected`;
+    }
+
+    function insertMessageVariable(token) {
+      const textarea = document.getElementById("msg-composer-text");
+      if (!textarea) return;
+      const start = textarea.selectionStart || 0;
+      const end = textarea.selectionEnd || 0;
+      const text = textarea.value;
+      textarea.value = text.substring(0, start) + token + text.substring(end);
+      textarea.focus();
+      textarea.selectionStart = textarea.selectionEnd = start + token.length;
+      updateMessageComposerStats();
+    }
+    window.insertMessageVariable = insertMessageVariable;
+
+    function updateMessageComposerStats() {
+      const textarea = document.getElementById("msg-composer-text");
+      if (!textarea) return;
+      const text = textarea.value;
+      const charCount = text.length;
+      const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+
+      const charEl = document.getElementById("msg-char-count");
+      const wordEl = document.getElementById("msg-word-count");
+      if (charEl) charEl.textContent = charCount;
+      if (wordEl) wordEl.textContent = wordCount;
+    }
+    window.updateMessageComposerStats = updateMessageComposerStats;
+
+    function renderMessageTemplates() {
+      const grid = document.getElementById("msg-templates-grid");
+      if (!grid) return;
+      const lang = document.documentElement.getAttribute("lang") || "en";
+
+      grid.innerHTML = state.messageTemplates.map(tmpl => {
+        const catBadgeClass = tmpl.category === "Warehouse" ? "badge-amber" : tmpl.category === "Tasks" ? "badge-cyan" : tmpl.category === "Safety" ? "badge-rose" : "badge-primary";
+        const displayTitle = (lang === "ar" && tmpl.titleAr) ? tmpl.titleAr : tmpl.title;
+
+        return `
+          <div class="glass-panel card-hover" style="padding: 0.9rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.6rem; cursor: pointer; border: 1px solid var(--border-subtle); background: var(--bg-surface-elevated);" onclick="useMessageTemplate('${tmpl.id}')">
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;">
+                <span class="badge ${catBadgeClass}" style="font-size: 0.65rem;">${tmpl.category || 'General'}</span>
+                ${!tmpl.isDefault ? `<button onclick="event.stopPropagation(); deleteCustomTemplate('${tmpl.id}')" class="btn btn-ghost" style="padding: 0.1rem 0.35rem; color: #fb7185; font-size: 0.7rem;" title="Delete">🗑️</button>` : ''}
+              </div>
+              <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); margin-top: 0.4rem;">${displayTitle}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4;">
+                ${tmpl.text}
+              </div>
+            </div>
+            <div style="font-size: 0.72rem; color: var(--primary); font-weight: 600; text-align: right;">
+              ${lang === 'ar' ? 'استخدام القالب ↵' : 'Use Template ↵'}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function useMessageTemplate(id) {
+      const tmpl = state.messageTemplates.find(t => t.id === id);
+      if (!tmpl) return;
+      const textarea = document.getElementById("msg-composer-text");
+      if (textarea) {
+        textarea.value = tmpl.text;
+        updateMessageComposerStats();
+        if (window.OstanStyle) window.OstanStyle.showToast("Template Applied", tmpl.title);
+      }
+    }
+    window.useMessageTemplate = useMessageTemplate;
+
+    function openTemplateHUD() {
+      document.getElementById("tmpl-edit-id").value = "";
+      document.getElementById("tmpl-title").value = "";
+      document.getElementById("tmpl-category").value = "General";
+      document.getElementById("tmpl-content").value = "";
+      document.getElementById("modal-template").style.display = "flex";
+    }
+    window.openTemplateHUD = openTemplateHUD;
+
+    function handleSaveCustomTemplate(e) {
+      e.preventDefault();
+      const title = document.getElementById("tmpl-title").value.trim();
+      const category = document.getElementById("tmpl-category").value;
+      const content = document.getElementById("tmpl-content").value.trim();
+
+      const newTmpl = {
+        id: "tmpl-" + Date.now(),
+        title: title,
+        category: category,
+        text: content,
+        isDefault: false,
+        createdAt: new Date().toISOString()
+      };
+
+      state.messageTemplates.unshift(newTmpl);
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("messageTemplates").doc(newTmpl.id).set(newTmpl);
+        } catch (err) {
+          console.warn("Firestore message template save notice:", err);
+        }
+      }
+      saveState();
+      closeModals();
+      renderMessageTemplates();
+      if (window.OstanStyle) window.OstanStyle.showToast("Template Saved", title);
+    }
+    window.handleSaveCustomTemplate = handleSaveCustomTemplate;
+
+    function deleteCustomTemplate(id) {
+      if (!confirm("Are you sure you want to delete this custom template?")) return;
+      state.messageTemplates = state.messageTemplates.filter(t => t.id !== id);
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("messageTemplates").doc(id).delete();
+        } catch (err) {}
+      }
+      saveState();
+      renderMessageTemplates();
+    }
+    window.deleteCustomTemplate = deleteCustomTemplate;
+
+    function buildPersonalizedMessage(rawText, user = null) {
+      const today = new Date().toISOString().split("T")[0];
+      const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const name = user ? (user.nameAr || user.name) : "Staff";
+      const role = user ? user.role : "EMPLOYEE";
+      const company = "Ostan Enterprise";
+
+      return rawText
+        .replace(/{name}/g, name)
+        .replace(/{role}/g, role)
+        .replace(/{date}/g, today)
+        .replace(/{time}/g, nowTime)
+        .replace(/{company}/g, company);
+    }
+
+    function dispatchAutomatedMessages() {
+      const rawText = document.getElementById("msg-composer-text")?.value.trim();
+      if (!rawText) {
+        alert("Please write a message or select a pre-written template before sending.");
+        return;
+      }
+
+      const totalRecipientsCount = selectedRecipientIds.size + manualRecipients.length;
+      if (totalRecipientsCount === 0) {
+        alert("Please select at least one employee or enter a manual phone number.");
+        return;
+      }
+
+      const selectedUsers = state.users.filter(u => selectedRecipientIds.has(u.id));
+      let dispatchedList = [];
+
+      selectedUsers.forEach(u => {
+        const cleanPhone = (u.phone || "+966501234567").replace(/[^0-9]/g, "");
+        const personalized = buildPersonalizedMessage(rawText, u);
+        const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(personalized)}`;
+
+        const logEntry = {
+          id: "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
+          recipientName: u.name,
+          phone: u.phone,
+          message: personalized,
+          timestamp: new Date().toLocaleTimeString() + " • " + new Date().toISOString().split("T")[0],
+          status: "SENT",
+          url: waUrl
+        };
+        state.messageDispatchLogs.unshift(logEntry);
+        dispatchedList.push(logEntry);
+      });
+
+      manualRecipients.forEach(p => {
+        const cleanPhone = p.replace(/[^0-9]/g, "");
+        const personalized = buildPersonalizedMessage(rawText, null);
+        const waUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(personalized)}`;
+
+        const logEntry = {
+          id: "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
+          recipientName: "External Recipient",
+          phone: p,
+          message: personalized,
+          timestamp: new Date().toLocaleTimeString() + " • " + new Date().toISOString().split("T")[0],
+          status: "SENT",
+          url: waUrl
+        };
+        state.messageDispatchLogs.unshift(logEntry);
+        dispatchedList.push(logEntry);
+      });
+
+      if (window.fbDb) {
+        dispatchedList.forEach(log => {
+          try {
+            window.fbDb.collection("messageLogs").doc(log.id).set(log);
+          } catch (e) {}
+        });
+      }
+
+      saveState();
+      renderMessageHistoryLogs();
+
+      if (dispatchedList.length > 0) {
+        window.open(dispatchedList[0].url, "_blank");
+      }
+
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast(
+          "WhatsApp Automated Dispatch",
+          `Generated personalized dispatch for ${dispatchedList.length} recipient(s)`
+        );
+      }
+    }
+    window.dispatchAutomatedMessages = dispatchAutomatedMessages;
+
+    function copyPersonalizedMessageText() {
+      const rawText = document.getElementById("msg-composer-text")?.value.trim();
+      if (!rawText) return;
+      const previewUser = state.users.find(u => selectedRecipientIds.has(u.id)) || state.users[0];
+      const personalized = buildPersonalizedMessage(rawText, previewUser);
+      navigator.clipboard.writeText(personalized).then(() => {
+        if (window.OstanStyle) window.OstanStyle.showToast("Copied to Clipboard", "Personalized text copied successfully");
+      });
+    }
+    window.copyPersonalizedMessageText = copyPersonalizedMessageText;
+
+    function renderMessageHistoryLogs() {
+      const container = document.getElementById("msg-history-container");
+      if (!container) return;
+      const lang = document.documentElement.getAttribute("lang") || "en";
+
+      if (state.messageDispatchLogs.length === 0) {
+        container.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-faint); font-size: 0.85rem;">No WhatsApp messages dispatched yet.</div>`;
+        return;
+      }
+
+      container.innerHTML = `
+        <table class="matrix-table">
+          <thead>
+            <tr>
+              <th>${lang === 'ar' ? 'المستلم' : 'Recipient'}</th>
+              <th>${lang === 'ar' ? 'رقم الهاتف' : 'Phone'}</th>
+              <th>${lang === 'ar' ? 'الرسالة' : 'Message'}</th>
+              <th>${lang === 'ar' ? 'الوقت' : 'Time'}</th>
+              <th>${lang === 'ar' ? 'الحالة' : 'Status'}</th>
+              <th>${lang === 'ar' ? 'إجراء' : 'Action'}</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${state.messageDispatchLogs.slice(0, 20).map(log => `
+              <tr>
+                <td style="font-weight: 700; color: var(--text-main);">${log.recipientName}</td>
+                <td style="font-size: 0.8rem; color: var(--text-muted);">${log.phone}</td>
+                <td style="max-width: 260px; font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${log.message}">${log.message}</td>
+                <td style="font-size: 0.75rem; color: var(--text-faint);">${log.timestamp}</td>
+                <td><span class="badge badge-emerald" style="font-size: 0.65rem;">SENT ✅</span></td>
+                <td>
+                  <a href="${log.url}" target="_blank" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #25D366; text-decoration: none;">
+                    💬 Open WA
+                  </a>
+                </td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      `;
+    }
+
+    function clearMessageHistoryLogs() {
+      if (!confirm("Clear all dispatched messages history?")) return;
+      state.messageDispatchLogs = [];
+      saveState();
+      renderMessageHistoryLogs();
+    }
+    window.clearMessageHistoryLogs = clearMessageHistoryLogs;
+
     // Authentication Portal
     let authPortalMode = "login";
     function setAuthPortalMode(mode) {
@@ -3353,6 +4222,7 @@
                   "stock-requests": isSuper ? "accessible" : "hidden",
                   reports: isSuper ? "accessible" : "hidden",
                   "audit-logs": isSuper ? "accessible" : "hidden",
+                  messages: isSuper ? "accessible" : "hidden",
                   settings: "accessible"
                 },
                 permissions: docData.permissions || null
@@ -3406,6 +4276,7 @@
           renderTasks();
           renderReminders();
           renderStockRequests();
+          if (state.activeModule === "messages") renderMessagesSender();
           renderWorkers();
           renderDepartments();
           updateCounts();
@@ -3479,6 +4350,20 @@
       }, err => {
         console.warn("Firestore tasks onSnapshot notice:", err);
       });
+
+      // Real-Time Live Cloud Firestore Sync for WhatsApp Message Templates
+      window.fbDb.collection("messageTemplates").onSnapshot((snapshot) => {
+        if (snapshot.empty) return;
+        const tmpls = [];
+        snapshot.forEach(doc => tmpls.push(doc.data()));
+        const customIds = new Set(tmpls.map(t => t.id));
+        const merged = [...tmpls, ...defaultTemplates.filter(d => !customIds.has(d.id))];
+        state.messageTemplates = merged;
+        localStorage.setItem("ostan_message_templates", JSON.stringify(state.messageTemplates));
+        renderMessageTemplates();
+      }, err => {
+        console.warn("Firestore messageTemplates onSnapshot notice:", err);
+      });
     }
 
     // App Boot Initialization
@@ -3512,6 +4397,7 @@
               renderTasks();
               renderReminders();
               renderStockRequests();
+              if (state.activeModule === "messages") renderMessagesSender();
             }
           }
         }).catch(err => console.warn("Boot sync notice:", err));
