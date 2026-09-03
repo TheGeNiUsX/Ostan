@@ -4232,6 +4232,33 @@
         });
       });
 
+      const queueData = {
+        items: items.map(i => ({ name: i.name, phone: i.phone, text: i.message })),
+        delay: delayVal,
+        currentIndex: 0
+      };
+      const encodedPayload = encodeURIComponent(JSON.stringify(queueData));
+      const firstUrl = `${items[0].url}#ostan_queue=${encodedPayload}`;
+
+      // Record all queued items in dispatch history
+      items.forEach((item, idx) => {
+        const logEntry = {
+          id: "msg-" + (Date.now() + idx) + "-" + Math.random().toString(36).substr(2, 4),
+          recipientName: item.name,
+          phone: item.phone,
+          message: item.message,
+          timestamp: new Date().toLocaleTimeString() + " • " + new Date().toISOString().split("T")[0],
+          status: "PENDING ⏳",
+          url: item.url
+        };
+        state.messageDispatchLogs.unshift(logEntry);
+        if (window.fbDb) {
+          try { window.fbDb.collection("messageLogs").doc(logEntry.id).set(logEntry); } catch(e) {}
+        }
+      });
+      saveState();
+      renderMessageHistoryLogs();
+
       queueState.active = true;
       queueState.paused = false;
       queueState.items = items;
@@ -4245,9 +4272,9 @@
       document.getElementById("runner-content-completed").style.display = "none";
       document.getElementById("runner-delay-badge").textContent = `${delayVal}s Anti-Ban Delay`;
 
-      // Open dedicated WhatsApp Web tab directly on user click to avoid browser popup blockers!
+      // Open WhatsApp Web with the full queue payload! The extension will navigate autonomously!
       try {
-        waWindowRef = window.open(items[0].url, "ostan_whatsapp_queue");
+        waWindowRef = window.open(firstUrl, "_blank");
       } catch (e) {
         waWindowRef = null;
       }
@@ -4307,23 +4334,6 @@
           waWindowRef = window.open(currentItem.url, "ostan_whatsapp_queue");
         }
       }
-
-      // Record in dispatch logs (Initial status is PENDING until sent)
-      const logEntry = {
-        id: "msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
-        recipientName: currentItem.name,
-        phone: currentItem.phone,
-        message: currentItem.message,
-        timestamp: new Date().toLocaleTimeString() + " • " + new Date().toISOString().split("T")[0],
-        status: "PENDING ⏳",
-        url: currentItem.url
-      };
-      state.messageDispatchLogs.unshift(logEntry);
-      if (window.fbDb) {
-        try { window.fbDb.collection("messageLogs").doc(logEntry.id).set(logEntry); } catch(e) {}
-      }
-      saveState();
-      renderMessageHistoryLogs();
 
       // If there are more recipients, start the delay countdown timer!
       if (queueState.currentIndex < queueState.items.length - 1) {

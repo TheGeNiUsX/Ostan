@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Ostan WhatsApp Auto-Sender",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "Automates sending messages in WhatsApp Web with zero clicks for Ostan Enterprise System.",
   "permissions": [
     "storage"
