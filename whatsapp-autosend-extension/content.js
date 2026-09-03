@@ -158,17 +158,26 @@
       return;
     }
 
-    // Auto-click intermediate buttons
+    // Auto-click intermediate buttons without creating extra tabs!
     const actionBtn = document.getElementById("action-button");
     if (actionBtn && actionBtn.offsetParent !== null) {
+      actionBtn.removeAttribute("target");
+      actionBtn.setAttribute("target", "_self");
       updateHud("⚡ Clicking 'Continue to Chat'...", "#10b981");
       actionBtn.click();
     }
 
     const useWebLink = document.querySelector('a[href*="web.whatsapp.com"]') || document.querySelector('#fallback_block a');
     if (useWebLink && useWebLink.offsetParent !== null) {
-      updateHud("⚡ Clicking 'use WhatsApp Web'...", "#10b981");
-      useWebLink.click();
+      useWebLink.removeAttribute("target");
+      useWebLink.setAttribute("target", "_self");
+      updateHud("⚡ Loading WhatsApp Web in this tab...", "#10b981");
+      // If href is present, navigate directly in same tab to avoid target=_blank popup
+      if (useWebLink.href) {
+        window.location.replace(useWebLink.href);
+      } else {
+        useWebLink.click();
+      }
     }
 
     const sendBtn = findSendButton();
@@ -240,9 +249,9 @@
 
         updateHud(`🚀 Loading next recipient: ${nextItem.name || nextItem.phone}...`, "#25D366");
 
-        // Navigate the same tab to the next contact (Never blocked by popup blockers!)
+        // Navigate the same tab to the next contact (Replaces in same tab without creating new tabs!)
         const cleanPhone = nextItem.phone.replace(/[^0-9]/g, "");
-        window.location.href = `https://web.whatsapp.com/send/?phone=${cleanPhone}&text=${encodeURIComponent(nextItem.text || "")}`;
+        window.location.replace(`https://web.whatsapp.com/send/?phone=${cleanPhone}&text=${encodeURIComponent(nextItem.text || "")}`);
       }
     }, 1000);
   }
