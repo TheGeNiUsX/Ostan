@@ -1423,6 +1423,7 @@
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                   <select id="msg-delay-select" class="input-field" style="padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 700; min-width: 210px;">
                     <option value="5" data-i18n="msg_delay_5s">5 Seconds (Fast)</option>
+                    <option value="7" data-i18n="msg_delay_7s">7 Seconds (Balanced)</option>
                     <option value="10" selected data-i18n="msg_delay_10s">10 Seconds (Recommended)</option>
                     <option value="15" data-i18n="msg_delay_15s">15 Seconds (Safe)</option>
                     <option value="20" data-i18n="msg_delay_20s">20 Seconds (High Protection)</option>
@@ -4366,10 +4367,19 @@
       if (queueState.currentIndex < queueState.items.length - 1) {
         startDelayTimerCountdown();
       } else {
-        // Last recipient finished!
-        setTimeout(() => {
-          finishWhatsAppQueue();
-        }, 1200);
+        // For the final recipient, run the full delay timer so WhatsApp Web finishes before declaring completed!
+        queueState.remainingCountdown = queueState.delaySeconds;
+        updateTimerUI();
+        if (queueState.timerInterval) clearInterval(queueState.timerInterval);
+        queueState.timerInterval = setInterval(() => {
+          if (!queueState.active || queueState.paused) return;
+          queueState.remainingCountdown -= 1;
+          updateTimerUI();
+          if (queueState.remainingCountdown <= 0) {
+            clearInterval(queueState.timerInterval);
+            finishWhatsAppQueue();
+          }
+        }, 1000);
       }
     }
 
