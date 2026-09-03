@@ -1590,10 +1590,13 @@
       if (isMasterSuperAdmin(user)) return "accessible";
       if (mod === "dashboard") return "accessible";
 
-      // 1. If user has granular permissions configured, view flag governs visibility
+      // 1. If user has granular permissions configured, view/action flags govern visibility
       if (user.permissions) {
         if (mod === "stock-requests" && user.permissions.stock) {
-          return (user.permissions.stock.request || user.permissions.stock.view) ? "accessible" : "hidden";
+          return (user.permissions.stock.request || user.permissions.stock.approve_requests) ? "accessible" : "hidden";
+        }
+        if (mod === "stock" && user.permissions.stock) {
+          return user.permissions.stock.view ? "accessible" : "hidden";
         }
         if (mod === "departments" && user.permissions.employees) {
           return user.permissions.employees.view ? "accessible" : "hidden";
@@ -1609,7 +1612,10 @@
       if (mod === "employees" || mod === "departments") {
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER") ? "accessible" : "hidden";
       }
-      if (mod === "stock" || mod === "stock-requests") {
+      if (mod === "stock") {
+        return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER") ? "accessible" : "hidden";
+      }
+      if (mod === "stock-requests") {
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER") ? "accessible" : "hidden";
       }
       if (mod === "reports" || mod === "audit-logs") {
@@ -1741,12 +1747,11 @@
       const quickOpReminders = document.getElementById("quick-op-reminders");
       if (quickOpReminders) quickOpReminders.style.display = (remindersAccess === "accessible") ? "flex" : "none";
 
-      // If stock is hidden, hide Stock Requests as well unless explicitly accessible
-      if (stockAccess === "hidden") {
-        const navReq = document.getElementById("nav-stock-requests");
-        if (navReq && (!user.sectionAccess || user.sectionAccess["stock-requests"] !== "accessible")) {
-          navReq.style.display = "none";
-        }
+      // Stock Requests navigation visibility is strictly governed by its own permission
+      const stockReqAccess = getSectionAccess("stock-requests", user);
+      const navReq = document.getElementById("nav-stock-requests");
+      if (navReq) {
+        navReq.style.display = (stockReqAccess === "accessible") ? "flex" : "none";
       }
 
       // Re-evaluate nav groups after individual overrides
@@ -2077,7 +2082,7 @@
         create: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "STOCK_MANAGER",
         edit: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "STOCK_MANAGER",
         delete: user.role === "SUPER_ADMIN" || user.role === "ADMIN",
-        request: true,
+        request: user.sectionAccess ? (user.sectionAccess["stock-requests"] === "accessible") : false,
         approve_requests: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "STOCK_MANAGER"
       };
       const taskP = p.tasks || {
@@ -2151,6 +2156,8 @@
 
       const empView = getChecked("chk-perm-emp-view");
       const stockView = getChecked("chk-perm-stock-view");
+      const stockReqPerm = getChecked("chk-perm-stock-request");
+      const stockApprovePerm = getChecked("chk-perm-stock-approve_requests");
       const tasksView = getChecked("chk-perm-tasks-view");
       const remView = getChecked("chk-perm-reminders-view");
       const repView = getChecked("chk-perm-reports-view");
@@ -2169,8 +2176,8 @@
           create: getChecked("chk-perm-stock-create"),
           edit: getChecked("chk-perm-stock-edit"),
           delete: getChecked("chk-perm-stock-delete"),
-          request: getChecked("chk-perm-stock-request"),
-          approve_requests: getChecked("chk-perm-stock-approve_requests")
+          request: stockReqPerm,
+          approve_requests: stockApprovePerm
         },
         tasks: {
           view: tasksView,
@@ -2193,7 +2200,7 @@
       user.sectionAccess.employees = empView ? "accessible" : "hidden";
       user.sectionAccess.departments = empView ? "accessible" : "hidden";
       user.sectionAccess.stock = stockView ? "accessible" : "hidden";
-      user.sectionAccess["stock-requests"] = (stockView || getChecked("chk-perm-stock-request")) ? "accessible" : "hidden";
+      user.sectionAccess["stock-requests"] = (stockReqPerm || stockApprovePerm) ? "accessible" : "hidden";
       user.sectionAccess.tasks = tasksView ? "accessible" : "hidden";
       user.sectionAccess.reminders = remView ? "accessible" : "hidden";
       user.sectionAccess.reports = repView ? "accessible" : "hidden";
