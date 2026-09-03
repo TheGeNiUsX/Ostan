@@ -3093,12 +3093,37 @@
     window.moveToRecycleBin = moveToRecycleBin;
 
     async function restoreRecycleBinItem(binId) {
-      const item = (state.recycleBin || []).find(b => b.id === binId);
+      const item = (state.recycleBin || []).find(b => b.id === binId || b.originalId === binId);
       if (!item) return;
 
       const lang = document.documentElement.getAttribute("lang") || "en";
       const itemType = (item.type || "").toUpperCase();
 
+      // 1. Immediately remove from Recycle Bin in local state and storage
+      state.recycleBin = (state.recycleBin || []).filter(b => b.id !== item.id && b.id !== binId && b.originalId !== item.originalId);
+      localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin));
+
+      // 2. Permanently delete from Cloud Firestore recycleBin
+      if (window.fbDb) {
+        try {
+          if (item.id) window.fbDb.collection("recycleBin").doc(item.id).delete().catch(() => {});
+          if (binId && binId !== item.id) window.fbDb.collection("recycleBin").doc(binId).delete().catch(() => {});
+          if (item.id) {
+            window.fbDb.collection("recycleBin").where("id", "==", item.id).get().then(snap => {
+              snap.forEach(docSnap => docSnap.ref.delete().catch(() => {}));
+            }).catch(() => {});
+          }
+          if (item.originalId) {
+            window.fbDb.collection("recycleBin").where("originalId", "==", item.originalId).get().then(snap => {
+              snap.forEach(docSnap => docSnap.ref.delete().catch(() => {}));
+            }).catch(() => {});
+          }
+        } catch(e) {
+          console.warn("Firestore recycleBin delete error:", e);
+        }
+      }
+
+      // 3. Restore to target module
       if (itemType === "USER" || itemType === "EMPLOYEE") {
         const uData = item.data || {};
         uData.status = "ACTIVE";
@@ -3181,17 +3206,6 @@
         }
       }
 
-      // Remove from Recycle Bin
-      state.recycleBin = state.recycleBin.filter(b => b.id !== binId);
-      saveState();
-
-      // Delete from Firestore recycleBin collection
-      if (window.fbDb) {
-        try {
-          window.fbDb.collection("recycleBin").doc(binId).delete().catch(() => {});
-        } catch(e) {}
-      }
-
       renderAuditLogsView(false);
 
       if (window.OstanStyle) {
@@ -3204,7 +3218,7 @@
     window.restoreRecycleBinItem = restoreRecycleBinItem;
 
     function purgeRecycleBinItem(binId) {
-      const item = (state.recycleBin || []).find(b => b.id === binId);
+      const item = (state.recycleBin || []).find(b => b.id === binId || b.originalId === binId);
       if (!item) return;
 
       const lang = document.documentElement.getAttribute("lang") || "en";
@@ -3213,13 +3227,30 @@
         targetName: item.name,
         isPermanent: true,
         onConfirm: () => {
-          state.recycleBin = state.recycleBin.filter(b => b.id !== binId);
-          saveState();
+          // 1. Immediately remove from local state and storage
+          state.recycleBin = (state.recycleBin || []).filter(b => b.id !== item.id && b.id !== binId && b.originalId !== item.originalId);
+          localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin));
+
+          // 2. Permanently delete from Cloud Firestore recycleBin
           if (window.fbDb) {
             try {
-              window.fbDb.collection("recycleBin").doc(binId).delete().catch(() => {});
-            } catch(e) {}
+              if (item.id) window.fbDb.collection("recycleBin").doc(item.id).delete().catch(() => {});
+              if (binId && binId !== item.id) window.fbDb.collection("recycleBin").doc(binId).delete().catch(() => {});
+              if (item.id) {
+                window.fbDb.collection("recycleBin").where("id", "==", item.id).get().then(snap => {
+                  snap.forEach(docSnap => docSnap.ref.delete().catch(() => {}));
+                }).catch(() => {});
+              }
+              if (item.originalId) {
+                window.fbDb.collection("recycleBin").where("originalId", "==", item.originalId).get().then(snap => {
+                  snap.forEach(docSnap => docSnap.ref.delete().catch(() => {}));
+                }).catch(() => {});
+              }
+            } catch(e) {
+              console.warn("Firestore purge error:", e);
+            }
           }
+
           renderAuditLogsView(false);
           if (window.OstanStyle) {
             window.OstanStyle.showToast(
@@ -3419,10 +3450,10 @@
                 </td>
                 <td style="padding: 0.75rem; text-align: center;">
                   <div style="display: inline-flex; align-items: center; gap: 0.45rem;">
-                    <button onclick="restoreRecycleBinItem('${b.id}')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; font-weight: 700; color: #34d399; border-color: rgba(52, 211, 153, 0.4); display: inline-flex; align-items: center; gap: 0.35rem;" title="${lang === 'ar' ? 'استعادة العنصر' : 'Restore Item'}">
+                    <button onclick="restoreRecycleBinItem('${b.id || b.originalId}')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; font-weight: 700; color: #34d399; border-color: rgba(52, 211, 153, 0.4); display: inline-flex; align-items: center; gap: 0.35rem;" title="${lang === 'ar' ? 'استعادة العنصر' : 'Restore Item'}">
                       <span>♻️</span> <span>${lang === 'ar' ? 'استعادة' : 'Restore'}</span>
                     </button>
-                    <button onclick="purgeRecycleBinItem('${b.id}')" class="btn btn-ghost" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; color: #fb7185;" title="${lang === 'ar' ? 'حذف نهائي' : 'Delete Permanently'}">
+                    <button onclick="purgeRecycleBinItem('${b.id || b.originalId}')" class="btn btn-ghost" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; color: #fb7185;" title="${lang === 'ar' ? 'حذف نهائي' : 'Delete Permanently'}">
                       <span>🗑️</span>
                     </button>
                   </div>
@@ -6022,20 +6053,16 @@
         const binItems = [];
         snapshot.forEach(doc => {
           const d = doc.data();
-          if (d) binItems.push(d);
+          if (d) {
+            d.id = d.id || doc.id;
+            binItems.push(d);
+          }
         });
-        if (binItems.length > 0) {
-          binItems.sort((a, b) => (b.deletedAt || "").localeCompare(a.deletedAt || ""));
-          state.recycleBin = binItems;
-          localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin));
-        } else if ((state.recycleBin || []).length > 0) {
-          state.recycleBin.forEach(item => {
-            try {
-              const clean = JSON.parse(JSON.stringify(item));
-              window.fbDb.collection("recycleBin").doc(item.id).set(clean, { merge: true }).catch(() => {});
-            } catch(e) {}
-          });
-        }
+
+        binItems.sort((a, b) => (b.deletedAt || "").localeCompare(a.deletedAt || ""));
+        state.recycleBin = binItems;
+        localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin));
+
         const changed = purgeDeletedUsersFromActiveState();
         if (changed) {
           renderWorkers();
