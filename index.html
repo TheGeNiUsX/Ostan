@@ -2564,7 +2564,11 @@
       if (mod === "stock") renderWarehouse();
       if (mod === "stock-requests") renderStockRequests();
       if (mod === "messages") renderMessagesSender();
-      if (mod === "audit-logs") renderAuditLogsView();
+      if (mod === "audit-logs") {
+        const searchInput = document.getElementById("audit-bin-search");
+        if (searchInput) searchInput.value = "";
+        renderAuditLogsView(true);
+      }
     }
     window.setModule = setModule;
     window.renderCurrentModuleView = function() {
@@ -3093,76 +3097,87 @@
       if (!item) return;
 
       const lang = document.documentElement.getAttribute("lang") || "en";
+      const itemType = (item.type || "").toUpperCase();
 
-      if (item.type === "USER") {
-        const uData = item.data;
+      if (itemType === "USER" || itemType === "EMPLOYEE") {
+        const uData = item.data || {};
         uData.status = "ACTIVE";
         uData.isBlocked = false;
-        const exists = state.users.some(u => u.id === uData.id || (u.email && uData.email && u.email.toLowerCase().trim() === uData.email.toLowerCase().trim()));
-        if (exists) {
-          alert(lang === "ar" ? "الموظف موجود بالفعل في القائمة!" : "An employee with this email already exists!");
-          return;
+        const targetId = uData.id || item.originalId;
+        const existingIdx = state.users.findIndex(u => (targetId && u.id === targetId) || (u.email && uData.email && u.email.toLowerCase().trim() === uData.email.toLowerCase().trim()));
+        if (existingIdx !== -1) {
+          state.users[existingIdx] = { ...state.users[existingIdx], ...uData, status: "ACTIVE", isBlocked: false };
+        } else {
+          state.users.push(uData);
         }
-        state.users.push(uData);
         saveState();
         renderWorkers();
         renderDepartments();
         updateCounts();
 
-        // Restore to Cloud Firestore users collection!
-        if (window.fbDb) {
+        // Restore to Cloud Firestore users collection
+        if (window.fbDb && targetId) {
           try {
             const cleanUser = JSON.parse(JSON.stringify(uData));
-            window.fbDb.collection("users").doc(uData.id).set(cleanUser, { merge: true });
+            window.fbDb.collection("users").doc(targetId).set(cleanUser, { merge: true }).catch(() => {});
           } catch(e) {
             console.warn("Firestore user restore error:", e);
           }
         }
-      } else if (item.type === "TASK") {
-        const tData = item.data;
-        const exists = state.tasks.some(t => t.id === tData.id);
-        if (!exists) {
+      } else if (itemType === "TASK") {
+        const tData = item.data || {};
+        const targetId = tData.id || item.originalId;
+        const existingTaskIdx = state.tasks.findIndex(t => (targetId && t.id === targetId));
+        if (existingTaskIdx !== -1) {
+          state.tasks[existingTaskIdx] = { ...state.tasks[existingTaskIdx], ...tData };
+        } else {
           state.tasks.unshift(tData);
-          saveState();
-          renderTasks();
-          updateCounts();
-          if (window.fbDb) {
-            try {
-              const cleanTask = JSON.parse(JSON.stringify(tData));
-              window.fbDb.collection("tasks").doc(tData.id).set(cleanTask, { merge: true });
-            } catch(e) {}
-          }
         }
-      } else if (item.type === "REMINDER") {
-        const rData = item.data;
-        const exists = state.reminders.some(r => r.id === rData.id);
-        if (!exists) {
+        saveState();
+        renderTasks();
+        updateCounts();
+        if (window.fbDb && targetId) {
+          try {
+            const cleanTask = JSON.parse(JSON.stringify(tData));
+            window.fbDb.collection("tasks").doc(targetId).set(cleanTask, { merge: true }).catch(() => {});
+          } catch(e) {}
+        }
+      } else if (itemType === "REMINDER") {
+        const rData = item.data || {};
+        const targetId = rData.id || item.originalId;
+        const existingRemIdx = state.reminders.findIndex(r => (targetId && r.id === targetId));
+        if (existingRemIdx !== -1) {
+          state.reminders[existingRemIdx] = { ...state.reminders[existingRemIdx], ...rData };
+        } else {
           state.reminders.unshift(rData);
-          saveState();
-          renderReminders();
-          updateCounts();
-          if (window.fbDb) {
-            try {
-              const cleanRem = JSON.parse(JSON.stringify(rData));
-              window.fbDb.collection("reminders").doc(rData.id).set(cleanRem, { merge: true });
-            } catch(e) {}
-          }
         }
-      } else if (item.type === "STOCK") {
-        const sData = item.data;
-        const exists = state.stock.some(s => s.id === sData.id);
-        if (!exists) {
+        saveState();
+        renderReminders();
+        updateCounts();
+        if (window.fbDb && targetId) {
+          try {
+            const cleanRem = JSON.parse(JSON.stringify(rData));
+            window.fbDb.collection("reminders").doc(targetId).set(cleanRem, { merge: true }).catch(() => {});
+          } catch(e) {}
+        }
+      } else if (itemType === "STOCK" || itemType === "INVENTORY" || itemType === "ITEM") {
+        const sData = item.data || {};
+        const targetId = sData.id || item.originalId;
+        const existingStockIdx = state.stock.findIndex(s => (targetId && s.id === targetId) || (s.name && sData.name && s.name.toLowerCase().trim() === sData.name.toLowerCase().trim()));
+        if (existingStockIdx !== -1) {
+          state.stock[existingStockIdx] = { ...state.stock[existingStockIdx], ...sData };
+        } else {
           state.stock.push(sData);
-          saveState();
-          renderWarehouse();
-          renderDashboard();
-          updateCounts();
-          if (window.fbDb) {
-            try {
-              const cleanStock = JSON.parse(JSON.stringify(sData));
-              window.fbDb.collection("inventory").doc(sData.id).set(cleanStock, { merge: true });
-            } catch(e) {}
-          }
+        }
+        saveState();
+        renderWarehouse();
+        renderDashboard();
+        updateCounts();
+        if (window.fbDb && targetId) {
+          try {
+            const cleanStock = JSON.parse(JSON.stringify(sData));
+            window.fbDb.collection("inventory").doc(targetId).set(cleanStock, { merge: true }).catch(() => {});
+          } catch(e) {}
         }
       }
 
@@ -3177,12 +3192,12 @@
         } catch(e) {}
       }
 
-      renderAuditLogsView();
+      renderAuditLogsView(false);
 
       if (window.OstanStyle) {
         window.OstanStyle.showToast(
           lang === "ar" ? "تمت الاستعادة بنجاح" : "Item Restored",
-          lang === "ar" ? `تمت استعادة ${item.name} بنجاح إلى النظام وحفظه في فايربيز.` : `${item.name} restored to active records and synced with Firestore.`
+          lang === "ar" ? `تمت استعادة ${item.name} بنجاح إلى النظام.` : `${item.name} restored to active records.`
         );
       }
     }
@@ -3205,7 +3220,7 @@
               window.fbDb.collection("recycleBin").doc(binId).delete().catch(() => {});
             } catch(e) {}
           }
-          renderAuditLogsView();
+          renderAuditLogsView(false);
           if (window.OstanStyle) {
             window.OstanStyle.showToast(
               lang === "ar" ? "تم الحذف النهائي" : "Permanently Purged",
@@ -3220,32 +3235,38 @@
     let auditRecycleCurrentFilter = "all";
 
     function setAuditRecycleFilter(filter) {
-      auditRecycleCurrentFilter = filter;
+      auditRecycleCurrentFilter = filter || "all";
       const btnAll = document.getElementById("btn-filter-bin-all");
       const btnUser = document.getElementById("btn-filter-bin-user");
       const btnTask = document.getElementById("btn-filter-bin-task");
       const btnReminder = document.getElementById("btn-filter-bin-reminder");
       const btnStock = document.getElementById("btn-filter-bin-stock");
 
-      if (btnAll) btnAll.className = (filter === "all") ? "btn btn-primary" : "btn btn-ghost";
-      if (btnUser) btnUser.className = (filter === "USER") ? "btn btn-primary" : "btn btn-ghost";
-      if (btnTask) btnTask.className = (filter === "TASK") ? "btn btn-primary" : "btn btn-ghost";
-      if (btnReminder) btnReminder.className = (filter === "REMINDER") ? "btn btn-primary" : "btn btn-ghost";
-      if (btnStock) btnStock.className = (filter === "STOCK") ? "btn btn-primary" : "btn btn-ghost";
+      if (btnAll) btnAll.className = (auditRecycleCurrentFilter === "all") ? "btn btn-primary" : "btn btn-ghost";
+      if (btnUser) btnUser.className = (auditRecycleCurrentFilter === "USER") ? "btn btn-primary" : "btn btn-ghost";
+      if (btnTask) btnTask.className = (auditRecycleCurrentFilter === "TASK") ? "btn btn-primary" : "btn btn-ghost";
+      if (btnReminder) btnReminder.className = (auditRecycleCurrentFilter === "REMINDER") ? "btn btn-primary" : "btn btn-ghost";
+      if (btnStock) btnStock.className = (auditRecycleCurrentFilter === "STOCK") ? "btn btn-primary" : "btn btn-ghost";
 
       renderAuditRecycleBinTable();
     }
     window.setAuditRecycleFilter = setAuditRecycleFilter;
 
-    function renderAuditLogsView() {
+    function renderAuditLogsView(resetToAll = false) {
+      const lang = document.documentElement.getAttribute("lang") || "en";
       if (!state.recycleBin) state.recycleBin = [];
       const bin = state.recycleBin;
 
+      const isUser = (x) => { const t = (x.type || "").toUpperCase(); return t === "USER" || t === "EMPLOYEE"; };
+      const isTask = (x) => (x.type || "").toUpperCase() === "TASK";
+      const isReminder = (x) => (x.type || "").toUpperCase() === "REMINDER";
+      const isStock = (x) => { const t = (x.type || "").toUpperCase(); return t === "STOCK" || t === "INVENTORY" || t === "ITEM"; };
+
       const total = bin.length;
-      const usersCount = bin.filter(x => x.type === "USER").length;
-      const tasksCount = bin.filter(x => x.type === "TASK").length;
-      const remindersCount = bin.filter(x => x.type === "REMINDER").length;
-      const stockCount = bin.filter(x => x.type === "STOCK").length;
+      const usersCount = bin.filter(isUser).length;
+      const tasksCount = bin.filter(isTask).length;
+      const remindersCount = bin.filter(isReminder).length;
+      const stockCount = bin.filter(isStock).length;
 
       // Update stat cards
       const elTotal = document.getElementById("stat-bin-total");
@@ -3293,7 +3314,12 @@
         if (barStock) barStock.style.width = "0%";
       }
 
-      renderAuditRecycleBinTable();
+      if (resetToAll) {
+        setAuditRecycleFilter("all");
+      } else {
+        // Keep current active button style
+        setAuditRecycleFilter(auditRecycleCurrentFilter);
+      }
     }
     window.renderAuditLogsView = renderAuditLogsView;
 
@@ -3304,10 +3330,21 @@
       const lang = document.documentElement.getAttribute("lang") || "en";
       const query = (document.getElementById("audit-bin-search")?.value || "").toLowerCase().trim();
 
+      const isUser = (x) => { const t = (x.type || "").toUpperCase(); return t === "USER" || t === "EMPLOYEE"; };
+      const isTask = (x) => (x.type || "").toUpperCase() === "TASK";
+      const isReminder = (x) => (x.type || "").toUpperCase() === "REMINDER";
+      const isStock = (x) => { const t = (x.type || "").toUpperCase(); return t === "STOCK" || t === "INVENTORY" || t === "ITEM"; };
+
       let items = (state.recycleBin || []);
 
       if (auditRecycleCurrentFilter !== "all") {
-        items = items.filter(x => x.type === auditRecycleCurrentFilter);
+        items = items.filter(x => {
+          if (auditRecycleCurrentFilter === "USER") return isUser(x);
+          if (auditRecycleCurrentFilter === "TASK") return isTask(x);
+          if (auditRecycleCurrentFilter === "REMINDER") return isReminder(x);
+          if (auditRecycleCurrentFilter === "STOCK") return isStock(x);
+          return (x.type || "").toUpperCase() === auditRecycleCurrentFilter.toUpperCase();
+        });
       }
 
       if (query) {
