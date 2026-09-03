@@ -1511,6 +1511,46 @@
     }
     window.syncUserToFirestore = syncUserToFirestore;
 
+    function syncStockItemToFirestore(item) {
+      if (!window.fbDb || !item || !item.id) return;
+      try {
+        window.fbDb.collection("inventory").doc(item.id).set(item, { merge: true });
+      } catch (e) {
+        console.warn("Firestore stock sync error:", e);
+      }
+    }
+    window.syncStockItemToFirestore = syncStockItemToFirestore;
+
+    function deleteStockItemFromFirestore(id) {
+      if (!window.fbDb || !id) return;
+      try {
+        window.fbDb.collection("inventory").doc(id).delete();
+      } catch (e) {
+        console.warn("Firestore stock delete error:", e);
+      }
+    }
+    window.deleteStockItemFromFirestore = deleteStockItemFromFirestore;
+
+    function syncTaskToFirestore(task) {
+      if (!window.fbDb || !task || !task.id) return;
+      try {
+        window.fbDb.collection("tasks").doc(task.id).set(task, { merge: true });
+      } catch (e) {
+        console.warn("Firestore task sync error:", e);
+      }
+    }
+    window.syncTaskToFirestore = syncTaskToFirestore;
+
+    function deleteTaskFromFirestore(id) {
+      if (!window.fbDb || !id) return;
+      try {
+        window.fbDb.collection("tasks").doc(id).delete();
+      } catch (e) {
+        console.warn("Firestore task delete error:", e);
+      }
+    }
+    window.deleteTaskFromFirestore = deleteTaskFromFirestore;
+
     function isMasterSuperAdmin(user = getCurrentUser()) {
       return user && (user.role === "SUPER_ADMIN" || user.email.toLowerCase().trim() === "waseem.tw@hotmail.com");
     }
@@ -2376,6 +2416,7 @@
       }
       if (!confirm(`Cancel task "${t.title}"?`)) return;
       state.tasks = state.tasks.filter(x => x.id !== id);
+      deleteTaskFromFirestore(id);
       saveState();
       renderTasks();
       if (window.OstanStyle) window.OstanStyle.showToast("Task Cancelled", t.title);
@@ -2390,6 +2431,7 @@
       const t = state.tasks.find(x => x.id === taskId);
       if (t) {
         t.status = newStatus;
+        syncTaskToFirestore(t);
         saveState();
         renderTasks();
       }
@@ -2647,6 +2689,7 @@
       }
       if (!confirm("Are you sure you want to remove this item from warehouse?")) return;
       state.stock = state.stock.filter(x => x.id !== id);
+      deleteStockItemFromFirestore(id);
       saveState();
       renderWarehouse();
     }
@@ -2750,6 +2793,13 @@
       };
 
       state.stockRequests.unshift(newReq);
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("stockRequests").doc(newReq.id).set(newReq);
+        } catch (err) {
+          console.warn("Firestore stock request save error:", err);
+        }
+      }
       saveState();
       closeModals();
       renderStockRequests();
@@ -2767,8 +2817,14 @@
       const item = state.stock.find(s => s.id === req.stockId);
       if (item) {
         item.quantity = Math.max(0, item.quantity - req.quantity);
+        syncStockItemToFirestore(item);
       }
       req.status = "APPROVED";
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("stockRequests").doc(req.id).set({ status: "APPROVED" }, { merge: true });
+        } catch (e) {}
+      }
       saveState();
       renderStockRequests();
       renderWarehouse();
@@ -2784,6 +2840,11 @@
       const req = state.stockRequests.find(r => r.id === id);
       if (!req) return;
       req.status = "REJECTED";
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("stockRequests").doc(req.id).set({ status: "REJECTED" }, { merge: true });
+        } catch (e) {}
+      }
       saveState();
       renderStockRequests();
     }
@@ -2904,13 +2965,16 @@
         if (t) {
           t.title = title;
           t.workerName = workerName;
+          syncTaskToFirestore(t);
         }
       } else {
         if (!hasUserPermission("tasks", "create")) {
           alert("Permission denied: You do not have permission to assign tasks.");
           return;
         }
-        state.tasks.unshift({ id: "task-" + Date.now(), title, workerName, status: "TODO" });
+        const newTask = { id: "task-" + Date.now(), title, workerName, status: "TODO", createdAt: new Date().toISOString() };
+        state.tasks.unshift(newTask);
+        syncTaskToFirestore(newTask);
       }
 
       saveState();
@@ -2943,13 +3007,16 @@
           s.imageUrl = imageUrl;
           s.quantity = quantity;
           s.threshold = threshold;
+          syncStockItemToFirestore(s);
         }
       } else {
         if (!hasUserPermission("stock", "create")) {
           alert("Permission denied: You do not have permission to add warehouse items.");
           return;
         }
-        state.stock.unshift({ id: "stock-" + Date.now(), name, category, icon, imageUrl, quantity, threshold });
+        const newItem = { id: "stock-" + Date.now(), name, category, icon, imageUrl, quantity, threshold };
+        state.stock.unshift(newItem);
+        syncStockItemToFirestore(newItem);
       }
 
       saveState();
@@ -3300,6 +3367,74 @@
           updateCounts();
         }
       });
+
+      // Real-Time Live Cloud Firestore Sync for Warehouse Inventory
+      window.fbDb.collection("inventory").onSnapshot((snapshot) => {
+        if (snapshot.empty) {
+          // If Firestore inventory is empty and Super Admin is logged in, seed it with current stock
+          const curUser = getCurrentUser();
+          if (curUser && isMasterSuperAdmin(curUser) && state.stock.length > 0) {
+            state.stock.forEach(item => {
+              window.fbDb.collection("inventory").doc(item.id).set(item, { merge: true });
+            });
+          }
+          return;
+        }
+
+        const items = [];
+        snapshot.forEach(doc => {
+          items.push(doc.data());
+        });
+
+        state.stock = items;
+        localStorage.setItem("ostan_stock", JSON.stringify(state.stock));
+        renderWarehouse();
+        renderDashboard();
+        updateCounts();
+      }, err => {
+        console.warn("Firestore inventory onSnapshot notice:", err);
+      });
+
+      // Real-Time Live Cloud Firestore Sync for Material Requests
+      window.fbDb.collection("stockRequests").onSnapshot((snapshot) => {
+        if (snapshot.empty) return;
+        const requests = [];
+        snapshot.forEach(doc => {
+          requests.push(doc.data());
+        });
+        requests.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+        state.stockRequests = requests;
+        localStorage.setItem("ostan_stock_requests", JSON.stringify(state.stockRequests));
+        renderStockRequests();
+        updateCounts();
+      }, err => {
+        console.warn("Firestore stockRequests onSnapshot notice:", err);
+      });
+
+      // Real-Time Live Cloud Firestore Sync for Tasks
+      window.fbDb.collection("tasks").onSnapshot((snapshot) => {
+        if (snapshot.empty) {
+          const curUser = getCurrentUser();
+          if (curUser && isMasterSuperAdmin(curUser) && state.tasks.length > 0) {
+            state.tasks.forEach(t => {
+              window.fbDb.collection("tasks").doc(t.id).set(t, { merge: true });
+            });
+          }
+          return;
+        }
+        const tasks = [];
+        snapshot.forEach(doc => {
+          tasks.push(doc.data());
+        });
+        tasks.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+        state.tasks = tasks;
+        localStorage.setItem("ostan_tasks", JSON.stringify(state.tasks));
+        renderTasks();
+        renderDashboard();
+        updateCounts();
+      }, err => {
+        console.warn("Firestore tasks onSnapshot notice:", err);
+      });
     }
 
     // App Boot Initialization
@@ -3332,6 +3467,17 @@
             }
           }
         }).catch(err => console.warn("Boot sync notice:", err));
+      }
+
+      // Check & Seed inventory if empty in Firestore
+      if (window.fbDb && isMasterSuperAdmin(initialUser)) {
+        window.fbDb.collection("inventory").get().then(snap => {
+          if (snap.empty && state.stock.length > 0) {
+            state.stock.forEach(item => {
+              window.fbDb.collection("inventory").doc(item.id).set(item, { merge: true });
+            });
+          }
+        }).catch(err => console.warn("Boot inventory seed notice:", err));
       }
     }
   </script>
