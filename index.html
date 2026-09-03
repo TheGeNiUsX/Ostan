@@ -2945,10 +2945,10 @@
 
       if (btnProceed) {
         btnProceed.onclick = () => {
+          const actionToRun = pendingDeleteAction;
           closeConfirmDeleteModal();
-          if (typeof pendingDeleteAction === "function") {
-            pendingDeleteAction();
-            pendingDeleteAction = null;
+          if (typeof actionToRun === "function") {
+            actionToRun();
           }
         };
       }
@@ -2971,7 +2971,7 @@
         type: type, // "USER", "TASK", "REMINDER", "STOCK", "TEMPLATE"
         originalId: originalId,
         name: name,
-        data: data,
+        data: data || {},
         deletedAt: new Date().toISOString(),
         deletedAtFormatted: new Date().toLocaleString(),
         deletedBy: curUser ? curUser.name : "System Administrator",
@@ -2982,10 +2982,13 @@
       state.recycleBin.unshift(binItem);
       saveState();
 
-      // Real-Time Cloud Firestore Sync for Recycle Bin
+      // Real-Time Cloud Firestore Sync for Recycle Bin (safely serialize to remove undefined)
       if (window.fbDb) {
         try {
-          window.fbDb.collection("recycleBin").doc(binItem.id).set(binItem).catch(() => {});
+          const cleanDoc = JSON.parse(JSON.stringify(binItem));
+          window.fbDb.collection("recycleBin").doc(binItem.id).set(cleanDoc, { merge: true }).catch(err => {
+            console.warn("Firestore recycleBin set warning:", err);
+          });
         } catch(e) {
           console.warn("Firestore recycleBin save error:", e);
         }
@@ -3790,7 +3793,7 @@
         const isDone = t.status === "DONE";
         const isProgress = t.status === "PROGRESS";
         const isTodo = t.status === "TODO" || !t.status;
-        const canCancel = isTodo && canDeleteTask;
+        const canCancel = canDeleteTask;
 
         const item = `
           <div class="glass-panel card-hover" style="padding: 0.95rem; background: var(--bg-surface-elevated); display: flex; flex-direction: column; gap: 0.5rem;">
@@ -3861,10 +3864,6 @@
       }
       const t = state.tasks.find(x => x.id === id);
       if (!t) return;
-      if (t.status !== "TODO") {
-        alert("Tasks that have moved to 'In Progress' or 'Done' cannot be cancelled or deleted.");
-        return;
-      }
 
       const lang = document.documentElement.getAttribute("lang") || "en";
       openConfirmDeleteModal({
@@ -5801,9 +5800,18 @@
           const d = doc.data();
           if (d) binItems.push(d);
         });
-        binItems.sort((a, b) => (b.deletedAt || "").localeCompare(a.deletedAt || ""));
-        state.recycleBin = binItems;
-        localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin));
+        if (binItems.length > 0) {
+          binItems.sort((a, b) => (b.deletedAt || "").localeCompare(a.deletedAt || ""));
+          state.recycleBin = binItems;
+          localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin));
+        } else if ((state.recycleBin || []).length > 0) {
+          state.recycleBin.forEach(item => {
+            try {
+              const clean = JSON.parse(JSON.stringify(item));
+              window.fbDb.collection("recycleBin").doc(item.id).set(clean, { merge: true }).catch(() => {});
+            } catch(e) {}
+          });
+        }
         if (state.activeModule === "audit-logs") {
           renderAuditLogsView();
         }
