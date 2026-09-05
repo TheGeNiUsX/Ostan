@@ -433,6 +433,11 @@
           <input id="auth-input-name" type="text" placeholder="e.g. Khalid Al-Ghamdi" data-i18n-placeholder="placeholder_fullname" class="input-field">
         </div>
 
+        <div id="auth-group-phone" style="display: none;">
+          <label data-i18n="label_phone" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Mobile / WhatsApp (+966) *</label>
+          <input id="auth-input-phone" type="tel" placeholder="+966 5X XXX XXXX" data-i18n-placeholder="placeholder_phone" class="input-field">
+        </div>
+
         <div>
           <label data-i18n="label_email" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Email Address *</label>
           <input id="auth-input-email" type="email" required placeholder="khalid@company.com" data-i18n-placeholder="placeholder_email" oninput="checkAuthEmailSpecialRule(this.value)" class="input-field">
@@ -5819,6 +5824,10 @@
         } else if (res.status !== 404) {
           return { success: false, error: data.error || "Dispatch rejected" };
         }
+      } catch (proxyErr) {
+        // Fallback to direct browser fetch below
+      }
+
       // 2. Direct browser fetch fallback
       let cleanPhone = String(phone).replace(/[^0-9]/g, "");
       if (cleanPhone.startsWith("05") && cleanPhone.length === 10) cleanPhone = "966" + cleanPhone.slice(1);
@@ -6152,12 +6161,26 @@
     function setAuthPortalMode(mode) {
       authPortalMode = mode;
       const lang = document.documentElement.getAttribute("lang") || "en";
-      document.getElementById("auth-tab-login").className = (mode === "login") ? "btn btn-primary" : "btn btn-ghost";
-      document.getElementById("auth-tab-signup").className = (mode === "signup") ? "btn btn-primary" : "btn btn-ghost";
-      document.getElementById("auth-group-name").style.display = (mode === "signup") ? "block" : "none";
-      document.getElementById("auth-btn-submit").querySelector("span").textContent = (mode === "signup") 
-        ? (lang === "ar" ? "إنشاء الحساب والدخول" : "Create Account & Sign In")
-        : (lang === "ar" ? "دخول إلى المنصة" : "Sign In to Platform");
+      const tabLogin = document.getElementById("auth-tab-login");
+      const tabSignup = document.getElementById("auth-tab-signup");
+      const grpName = document.getElementById("auth-group-name");
+      const grpPhone = document.getElementById("auth-group-phone");
+      const btnSubmit = document.getElementById("auth-btn-submit");
+
+      if (tabLogin) tabLogin.className = (mode === "login") ? "btn btn-primary" : "btn btn-ghost";
+      if (tabSignup) tabSignup.className = (mode === "signup") ? "btn btn-primary" : "btn btn-ghost";
+      if (grpName) grpName.style.display = (mode === "signup") ? "block" : "none";
+      if (grpPhone) grpPhone.style.display = (mode === "signup") ? "block" : "none";
+
+      if (btnSubmit) {
+        const span = btnSubmit.querySelector("span");
+        if (span) {
+          span.setAttribute("data-i18n", (mode === "signup") ? "btn_submit_signup" : "btn_submit_login");
+          span.textContent = (mode === "signup") 
+            ? (lang === "ar" ? "إنشاء الحساب والدخول" : "Create Account & Sign In")
+            : (lang === "ar" ? "دخول إلى المنصة" : "Sign In to Platform");
+        }
+      }
     }
     window.setAuthPortalMode = setAuthPortalMode;
 
@@ -6175,6 +6198,7 @@
       const email = document.getElementById("auth-input-email").value.trim().toLowerCase();
       const pass = document.getElementById("auth-input-password").value;
       const name = document.getElementById("auth-input-name")?.value.trim() || "";
+      const rawPhone = document.getElementById("auth-input-phone")?.value.trim() || "";
 
       // =========================================================================
       // STRICT BLOCK & DELETED ACCOUNT GUARD: BLOCKS RESTRICTED USERS
@@ -6259,12 +6283,24 @@
         }
 
         const passHash = await hashPassword(pass);
+        let assignedPhone = rawPhone;
+        if (assignedPhone) {
+          let clean = assignedPhone.replace(/[^0-9]/g, "");
+          if (clean.startsWith("05") && clean.length === 10) clean = "966" + clean.slice(1);
+          else if (clean.startsWith("5") && clean.length === 9) clean = "966" + clean;
+          if (clean.startsWith("966") && clean.length === 12) {
+            assignedPhone = `+966 ${clean.slice(3, 5)} ${clean.slice(5, 8)} ${clean.slice(8)}`;
+          }
+        } else {
+          assignedPhone = "+966 5" + (Math.abs(fbUid.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000);
+        }
+
         const user = {
           id: fbUid,
           name: name || (isSuper ? "Osama Al-Twaish" : "Worker"),
           nameAr: isSuper ? "اسامة الطويش" : null,
           email: email,
-          phone: "+966 5" + (Math.abs(fbUid.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000),
+          phone: assignedPhone,
           passwordHash: passHash,
           role: isSuper ? "SUPER_ADMIN" : "EMPLOYEE",
           status: "ACTIVE",
@@ -6429,7 +6465,7 @@
       if (!user) {
         document.getElementById("auth-portal-fullscreen").style.display = "flex";
         document.getElementById("app-shell-root").style.display = "none";
-        setAuthPortalMode("login");
+        setAuthPortalMode(authPortalMode || "login");
         return;
       }
 
