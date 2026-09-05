@@ -511,19 +511,27 @@ export function WorkersView() {
                     </div>
                   </div>
 
-                  <span
-                    className={`badge ${
-                      u.role === "SUPER_ADMIN"
-                        ? "badge-rose"
-                        : u.role === "ADMIN"
-                        ? "badge-primary"
-                        : u.role === "MANAGER"
-                        ? "badge-emerald"
-                        : "badge-cyan"
-                    }`}
-                  >
-                    {u.role}
-                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: "0.35rem", flexShrink: 0 }}>
+                    {(u.status === "BLOCKED") && (
+                      <span className="badge" style={{ background: "rgba(239, 68, 68, 0.15)", color: "#ef4444", border: "1px solid rgba(239, 68, 68, 0.35)", fontWeight: 700, fontSize: "0.68rem", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: "0.25rem", lineHeight: 1 }}>
+                        🚫 {locale === "ar" ? "محظور" : "BLOCKED"}
+                      </span>
+                    )}
+                    <span
+                      className={`badge ${
+                        u.role === "SUPER_ADMIN"
+                          ? "badge-rose"
+                          : u.role === "ADMIN"
+                          ? "badge-primary"
+                          : u.role === "MANAGER"
+                          ? "badge-emerald"
+                          : "badge-cyan"
+                      }`}
+                      style={{ whiteSpace: "nowrap", lineHeight: 1 }}
+                    >
+                      {u.role}
+                    </span>
+                  </div>
                 </div>
 
                 {u.phone && (

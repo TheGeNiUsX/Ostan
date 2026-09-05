@@ -223,6 +223,7 @@ body {
   font-weight: 600;
   border-radius: var(--radius-full);
   letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .badge-primary {

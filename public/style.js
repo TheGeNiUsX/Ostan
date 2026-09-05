@@ -197,6 +197,7 @@
       font-size: 0.72rem;
       font-weight: 700;
       border-radius: var(--radius-full);
+      white-space: nowrap;
     }
     .badge-primary { background: rgba(0, 122, 255, 0.15); color: #60a5fa; border: 1px solid rgba(0, 122, 255, 0.3); }
     .badge-emerald { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
