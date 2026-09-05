@@ -2194,60 +2194,71 @@
         <button type="button" onclick="closeWhatsAppApiModal()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
       </div>
 
-      <p data-i18n="whatsapp_api_modal_desc" style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1rem; line-height: 1.45;">
-        Directly link your official Meta WhatsApp Cloud API credentials to dispatch instant background messages without opening browser tabs.
+      <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1rem; line-height: 1.45;">
+        Link your WhatsApp account to dispatch automated background messages. Supports <strong>Normal Personal WhatsApp</strong> (via UltraMsg or Green-API QR gateway) and <strong>Official Meta Business Cloud API</strong>.
       </p>
 
       <!-- Form Inputs -->
       <div style="display: flex; flex-direction: column; gap: 0.9rem;">
-        <!-- Phone Number ID -->
+        <!-- Account Type / Provider Selector -->
         <div>
-          <label data-i18n="label_phone_number_id" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">Meta Phone Number ID *</label>
-          <input id="wa-cfg-phone-id" type="text" placeholder="e.g. 104829102938475" class="input-field" style="font-size: 0.88rem; font-family: monospace;">
-          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Found under WhatsApp > API Setup > Phone number ID in Meta Developer Portal.</div>
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">WhatsApp Account Type & API Provider</label>
+          <select id="wa-cfg-provider" class="input-field" style="font-size: 0.85rem; font-weight: 700;" onchange="handleWaProviderChange()">
+            <option value="ultramsg" selected>📱 Normal Personal WhatsApp (via UltraMsg Gateway - Recommended)</option>
+            <option value="greenapi">📱 Normal Personal WhatsApp (via Green-API Gateway)</option>
+            <option value="meta">💼 WhatsApp Business (via Official Meta Cloud API)</option>
+          </select>
         </div>
 
-        <!-- WhatsApp Business Account ID (WABA ID) -->
+        <!-- Phone Number ID / Instance ID -->
         <div>
+          <label id="wa-lbl-phone-id" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">UltraMsg Instance ID *</label>
+          <input id="wa-cfg-phone-id" type="text" placeholder="e.g. instance105820" class="input-field" style="font-size: 0.88rem; font-family: monospace;">
+          <div id="wa-desc-phone-id" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Your Instance ID from your UltraMsg dashboard (ultramsg.com).</div>
+        </div>
+
+        <!-- WhatsApp Business Account ID (WABA ID) - Meta Only -->
+        <div id="wa-group-waba-id" style="display: none;">
           <label data-i18n="label_waba_id" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">WhatsApp Business Account ID (WABA ID)</label>
           <input id="wa-cfg-waba-id" type="text" placeholder="e.g. 109283746591023" class="input-field" style="font-size: 0.88rem; font-family: monospace;">
           <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Your Meta Business Manager Account ID.</div>
         </div>
 
-        <!-- Permanent Access Token -->
+        <!-- Token / Password -->
         <div>
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label data-i18n="label_access_token" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Permanent Access Token (System User Token) *</label>
+            <label id="wa-lbl-token" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">UltraMsg Token *</label>
             <button type="button" onclick="toggleWaApiTokenVisibility()" class="btn btn-ghost" style="padding: 0 4px; font-size: 0.75rem; color: var(--text-muted);">👁️ Show/Hide</button>
           </div>
-          <input id="wa-cfg-token" type="password" placeholder="EAAG... (Bearer Token)" class="input-field" style="font-size: 0.85rem; font-family: monospace;">
-          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Generated in Meta Business Settings > Users > System Users with `whatsapp_business_messaging` permission.</div>
+          <input id="wa-cfg-token" type="password" placeholder="e.g. 5x7ab... (Token)" class="input-field" style="font-size: 0.85rem; font-family: monospace;">
+          <div id="wa-desc-token" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Your private API authentication token.</div>
         </div>
 
         <!-- Dispatch Mode Toggle -->
         <div>
           <label data-i18n="label_sender_mode" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">Preferred Dispatch Mode</label>
           <select id="wa-cfg-mode" class="input-field" style="font-size: 0.85rem; font-weight: 700;">
-            <option value="api">⚡ Meta Cloud API (Direct & Instant Background - Recommended)</option>
-            <option value="web">🌐 WhatsApp Web (Browser Tab & Extension Runner)</option>
+            <option value="api">⚡ Direct Cloud API (Instant Background - No Tabs Opened)</option>
+            <option value="web">🌐 WhatsApp Web (Browser Tab & Extension Runner - 100% Free)</option>
           </select>
         </div>
 
         <!-- Test Connection Live Status Box -->
         <div id="wa-cfg-test-result" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.82rem; line-height: 1.45;"></div>
 
-        <!-- Quick 5-Step Meta Setup Guide Collapsible -->
+        <!-- Quick Setup Guide Collapsible -->
         <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem 1rem; background: var(--bg-surface-elevated);">
-          <details>
+          <details open>
             <summary style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-              <span>📘</span> <span data-i18n="meta_api_guide_title">How to get your Meta WhatsApp Cloud API Credentials (5 Steps)</span>
+              <span>📘</span> <span id="wa-guide-title">How to connect Normal Personal WhatsApp via UltraMsg (3 Steps)</span>
             </summary>
-            <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
-              <div><strong style="color: var(--text-main);">Step 1:</strong> Go to <a href="https://developers.facebook.com" target="_blank" style="color: #38bdf8; text-decoration: underline;">developers.facebook.com</a>, log in with Facebook, and click <em>My Apps > Create App > Type: Business</em>.</div>
-              <div><strong style="color: var(--text-main);">Step 2:</strong> In the App Dashboard, find <strong>WhatsApp</strong> and click <strong>Set Up</strong>.</div>
-              <div><strong style="color: var(--text-main);">Step 3:</strong> Navigate to <em>WhatsApp > API Setup</em>. Copy the <strong>Phone Number ID</strong> and <strong>WhatsApp Business Account ID</strong>.</div>
-              <div><strong style="color: var(--text-main);">Step 4:</strong> To get a Permanent Token: Go to <a href="https://business.facebook.com/settings/system-users" target="_blank" style="color: #38bdf8; text-decoration: underline;">Business Settings > System Users</a>, create a System User (Admin), assign your WhatsApp App, and generate a token with <code>whatsapp_business_messaging</code>.</div>
-              <div><strong style="color: var(--text-main);">Step 5:</strong> Paste your Phone Number ID and Access Token here, click <strong>Test Connection</strong>, and save! Meta provides 1,000 free service conversations per month.</div>
+            <div id="wa-guide-content" style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
+              <div><strong style="color: var(--text-main);">Step 1:</strong> Go to <a href="https://ultramsg.com" target="_blank" style="color: #38bdf8; text-decoration: underline;">ultramsg.com</a> and sign up for a free account.</div>
+              <div><strong style="color: var(--text-main);">Step 2:</strong> Scan the QR code on your UltraMsg dashboard using your <strong>normal personal WhatsApp</strong> (Settings > Linked Devices > Link a Device).</div>
+              <div><strong style="color: var(--text-main);">Step 3:</strong> Copy your <strong>Instance ID</strong> and <strong>Token</strong> from UltraMsg, paste them above, and click <strong>Test Connection</strong>!</div>
+              <div style="margin-top: 4px; padding: 6px 10px; background: rgba(37, 211, 102, 0.1); border-radius: 6px; color: #10b981; font-weight: 600;">
+                💡 <em>Note: If you don't want an external API service, you can use our built-in <strong>WhatsApp Web Auto-Sender</strong> right now for free with your normal WhatsApp!</em>
+              </div>
             </div>
           </details>
         </div>
@@ -5477,22 +5488,100 @@
     // META WHATSAPP BUSINESS CLOUD API MODULE
     // =========================================================================
 
+    function handleWaProviderChange() {
+      const provider = document.getElementById("wa-cfg-provider")?.value || "ultramsg";
+      const lblPhone = document.getElementById("wa-lbl-phone-id");
+      const inputPhone = document.getElementById("wa-cfg-phone-id");
+      const descPhone = document.getElementById("wa-desc-phone-id");
+      const groupWaba = document.getElementById("wa-group-waba-id");
+      const lblToken = document.getElementById("wa-lbl-token");
+      const inputToken = document.getElementById("wa-cfg-token");
+      const descToken = document.getElementById("wa-desc-token");
+      const guideTitle = document.getElementById("wa-guide-title");
+      const guideContent = document.getElementById("wa-guide-content");
+      const btnTest = document.getElementById("btn-test-wa-api");
+
+      if (provider === "ultramsg") {
+        if (lblPhone) lblPhone.textContent = "UltraMsg Instance ID *";
+        if (inputPhone) inputPhone.placeholder = "e.g. instance105820";
+        if (descPhone) descPhone.textContent = "Your Instance ID from your UltraMsg dashboard (ultramsg.com).";
+        if (groupWaba) groupWaba.style.display = "none";
+        if (lblToken) lblToken.textContent = "UltraMsg Token *";
+        if (inputToken) inputToken.placeholder = "e.g. 5x7ab... (Token)";
+        if (descToken) descToken.textContent = "Your private UltraMsg API Token.";
+        if (guideTitle) guideTitle.textContent = "How to connect Normal Personal WhatsApp via UltraMsg (3 Steps)";
+        if (guideContent) {
+          guideContent.innerHTML = `
+            <div><strong style="color: var(--text-main);">Step 1:</strong> Go to <a href="https://ultramsg.com" target="_blank" style="color: #38bdf8; text-decoration: underline;">ultramsg.com</a> and sign up for a free account.</div>
+            <div><strong style="color: var(--text-main);">Step 2:</strong> Scan the QR code on your UltraMsg dashboard using your <strong>normal personal WhatsApp</strong> (Settings > Linked Devices > Link a Device).</div>
+            <div><strong style="color: var(--text-main);">Step 3:</strong> Copy your <strong>Instance ID</strong> and <strong>Token</strong> from UltraMsg, paste them above, and click <strong>Test Connection</strong>!</div>
+            <div style="margin-top: 4px; padding: 6px 10px; background: rgba(37, 211, 102, 0.1); border-radius: 6px; color: #10b981; font-weight: 600;">
+              💡 <em>Note: If you prefer zero third-party registrations, you can switch mode below to <strong>WhatsApp Web (Browser Runner)</strong> to send with your personal WhatsApp for free!</em>
+            </div>
+          `;
+        }
+        if (btnTest) btnTest.innerHTML = "⚡ <span>Test UltraMsg Connection</span>";
+      } else if (provider === "greenapi") {
+        if (lblPhone) lblPhone.textContent = "Green-API idInstance *";
+        if (inputPhone) inputPhone.placeholder = "e.g. 1101234567";
+        if (descPhone) descPhone.textContent = "Found on green-api.com console.";
+        if (groupWaba) groupWaba.style.display = "none";
+        if (lblToken) lblToken.textContent = "Green-API apiTokenInstance *";
+        if (inputToken) inputToken.placeholder = "e.g. d2f8c... (apiTokenInstance)";
+        if (descToken) descToken.textContent = "Your Green-API token instance.";
+        if (guideTitle) guideTitle.textContent = "How to connect Normal Personal WhatsApp via Green-API (3 Steps)";
+        if (guideContent) {
+          guideContent.innerHTML = `
+            <div><strong style="color: var(--text-main);">Step 1:</strong> Register on <a href="https://green-api.com" target="_blank" style="color: #38bdf8; text-decoration: underline;">green-api.com</a>.</div>
+            <div><strong style="color: var(--text-main);">Step 2:</strong> Scan the QR code in your Green-API console with your <strong>personal WhatsApp</strong>.</div>
+            <div><strong style="color: var(--text-main);">Step 3:</strong> Copy <strong>idInstance</strong> and <strong>apiTokenInstance</strong> and paste them above.</div>
+          `;
+        }
+        if (btnTest) btnTest.innerHTML = "⚡ <span>Test Green-API Connection</span>";
+      } else {
+        // Meta
+        if (lblPhone) lblPhone.textContent = "Meta Phone Number ID *";
+        if (inputPhone) inputPhone.placeholder = "e.g. 104829102938475";
+        if (descPhone) descPhone.textContent = "Found under WhatsApp > API Setup in Meta Developer Portal.";
+        if (groupWaba) groupWaba.style.display = "block";
+        if (lblToken) lblToken.textContent = "Permanent Access Token *";
+        if (inputToken) inputToken.placeholder = "EAAG... (Bearer Token)";
+        if (descToken) descToken.textContent = "Generated in Meta Business Settings > System Users.";
+        if (guideTitle) guideTitle.textContent = "How to get Meta WhatsApp Cloud API Credentials (5 Steps)";
+        if (guideContent) {
+          guideContent.innerHTML = `
+            <div><strong style="color: var(--text-main);">Step 1:</strong> Go to <a href="https://developers.facebook.com" target="_blank" style="color: #38bdf8; text-decoration: underline;">developers.facebook.com</a> and create a Business App.</div>
+            <div><strong style="color: var(--text-main);">Step 2:</strong> Add WhatsApp product.</div>
+            <div><strong style="color: var(--text-main);">Step 3:</strong> Copy Phone Number ID and WABA ID.</div>
+            <div><strong style="color: var(--text-main);">Step 4:</strong> Generate Permanent System User Token with <code>whatsapp_business_messaging</code>.</div>
+            <div><strong style="color: var(--text-main);">Step 5:</strong> Paste credentials and test connection.</div>
+          `;
+        }
+        if (btnTest) btnTest.innerHTML = "⚡ <span>Test Meta API Connection</span>";
+      }
+    }
+    window.handleWaProviderChange = handleWaProviderChange;
+
     function openWhatsAppApiModal() {
       const cfg = state.whatsappApiConfig || {};
+      const providerInput = document.getElementById("wa-cfg-provider");
       const phoneInput = document.getElementById("wa-cfg-phone-id");
       const wabaInput = document.getElementById("wa-cfg-waba-id");
       const tokenInput = document.getElementById("wa-cfg-token");
       const modeInput = document.getElementById("wa-cfg-mode");
       const resBox = document.getElementById("wa-cfg-test-result");
 
+      if (providerInput) providerInput.value = cfg.provider || "ultramsg";
       if (phoneInput) phoneInput.value = cfg.phoneNumberId || "";
       if (wabaInput) wabaInput.value = cfg.wabaId || "";
       if (tokenInput) tokenInput.value = cfg.accessToken || "";
-      if (modeInput) modeInput.value = cfg.mode || "web";
+      if (modeInput) modeInput.value = cfg.mode || "api";
       if (resBox) {
         resBox.style.display = "none";
         resBox.textContent = "";
       }
+
+      handleWaProviderChange();
 
       const modal = document.getElementById("modal-whatsapp-api-config");
       if (modal) modal.style.display = "flex";
@@ -5513,6 +5602,7 @@
     window.toggleWaApiTokenVisibility = toggleWaApiTokenVisibility;
 
     async function testWhatsAppApiConnection() {
+      const provider = document.getElementById("wa-cfg-provider")?.value || "ultramsg";
       const phoneId = document.getElementById("wa-cfg-phone-id")?.value.trim() || "";
       const token = document.getElementById("wa-cfg-token")?.value.trim() || "";
       const resBox = document.getElementById("wa-cfg-test-result");
@@ -5524,7 +5614,7 @@
           resBox.style.background = "rgba(239, 68, 68, 0.15)";
           resBox.style.border = "1px solid rgba(239, 68, 68, 0.35)";
           resBox.style.color = "#ef4444";
-          resBox.innerHTML = "⚠️ Please enter both the <strong>Phone Number ID</strong> and <strong>Access Token</strong> before testing.";
+          resBox.innerHTML = "⚠️ Please enter your credentials before testing.";
         }
         return;
       }
@@ -5539,7 +5629,7 @@
         resBox.style.background = "rgba(99, 102, 241, 0.12)";
         resBox.style.border = "1px solid rgba(99, 102, 241, 0.35)";
         resBox.style.color = "#818cf8";
-        resBox.innerHTML = "Connecting to Meta Graph API servers...";
+        resBox.innerHTML = `Connecting to ${provider.toUpperCase()} servers...`;
       }
 
       let success = false;
@@ -5551,41 +5641,47 @@
         const res = await fetch("/api/whatsapp/test-connection", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ phoneNumberId: phoneId, accessToken: token })
+          body: JSON.stringify({
+            provider: provider,
+            phoneNumberId: phoneId,
+            accessToken: token,
+            instanceId: phoneId,
+            token: token
+          })
         });
         if (res.ok) {
           resultData = await res.json();
           if (resultData.success) success = true;
-          else errorMessage = resultData.error || "Meta verification rejected credentials.";
+          else errorMessage = resultData.error || "Verification rejected credentials.";
         } else {
           const errJson = await res.json().catch(() => ({}));
           errorMessage = errJson.error || `HTTP ${res.status} from API route`;
         }
       } catch (proxyErr) {
-        // Fallback: direct Graph API call from browser
-        try {
-          const directRes = await fetch(`https://graph.facebook.com/v20.0/${encodeURIComponent(phoneId)}?fields=verified_name,display_phone_number,quality_rating`, {
-            headers: { "Authorization": `Bearer ${token}` }
-          });
-          const directData = await directRes.json();
-          if (directRes.ok && directData.id) {
-            success = true;
-            resultData = {
-              verifiedName: directData.verified_name || "Meta Business Account",
-              displayPhoneNumber: directData.display_phone_number || "Active Number",
-              qualityRating: directData.quality_rating || "GREEN"
-            };
-          } else {
-            errorMessage = directData.error?.message || "Direct Meta API verification failed.";
+        // Fallback: direct test for UltraMsg
+        if (provider === "ultramsg") {
+          try {
+            const ultraRes = await fetch(`https://api.ultramsg.com/${encodeURIComponent(phoneId)}/instance/status?token=${encodeURIComponent(token)}`);
+            const ultraData = await ultraRes.json();
+            if (ultraData.status && ultraData.status.account_status) {
+              success = true;
+              resultData = {
+                verifiedName: "UltraMsg Personal WhatsApp",
+                displayPhoneNumber: ultraData.status.account_status.phone || "Active Linked Phone",
+                qualityRating: "AUTHENTICATED ✅"
+              };
+            } else {
+              errorMessage = ultraData.error || "UltraMsg authentication failed.";
+            }
+          } catch (e) {
+            errorMessage = e.message || "Network error connecting to UltraMsg.";
           }
-        } catch (directErr) {
-          errorMessage = directErr.message || "Network error connecting to Meta Graph API.";
         }
       }
 
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = "⚡ <span data-i18n=\"btn_test_api\">Test Meta API Connection</span>";
+        handleWaProviderChange();
       }
 
       if (resBox) {
@@ -5597,9 +5693,9 @@
           resBox.innerHTML = `
             <div style="font-weight: 800; font-size: 0.9rem; margin-bottom: 2px;">✅ Connection Verified & Active!</div>
             <div>Account: <strong>${resultData.verifiedName}</strong></div>
-            <div>Phone: <strong>${resultData.displayPhoneNumber}</strong> • Quality Rating: <span class="badge badge-emerald" style="padding: 1px 6px; font-size: 0.68rem;">${resultData.qualityRating}</span></div>
+            <div>Phone: <strong>${resultData.displayPhoneNumber}</strong> • Status: <span class="badge badge-emerald" style="padding: 1px 6px; font-size: 0.68rem;">${resultData.qualityRating}</span></div>
           `;
-          if (window.OstanStyle) window.OstanStyle.showToast("Meta API Connected", `Verified ${resultData.displayPhoneNumber}`);
+          if (window.OstanStyle) window.OstanStyle.showToast("WhatsApp API Connected", `Verified ${resultData.displayPhoneNumber}`);
         } else {
           resBox.style.display = "block";
           resBox.style.background = "rgba(239, 68, 68, 0.15)";
@@ -5607,7 +5703,7 @@
           resBox.style.color = "#ef4444";
           resBox.innerHTML = `
             <div style="font-weight: 800; margin-bottom: 2px;">❌ Connection Failed</div>
-            <div>${errorMessage || "Could not authenticate with Meta Graph API. Please double check your Phone Number ID and Access Token."}</div>
+            <div>${errorMessage || "Could not authenticate. Please double-check your credentials."}</div>
           `;
         }
       }
@@ -5615,12 +5711,14 @@
     window.testWhatsAppApiConnection = testWhatsAppApiConnection;
 
     function saveWhatsAppApiConfig() {
+      const provider = document.getElementById("wa-cfg-provider")?.value || "ultramsg";
       const phoneId = document.getElementById("wa-cfg-phone-id")?.value.trim() || "";
       const wabaId = document.getElementById("wa-cfg-waba-id")?.value.trim() || "";
       const token = document.getElementById("wa-cfg-token")?.value.trim() || "";
-      const mode = document.getElementById("wa-cfg-mode")?.value || "web";
+      const mode = document.getElementById("wa-cfg-mode")?.value || "api";
 
       state.whatsappApiConfig = {
+        provider: provider,
         phoneNumberId: phoneId,
         wabaId: wabaId,
         accessToken: token,
@@ -5639,7 +5737,7 @@
       closeWhatsAppApiModal();
 
       const lang = document.documentElement.getAttribute("lang") || "en";
-      const msg = lang === "ar" ? "تم حفظ وتفعيل إعدادات Meta API بنجاح" : "Meta WhatsApp API Configuration Saved Successfully";
+      const msg = lang === "ar" ? "تم حفظ وتفعيل إعدادات WhatsApp API بنجاح" : "WhatsApp API Configuration Saved Successfully";
       if (window.OstanStyle) window.OstanStyle.showToast("WhatsApp API", msg);
       else alert(msg);
     }
@@ -5649,6 +5747,7 @@
       const cfg = state.whatsappApiConfig || {};
       const hasCreds = Boolean(cfg.phoneNumberId && cfg.accessToken);
       const isApiMode = hasCreds && (cfg.mode === "api");
+      const providerName = (cfg.provider === "ultramsg" ? "UltraMsg" : cfg.provider === "greenapi" ? "Green-API" : "Meta Cloud");
 
       const pill = document.getElementById("wa-api-status-pill");
       const dot = document.getElementById("wa-api-status-dot");
@@ -5664,27 +5763,28 @@
           pill.style.color = "#10b981";
           pill.style.border = "1px solid rgba(16, 185, 129, 0.35)";
           dot.style.background = "#10b981";
-          text.textContent = lang === "ar" ? "🟢 Meta Cloud API: نشط" : "🟢 Meta Cloud API: Active";
+          text.textContent = lang === "ar" ? `🟢 ${providerName} API: نشط` : `🟢 ${providerName} API: Active`;
         } else if (hasCreds) {
           pill.className = "badge badge-amber";
           pill.style.background = "rgba(245, 158, 11, 0.15)";
           pill.style.color = "#fbbf24";
           pill.style.border = "1px solid rgba(245, 158, 11, 0.35)";
           dot.style.background = "#f59e0b";
-          text.textContent = lang === "ar" ? "🟠 وضع واتساب ويب" : "🟠 WhatsApp Web Mode";
+          text.textContent = lang === "ar" ? "🟠 وضع واتساب ويب (حساب شخصي)" : "🟠 WhatsApp Web Mode (Personal WA)";
         } else {
           pill.className = "badge badge-secondary";
           pill.style.background = "var(--bg-surface-elevated)";
           pill.style.color = "var(--text-muted)";
           pill.style.border = "1px solid var(--border-subtle)";
           dot.style.background = "#94a3b8";
-          text.textContent = lang === "ar" ? "⚪ لم يتم ضبط Meta API" : "⚪ Meta API Not Configured";
+          text.textContent = lang === "ar" ? "⚪ لم يتم ضبط API (استخدم واتساب ويب)" : "⚪ API Not Configured (Using Web)";
         }
       }
 
       if (btnMeta && btnWeb) {
         if (isApiMode) {
           btnMeta.style.display = "inline-flex";
+          btnMeta.innerHTML = `⚡ <span>${lang === 'ar' ? 'إرسال فوري عبر ' + providerName : 'Send Instantly via ' + providerName}</span>`;
           btnWeb.style.display = "none";
         } else {
           btnMeta.style.display = "none";
@@ -5697,10 +5797,13 @@
     async function sendSingleMetaWhatsAppMessage(phone, messageText) {
       const cfg = state.whatsappApiConfig || {};
       const payload = {
+        provider: cfg.provider || "ultramsg",
         phone: phone,
         message: messageText,
         phoneNumberId: cfg.phoneNumberId,
-        accessToken: cfg.accessToken
+        accessToken: cfg.accessToken,
+        instanceId: cfg.phoneNumberId,
+        token: cfg.accessToken
       };
 
       // 1. Try local Next.js proxy route
@@ -5712,43 +5815,58 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          return { success: true, messageId: data.messageId || "wamid.success" };
+          return { success: true, messageId: data.messageId || "msg-" + Date.now() };
         } else if (res.status !== 404) {
-          return { success: false, error: data.error || "Meta dispatch rejected" };
+          return { success: false, error: data.error || "Dispatch rejected" };
         }
-      } catch (proxyErr) {
-        // Fallback: direct Graph API POST
-      }
+      // 2. Direct browser fetch fallback
+      let cleanPhone = String(phone).replace(/[^0-9]/g, "");
+      if (cleanPhone.startsWith("05") && cleanPhone.length === 10) cleanPhone = "966" + cleanPhone.slice(1);
+      else if (cleanPhone.startsWith("5") && cleanPhone.length === 9) cleanPhone = "966" + cleanPhone;
 
-      // 2. Direct Graph API fallback
-      try {
-        let cleanPhone = String(phone).replace(/[^0-9]/g, "");
-        if (cleanPhone.startsWith("05") && cleanPhone.length === 10) cleanPhone = "966" + cleanPhone.slice(1);
-        else if (cleanPhone.startsWith("5") && cleanPhone.length === 9) cleanPhone = "966" + cleanPhone;
-
-        const metaUrl = `https://graph.facebook.com/v20.0/${encodeURIComponent(cfg.phoneNumberId)}/messages`;
-        const directRes = await fetch(metaUrl, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${cfg.accessToken}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            recipient_type: "individual",
-            to: cleanPhone,
-            type: "text",
-            text: { preview_url: false, body: messageText }
-          })
-        });
-        const directData = await directRes.json();
-        if (directRes.ok && directData.messages?.[0]?.id) {
-          return { success: true, messageId: directData.messages[0].id };
-        } else {
-          return { success: false, error: directData.error?.message || "Meta API error" };
+      if (cfg.provider === "ultramsg") {
+        try {
+          const ultraRes = await fetch(`https://api.ultramsg.com/${encodeURIComponent(cfg.phoneNumberId)}/messages/chat`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: cfg.accessToken, to: cleanPhone, body: messageText })
+          });
+          const ultraData = await ultraRes.json();
+          if (ultraData.sent === "true" || ultraData.id) {
+            return { success: true, messageId: String(ultraData.id) };
+          } else {
+            return { success: false, error: ultraData.error || "UltraMsg error" };
+          }
+        } catch (e) {
+          return { success: false, error: e.message || "Network dispatch failure" };
         }
-      } catch (err) {
-        return { success: false, error: err.message || "Network dispatch failure" };
+      } else {
+        // Meta
+        try {
+          const metaUrl = `https://graph.facebook.com/v20.0/${encodeURIComponent(cfg.phoneNumberId)}/messages`;
+          const directRes = await fetch(metaUrl, {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${cfg.accessToken}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              messaging_product: "whatsapp",
+              recipient_type: "individual",
+              to: cleanPhone,
+              type: "text",
+              text: { preview_url: false, body: messageText }
+            })
+          });
+          const directData = await directRes.json();
+          if (directRes.ok && directData.messages?.[0]?.id) {
+            return { success: true, messageId: directData.messages[0].id };
+          } else {
+            return { success: false, error: directData.error?.message || "Meta API error" };
+          }
+        } catch (err) {
+          return { success: false, error: err.message || "Network dispatch failure" };
+        }
       }
     }
     window.sendSingleMetaWhatsAppMessage = sendSingleMetaWhatsAppMessage;
