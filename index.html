@@ -1304,7 +1304,14 @@
                 Pair your WhatsApp account via QR code, compose dynamic announcements, and dispatch automated messages to employees.
               </p>
             </div>
-            <div id="wa-connection-status-container">
+            <div id="wa-connection-status-container" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+              <button type="button" onclick="openWhatsAppApiModal()" class="btn btn-secondary" style="font-size: 0.8rem; font-weight: 700; padding: 0.45rem 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
+                <span data-i18n="whatsapp_api_config_btn">⚙️ Meta API Settings</span>
+              </button>
+              <span id="wa-api-status-pill" class="badge badge-secondary" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 9999px;">
+                <span id="wa-api-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span>
+                <span id="wa-api-status-text" data-i18n="whatsapp_api_status_web">🟠 WhatsApp Web Mode</span>
+              </span>
               <span id="wa-status-pill" class="badge badge-amber" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 9999px;">
                 <span id="wa-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
                 <span id="wa-status-text" data-i18n="whatsapp_status_disconnected">Disconnected / Ready to Pair</span>
@@ -1564,7 +1571,10 @@
               <button type="button" onclick="copyPersonalizedMessageText()" class="btn btn-secondary">
                 <span data-i18n="btn_copy_text">📋 Copy Formatted Text</span>
               </button>
-              <button type="button" onclick="startWhatsAppQueueDispatch()" class="btn btn-primary" style="background: #25D366; border-color: #25D366; font-size: 0.95rem; font-weight: 800; padding: 0.65rem 1.4rem; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35);">
+              <button id="btn-dispatch-meta-api" type="button" onclick="startWhatsAppCloudApiDispatch()" class="btn btn-primary" style="background: linear-gradient(135deg, #0084ff, #00c6ff); border-color: #0084ff; font-size: 0.92rem; font-weight: 800; padding: 0.65rem 1.35rem; display: none; align-items: center; gap: 0.5rem; box-shadow: 0 4px 15px rgba(0, 132, 255, 0.35);">
+                <span data-i18n="btn_start_cloud_api_dispatch">⚡ Send Instantly via Meta Cloud API</span>
+              </button>
+              <button id="btn-dispatch-whatsapp-web" type="button" onclick="startWhatsAppQueueDispatch()" class="btn btn-primary" style="background: #25D366; border-color: #25D366; font-size: 0.95rem; font-weight: 800; padding: 0.65rem 1.4rem; display: flex; align-items: center; gap: 0.5rem; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35);">
                 <span data-i18n="btn_start_queue">🚀 Start Automated Dispatch (With Anti-Ban Timer)</span>
               </button>
             </div>
@@ -2167,6 +2177,97 @@
     </div>
   </div>
 
+  <!-- MODAL: META WHATSAPP BUSINESS CLOUD API CONFIGURATION -->
+  <div id="modal-whatsapp-api-config" class="hud-modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10001;">
+    <div class="hud-modal-box" style="max-width: 620px; width: 95%; max-height: 90vh; overflow-y: auto;">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #0084ff, #00c6ff); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; box-shadow: 0 4px 15px rgba(0, 132, 255, 0.35); flex-shrink: 0;">
+            ⚡
+          </div>
+          <div>
+            <h2 data-i18n="whatsapp_api_modal_title" style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">Meta WhatsApp Business Cloud API Configuration</h2>
+            <div style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;">Official Direct Cloud Integration • 1,000 Free Messages/Month</div>
+          </div>
+        </div>
+        <button type="button" onclick="closeWhatsAppApiModal()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <p data-i18n="whatsapp_api_modal_desc" style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1rem; line-height: 1.45;">
+        Directly link your official Meta WhatsApp Cloud API credentials to dispatch instant background messages without opening browser tabs.
+      </p>
+
+      <!-- Form Inputs -->
+      <div style="display: flex; flex-direction: column; gap: 0.9rem;">
+        <!-- Phone Number ID -->
+        <div>
+          <label data-i18n="label_phone_number_id" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">Meta Phone Number ID *</label>
+          <input id="wa-cfg-phone-id" type="text" placeholder="e.g. 104829102938475" class="input-field" style="font-size: 0.88rem; font-family: monospace;">
+          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Found under WhatsApp > API Setup > Phone number ID in Meta Developer Portal.</div>
+        </div>
+
+        <!-- WhatsApp Business Account ID (WABA ID) -->
+        <div>
+          <label data-i18n="label_waba_id" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">WhatsApp Business Account ID (WABA ID)</label>
+          <input id="wa-cfg-waba-id" type="text" placeholder="e.g. 109283746591023" class="input-field" style="font-size: 0.88rem; font-family: monospace;">
+          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Your Meta Business Manager Account ID.</div>
+        </div>
+
+        <!-- Permanent Access Token -->
+        <div>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <label data-i18n="label_access_token" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Permanent Access Token (System User Token) *</label>
+            <button type="button" onclick="toggleWaApiTokenVisibility()" class="btn btn-ghost" style="padding: 0 4px; font-size: 0.75rem; color: var(--text-muted);">👁️ Show/Hide</button>
+          </div>
+          <input id="wa-cfg-token" type="password" placeholder="EAAG... (Bearer Token)" class="input-field" style="font-size: 0.85rem; font-family: monospace;">
+          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Generated in Meta Business Settings > Users > System Users with `whatsapp_business_messaging` permission.</div>
+        </div>
+
+        <!-- Dispatch Mode Toggle -->
+        <div>
+          <label data-i18n="label_sender_mode" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">Preferred Dispatch Mode</label>
+          <select id="wa-cfg-mode" class="input-field" style="font-size: 0.85rem; font-weight: 700;">
+            <option value="api">⚡ Meta Cloud API (Direct & Instant Background - Recommended)</option>
+            <option value="web">🌐 WhatsApp Web (Browser Tab & Extension Runner)</option>
+          </select>
+        </div>
+
+        <!-- Test Connection Live Status Box -->
+        <div id="wa-cfg-test-result" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.82rem; line-height: 1.45;"></div>
+
+        <!-- Quick 5-Step Meta Setup Guide Collapsible -->
+        <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem 1rem; background: var(--bg-surface-elevated);">
+          <details>
+            <summary style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
+              <span>📘</span> <span data-i18n="meta_api_guide_title">How to get your Meta WhatsApp Cloud API Credentials (5 Steps)</span>
+            </summary>
+            <div style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
+              <div><strong style="color: var(--text-main);">Step 1:</strong> Go to <a href="https://developers.facebook.com" target="_blank" style="color: #38bdf8; text-decoration: underline;">developers.facebook.com</a>, log in with Facebook, and click <em>My Apps > Create App > Type: Business</em>.</div>
+              <div><strong style="color: var(--text-main);">Step 2:</strong> In the App Dashboard, find <strong>WhatsApp</strong> and click <strong>Set Up</strong>.</div>
+              <div><strong style="color: var(--text-main);">Step 3:</strong> Navigate to <em>WhatsApp > API Setup</em>. Copy the <strong>Phone Number ID</strong> and <strong>WhatsApp Business Account ID</strong>.</div>
+              <div><strong style="color: var(--text-main);">Step 4:</strong> To get a Permanent Token: Go to <a href="https://business.facebook.com/settings/system-users" target="_blank" style="color: #38bdf8; text-decoration: underline;">Business Settings > System Users</a>, create a System User (Admin), assign your WhatsApp App, and generate a token with <code>whatsapp_business_messaging</code>.</div>
+              <div><strong style="color: var(--text-main);">Step 5:</strong> Paste your Phone Number ID and Access Token here, click <strong>Test Connection</strong>, and save! Meta provides 1,000 free service conversations per month.</div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 1rem; margin-top: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <button type="button" onclick="testWhatsAppApiConnection()" class="btn btn-secondary" id="btn-test-wa-api" style="font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
+          ⚡ <span data-i18n="btn_test_api">Test Meta API Connection</span>
+        </button>
+        <div style="display: flex; gap: 0.5rem;">
+          <button type="button" onclick="closeWhatsAppApiModal()" class="btn btn-ghost" style="font-size: 0.85rem;">Cancel</button>
+          <button type="button" onclick="saveWhatsAppApiConfig()" class="btn btn-primary" style="background: linear-gradient(135deg, #0084ff, #00c6ff); border-color: #0084ff; font-size: 0.85rem; font-weight: 800; padding: 0.5rem 1.2rem;">
+            💾 <span data-i18n="btn_save_api">Save & Activate</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
   <!-- =========================================================================
        4. CLIENT APPLICATION CORE ENGINE
@@ -2276,7 +2377,13 @@
       messageDispatchLogs: JSON.parse(localStorage.getItem("ostan_message_logs") || "[]"),
       whatsappConnected: localStorage.getItem("ostan_wa_connected") === "true",
       whatsappPhone: localStorage.getItem("ostan_wa_phone") || "+966 50 123 4567",
-      recycleBin: JSON.parse(localStorage.getItem("ostan_recycle_bin") || "[]")
+      recycleBin: JSON.parse(localStorage.getItem("ostan_recycle_bin") || "[]"),
+      whatsappApiConfig: JSON.parse(localStorage.getItem("ostan_wa_api_config") || JSON.stringify({
+        phoneNumberId: "",
+        wabaId: "",
+        accessToken: "",
+        mode: "web"
+      }))
     };
     window.state = state;
 
@@ -2296,6 +2403,7 @@
       localStorage.setItem("ostan_wa_connected", state.whatsappConnected ? "true" : "false");
       localStorage.setItem("ostan_wa_phone", state.whatsappPhone || "+966 50 123 4567");
       localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin || []));
+      localStorage.setItem("ostan_wa_api_config", JSON.stringify(state.whatsappApiConfig || {}));
       updateCounts();
     }
 
@@ -4743,6 +4851,7 @@
 
     function renderMessagesSender() {
       updateWhatsAppConnectionUI();
+      updateWhatsAppApiStatusUI();
       renderMessageRecipientsList();
       renderMessageTemplates();
       renderMessageHistoryLogs();
@@ -5363,6 +5472,411 @@
         window.OstanStyle.showToast("WhatsApp Queue Done", `Dispatched to ${queueState.items.length} recipients safely!`);
       }
     }
+
+    // =========================================================================
+    // META WHATSAPP BUSINESS CLOUD API MODULE
+    // =========================================================================
+
+    function openWhatsAppApiModal() {
+      const cfg = state.whatsappApiConfig || {};
+      const phoneInput = document.getElementById("wa-cfg-phone-id");
+      const wabaInput = document.getElementById("wa-cfg-waba-id");
+      const tokenInput = document.getElementById("wa-cfg-token");
+      const modeInput = document.getElementById("wa-cfg-mode");
+      const resBox = document.getElementById("wa-cfg-test-result");
+
+      if (phoneInput) phoneInput.value = cfg.phoneNumberId || "";
+      if (wabaInput) wabaInput.value = cfg.wabaId || "";
+      if (tokenInput) tokenInput.value = cfg.accessToken || "";
+      if (modeInput) modeInput.value = cfg.mode || "web";
+      if (resBox) {
+        resBox.style.display = "none";
+        resBox.textContent = "";
+      }
+
+      const modal = document.getElementById("modal-whatsapp-api-config");
+      if (modal) modal.style.display = "flex";
+    }
+    window.openWhatsAppApiModal = openWhatsAppApiModal;
+
+    function closeWhatsAppApiModal() {
+      const modal = document.getElementById("modal-whatsapp-api-config");
+      if (modal) modal.style.display = "none";
+    }
+    window.closeWhatsAppApiModal = closeWhatsAppApiModal;
+
+    function toggleWaApiTokenVisibility() {
+      const tokenInput = document.getElementById("wa-cfg-token");
+      if (!tokenInput) return;
+      tokenInput.type = tokenInput.type === "password" ? "text" : "password";
+    }
+    window.toggleWaApiTokenVisibility = toggleWaApiTokenVisibility;
+
+    async function testWhatsAppApiConnection() {
+      const phoneId = document.getElementById("wa-cfg-phone-id")?.value.trim() || "";
+      const token = document.getElementById("wa-cfg-token")?.value.trim() || "";
+      const resBox = document.getElementById("wa-cfg-test-result");
+      const btn = document.getElementById("btn-test-wa-api");
+
+      if (!phoneId || !token) {
+        if (resBox) {
+          resBox.style.display = "block";
+          resBox.style.background = "rgba(239, 68, 68, 0.15)";
+          resBox.style.border = "1px solid rgba(239, 68, 68, 0.35)";
+          resBox.style.color = "#ef4444";
+          resBox.innerHTML = "⚠️ Please enter both the <strong>Phone Number ID</strong> and <strong>Access Token</strong> before testing.";
+        }
+        return;
+      }
+
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = "⏳ Testing Connection...";
+      }
+
+      if (resBox) {
+        resBox.style.display = "block";
+        resBox.style.background = "rgba(99, 102, 241, 0.12)";
+        resBox.style.border = "1px solid rgba(99, 102, 241, 0.35)";
+        resBox.style.color = "#818cf8";
+        resBox.innerHTML = "Connecting to Meta Graph API servers...";
+      }
+
+      let success = false;
+      let resultData = null;
+      let errorMessage = "";
+
+      // 1. Try local Next.js proxy route first
+      try {
+        const res = await fetch("/api/whatsapp/test-connection", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ phoneNumberId: phoneId, accessToken: token })
+        });
+        if (res.ok) {
+          resultData = await res.json();
+          if (resultData.success) success = true;
+          else errorMessage = resultData.error || "Meta verification rejected credentials.";
+        } else {
+          const errJson = await res.json().catch(() => ({}));
+          errorMessage = errJson.error || `HTTP ${res.status} from API route`;
+        }
+      } catch (proxyErr) {
+        // Fallback: direct Graph API call from browser
+        try {
+          const directRes = await fetch(`https://graph.facebook.com/v20.0/${encodeURIComponent(phoneId)}?fields=verified_name,display_phone_number,quality_rating`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          const directData = await directRes.json();
+          if (directRes.ok && directData.id) {
+            success = true;
+            resultData = {
+              verifiedName: directData.verified_name || "Meta Business Account",
+              displayPhoneNumber: directData.display_phone_number || "Active Number",
+              qualityRating: directData.quality_rating || "GREEN"
+            };
+          } else {
+            errorMessage = directData.error?.message || "Direct Meta API verification failed.";
+          }
+        } catch (directErr) {
+          errorMessage = directErr.message || "Network error connecting to Meta Graph API.";
+        }
+      }
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = "⚡ <span data-i18n=\"btn_test_api\">Test Meta API Connection</span>";
+      }
+
+      if (resBox) {
+        if (success && resultData) {
+          resBox.style.display = "block";
+          resBox.style.background = "rgba(16, 185, 129, 0.12)";
+          resBox.style.border = "1px solid rgba(16, 185, 129, 0.35)";
+          resBox.style.color = "#10b981";
+          resBox.innerHTML = `
+            <div style="font-weight: 800; font-size: 0.9rem; margin-bottom: 2px;">✅ Connection Verified & Active!</div>
+            <div>Account: <strong>${resultData.verifiedName}</strong></div>
+            <div>Phone: <strong>${resultData.displayPhoneNumber}</strong> • Quality Rating: <span class="badge badge-emerald" style="padding: 1px 6px; font-size: 0.68rem;">${resultData.qualityRating}</span></div>
+          `;
+          if (window.OstanStyle) window.OstanStyle.showToast("Meta API Connected", `Verified ${resultData.displayPhoneNumber}`);
+        } else {
+          resBox.style.display = "block";
+          resBox.style.background = "rgba(239, 68, 68, 0.15)";
+          resBox.style.border = "1px solid rgba(239, 68, 68, 0.35)";
+          resBox.style.color = "#ef4444";
+          resBox.innerHTML = `
+            <div style="font-weight: 800; margin-bottom: 2px;">❌ Connection Failed</div>
+            <div>${errorMessage || "Could not authenticate with Meta Graph API. Please double check your Phone Number ID and Access Token."}</div>
+          `;
+        }
+      }
+    }
+    window.testWhatsAppApiConnection = testWhatsAppApiConnection;
+
+    function saveWhatsAppApiConfig() {
+      const phoneId = document.getElementById("wa-cfg-phone-id")?.value.trim() || "";
+      const wabaId = document.getElementById("wa-cfg-waba-id")?.value.trim() || "";
+      const token = document.getElementById("wa-cfg-token")?.value.trim() || "";
+      const mode = document.getElementById("wa-cfg-mode")?.value || "web";
+
+      state.whatsappApiConfig = {
+        phoneNumberId: phoneId,
+        wabaId: wabaId,
+        accessToken: token,
+        mode: mode
+      };
+
+      saveState();
+
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("systemSettings").doc("whatsapp_api").set(state.whatsappApiConfig, { merge: true }).catch(() => {});
+        } catch (e) {}
+      }
+
+      updateWhatsAppApiStatusUI();
+      closeWhatsAppApiModal();
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const msg = lang === "ar" ? "تم حفظ وتفعيل إعدادات Meta API بنجاح" : "Meta WhatsApp API Configuration Saved Successfully";
+      if (window.OstanStyle) window.OstanStyle.showToast("WhatsApp API", msg);
+      else alert(msg);
+    }
+    window.saveWhatsAppApiConfig = saveWhatsAppApiConfig;
+
+    function updateWhatsAppApiStatusUI() {
+      const cfg = state.whatsappApiConfig || {};
+      const hasCreds = Boolean(cfg.phoneNumberId && cfg.accessToken);
+      const isApiMode = hasCreds && (cfg.mode === "api");
+
+      const pill = document.getElementById("wa-api-status-pill");
+      const dot = document.getElementById("wa-api-status-dot");
+      const text = document.getElementById("wa-api-status-text");
+      const btnMeta = document.getElementById("btn-dispatch-meta-api");
+      const btnWeb = document.getElementById("btn-dispatch-whatsapp-web");
+      const lang = document.documentElement.getAttribute("lang") || "en";
+
+      if (pill && dot && text) {
+        if (isApiMode) {
+          pill.className = "badge badge-emerald";
+          pill.style.background = "rgba(16, 185, 129, 0.15)";
+          pill.style.color = "#10b981";
+          pill.style.border = "1px solid rgba(16, 185, 129, 0.35)";
+          dot.style.background = "#10b981";
+          text.textContent = lang === "ar" ? "🟢 Meta Cloud API: نشط" : "🟢 Meta Cloud API: Active";
+        } else if (hasCreds) {
+          pill.className = "badge badge-amber";
+          pill.style.background = "rgba(245, 158, 11, 0.15)";
+          pill.style.color = "#fbbf24";
+          pill.style.border = "1px solid rgba(245, 158, 11, 0.35)";
+          dot.style.background = "#f59e0b";
+          text.textContent = lang === "ar" ? "🟠 وضع واتساب ويب" : "🟠 WhatsApp Web Mode";
+        } else {
+          pill.className = "badge badge-secondary";
+          pill.style.background = "var(--bg-surface-elevated)";
+          pill.style.color = "var(--text-muted)";
+          pill.style.border = "1px solid var(--border-subtle)";
+          dot.style.background = "#94a3b8";
+          text.textContent = lang === "ar" ? "⚪ لم يتم ضبط Meta API" : "⚪ Meta API Not Configured";
+        }
+      }
+
+      if (btnMeta && btnWeb) {
+        if (isApiMode) {
+          btnMeta.style.display = "inline-flex";
+          btnWeb.style.display = "none";
+        } else {
+          btnMeta.style.display = "none";
+          btnWeb.style.display = "inline-flex";
+        }
+      }
+    }
+    window.updateWhatsAppApiStatusUI = updateWhatsAppApiStatusUI;
+
+    async function sendSingleMetaWhatsAppMessage(phone, messageText) {
+      const cfg = state.whatsappApiConfig || {};
+      const payload = {
+        phone: phone,
+        message: messageText,
+        phoneNumberId: cfg.phoneNumberId,
+        accessToken: cfg.accessToken
+      };
+
+      // 1. Try local Next.js proxy route
+      try {
+        const res = await fetch("/api/whatsapp/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          return { success: true, messageId: data.messageId || "wamid.success" };
+        } else if (res.status !== 404) {
+          return { success: false, error: data.error || "Meta dispatch rejected" };
+        }
+      } catch (proxyErr) {
+        // Fallback: direct Graph API POST
+      }
+
+      // 2. Direct Graph API fallback
+      try {
+        let cleanPhone = String(phone).replace(/[^0-9]/g, "");
+        if (cleanPhone.startsWith("05") && cleanPhone.length === 10) cleanPhone = "966" + cleanPhone.slice(1);
+        else if (cleanPhone.startsWith("5") && cleanPhone.length === 9) cleanPhone = "966" + cleanPhone;
+
+        const metaUrl = `https://graph.facebook.com/v20.0/${encodeURIComponent(cfg.phoneNumberId)}/messages`;
+        const directRes = await fetch(metaUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${cfg.accessToken}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            messaging_product: "whatsapp",
+            recipient_type: "individual",
+            to: cleanPhone,
+            type: "text",
+            text: { preview_url: false, body: messageText }
+          })
+        });
+        const directData = await directRes.json();
+        if (directRes.ok && directData.messages?.[0]?.id) {
+          return { success: true, messageId: directData.messages[0].id };
+        } else {
+          return { success: false, error: directData.error?.message || "Meta API error" };
+        }
+      } catch (err) {
+        return { success: false, error: err.message || "Network dispatch failure" };
+      }
+    }
+    window.sendSingleMetaWhatsAppMessage = sendSingleMetaWhatsAppMessage;
+
+    async function startWhatsAppCloudApiDispatch() {
+      const rawText = document.getElementById("msg-composer-text")?.value.trim();
+      if (!rawText) {
+        alert("Please write a message or select a pre-written template before sending.");
+        return;
+      }
+
+      const totalRecipientsCount = selectedRecipientIds.size + manualRecipients.length;
+      if (totalRecipientsCount === 0) {
+        alert("Please select at least one employee or enter a manual phone number.");
+        return;
+      }
+
+      const cfg = state.whatsappApiConfig || {};
+      if (!cfg.phoneNumberId || !cfg.accessToken) {
+        const proceed = confirm("Meta WhatsApp Cloud API credentials are not configured yet. Would you like to configure them now?");
+        if (proceed) openWhatsAppApiModal();
+        return;
+      }
+
+      const selectedUsers = state.users.filter(u => selectedRecipientIds.has(u.id));
+      const items = [];
+      selectedUsers.forEach(u => {
+        const personalized = buildPersonalizedMessage(rawText, u);
+        items.push({
+          user: u,
+          name: u.name,
+          phone: u.phone || "+966501234567",
+          message: personalized
+        });
+      });
+
+      manualRecipients.forEach(p => {
+        const personalized = buildPersonalizedMessage(rawText, null);
+        items.push({
+          user: null,
+          name: "External Contact",
+          phone: p,
+          message: personalized
+        });
+      });
+
+      // Open Runner Modal configured for Cloud API
+      const modal = document.getElementById("modal-dispatch-runner");
+      if (modal) modal.style.display = "flex";
+      document.getElementById("runner-content-active").style.display = "flex";
+      document.getElementById("runner-content-completed").style.display = "none";
+      document.getElementById("runner-delay-badge").textContent = "⚡ Meta Cloud API";
+
+      const openBtn = document.getElementById("runner-open-btn");
+      if (openBtn) openBtn.style.display = "none";
+
+      let successCount = 0;
+      let failureCount = 0;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const currentNum = i + 1;
+        const total = items.length;
+        const pct = Math.round((currentNum / total) * 100);
+
+        // Update Runner UI
+        const progressLabel = document.getElementById("runner-progress-label");
+        if (progressLabel) progressLabel.textContent = `Meta API Dispatching: ${currentNum} of ${total}`;
+        const overallBar = document.getElementById("runner-overall-progress-bar");
+        if (overallBar) overallBar.style.width = pct + "%";
+        const nameEl = document.getElementById("runner-current-name");
+        if (nameEl) nameEl.textContent = item.name;
+        const phoneEl = document.getElementById("runner-current-phone");
+        if (phoneEl) phoneEl.textContent = item.phone;
+        const previewEl = document.getElementById("runner-msg-preview");
+        if (previewEl) previewEl.textContent = item.message;
+        const avatarEl = document.getElementById("runner-current-avatar");
+        if (avatarEl) avatarEl.textContent = item.name.charAt(0).toUpperCase();
+
+        const timerEl = document.getElementById("runner-timer-countdown");
+        if (timerEl) timerEl.textContent = "SENDING ⚡";
+
+        // Dispatch via Meta API
+        const sendRes = await sendSingleMetaWhatsAppMessage(item.phone, item.message);
+
+        const logEntry = {
+          id: "meta-msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
+          recipientName: item.name,
+          phone: item.phone,
+          message: item.message,
+          timestamp: new Date().toLocaleTimeString() + " • " + new Date().toISOString().split("T")[0],
+          status: sendRes.success ? `SENT ✅ (wamid: ${sendRes.messageId.substring(0, 14)}...)` : `FAILED ❌ (${sendRes.error})`,
+          url: "https://graph.facebook.com"
+        };
+
+        state.messageDispatchLogs.unshift(logEntry);
+        if (window.fbDb) {
+          try { window.fbDb.collection("messageLogs").doc(logEntry.id).set(logEntry); } catch(e) {}
+        }
+        saveState();
+        renderMessageHistoryLogs();
+
+        if (sendRes.success) {
+          successCount++;
+          if (timerEl) timerEl.textContent = "SENT ✅";
+        } else {
+          failureCount++;
+          if (timerEl) timerEl.textContent = "FAILED ❌";
+        }
+
+        // Brief 1s delay between API calls
+        if (i < items.length - 1) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+
+      // Finish View
+      document.getElementById("runner-content-active").style.display = "none";
+      document.getElementById("runner-content-completed").style.display = "flex";
+      document.getElementById("runner-completed-summary").textContent = `Dispatched ${items.length} messages directly via Meta WhatsApp Cloud API (${successCount} Successful, ${failureCount} Failed).`;
+
+      if (openBtn) openBtn.style.display = "inline-flex";
+
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("Meta API Complete", `${successCount} of ${items.length} messages delivered!`);
+      }
+    }
+    window.startWhatsAppCloudApiDispatch = startWhatsAppCloudApiDispatch;
 
     function handleSaveCustomTemplate(e) {
       e.preventDefault();
@@ -6089,6 +6603,20 @@
       }, err => {
         console.warn("Firestore recycleBin onSnapshot notice:", err);
       });
+
+      // Real-Time Live Cloud Firestore Sync for WhatsApp Cloud API Settings
+      window.fbDb.collection("systemSettings").doc("whatsapp_api").onSnapshot((docSnap) => {
+        if (docSnap && docSnap.exists) {
+          const cfg = docSnap.data();
+          if (cfg) {
+            state.whatsappApiConfig = { ...state.whatsappApiConfig, ...cfg };
+            localStorage.setItem("ostan_wa_api_config", JSON.stringify(state.whatsappApiConfig));
+            updateWhatsAppApiStatusUI();
+          }
+        }
+      }, err => {
+        console.warn("Firestore whatsapp_api onSnapshot notice:", err);
+      });
     }
 
     // App Boot Initialization
@@ -6102,6 +6630,7 @@
       document.getElementById("app-shell-root").style.display = "grid";
       updateUserSessionUI();
       applyModuleVisibility();
+      updateWhatsAppApiStatusUI();
       setModule("dashboard");
 
       // Pull latest user profiles, phone numbers, and permissions for all staff on boot + scrub plaintext passwords
