@@ -33,3 +33,6 @@ next-env.d.ts
 # prisma dev sqlite database if used
 prisma/*.db
 prisma/*.db-journal
+
+# WhatsApp Web session credentials
+whatsapp_session/
