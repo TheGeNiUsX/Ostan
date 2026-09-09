@@ -5,6 +5,20 @@ import http from 'http';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
+import { initializeApp } from 'firebase/app';
+import { getFirestore, doc, setDoc, onSnapshot, collection, updateDoc } from 'firebase/firestore';
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBosnwK5ima8AFANYoBxfzPN9mb-yNwVnQ",
+  authDomain: "ostan-75a0c.firebaseapp.com",
+  projectId: "ostan-75a0c",
+  storageBucket: "ostan-75a0c.firebasestorage.app",
+  messagingSenderId: "278978199753",
+  appId: "1:278978199753:web:e32452e1c4b39f41970d18"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const fbDb = getFirestore(fbApp);
 
 const PORT = process.env.WHATSAPP_PORT || 5001;
 // Bind to 0.0.0.0 so the gateway is reachable from any device on the same network (LAN)
@@ -23,6 +37,28 @@ function getLanIPs() {
     }
   }
   return results;
+}
+
+/** Sync live session state directly to Cloud Firestore so remote computers anywhere see it in real-time */
+async function syncSessionStateToFirestore(cleanUserId, session) {
+  try {
+    const liveRef = doc(fbDb, 'systemSettings', 'whatsapp_live');
+    const data = {
+      userId: cleanUserId,
+      status: session.status,
+      qr: session.qr || null,
+      phone: session.phone || null,
+      name: session.name || null,
+      connected: session.status === 'connected',
+      lanIPs: getLanIPs(),
+      gatewayPort: PORT,
+      updatedAt: Date.now()
+    };
+    await setDoc(liveRef, data, { merge: true });
+    console.log(`[WhatsApp Gateway] ☁️ Synced live state to Cloud Firestore (Status: ${session.status}, Phone: ${session.phone || 'none'})`);
+  } catch (err) {
+    console.warn('[WhatsApp Gateway] Firestore live state sync notice:', err?.message || err);
+  }
 }
 
 // Ensure base sessions directory exists
@@ -128,6 +164,7 @@ async function startWhatsAppSocketForUser(cleanUserId) {
             color: { dark: '#111827', light: '#ffffff' }
           });
           console.log(`[WhatsApp Gateway] 📱 New Live QR Code ready for user: ${cleanUserId}`);
+          syncSessionStateToFirestore(cleanUserId, session);
         } catch (err) {
           console.error(`[WhatsApp Gateway] Failed to convert QR for ${cleanUserId}:`, err);
         }
@@ -139,6 +176,7 @@ async function startWhatsAppSocketForUser(cleanUserId) {
         session.status = 'disconnected';
         session.qr = null;
         session.isStarting = false;
+        syncSessionStateToFirestore(cleanUserId, session);
 
         console.log(`[WhatsApp Gateway] User '${cleanUserId}' connection closed (code: ${statusCode}). Reconnecting: ${shouldReconnect}`);
 
@@ -169,6 +207,8 @@ async function startWhatsAppSocketForUser(cleanUserId) {
         console.log(`Active Phone: +${session.phone}`);
         console.log(`Account Name: ${session.name}`);
         console.log(`======================================================\n`);
+
+        syncSessionStateToFirestore(cleanUserId, session);
       }
     });
   } catch (err) {
@@ -214,6 +254,7 @@ async function logoutWhatsAppForUser(userId) {
     session.phone = null;
     session.name = null;
     session.isStarting = false;
+    syncSessionStateToFirestore(cleanId, session);
     setTimeout(() => startWhatsAppSocketForUser(cleanId), 1500);
   }
   return { success: true, message: `Logged out session for user ${cleanId}` };
@@ -339,4 +380,65 @@ server.listen(PORT, HOST, () => {
   console.log(`   so all remote users can reach the QR pairing engine.\n`);
   // Automatically start the default session
   getOrCreateUserSession('u-osama');
+
+  // Real-time Cloud Outbox Listener for Remote Users
+  try {
+    onSnapshot(collection(fbDb, 'whatsappOutbox'), (snapshot) => {
+      snapshot.docChanges().forEach(async (change) => {
+        if (change.type === 'added' || change.type === 'modified') {
+          const msgData = change.doc.data();
+          const docId = change.doc.id;
+          if (msgData && msgData.status === 'pending') {
+            console.log(`[WhatsApp Gateway] 📨 Processing cloud outbox message for ${msgData.phone}...`);
+            try {
+              await updateDoc(doc(fbDb, 'whatsappOutbox', docId), { status: 'processing' });
+              const res = await sendWhatsAppMessageForUser(msgData.userId || 'u-osama', msgData.phone, msgData.message);
+              await updateDoc(doc(fbDb, 'whatsappOutbox', docId), {
+                status: 'sent',
+                sentAt: new Date().toISOString(),
+                messageId: res.messageId
+              });
+              console.log(`[WhatsApp Gateway] ✅ Cloud outbox message sent to ${msgData.phone}!`);
+            } catch (sendErr) {
+              console.error(`[WhatsApp Gateway] ❌ Cloud outbox error for ${msgData.phone}:`, sendErr?.message || sendErr);
+              await updateDoc(doc(fbDb, 'whatsappOutbox', docId), {
+                status: 'failed',
+                error: sendErr?.message || 'Failed to dispatch',
+                failedAt: new Date().toISOString()
+              });
+            }
+          }
+        }
+      });
+    }, (err) => {
+      console.warn('[WhatsApp Gateway] Outbox listener notice:', err?.message || err);
+    });
+    console.log('[WhatsApp Gateway] ☁️ Cloud Firestore Outbox Listener active');
+  } catch (e) {
+    console.warn('[WhatsApp Gateway] Could not attach Firestore outbox listener:', e);
+  }
+
+  // Real-time Cloud Commands Listener for Remote Admin Actions (Refresh, Restart, Logout)
+  try {
+    onSnapshot(doc(fbDb, 'systemSettings', 'whatsapp_commands'), async (snap) => {
+      if (snap && snap.exists()) {
+        const cmd = snap.data();
+        if (cmd && cmd.action && cmd.timestamp && (Date.now() - cmd.timestamp < 30000)) {
+          const cleanId = sanitizeUserId(cmd.userId || 'u-osama');
+          console.log(`[WhatsApp Gateway] ⚡ Received remote command: ${cmd.action} for ${cleanId}`);
+          if (cmd.action === 'restart' || cmd.action === 'refresh') {
+            await startWhatsAppSocketForUser(cleanId);
+          } else if (cmd.action === 'logout') {
+            await logoutWhatsAppForUser(cleanId);
+          }
+        }
+      }
+    }, (err) => {
+      console.warn('[WhatsApp Gateway] Commands listener notice:', err?.message || err);
+    });
+    console.log('[WhatsApp Gateway] ☁️ Cloud Firestore Remote Commands Listener active');
+  } catch (e) {
+    console.warn('[WhatsApp Gateway] Could not attach Firestore commands listener:', e);
+  }
 });
+

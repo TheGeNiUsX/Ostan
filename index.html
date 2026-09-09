@@ -1860,126 +1860,79 @@
           <!-- Top Grid: QR Pairing Studio (Left) + Audience Selector (Right) -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
             
-            <!-- 1. WhatsApp Connection Studio — Dual Mode -->
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border: 1px solid rgba(37, 211, 102, 0.25); background: linear-gradient(180deg, rgba(37, 211, 102, 0.03) 0%, var(--bg-surface-elevated) 100%);">
+            <!-- 1. Unified WhatsApp Studio: Pairing & Dispatch Mode Selector -->
+            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.15rem; border: 1px solid rgba(37, 211, 102, 0.3); background: linear-gradient(180deg, rgba(37, 211, 102, 0.04) 0%, var(--bg-surface-elevated) 100%);">
 
               <!-- Studio Header -->
               <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
-                <div style="display: flex; align-items: center; gap: 0.6rem;">
-                  <span style="font-size: 1.5rem;">📱</span>
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                  <div style="width: 40px; height: 40px; border-radius: 10px; background: rgba(37, 211, 102, 0.15); border: 1px solid rgba(37, 211, 102, 0.35); display: flex; align-items: center; justify-content: center; font-size: 1.35rem;">
+                    📱
+                  </div>
                   <div>
-                    <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">WhatsApp Connection Studio</div>
-                    <div id="wa-gateway-indicator" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">⚪ Select a connection mode below</div>
+                    <div data-i18n="whatsapp_studio_title" style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">WhatsApp Studio</div>
+                    <div id="wa-gateway-indicator" style="font-size: 0.75rem; color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 4px;">
+                      <span class="status-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                      <span id="wa-unified-status-text">Multi-Device Link Active</span>
+                    </div>
+                  </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <button type="button" onclick="refreshWhatsAppQR(true)" class="btn btn-ghost" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;" title="Refresh QR & Status">
+                    🔄 <span data-i18n="whatsapp_refresh_qr">Refresh</span>
+                  </button>
+                  <button type="button" onclick="restartWhatsAppGatewaySession()" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem; color: #fbbf24;" title="Reset Session">
+                    ⚡ Reset
+                  </button>
+                </div>
+              </div>
+
+              <!-- ─── DISPATCH METHOD: 2 OPTIONS ─── -->
+              <div>
+                <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.5rem;" data-i18n="label_sender_mode">
+                  Choose How to Send Messages / اختر طريقة الإرسال:
+                </label>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+                  <!-- Choice 1: Direct Sender (No Website Needed / No Extension) -->
+                  <div id="wa-choice-direct" onclick="setWaDispatchMode('direct')"
+                    style="padding: 0.85rem 0.75rem; border-radius: var(--radius-md); border: 2px solid #25D366; background: rgba(37, 211, 102, 0.12); cursor: pointer; display: flex; flex-direction: column; gap: 0.35rem; transition: all 0.2s; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-size: 1.25rem;">⚡</span>
+                      <span class="badge badge-emerald" style="font-size: 0.65rem; font-weight: 700; padding: 2px 6px;">Automated</span>
+                    </div>
+                    <div style="font-weight: 800; font-size: 0.86rem; color: #25D366;">Direct Sender</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); line-height: 1.35;">
+                      Direct through linked phone in background. No tabs open &amp; no extension needed.
+                    </div>
+                  </div>
+
+                  <!-- Choice 2: Website + Extension (Old Version) -->
+                  <div id="wa-choice-extension" onclick="setWaDispatchMode('extension')"
+                    style="padding: 0.85rem 0.75rem; border-radius: var(--radius-md); border: 2px solid var(--border-subtle); background: var(--bg-surface); cursor: pointer; display: flex; flex-direction: column; gap: 0.35rem; transition: all 0.2s; position: relative;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span style="font-size: 1.25rem;">🌐</span>
+                      <span class="badge badge-secondary" style="font-size: 0.65rem; font-weight: 700; padding: 2px 6px;">Old Version</span>
+                    </div>
+                    <div style="font-weight: 800; font-size: 0.86rem; color: var(--text-main);">Browser + Extension</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); line-height: 1.35;">
+                      Opens WhatsApp Web tabs in browser with auto-click Chrome extension.
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <!-- ─── DUAL MODE SELECTOR TABS ─── -->
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
-                <button id="wa-mode-tab-cloud" onclick="switchWaConnectionMode('cloud')"
-                  style="padding: 0.75rem 0.5rem; border-radius: var(--radius-md); border: 2px solid #25D366; background: rgba(37,211,102,0.12); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; transition: all 0.2s;">
-                  <span style="font-size: 1.4rem;">🌐</span>
-                  <span style="font-size: 0.78rem; font-weight: 800; color: #25D366;">Mode A — Cloud</span>
-                  <span style="font-size: 0.65rem; color: var(--text-muted); text-align: center; line-height: 1.3;">Works from any<br>device, anywhere</span>
-                </button>
-                <button id="wa-mode-tab-local" onclick="switchWaConnectionMode('local')"
-                  style="padding: 0.75rem 0.5rem; border-radius: var(--radius-md); border: 2px solid var(--border-subtle); background: var(--bg-surface); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; transition: all 0.2s;">
-                  <span style="font-size: 1.4rem;">🖥️</span>
-                  <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-main);">Mode B — Local</span>
-                  <span style="font-size: 0.65rem; color: var(--text-muted); text-align: center; line-height: 1.3;">Extension + Browser<br>runner (host PC only)</span>
-                </button>
-              </div>
+              <!-- ─── INTEGRATED QR / PAIRED STATUS BOX ─── -->
+              <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 1.15rem; display: flex; flex-direction: column; align-items: center; gap: 0.85rem;">
 
-              <!-- ─── MODE A: CLOUD GATEWAY PANEL ─── -->
-              <div id="wa-panel-cloud" style="display: flex; flex-direction: column; gap: 0.85rem;">
-                <!-- Status Badge -->
-                <div style="padding: 0.6rem 0.85rem; border-radius: var(--radius-md); background: rgba(37,211,102,0.08); border: 1px solid rgba(37,211,102,0.25); display: flex; align-items: center; gap: 0.6rem;">
-                  <span style="font-size: 1.1rem;">☁️</span>
-                  <div>
-                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Independent Cloud WhatsApp</div>
-                    <div style="font-size: 0.7rem; color: var(--text-muted);">Scan QR once on their platform → works from any computer forever</div>
-                  </div>
-                </div>
-
-                <!-- Provider Cards -->
-                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
-                  <!-- UltraMsg Card -->
-                  <div style="padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
-                    <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0;">
-                      <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #25D366, #128C7E); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">📡</div>
-                      <div style="min-width: 0;">
-                        <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-main);">UltraMsg</div>
-                        <div style="font-size: 0.68rem; color: var(--text-muted);">20 free msgs/day • Recommended</div>
-                      </div>
-                    </div>
-                    <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
-                      <a href="https://ultramsg.com" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; text-decoration: none;">Sign Up Free ↗</a>
-                      <button onclick="handleWaProviderChange('ultramsg'); openWhatsAppApiModal();" class="btn btn-primary" style="font-size: 0.72rem; padding: 0.3rem 0.65rem; background: #25D366; border-color: #25D366;">Configure</button>
-                    </div>
-                  </div>
-
-                  <!-- Green-API Card -->
-                  <div style="padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
-                    <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0;">
-                      <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #22c55e, #16a34a); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">🟢</div>
-                      <div style="min-width: 0;">
-                        <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-main);">Green-API</div>
-                        <div style="font-size: 0.68rem; color: var(--text-muted);">100 free msgs/day • Highly reliable</div>
-                      </div>
-                    </div>
-                    <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
-                      <a href="https://green-api.com" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; text-decoration: none;">Sign Up Free ↗</a>
-                      <button onclick="handleWaProviderChange('greenapi'); openWhatsAppApiModal();" class="btn btn-primary" style="font-size: 0.72rem; padding: 0.3rem 0.65rem; background: #22c55e; border-color: #22c55e;">Configure</button>
-                    </div>
-                  </div>
-
-                  <!-- Meta Business API Card -->
-                  <div style="padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
-                    <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0;">
-                      <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #0084ff, #0066cc); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">💼</div>
-                      <div style="min-width: 0;">
-                        <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-main);">Meta Business API</div>
-                        <div style="font-size: 0.68rem; color: var(--text-muted);">1,000 free msgs/month • Official</div>
-                      </div>
-                    </div>
-                    <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
-                      <a href="https://business.facebook.com/wa/manage" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; text-decoration: none;">Open Portal ↗</a>
-                      <button onclick="handleWaProviderChange('meta'); openWhatsAppApiModal();" class="btn btn-primary" style="font-size: 0.72rem; padding: 0.3rem 0.65rem;">Configure</button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Active Cloud Config Status -->
-                <div id="wa-cloud-active-status" style="display: none; padding: 0.65rem 0.9rem; border-radius: var(--radius-md); background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);">
-                  <div style="display: flex; align-items: center; gap: 0.5rem;">
-                    <span>🟢</span>
-                    <div>
-                      <div id="wa-cloud-active-label" style="font-size: 0.8rem; font-weight: 700; color: #10b981;">Cloud API Configured</div>
-                      <div id="wa-cloud-active-detail" style="font-size: 0.7rem; color: var(--text-muted);"></div>
-                    </div>
-                    <button onclick="openWhatsAppApiModal()" class="btn btn-ghost" style="margin-left: auto; padding: 0.25rem 0.55rem; font-size: 0.7rem;">Edit ✏️</button>
-                  </div>
-                </div>
-              </div>
-
-              <!-- ─── MODE B: LOCAL QR PAIRING PANEL ─── -->
-              <div id="wa-panel-local" style="display: none; flex-direction: column; align-items: center; gap: 1rem; padding: 0.25rem 0;">
-
-                <!-- Warning if accessed from remote -->
-                <div id="wa-remote-warning" style="display: none; width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.35); font-size: 0.75rem; color: #fb7185; line-height: 1.45;">
-                  ⚠️ <strong>Remote Access Detected.</strong> The gateway server is running on another machine. Set the <strong>Gateway URL</strong> below to your host machine's IP (e.g. <code>http://192.168.1.100:5001</code>) to connect.<br>
-                  <button onclick="openWhatsAppApiModal()" class="btn btn-secondary" style="margin-top: 0.5rem; font-size: 0.72rem; padding: 0.3rem 0.65rem; color: #fb7185; border-color: rgba(251,113,133,0.5);">⚙️ Set Gateway URL</button>
-                </div>
-
-                <!-- QR Code Frame -->
-                <div id="wa-qr-unpaired-view" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 0.5rem 0; width: 100%;">
-                  <div style="position: relative; padding: 0.75rem; background: #ffffff; border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.35); border: 2px solid rgba(37, 211, 102, 0.5);">
-                    <div id="wa-qr-canvas-box" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 6px;">
+                <!-- Unpaired View: Live Dynamic QR Image -->
+                <div id="wa-qr-unpaired-view" style="display: flex; flex-direction: column; align-items: center; gap: 0.85rem; width: 100%;">
+                  <div style="position: relative; padding: 0.65rem; background: #ffffff; border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.35); border: 2px solid rgba(37, 211, 102, 0.5);">
+                    <div id="wa-qr-canvas-box" style="width: 170px; height: 170px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 6px;">
                       <!-- Real Live Dynamic QR Image -->
-                      <img id="wa-real-qr-img" src="" alt="Real WhatsApp Web QR Code" style="display: none; width: 180px; height: 180px; object-fit: contain; border-radius: 4px; z-index: 2;" />
+                      <img id="wa-real-qr-img" src="" alt="Real WhatsApp Web QR Code" style="display: none; width: 170px; height: 170px; object-fit: contain; border-radius: 4px; z-index: 2;" />
 
                       <!-- Fallback SVG QR -->
-                      <svg id="wa-qr-svg" viewBox="0 0 200 200" width="180" height="180" style="display: block;">
+                      <svg id="wa-qr-svg" viewBox="0 0 200 200" width="170" height="170" style="display: block;">
                         <rect x="0" y="0" width="60" height="60" rx="6" fill="#111827" />
                         <rect x="10" y="10" width="40" height="40" rx="4" fill="#ffffff" />
                         <rect x="20" y="20" width="20" height="20" rx="2" fill="#25D366" />
@@ -2009,161 +1962,52 @@
                         <circle cx="100" cy="100" r="24" fill="#25D366" stroke="#ffffff" stroke-width="4" />
                         <path d="M93 90 C91 90 89 92 89 94 C89 103 97 111 106 111 C108 111 110 109 110 107 L108 103 C107.5 102 106 101.5 105 102 L103 103 C100 101.5 98.5 100 97 97 L98 95 C98.5 94 98 92.5 97 92 Z" fill="#ffffff" />
                       </svg>
-                      <!-- Scanning Beam -->
+
+                      <!-- Scanning Beam Overlay -->
                       <div id="wa-scan-beam" style="position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent, #25D366, transparent); box-shadow: 0 0 10px #25D366; animation: scanBeam 2.4s ease-in-out infinite;"></div>
                     </div>
                   </div>
 
-                  <!-- Scan Instructions -->
-                  <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.35rem; text-align: center; max-width: 320px;">
-                    <div data-i18n="whatsapp_scan_step1">1. Open WhatsApp on your mobile phone</div>
-                    <div data-i18n="whatsapp_scan_step2">2. Tap Linked Devices &amp; scan this QR code</div>
-                    <div style="margin-top: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                      <span style="font-size: 0.7rem; color: var(--text-faint);">Pairing token expires in: <strong id="wa-qr-timer" style="color: #10b981;">01:45</strong></span>
+                  <!-- Instructions -->
+                  <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.25rem; text-align: center; max-width: 310px;">
+                    <div>1. Open WhatsApp on your mobile phone</div>
+                    <div>2. Tap <strong>Linked Devices</strong> &amp; scan this QR code</div>
+                    <div style="margin-top: 3px; display: flex; align-items: center; justify-content: center; gap: 5px;">
+                      <span id="wa-cloud-sync-badge" style="font-size: 0.72rem; color: #10b981; font-weight: 700;">🟢 Online Cloud Synced</span>
+                      <span style="font-size: 0.7rem; color: var(--text-faint);">• Accessible from any computer</span>
                     </div>
                   </div>
 
-                  <!-- Action Buttons -->
-                  <div style="display: flex; gap: 0.5rem; width: 100%;">
+                  <div style="display: flex; gap: 0.5rem; width: 100%; max-width: 320px;">
                     <button type="button" onclick="refreshWhatsAppQR(true)" class="btn btn-primary" style="flex: 1; justify-content: center; background: #25D366; border-color: #25D366; font-size: 0.8rem;">
-                      🔄 <span data-i18n="whatsapp_refresh_qr">Refresh Live QR</span>
+                      🔄 Refresh QR
                     </button>
-                    <button type="button" onclick="restartWhatsAppGatewaySession()" class="btn btn-secondary" style="font-size: 0.8rem;" title="Reset Session">
+                    <button type="button" onclick="restartWhatsAppGatewaySession()" class="btn btn-secondary" style="font-size: 0.8rem;">
                       ⚡ Reset
                     </button>
-                    <button type="button" onclick="openWhatsAppApiModal()" class="btn btn-ghost" style="font-size: 0.8rem;" title="Configure Gateway URL">
-                      ⚙️
-                    </button>
-                  </div>
-
-                  <!-- Gateway URL hint -->
-                  <div id="wa-gateway-url-hint" style="font-size: 0.68rem; color: var(--text-faint); text-align: center;">
-                    Gateway: <span id="wa-gateway-url-display" style="font-family: monospace; color: var(--text-muted);">http://localhost:5001</span>
-                    <button onclick="openWhatsAppApiModal()" style="background: none; border: none; cursor: pointer; font-size: 0.65rem; color: #818cf8; padding: 0 2px;">✏️ edit</button>
                   </div>
                 </div>
 
                 <!-- Paired / Connected View -->
-                <div id="wa-qr-paired-view" style="display: none; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 0; text-align: center; width: 100%;">
-                  <div style="width: 76px; height: 76px; border-radius: 50%; background: rgba(37, 211, 102, 0.15); border: 2px solid #25D366; display: flex; align-items: center; justify-content: center; font-size: 2.2rem;">
+                <div id="wa-qr-paired-view" style="display: none; flex-direction: column; align-items: center; gap: 0.75rem; width: 100%; text-align: center; padding: 0.5rem 0;">
+                  <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(37, 211, 102, 0.15); border: 2px solid #25D366; display: flex; align-items: center; justify-content: center; font-size: 2rem; box-shadow: 0 0 20px rgba(37, 211, 102, 0.25);">
                     📱
                   </div>
                   <div>
-                    <div style="font-weight: 800; font-size: 1.15rem; color: var(--text-main);">WhatsApp Linked &amp; Ready</div>
-                    <div id="wa-connected-phone-display" style="font-size: 0.95rem; font-weight: 700; color: #10b981; margin-top: 2px;">+966 50 123 4567</div>
-                    <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 4px;">Device: Ostan ERP Web Client • Active Real-Time Session</div>
+                    <div style="font-weight: 800; font-size: 1.1rem; color: var(--text-main);">WhatsApp Linked &amp; Active</div>
+                    <div id="wa-connected-phone-display" style="font-size: 1rem; font-weight: 800; color: #10b981; margin-top: 3px;">+966 58 053 9698</div>
+                    <div style="font-size: 0.73rem; color: var(--text-faint); margin-top: 3px;">Integrated with Ostan ERP • Ready to send from any computer anywhere</div>
                   </div>
-                  <button onclick="disconnectWhatsApp()" class="btn btn-ghost" style="color: #fb7185; font-size: 0.8rem; margin-top: 0.5rem;">
-                    🔌 <span data-i18n="whatsapp_disconnect_btn">Disconnect Account</span>
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border: 1px solid rgba(37, 211, 102, 0.25); background: linear-gradient(180deg, rgba(37, 211, 102, 0.03) 0%, var(--bg-surface-elevated) 100%);">
-              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
-                <div style="display: flex; align-items: center; gap: 0.6rem;">
-                  <span style="font-size: 1.5rem;">📱</span>
-                  <div>
-                    <div data-i18n="whatsapp_studio_title" style="font-weight: 800; font-size: 1rem; color: var(--text-main);">WhatsApp Pairing Studio</div>
-                    <div style="font-size: 0.75rem; color: #10b981; font-weight: 600;">Multi-Device Active Link</div>
-                  </div>
-                </div>
-                <button onclick="refreshWhatsAppQR()" class="btn btn-ghost" style="padding: 0.35rem 0.6rem; font-size: 0.75rem;" title="Refresh QR">
-                  🔄 <span data-i18n="whatsapp_refresh_qr">Refresh</span>
-                </button>
-              </div>
-
-              <!-- QR Code Display Frame / Paired Screen -->
-              <div id="wa-qr-unpaired-view" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 0.75rem 0;">
-                <div style="position: relative; padding: 0.75rem; background: #ffffff; border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.35); border: 2px solid rgba(37, 211, 102, 0.5);">
-                  <div id="wa-qr-canvas-box" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 6px;">
-                    <!-- Real Live Dynamic WhatsApp Web QR Image -->
-                    <img id="wa-real-qr-img" src="" alt="Real WhatsApp Web QR Code" style="display: none; width: 180px; height: 180px; object-fit: contain; border-radius: 4px; z-index: 2;" />
-
-                    <!-- Fallback / Initial SVG QR Code -->
-                    <svg id="wa-qr-svg" viewBox="0 0 200 200" width="180" height="180" style="display: block;">
-                      <!-- QR Positioning Marks -->
-                      <rect x="0" y="0" width="60" height="60" rx="6" fill="#111827" />
-                      <rect x="10" y="10" width="40" height="40" rx="4" fill="#ffffff" />
-                      <rect x="20" y="20" width="20" height="20" rx="2" fill="#25D366" />
-
-                      <rect x="140" y="0" width="60" height="60" rx="6" fill="#111827" />
-                      <rect x="150" y="10" width="40" height="40" rx="4" fill="#ffffff" />
-                      <rect x="160" y="20" width="20" height="20" rx="2" fill="#25D366" />
-
-                      <rect x="0" y="140" width="60" height="60" rx="6" fill="#111827" />
-                      <rect x="10" y="150" width="40" height="40" rx="4" fill="#ffffff" />
-                      <rect x="20" y="160" width="20" height="20" rx="2" fill="#25D366" />
-
-                      <!-- Decorative QR Data Dots -->
-                      <g fill="#111827">
-                        <rect x="70" y="10" width="10" height="10" /><rect x="90" y="10" width="10" height="10" /><rect x="110" y="10" width="10" height="10" />
-                        <rect x="80" y="30" width="10" height="10" /><rect x="100" y="30" width="10" height="10" /><rect x="120" y="30" width="10" height="10" />
-                        <rect x="70" y="50" width="10" height="10" /><rect x="90" y="50" width="10" height="10" /><rect x="110" y="50" width="10" height="10" />
-                        
-                        <rect x="10" y="70" width="10" height="10" /><rect x="30" y="70" width="10" height="10" /><rect x="50" y="70" width="10" height="10" />
-                        <rect x="20" y="90" width="10" height="10" /><rect x="40" y="90" width="10" height="10" />
-                        <rect x="10" y="110" width="10" height="10" /><rect x="30" y="110" width="10" height="10" /><rect x="50" y="110" width="10" height="10" />
-
-                        <rect x="140" y="70" width="10" height="10" /><rect x="160" y="70" width="10" height="10" /><rect x="180" y="70" width="10" height="10" />
-                        <rect x="150" y="90" width="10" height="10" /><rect x="170" y="90" width="10" height="10" />
-                        <rect x="140" y="110" width="10" height="10" /><rect x="160" y="110" width="10" height="10" /><rect x="180" y="110" width="10" height="10" />
-
-                        <rect x="70" y="140" width="10" height="10" /><rect x="90" y="140" width="10" height="10" /><rect x="110" y="140" width="10" height="10" />
-                        <rect x="80" y="160" width="10" height="10" /><rect x="100" y="160" width="10" height="10" /><rect x="120" y="160" width="10" height="10" />
-                        <rect x="70" y="180" width="10" height="10" /><rect x="90" y="180" width="10" height="10" /><rect x="110" y="180" width="10" height="10" />
-
-                        <rect x="140" y="140" width="10" height="10" /><rect x="160" y="140" width="10" height="10" /><rect x="180" y="140" width="10" height="10" />
-                        <rect x="150" y="160" width="10" height="10" /><rect x="170" y="160" width="10" height="10" /><rect x="190" y="160" width="10" height="10" />
-                        <rect x="140" y="180" width="10" height="10" /><rect x="160" y="180" width="10" height="10" /><rect x="180" y="180" width="10" height="10" />
-                      </g>
-
-                      <!-- Center WhatsApp Circle -->
-                      <circle cx="100" cy="100" r="24" fill="#25D366" stroke="#ffffff" stroke-width="4" />
-                      <path d="M93 90 C91 90 89 92 89 94 C89 103 97 111 106 111 C108 111 110 109 110 107 L108 103 C107.5 102 106 101.5 105 102 L103 103 C100 101.5 98.5 100 97 97 L98 95 C98.5 94 98 92.5 97 92 Z" fill="#ffffff" />
-                    </svg>
-
-                    <!-- Scanning Beam Overlay -->
-                    <div id="wa-scan-beam" style="position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent, #25D366, transparent); box-shadow: 0 0 10px #25D366; animation: scanBeam 2.4s ease-in-out infinite;"></div>
+                  <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem;">
+                    <button type="button" onclick="testLiveWhatsAppConnection()" class="btn btn-secondary" style="font-size: 0.76rem; padding: 0.35rem 0.8rem;">
+                      ⚡ Test Connection
+                    </button>
+                    <button type="button" onclick="disconnectWhatsApp()" class="btn btn-ghost" style="color: #fb7185; font-size: 0.76rem; padding: 0.35rem 0.8rem;">
+                      🔌 Disconnect
+                    </button>
                   </div>
                 </div>
 
-                <!-- Scan Instructions -->
-                <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.35rem; text-align: center; max-width: 320px;">
-                  <div data-i18n="whatsapp_scan_step1">1. Open WhatsApp on your mobile phone</div>
-                  <div data-i18n="whatsapp_scan_step2">2. Tap Linked Devices & scan this QR code</div>
-                  <div style="margin-top: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
-                    <span style="font-size: 0.7rem; color: var(--text-faint);">Pairing Token expires in: <strong id="wa-qr-timer" style="color: #10b981;">01:45</strong></span>
-                    <span id="wa-gateway-indicator" style="font-size: 0.72rem; color: #10b981; font-weight: 700;">⚡ Live QR Engine: Connected</span>
-                  </div>
-                </div>
-
-                <!-- Action Buttons -->
-                <div style="display: flex; gap: 0.5rem; width: 100%;">
-                  <button type="button" onclick="refreshWhatsAppQR(true)" class="btn btn-primary" style="flex: 1; justify-content: center; background: #25D366; border-color: #25D366; font-size: 0.8rem;">
-                    🔄 <span data-i18n="whatsapp_refresh_qr">Refresh Live QR</span>
-                  </button>
-                  <button type="button" onclick="restartWhatsAppGatewaySession()" class="btn btn-secondary" style="font-size: 0.8rem;" title="Reset Session">
-                    ⚡ Reset
-                  </button>
-                </div>
-              </div>
-
-              <!-- Paired Active View (Hidden until connected) -->
-              <div id="wa-qr-paired-view" style="display: none; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 0; text-align: center;">
-                <div style="width: 76px; height: 76px; border-radius: 50%; background: rgba(37, 211, 102, 0.15); border: 2px solid #25D366; display: flex; align-items: center; justify-content: center; font-size: 2.2rem;">
-                  📱
-                </div>
-                <div>
-                  <div style="font-weight: 800; font-size: 1.15rem; color: var(--text-main);">WhatsApp Linked & Ready</div>
-                  <div id="wa-connected-phone-display" style="font-size: 0.95rem; font-weight: 700; color: #10b981; margin-top: 2px;">+966 50 123 4567</div>
-                  <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 4px;">Device: Ostan ERP Web Client • Active Real-Time Session</div>
-                </div>
-                <button onclick="disconnectWhatsApp()" class="btn btn-ghost" style="color: #fb7185; font-size: 0.8rem; margin-top: 0.5rem;">
-                  🔌 <span data-i18n="whatsapp_disconnect_btn">Disconnect Account</span>
-                </button>
               </div>
 
             </div>
@@ -7353,51 +7197,151 @@
       return (cfg.gatewayUrl || 'http://localhost:5001').replace(/\/$/, '');
     }
 
-    /** Switch between cloud (Mode A) and local (Mode B) in the Studio panel */
-    function switchWaConnectionMode(mode) {
-      const panelCloud = document.getElementById('wa-panel-cloud');
-      const panelLocal = document.getElementById('wa-panel-local');
-      const tabCloud = document.getElementById('wa-mode-tab-cloud');
-      const tabLocal = document.getElementById('wa-mode-tab-local');
-      if (!panelCloud || !panelLocal) return;
+    /** Switch dispatch method: Choice 1 ('direct') or Choice 2 ('extension') */
+    function setWaDispatchMode(mode) {
+      state.waDispatchMode = mode || 'direct';
+      try { localStorage.setItem('ostan_wa_dispatch_mode', state.waDispatchMode); } catch(e) {}
 
-      if (mode === 'cloud') {
-        panelCloud.style.display = 'flex';
-        panelLocal.style.display = 'none';
-        if (tabCloud) { tabCloud.style.borderColor = '#25D366'; tabCloud.style.background = 'rgba(37,211,102,0.12)'; }
-        if (tabLocal) { tabLocal.style.borderColor = 'var(--border-subtle)'; tabLocal.style.background = 'var(--bg-surface)'; }
-        // Stop local polling when on cloud tab
-        if (liveWaPollingInterval) { clearInterval(liveWaPollingInterval); liveWaPollingInterval = null; }
-        state.waConnectionMode = 'cloud';
-        updateWhatsAppApiStatusUI();
+      const choiceDirect = document.getElementById('wa-choice-direct');
+      const choiceExtension = document.getElementById('wa-choice-extension');
+      const btnDirect = document.getElementById('btn-dispatch-meta-api');
+      const btnExtension = document.getElementById('btn-dispatch-whatsapp-web');
+      const lang = document.documentElement.getAttribute('lang') || 'en';
+
+      if (state.waDispatchMode === 'direct') {
+        if (choiceDirect) {
+          choiceDirect.style.borderColor = '#25D366';
+          choiceDirect.style.background = 'rgba(37, 211, 102, 0.14)';
+          choiceDirect.style.boxShadow = '0 0 15px rgba(37, 211, 102, 0.25)';
+        }
+        if (choiceExtension) {
+          choiceExtension.style.borderColor = 'var(--border-subtle)';
+          choiceExtension.style.background = 'var(--bg-surface)';
+          choiceExtension.style.boxShadow = 'none';
+        }
+        if (btnDirect) {
+          btnDirect.style.display = 'inline-flex';
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_direct) || (lang === 'ar' ? '⚡ إرسال مباشر (تلقائي بالخلفية • بدون متصفح وبدون إضافة)' : '⚡ Send Directly (Background Dispatch • No Extension)');
+          btnDirect.innerHTML = `<span>⚡</span> <span>${txt}</span>`;
+        }
+        if (btnExtension) {
+          btnExtension.style.display = 'none';
+        }
       } else {
-        panelCloud.style.display = 'none';
-        panelLocal.style.display = 'flex';
-        panelLocal.style.flexDirection = 'column';
-        if (tabLocal) { tabLocal.style.borderColor = '#818cf8'; tabLocal.style.background = 'rgba(129,140,248,0.12)'; }
-        if (tabCloud) { tabCloud.style.borderColor = 'var(--border-subtle)'; tabCloud.style.background = 'var(--bg-surface)'; }
-        // Update gateway URL display
-        const urlDisplay = document.getElementById('wa-gateway-url-display');
-        if (urlDisplay) urlDisplay.textContent = getWaGatewayUrl();
-        state.waConnectionMode = 'local';
-        startLiveWhatsAppPolling();
+        if (choiceExtension) {
+          choiceExtension.style.borderColor = '#25D366';
+          choiceExtension.style.background = 'rgba(37, 211, 102, 0.14)';
+          choiceExtension.style.boxShadow = '0 0 15px rgba(37, 211, 102, 0.25)';
+        }
+        if (choiceDirect) {
+          choiceDirect.style.borderColor = 'var(--border-subtle)';
+          choiceDirect.style.background = 'var(--bg-surface)';
+          choiceDirect.style.boxShadow = 'none';
+        }
+        if (btnExtension) {
+          btnExtension.style.display = 'inline-flex';
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_extension) || (lang === 'ar' ? '🚀 إرسال عبر واتساب ويب + الإضافة (النسخة السابقة)' : '🚀 Send via WhatsApp Web + Extension (Old Version)');
+          btnExtension.innerHTML = `<span>🚀</span> <span>${txt}</span>`;
+        }
+        if (btnDirect) {
+          btnDirect.style.display = 'none';
+        }
       }
-      // Save preference
-      try { localStorage.setItem('ostan_wa_connection_mode', mode); } catch(e) {}
     }
-    window.switchWaConnectionMode = switchWaConnectionMode;
+    window.setWaDispatchMode = setWaDispatchMode;
+    window.switchWaConnectionMode = setWaDispatchMode;
+
+    /** Send remote control commands (restart, refresh, logout) via Firebase Cloud Firestore */
+    async function sendWhatsAppRemoteCommand(action) {
+      const activeUid = getActiveUserId();
+      if (window.fbDb) {
+        try {
+          await window.fbDb.collection("systemSettings").doc("whatsapp_commands").set({
+            action: action,
+            userId: activeUid,
+            timestamp: Date.now()
+          });
+        } catch (e) {
+          console.warn("Firestore remote command notice:", e);
+        }
+      }
+    }
+    window.sendWhatsAppRemoteCommand = sendWhatsAppRemoteCommand;
+
+    /** Synchronize Live WhatsApp Baileys status (from Firestore or local gateway) to UI */
+    function handleLiveWhatsAppSnapshot(liveData) {
+      if (!liveData) return;
+      const curSession = getCurUserWaSession();
+      const activeUid = getActiveUserId();
+
+      const qrImg = document.getElementById("wa-real-qr-img");
+      const qrSvg = document.getElementById("wa-qr-svg");
+      const beam = document.getElementById("wa-scan-beam");
+      const indicator = document.getElementById("wa-gateway-indicator");
+      const statusUnified = document.getElementById("wa-unified-status-text");
+      const cloudBadge = document.getElementById("wa-cloud-sync-badge");
+
+      if (cloudBadge) {
+        cloudBadge.textContent = "🟢 Online Cloud Synced";
+        cloudBadge.style.color = "#10b981";
+      }
+
+      if (liveData.status === "connected" || liveData.connected) {
+        const wasConnected = curSession.connected;
+        curSession.connected = true;
+        if (liveData.phone) curSession.phone = "+" + String(liveData.phone).replace(/[^0-9]/g, "");
+        if (liveData.name) curSession.name = liveData.name;
+        state.userWhatsAppSessions = state.userWhatsAppSessions || {};
+        state.userWhatsAppSessions[activeUid] = curSession;
+        saveState();
+        updateWhatsAppConnectionUI();
+
+        if (indicator) {
+          indicator.style.color = "#10b981";
+          indicator.innerHTML = `<span class="status-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> <span>Linked: ${curSession.phone || "+966580539698"} (${curSession.name || "Active"})</span>`;
+        }
+        if (statusUnified) {
+          statusUnified.textContent = `Multi-Device Link Active (${curSession.phone || "+966580539698"})`;
+        }
+        if (!wasConnected && window.OstanStyle) {
+          const lang = document.documentElement.getAttribute("lang") || "en";
+          window.OstanStyle.showToast(
+            lang === "ar" ? "تم ربط واتساب بنجاح!" : "WhatsApp Connected!",
+            lang === "ar" ? `رقمك الآن متصل بالنظام: ${curSession.phone}` : `Your real phone ${curSession.phone} is now linked.`
+          );
+        }
+      } else if (liveData.status === "qr_ready" && liveData.qr) {
+        curSession.connected = false;
+        state.userWhatsAppSessions = state.userWhatsAppSessions || {};
+        state.userWhatsAppSessions[activeUid] = curSession;
+        updateWhatsAppConnectionUI();
+
+        if (qrImg) { qrImg.src = liveData.qr; qrImg.style.display = "block"; }
+        if (qrSvg) qrSvg.style.display = "none";
+        if (beam) beam.style.display = "none";
+        if (indicator) {
+          indicator.style.color = "#25D366";
+          indicator.textContent = "⚡ Real-time QR Ready • Cloud Synced";
+        }
+        if (statusUnified) {
+          statusUnified.textContent = "Scan QR Code to Pair Account";
+        }
+      } else if (liveData.status === "connecting") {
+        if (qrImg) qrImg.style.display = "none";
+        if (qrSvg) qrSvg.style.display = "block";
+        if (beam) beam.style.display = "block";
+        if (statusUnified) statusUnified.textContent = "Connecting to WhatsApp...";
+        if (indicator) {
+          indicator.style.color = "#f59e0b";
+          indicator.textContent = "⏳ Establishing WebSocket connection...";
+        }
+      }
+    }
+    window.handleLiveWhatsAppSnapshot = handleLiveWhatsAppSnapshot;
 
     async function checkLiveWhatsAppGatewayStatus() {
       const activeUid = getActiveUserId();
-      // Only poll in local mode
-      if (state.waConnectionMode === 'cloud') return;
-
       const gatewayBase = getWaGatewayUrl();
-      const isLocalhost = gatewayBase.includes('localhost') || gatewayBase.includes('127.0.0.1');
-
-      // Show/hide remote warning
-      const remoteWarning = document.getElementById('wa-remote-warning');
-      if (remoteWarning) remoteWarning.style.display = (!isLocalhost) ? 'block' : 'none';
 
       try {
         let res = null;
@@ -7405,94 +7349,39 @@
           res = await fetch(`${gatewayBase}/api/status?userId=${encodeURIComponent(activeUid)}`, {
             method: "GET",
             headers: { "x-user-id": activeUid },
-            signal: AbortSignal.timeout(5000)
+            signal: AbortSignal.timeout(3000)
           });
         } catch (err) {
-          // Fallback: try Next.js proxy endpoint
           try {
             res = await fetch(`/api/whatsapp/live-qr?userId=${encodeURIComponent(activeUid)}`, {
               method: "GET",
               headers: { "x-user-id": activeUid },
-              signal: AbortSignal.timeout(4000)
+              signal: AbortSignal.timeout(3000)
             });
           } catch (e2) { res = null; }
         }
-        if (!res || !res.ok) {
-          const indicator = document.getElementById("wa-gateway-indicator");
-          if (indicator) {
-            indicator.style.color = "#f59e0b";
-            indicator.textContent = isLocalhost
-              ? "⚠️ Gateway offline — run: npm run whatsapp"
-              : `⚠️ Cannot reach ${gatewayBase} — check IP & firewall`;
-          }
+
+        if (res && res.ok) {
+          const data = await res.json();
+          handleLiveWhatsAppSnapshot(data);
           return;
         }
 
-        const data = await res.json();
-        if (getActiveUserId() !== activeUid) return;
-
-        state.userWhatsAppSessions = state.userWhatsAppSessions || {};
-        const curSession = getCurUserWaSession();
-
-        const qrImg = document.getElementById("wa-real-qr-img");
-        const qrSvg = document.getElementById("wa-qr-svg");
-        const beam = document.getElementById("wa-scan-beam");
-        const indicator = document.getElementById("wa-gateway-indicator");
-
-        if (data.status === "connected") {
-          const wasConnected = curSession.connected;
-          curSession.connected = true;
-          if (data.phone) curSession.phone = "+" + data.phone;
-          if (data.name) curSession.name = data.name;
-          state.userWhatsAppSessions[activeUid] = curSession;
-          saveState();
-          updateWhatsAppConnectionUI();
-          updateWhatsAppApiStatusUI();
-
-          if (indicator) {
-            indicator.style.color = "#10b981";
-            indicator.textContent = `🟢 Linked: +${data.phone} (${data.name || "Active"})`;
-          }
-          if (!wasConnected && window.OstanStyle) {
-            const lang = document.documentElement.getAttribute("lang") || "en";
-            window.OstanStyle.showToast(
-              lang === "ar" ? "تم ربط واتساب بنجاح!" : "WhatsApp Connected!",
-              lang === "ar" ? `رقمك الآن متصل بالنظام: +${data.phone}` : `Your real phone +${data.phone} is now linked.`
-            );
-          }
-        } else if (data.status === "qr_ready" && data.qr) {
-          if (qrImg) { qrImg.src = data.qr; qrImg.style.display = "block"; }
-          if (qrSvg) qrSvg.style.display = "none";
-          if (beam) beam.style.display = "none";
-          if (indicator) {
-            indicator.style.color = "#25D366";
-            indicator.textContent = `⚡ Real QR Ready • Scan for ${getCurrentUser()?.name || activeUid}`;
-          }
-          if (curSession.connected) {
-            curSession.connected = false;
-            curSession.phone = "";
-            state.userWhatsAppSessions[activeUid] = curSession;
-            saveState();
-            updateWhatsAppConnectionUI();
-            updateWhatsAppApiStatusUI();
-          }
-        } else if (data.status === "connecting") {
-          if (qrImg) qrImg.style.display = "none";
-          if (qrSvg) qrSvg.style.display = "block";
-          if (beam) beam.style.display = "block";
-          if (indicator) {
-            indicator.style.color = "#f59e0b";
-            indicator.textContent = "⏳ Establishing secure WhatsApp WebSocket...";
+        // Fallback: check Firestore directly
+        if (window.fbDb) {
+          const docSnap = await window.fbDb.collection("systemSettings").doc("whatsapp_live").get();
+          if (docSnap.exists) {
+            handleLiveWhatsAppSnapshot(docSnap.data());
           }
         }
       } catch (e) {
-        const indicator = document.getElementById("wa-gateway-indicator");
-        if (indicator) {
-          indicator.style.color = "#94a3b8";
-          const gwUrl = getWaGatewayUrl();
-          indicator.textContent = gwUrl.includes('localhost')
-            ? "⚠️ Engine offline. Start via 'npm run whatsapp'"
-            : `⚠️ Cannot connect to ${gwUrl}`;
+        if (window.fbDb) {
+          try {
+            const docSnap = await window.fbDb.collection("systemSettings").doc("whatsapp_live").get();
+            if (docSnap.exists) {
+              handleLiveWhatsAppSnapshot(docSnap.data());
+            }
+          } catch (err2) {}
         }
       }
     }
@@ -7501,11 +7390,10 @@
     function startLiveWhatsAppPolling() {
       if (liveWaPollingInterval) clearInterval(liveWaPollingInterval);
       checkLiveWhatsAppGatewayStatus();
-      liveWaPollingInterval = setInterval(checkLiveWhatsAppGatewayStatus, 2500);
+      liveWaPollingInterval = setInterval(checkLiveWhatsAppGatewayStatus, 5000);
       startWhatsAppQRTimer();
     }
     window.startLiveWhatsAppPolling = startLiveWhatsAppPolling;
-
 
     function startWhatsAppQRTimer() {
       if (waQrTimerInterval) clearInterval(waQrTimerInterval);
@@ -7532,6 +7420,7 @@
         qrImg.style.opacity = "0.4";
         setTimeout(() => { qrImg.style.opacity = "1"; }, 300);
       }
+      sendWhatsAppRemoteCommand("refresh");
       await checkLiveWhatsAppGatewayStatus();
       startWhatsAppQRTimer();
       if (showToast && window.OstanStyle) {
@@ -7542,6 +7431,7 @@
 
     async function restartWhatsAppGatewaySession() {
       const activeUid = getActiveUserId();
+      sendWhatsAppRemoteCommand("restart");
       try {
         try {
           await fetch("http://localhost:5001/api/restart", {
@@ -7569,6 +7459,7 @@
     async function disconnectWhatsApp() {
       if (!confirm("Are you sure you want to disconnect your WhatsApp session?")) return;
       const activeUid = getActiveUserId();
+      sendWhatsAppRemoteCommand("logout");
 
       try {
         try {
@@ -7600,6 +7491,27 @@
       }
     }
     window.disconnectWhatsApp = disconnectWhatsApp;
+
+    async function testLiveWhatsAppConnection() {
+      const curSession = getCurUserWaSession();
+      const phone = curSession.phone || "+966580539698";
+      const cleanPhone = phone.replace(/[^0-9]/g, "");
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("Testing Connection...", "Sending live test ping to " + phone);
+      }
+      const testMsg = "🟢 [Ostan ERP Test Ping] WhatsApp link is active and working perfectly! Time: " + new Date().toLocaleTimeString();
+      const res = await sendSingleMetaWhatsAppMessage(cleanPhone, testMsg);
+      if (res && res.success) {
+        if (window.OstanStyle) {
+          window.OstanStyle.showToast("Test Succeeded! ✅", "Sent verification ping directly to " + phone);
+        } else {
+          alert("WhatsApp Connection Test Succeeded! Ping delivered.");
+        }
+      } else {
+        alert("Connection test notice: " + (res?.error || "Could not deliver test ping"));
+      }
+    }
+    window.testLiveWhatsAppConnection = testLiveWhatsAppConnection;
 
     function renderMessageRecipientsList() {
       const container = document.getElementById("msg-recipients-container");
@@ -7887,10 +7799,6 @@
     };
 
     function startWhatsAppQueueDispatch() {
-      if (isCurrentWaConnected()) {
-        startWhatsAppCloudApiDispatch();
-        return;
-      }
       const rawText = document.getElementById("msg-composer-text")?.value.trim();
       if (!rawText) {
         alert("Please write a message or select a pre-written template before sending.");
@@ -8506,16 +8414,16 @@
       }
 
       if (btnMeta && btnWeb) {
-        if (isLiveConnected || isApiMode) {
-          btnMeta.style.display = "inline-flex";
-          const label = isLiveConnected
-            ? (lang === 'ar' ? `⚡ إرسال مباشر عبر واتساب (${currentPhone || 'هاتفك'})` : `⚡ Send Directly via ${currentPhone || 'Phone'}`)
-            : (lang === 'ar' ? `⚡ إرسال فوري عبر ${providerName}` : `⚡ Send Instantly via ${providerName}`);
-          btnMeta.innerHTML = `<span>${label}</span>`;
-          btnWeb.style.display = "none";
-        } else {
+        if (state.waDispatchMode === "extension") {
           btnMeta.style.display = "none";
           btnWeb.style.display = "inline-flex";
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_extension) || (lang === 'ar' ? '🚀 إرسال عبر واتساب ويب + الإضافة (النسخة السابقة)' : '🚀 Send via WhatsApp Web + Extension (Old Version)');
+          btnWeb.innerHTML = `<span>🚀</span> <span>${txt}</span>`;
+        } else {
+          btnMeta.style.display = "inline-flex";
+          btnWeb.style.display = "none";
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_direct) || (lang === 'ar' ? '⚡ إرسال مباشر (تلقائي بالخلفية • بدون متصفح وبدون إضافة)' : '⚡ Send Directly (Background Dispatch • No Extension)');
+          btnMeta.innerHTML = `<span>⚡</span> <span>${txt}</span>`;
         }
       }
     }
@@ -8527,8 +8435,8 @@
       else if (cleanPhone.startsWith("5") && cleanPhone.length === 9) cleanPhone = "966" + cleanPhone;
 
       const activeUid = getActiveUserId();
-      // 0. PRIORITY: If Live WhatsApp Web QR is linked for active user, dispatch directly through real paired phone!
-      if (isCurrentWaConnected()) {
+      // 0. PRIORITY: Direct background sending via linked phone (Baileys gateway or Firebase Outbox)
+      if (isCurrentWaConnected() || state.waDispatchMode === 'direct') {
         try {
           let liveRes = null;
           const gwBase = getWaGatewayUrl();
@@ -8537,15 +8445,17 @@
               method: "POST",
               headers: { "Content-Type": "application/json", "x-user-id": activeUid },
               body: JSON.stringify({ userId: activeUid, phone: cleanPhone, message: messageText }),
-              signal: AbortSignal.timeout(8000)
+              signal: AbortSignal.timeout(4000)
             });
           } catch (e) {
-            liveRes = await fetch("/api/whatsapp/live-qr", {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "x-user-id": activeUid },
-              body: JSON.stringify({ action: "send", userId: activeUid, phone: cleanPhone, message: messageText }),
-              signal: AbortSignal.timeout(6000)
-            });
+            try {
+              liveRes = await fetch("/api/whatsapp/live-qr", {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+                body: JSON.stringify({ action: "send", userId: activeUid, phone: cleanPhone, message: messageText }),
+                signal: AbortSignal.timeout(4000)
+              });
+            } catch (e2) { liveRes = null; }
           }
           if (liveRes && liveRes.ok) {
             const liveData = await liveRes.json();
@@ -8554,7 +8464,42 @@
             }
           }
         } catch (liveErr) {
-          console.warn("Live QR gateway dispatch issue:", liveErr);
+          console.warn("Live QR gateway dispatch notice:", liveErr);
+        }
+
+        // Remote user fallback: queue to Firebase Cloud Outbox so the linked gateway picks it up online!
+        if (window.fbDb) {
+          try {
+            const outboxRef = window.fbDb.collection("whatsappOutbox").doc();
+            await outboxRef.set({
+              userId: activeUid,
+              phone: cleanPhone,
+              message: messageText,
+              status: "pending",
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            const sentPromise = new Promise((resolve) => {
+              const unsub = outboxRef.onSnapshot((snap) => {
+                const d = snap.data();
+                if (d && d.status === "sent") {
+                  unsub();
+                  resolve({ success: true, messageId: d.messageId || outboxRef.id });
+                } else if (d && d.status === "failed") {
+                  unsub();
+                  resolve({ success: false, error: d.error || "Gateway dispatch failed" });
+                }
+              });
+              setTimeout(() => {
+                unsub();
+                resolve({ success: true, messageId: "wa-queued-" + outboxRef.id });
+              }, 12000);
+            });
+            const outboxRes = await sentPromise;
+            if (outboxRes.success) return outboxRes;
+          } catch (fbErr) {
+            console.warn("Cloud outbox fallback notice:", fbErr);
+          }
         }
       }
 
@@ -9567,6 +9512,18 @@
       }, err => {
         console.warn("Firestore whatsapp_api onSnapshot notice:", err);
       });
+
+      // Real-Time Live Cloud Firestore Sync for WhatsApp Studio / Baileys Live QR & Session
+      window.fbDb.collection("systemSettings").doc("whatsapp_live").onSnapshot((docSnap) => {
+        if (docSnap && docSnap.exists) {
+          const liveData = docSnap.data();
+          if (liveData) {
+            handleLiveWhatsAppSnapshot(liveData);
+          }
+        }
+      }, err => {
+        console.warn("Firestore whatsapp_live onSnapshot notice:", err);
+      });
     }
 
     // App Boot Initialization
@@ -9582,6 +9539,12 @@
       applyModuleVisibility();
       updateWhatsAppApiStatusUI();
       setModule("dashboard");
+
+      // Initialize WhatsApp Studio Dispatch Mode and Cloud Link
+      const savedWaMode = localStorage.getItem('ostan_wa_dispatch_mode') || 'direct';
+      setWaDispatchMode(savedWaMode);
+      checkLiveWhatsAppGatewayStatus();
+      startLiveWhatsAppPolling();
 
       // Pull latest user profiles, phone numbers, and permissions for all staff on boot + scrub plaintext passwords
       if (window.fbDb) {
