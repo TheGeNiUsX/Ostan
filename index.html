@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
   <title>Ostan — Enterprise Business Management System</title>
   
   <!-- Modern Typography (Inter & Cairo) -->
@@ -11,8 +11,33 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Core Scripts -->
-  <script src="style.js"></script>
-  <script src="translation.js"></script>
+  <script src="style.js?v=2.5"></script>
+  <script src="translation.js?v=2.5"></script>
+  <script>
+    // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
+    (function() {
+      if (typeof window.OstanI18n === "undefined") {
+        window.OstanI18n = { dictionary: { en: {}, ar: {} } };
+      }
+      const d = window.OstanI18n.dictionary || { en: {}, ar: {} };
+      if (!d.en) d.en = {};
+      if (!d.ar) d.ar = {};
+      d.en.nav_saudi_staff = "Saudi Staff";
+      d.ar.nav_saudi_staff = "الكادر السعودي";
+      d.en.perm_sec_saudi = "🇸🇦 Saudi Staff & Payroll Hub";
+      d.ar.perm_sec_saudi = "🇸🇦 الكادر الوطني وإدارة الرواتب";
+      d.en.perm_saudi_view = "View Directory & Payroll (استعراض ورؤية الكادر والرواتب)";
+      d.ar.perm_saudi_view = "استعراض ورؤية الكادر والرواتب";
+      d.en.perm_saudi_create = "Add Saudi Employee (+ إضافة موظف سعودي)";
+      d.ar.perm_saudi_create = "إضافة موظف سعودي (+)";
+      d.en.perm_saudi_edit = "Edit Saudi Profile & Salary (✏️ تعديل بيانات والراتب)";
+      d.ar.perm_saudi_edit = "تعديل موظف سعودي والراتب";
+      d.en.perm_saudi_delete = "Delete Saudi Employee (🗑️ حذف موظف)";
+      d.ar.perm_saudi_delete = "حذف موظف سعودي";
+      d.en.perm_saudi_excel = "Excel Batch Import / Export (📥 استيراد وتصدير إكسل)";
+      d.ar.perm_saudi_excel = "استيراد وتصدير إكسل";
+    })();
+  </script>
   
   <!-- Firebase Compatibility Web SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
@@ -370,6 +395,177 @@
       50% { top: calc(100% - 3px); opacity: 1; }
       100% { top: 0; opacity: 0.8; }
     }
+
+    /* =========================================================================
+       RESPONSIVE & MOBILE DESIGN SYSTEM
+       ========================================================================= */
+    .mobile-only {
+      display: none !important;
+    }
+
+    .table-responsive-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: var(--radius-md);
+      margin-top: 0.75rem;
+    }
+
+    .sidebar-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.65);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 998;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+    .sidebar-backdrop.active {
+      display: block;
+      opacity: 1;
+    }
+
+    /* Tablet & Phone Breakpoint (< 900px) */
+    @media screen and (max-width: 900px) {
+      .mobile-only {
+        display: inline-flex !important;
+      }
+      .mobile-brand-mark {
+        display: flex !important;
+      }
+      .desktop-search-bar {
+        display: none !important;
+      }
+
+      body {
+        height: 100dvh;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .app-shell {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100vw !important;
+        height: 100dvh !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+        position: relative !important;
+      }
+
+      /* Off-canvas slide-out drawer */
+      .app-sidebar {
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 290px !important;
+        max-width: 85vw !important;
+        height: 100dvh !important;
+        height: 100vh !important;
+        z-index: 1000 !important;
+        transform: translateX(-100%) !important;
+        transition: transform 0.28s cubic-bezier(0.32, 0.72, 0, 1) !important;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.85) !important;
+        border-inline-end: 1px solid var(--border-strong) !important;
+      }
+      [dir="rtl"] .app-sidebar {
+        left: auto !important;
+        right: 0 !important;
+        transform: translateX(100%) !important;
+      }
+      .app-sidebar.mobile-open {
+        transform: translateX(0) !important;
+      }
+
+      /* Main wrapper takes full screen */
+      .main-wrapper {
+        width: 100vw !important;
+        height: 100dvh !important;
+        height: 100vh !important;
+        display: flex !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+      }
+
+      .top-header {
+        height: 56px !important;
+        min-height: 56px !important;
+        padding-inline: 0.85rem !important;
+        gap: 0.5rem !important;
+      }
+
+      .content-scroll-area {
+        padding: 0.85rem 0.65rem !important;
+        -webkit-overflow-scrolling: touch !important;
+      }
+
+      /* Grids collapse gracefully */
+      #dash-metrics-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.65rem !important;
+      }
+
+      #workers-grid, #saudi-workers-grid {
+        grid-template-columns: 1fr !important;
+        gap: 0.75rem !important;
+      }
+
+      .hud-modal-box {
+        max-width: 95vw !important;
+        max-height: 90dvh !important;
+        max-height: 90vh !important;
+        padding: 1.15rem 0.95rem !important;
+      }
+
+      .matrix-table {
+        min-width: 620px !important;
+      }
+
+      /* Form inputs in modals and multi-column panels collapse to 1 col on mobile */
+      div[style*="grid-template-columns: 1fr 1fr"],
+      div[style*="grid-template-columns: 1fr 1fr 1fr"],
+      div[style*="grid-template-columns: repeat(2, 1fr)"],
+      div[style*="grid-template-columns: repeat(3, 1fr)"],
+      div[style*="minmax(360px, 1fr)"],
+      div[style*="minmax(320px, 1fr)"],
+      div[style*="minmax(280px, 1fr)"] {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
+    /* Small Phone Breakpoint (< 540px) */
+    @media screen and (max-width: 540px) {
+      .top-header {
+        padding-inline: 0.6rem !important;
+      }
+      .top-header .btn {
+        padding: 0.35rem 0.5rem !important;
+        font-size: 0.75rem !important;
+      }
+      .content-scroll-area {
+        padding: 0.75rem 0.5rem !important;
+      }
+      .glass-panel {
+        border-radius: var(--radius-md) !important;
+        padding: 1rem !important;
+      }
+      /* Toolbar buttons full width stack on narrow mobile */
+      #emp-actions-all, #emp-actions-saudi {
+        width: 100% !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      #emp-actions-all button, #emp-actions-saudi button {
+        width: 100% !important;
+        justify-content: center !important;
+      }
+      #saudi-search-input {
+        width: 100% !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -451,6 +647,9 @@
        2. MAIN DASHBOARD SHELL (SHOWN ONLY WHEN AUTHENTICATED)
        ========================================================================= -->
   <div id="app-shell-root" class="app-shell" style="display: none;">
+    <!-- Mobile Drawer Backdrop -->
+    <div id="sidebar-mobile-backdrop" class="sidebar-backdrop" onclick="closeMobileSidebar()"></div>
+
     <!-- LEFT SIDEBAR -->
     <aside class="app-sidebar">
       <!-- Brand Header with Self-Contained Neon Gradient SVG Logo -->
@@ -483,6 +682,10 @@
             <div style="font-weight: 800; font-size: 1.3rem; letter-spacing: -0.02em;">Ostan</div>
           </div>
         </div>
+
+        <button class="btn btn-ghost mobile-only" onclick="closeMobileSidebar()" aria-label="Close" style="padding: 0.35rem 0.55rem; font-size: 1.15rem; color: var(--text-muted);">
+          ✕
+        </button>
       </div>
 
       <!-- Navigation Items Container -->
@@ -509,7 +712,15 @@
           </a>
           <a id="nav-saudi-staff" class="nav-item" onclick="setModule('saudi-staff')">
             <span style="display: flex; align-items: center; gap: 0.6rem;">
-              <span>🇸🇦</span>
+              <span style="display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 16px; border-radius: 3px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.35); flex-shrink: 0;" title="Saudi National Staff">
+                <svg viewBox="0 0 600 400" width="22" height="16" xmlns="http://www.w3.org/2000/svg">
+                  <rect width="600" height="400" fill="#006c35"/>
+                  <path d="M140,265 L460,265 L460,280 L140,280 Z" fill="#ffffff"/>
+                  <path d="M410,256 L475,272.5 L410,289 Z" fill="#ffffff"/>
+                  <circle cx="190" cy="272.5" r="7" fill="#006c35"/>
+                  <path d="M200,165 C230,135 270,125 300,135 C330,125 370,135 400,165 C370,185 340,190 300,180 C260,190 230,185 200,165 Z" fill="#ffffff" opacity="0.95"/>
+                </svg>
+              </span>
               <span data-i18n="nav_saudi_staff">Saudi Staff</span>
             </span>
           </a>
@@ -618,21 +829,38 @@
     <div class="main-wrapper">
       <!-- Top Navigation Header -->
       <header class="top-header">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <div style="position: relative; max-width: 320px; width: 100%;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <!-- Mobile Menu Button -->
+          <button id="btn-mobile-menu-toggle" class="btn btn-secondary mobile-only" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation Menu" style="padding: 0.45rem 0.65rem; font-size: 1.15rem; line-height: 1;">
+            <span>☰</span>
+          </button>
+
+          <!-- Mobile Brand Logo & Name -->
+          <div class="mobile-brand-mark mobile-only" style="align-items: center; gap: 0.5rem; cursor: pointer;" onclick="setModule('dashboard')">
+            <div class="brand-logo-box" style="width: 28px; height: 28px;">
+              <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+                <path d="M 50 10 A 40 40 0 1 1 18 78 A 32 32 0 1 0 50 20 A 30 30 0 0 1 76 34 A 40 40 0 0 0 50 10 Z" fill="#38bdf8" />
+                <circle cx="50" cy="50" r="14" fill="none" stroke="#818cf8" stroke-width="2.5" />
+              </svg>
+            </div>
+            <span style="font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em;">Ostan</span>
+          </div>
+
+          <!-- Desktop Search Bar -->
+          <div class="desktop-search-bar" style="position: relative; max-width: 320px; width: 100%;">
             <input type="text" placeholder="Search across modules..." data-i18n-placeholder="search_placeholder" class="input-field" style="padding-left: 2rem;">
             <span style="position: absolute; left: 10px; top: 8px; color: var(--text-faint);">🔍</span>
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
           <!-- Language Toggle (English ↔ Arabic) -->
-          <button class="btn btn-secondary" onclick="window.OstanI18n.toggle()" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
+          <button class="btn btn-secondary" onclick="window.OstanI18n.toggle()" style="padding: 0.4rem 0.65rem; font-size: 0.78rem;">
             <span data-i18n="lang_toggle">🌐 العربية</span>
           </button>
 
           <!-- Theme Toggle -->
-          <button class="btn btn-secondary" onclick="window.OstanStyle.toggleTheme()" style="padding: 0.4rem 0.75rem; font-size: 0.8rem;">
+          <button class="btn btn-secondary" onclick="window.OstanStyle.toggleTheme()" style="padding: 0.4rem 0.65rem; font-size: 0.78rem;">
             <span data-i18n="theme_toggle">🌓 Theme</span>
           </button>
         </div>
@@ -3156,7 +3384,38 @@
       return "accessible";
     }
 
+    function toggleMobileSidebar() {
+      const sidebar = document.querySelector(".app-sidebar");
+      if (!sidebar) return;
+      if (sidebar.classList.contains("mobile-open")) {
+        closeMobileSidebar();
+      } else {
+        openMobileSidebar();
+      }
+    }
+    window.toggleMobileSidebar = toggleMobileSidebar;
+
+    function openMobileSidebar() {
+      const sidebar = document.querySelector(".app-sidebar");
+      const backdrop = document.getElementById("sidebar-mobile-backdrop");
+      if (sidebar) sidebar.classList.add("mobile-open");
+      if (backdrop) backdrop.classList.add("active");
+    }
+    window.openMobileSidebar = openMobileSidebar;
+
+    function closeMobileSidebar() {
+      const sidebar = document.querySelector(".app-sidebar");
+      const backdrop = document.getElementById("sidebar-mobile-backdrop");
+      if (sidebar) sidebar.classList.remove("mobile-open");
+      if (backdrop) backdrop.classList.remove("active");
+    }
+    window.closeMobileSidebar = closeMobileSidebar;
+
     function setModule(mod) {
+      if (typeof window !== "undefined" && window.innerWidth <= 900) {
+        closeMobileSidebar();
+      }
+
       if (mod === "saudi-staff") {
         const access = getSectionAccess("saudi-staff");
         if (access === "locked") {
@@ -4923,44 +5182,46 @@
       };
 
       container.innerHTML = `
-        <table class="data-table" style="width: 100%; text-align: ${lang === 'ar' ? 'right' : 'left'}; font-size: 0.82rem;">
-          <thead>
-            <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem;">
-              <th style="padding: 0.65rem 0.75rem;">${lang === 'ar' ? 'النوع' : 'Type'}</th>
-              <th style="padding: 0.65rem 0.75rem;">${lang === 'ar' ? 'العنصر / الاسم' : 'Item / Name'}</th>
-              <th style="padding: 0.65rem 0.75rem;">${lang === 'ar' ? 'التفاصيل والبيانات' : 'Details'}</th>
-              <th style="padding: 0.65rem 0.75rem;">${lang === 'ar' ? 'تاريخ الحذف والمستخدم' : 'Deleted At & By'}</th>
-              <th style="padding: 0.65rem 0.75rem; text-align: center;">${lang === 'ar' ? 'الإجراءات' : 'Actions'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${items.map(b => `
-              <tr style="border-bottom: 1px solid var(--border-subtle); transition: background 0.2s ease;">
-                <td style="padding: 0.75rem;">${typeBadge(b.type)}</td>
-                <td style="padding: 0.75rem; font-weight: 700; color: var(--text-main);">
-                  ${b.name}
-                </td>
-                <td style="padding: 0.75rem; color: var(--text-muted); font-size: 0.75rem;">
-                  ${getItemDetails(b)}
-                </td>
-                <td style="padding: 0.75rem; font-size: 0.72rem; color: var(--text-faint);">
-                  <div>${b.deletedAtFormatted || (b.deletedAt ? new Date(b.deletedAt).toLocaleString() : 'N/A')}</div>
-                  <div style="color: var(--text-muted); font-weight: 600;">By: ${b.deletedBy || 'Admin'}</div>
-                </td>
-                <td style="padding: 0.75rem; text-align: center;">
-                  <div style="display: inline-flex; align-items: center; gap: 0.45rem;">
-                    <button onclick="restoreRecycleBinItem('${b.id || b.originalId}')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; font-weight: 700; color: #34d399; border-color: rgba(52, 211, 153, 0.4); display: inline-flex; align-items: center; gap: 0.35rem;" title="${lang === 'ar' ? 'استعادة العنصر' : 'Restore Item'}">
-                      <span>♻️</span> <span>${lang === 'ar' ? 'استعادة' : 'Restore'}</span>
-                    </button>
-                    <button onclick="purgeRecycleBinItem('${b.id || b.originalId}')" class="btn btn-ghost" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; color: #fb7185;" title="${lang === 'ar' ? 'حذف نهائي' : 'Delete Permanently'}">
-                      <span>🗑️</span>
-                    </button>
-                  </div>
-                </td>
+        <div class="table-responsive-wrapper">
+          <table class="data-table" style="width: 100%; min-width: 600px; text-align: ${lang === 'ar' ? 'right' : 'left'}; font-size: 0.82rem;">
+            <thead>
+              <tr style="border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem;">
+                <th style="padding: 0.65rem 0.75rem;">${lang === 'ar' ? 'النوع' : 'Type'}</th>
+                <th style="padding: 0.65rem 0.75rem;">${lang === 'ar' ? 'العنصر / الاسم' : 'Item / Name'}</th>
+                <th style="padding: 0.65rem 0.75rem;">${lang === 'ar' ? 'التفاصيل والبيانات' : 'Details'}</th>
+                <th style="padding: 0.65rem 0.75rem;">${lang === 'ar' ? 'تاريخ الحذف والمستخدم' : 'Deleted At & By'}</th>
+                <th style="padding: 0.65rem 0.75rem; text-align: center;">${lang === 'ar' ? 'الإجراءات' : 'Actions'}</th>
               </tr>
-            `).join("")}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${items.map(b => `
+                <tr style="border-bottom: 1px solid var(--border-subtle); transition: background 0.2s ease;">
+                  <td style="padding: 0.75rem;">${typeBadge(b.type)}</td>
+                  <td style="padding: 0.75rem; font-weight: 700; color: var(--text-main);">
+                    ${b.name}
+                  </td>
+                  <td style="padding: 0.75rem; color: var(--text-muted); font-size: 0.75rem;">
+                    ${getItemDetails(b)}
+                  </td>
+                  <td style="padding: 0.75rem; font-size: 0.72rem; color: var(--text-faint);">
+                    <div>${b.deletedAtFormatted || (b.deletedAt ? new Date(b.deletedAt).toLocaleString() : 'N/A')}</div>
+                    <div style="color: var(--text-muted); font-weight: 600;">By: ${b.deletedBy || 'Admin'}</div>
+                  </td>
+                  <td style="padding: 0.75rem; text-align: center;">
+                    <div style="display: inline-flex; align-items: center; gap: 0.45rem;">
+                      <button onclick="restoreRecycleBinItem('${b.id || b.originalId}')" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; font-weight: 700; color: #34d399; border-color: rgba(52, 211, 153, 0.4); display: inline-flex; align-items: center; gap: 0.35rem;" title="${lang === 'ar' ? 'استعادة العنصر' : 'Restore Item'}">
+                        <span>♻️</span> <span>${lang === 'ar' ? 'استعادة' : 'Restore'}</span>
+                      </button>
+                      <button onclick="purgeRecycleBinItem('${b.id || b.originalId}')" class="btn btn-ghost" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; color: #fb7185;" title="${lang === 'ar' ? 'حذف نهائي' : 'Delete Permanently'}">
+                        <span>🗑️</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
       `;
     }
     window.renderAuditRecycleBinTable = renderAuditRecycleBinTable;
@@ -5494,17 +5755,19 @@
       }).join("");
 
       matrixContainer.innerHTML = `
-        <table class="matrix-table">
-          <thead>
-            <tr>
-              <th>${lang === 'ar' ? 'الموظف / الحساب' : 'Worker / Account'}</th>
-              ${sections.map(s => `<th>${s.label}</th>`).join("")}
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
+        <div class="table-responsive-wrapper">
+          <table class="matrix-table">
+            <thead>
+              <tr>
+                <th>${lang === 'ar' ? 'الموظف / الحساب' : 'Worker / Account'}</th>
+                ${sections.map(s => `<th>${s.label}</th>`).join("")}
+              </tr>
+            </thead>
+            <tbody>
+              ${rows}
+            </tbody>
+          </table>
+        </div>
       `;
     }
 
@@ -6060,41 +6323,43 @@
       }
 
       container.innerHTML = `
-        <table class="matrix-table">
-          <thead>
-            <tr>
-              <th>${lang === 'ar' ? 'الصنف المطلوب' : 'Requested Item'}</th>
-              <th>${lang === 'ar' ? 'الكمية' : 'Qty'}</th>
-              <th>${lang === 'ar' ? 'مقدم الطلب' : 'Requested By'}</th>
-              <th>${lang === 'ar' ? 'الحالة' : 'Status'}</th>
-              <th>${lang === 'ar' ? 'الإجراءات' : 'Actions'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${state.stockRequests.map(r => `
+        <div class="table-responsive-wrapper">
+          <table class="matrix-table" style="min-width: 580px;">
+            <thead>
               <tr>
-                <td style="font-weight: 700; color: var(--text-main);">${r.itemName}</td>
-                <td><strong>${r.quantity}</strong></td>
-                <td style="font-size: 0.8rem; color: var(--text-muted);">${r.requestedBy}</td>
-                <td>
-                  <span class="badge ${r.status === 'APPROVED' ? 'badge-emerald' : r.status === 'REJECTED' ? 'badge-rose' : 'badge-amber'}">
-                    ${r.status}
-                  </span>
-                </td>
-                <td>
-                  ${r.status === 'PENDING' ? (
-                    canApprove ? `
-                      <div style="display: flex; gap: 0.4rem;">
-                        <button onclick="approveStockRequest('${r.id}')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.72rem;">✓ Approve</button>
-                        <button onclick="rejectStockRequest('${r.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.55rem; color: #fb7185; font-size: 0.72rem;">✕ Reject</button>
-                      </div>
-                    ` : `<span style="font-size: 0.75rem; color: var(--text-faint);">${lang === 'ar' ? 'بانتظار الاعتماد' : 'Pending Review'}</span>`
-                  ) : `<span style="font-size: 0.75rem; color: var(--text-faint);">Processed</span>`}
-                </td>
+                <th>${lang === 'ar' ? 'الصنف المطلوب' : 'Requested Item'}</th>
+                <th>${lang === 'ar' ? 'الكمية' : 'Qty'}</th>
+                <th>${lang === 'ar' ? 'مقدم الطلب' : 'Requested By'}</th>
+                <th>${lang === 'ar' ? 'الحالة' : 'Status'}</th>
+                <th>${lang === 'ar' ? 'الإجراءات' : 'Actions'}</th>
               </tr>
-            `).join("")}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${state.stockRequests.map(r => `
+                <tr>
+                  <td style="font-weight: 700; color: var(--text-main);">${r.itemName}</td>
+                  <td><strong>${r.quantity}</strong></td>
+                  <td style="font-size: 0.8rem; color: var(--text-muted);">${r.requestedBy}</td>
+                  <td>
+                    <span class="badge ${r.status === 'APPROVED' ? 'badge-emerald' : r.status === 'REJECTED' ? 'badge-rose' : 'badge-amber'}">
+                      ${r.status}
+                    </span>
+                  </td>
+                  <td>
+                    ${r.status === 'PENDING' ? (
+                      canApprove ? `
+                        <div style="display: flex; gap: 0.4rem;">
+                          <button onclick="approveStockRequest('${r.id}')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.72rem;">✓ Approve</button>
+                          <button onclick="rejectStockRequest('${r.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.55rem; color: #fb7185; font-size: 0.72rem;">✕ Reject</button>
+                        </div>
+                      ` : `<span style="font-size: 0.75rem; color: var(--text-faint);">${lang === 'ar' ? 'بانتظار الاعتماد' : 'Pending Review'}</span>`
+                    ) : `<span style="font-size: 0.75rem; color: var(--text-faint);">Processed</span>`}
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
       `;
     }
 
@@ -8064,41 +8329,43 @@
       }
 
       container.innerHTML = `
-        <table class="matrix-table">
-          <thead>
-            <tr>
-              <th>${lang === 'ar' ? 'المستلم' : 'Recipient'}</th>
-              <th>${lang === 'ar' ? 'رقم الهاتف' : 'Phone'}</th>
-              <th>${lang === 'ar' ? 'الرسالة' : 'Message'}</th>
-              <th>${lang === 'ar' ? 'الوقت' : 'Time'}</th>
-              <th>${lang === 'ar' ? 'الحالة' : 'Status'}</th>
-              <th>${lang === 'ar' ? 'إجراء' : 'Action'}</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${state.messageDispatchLogs.slice(0, 20).map(log => `
+        <div class="table-responsive-wrapper">
+          <table class="matrix-table" style="min-width: 620px;">
+            <thead>
               <tr>
-                <td style="font-weight: 700; color: var(--text-main);">${log.recipientName}</td>
-                <td style="font-size: 0.8rem; color: var(--text-muted);">${log.phone}</td>
-                <td style="max-width: 260px; font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${log.message}">${log.message}</td>
-                <td style="font-size: 0.75rem; color: var(--text-faint);">${log.timestamp}</td>
-                <td><span class="badge ${log.status && log.status.includes('SENT') ? 'badge-emerald' : 'badge-amber'}" style="font-size: 0.65rem;">${log.status || 'OPENED IN WA 💬'}</span></td>
-                <td>
-                  <div style="display: flex; align-items: center; gap: 0.35rem;">
-                    <a href="${log.url}" target="_blank" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #25D366; text-decoration: none;">
-                      💬 Open Web
-                    </a>
-                    ${(!log.status || !log.status.includes('SENT')) ? `
-                      <button type="button" onclick="markMessageAsSent('${log.id}')" class="btn btn-secondary" style="padding: 0.2rem 0.45rem; font-size: 0.68rem; font-weight: 700; color: #10b981; border-color: rgba(16, 185, 129, 0.4);" title="Mark as confirmed sent">
-                        ✅ Confirm Sent
-                      </button>
-                    ` : ''}
-                  </div>
-                </td>
+                <th>${lang === 'ar' ? 'المستلم' : 'Recipient'}</th>
+                <th>${lang === 'ar' ? 'رقم الهاتف' : 'Phone'}</th>
+                <th>${lang === 'ar' ? 'الرسالة' : 'Message'}</th>
+                <th>${lang === 'ar' ? 'الوقت' : 'Time'}</th>
+                <th>${lang === 'ar' ? 'الحالة' : 'Status'}</th>
+                <th>${lang === 'ar' ? 'إجراء' : 'Action'}</th>
               </tr>
-            `).join("")}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              ${state.messageDispatchLogs.slice(0, 20).map(log => `
+                <tr>
+                  <td style="font-weight: 700; color: var(--text-main);">${log.recipientName}</td>
+                  <td style="font-size: 0.8rem; color: var(--text-muted);">${log.phone}</td>
+                  <td style="max-width: 260px; font-size: 0.78rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${log.message}">${log.message}</td>
+                  <td style="font-size: 0.75rem; color: var(--text-faint);">${log.timestamp}</td>
+                  <td><span class="badge ${log.status && log.status.includes('SENT') ? 'badge-emerald' : 'badge-amber'}" style="font-size: 0.65rem;">${log.status || 'OPENED IN WA 💬'}</span></td>
+                  <td>
+                    <div style="display: flex; align-items: center; gap: 0.35rem;">
+                      <a href="${log.url}" target="_blank" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #25D366; text-decoration: none;">
+                        💬 Open Web
+                      </a>
+                      ${(!log.status || !log.status.includes('SENT')) ? `
+                        <button type="button" onclick="markMessageAsSent('${log.id}')" class="btn btn-secondary" style="padding: 0.2rem 0.45rem; font-size: 0.68rem; font-weight: 700; color: #10b981; border-color: rgba(16, 185, 129, 0.4);" title="Mark as confirmed sent">
+                          ✅ Confirm Sent
+                        </button>
+                      ` : ''}
+                    </div>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
       `;
     }
 

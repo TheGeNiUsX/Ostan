@@ -69,10 +69,43 @@
       emp_section_title: "Employees & User Management",
       emp_section_desc: "Create, edit, and delete real employee accounts with real-time Firebase sync.",
       btn_add_employee: "+ Add New Employee",
+      btn_add_saudi_employee: "+ Add Saudi Employee",
+      emp_tab_all: "👥 All Employees",
+      emp_tab_saudi: "🇸🇦 Saudi Staff",
+      saudi_section_subtitle: "Dedicated Saudi National Staff directory, payroll metrics, and fast Excel batch processing.",
+      btn_download_excel_sample: "📥 Download Excel Sample",
+      btn_import_excel: "📤 Import Excel File",
+      metric_saudi_count: "Saudi Nationals",
+      metric_saudization_rate: "Saudization Ratio",
+      metric_saudi_payroll: "Monthly Saudi Payroll",
+      metric_avg_salary: "Average Saudi Salary",
+      salary_filter_all: "All Salaries",
+      salary_filter_under_5k: "< 5,000 SAR",
+      salary_filter_5k_10k: "5,000 - 10,000 SAR",
+      salary_filter_10k_15k: "10,000 - 15,000 SAR",
+      salary_filter_above_15k: "> 15,000 SAR",
+      token_salary: "{salary}",
+      btn_filter_saudi_msg: "🇸🇦 Saudi Staff",
+      msg_salary_filter_title: "Filter Saudis by Salary Range:",
       search_emp_placeholder: "Search by name, email, or role...",
       registered_accounts_label: "Live Registered Accounts",
       protected_admin_badge: "Protected Super Admin",
       staff_member_badge: "Staff Member",
+      label_id_profession: "Occupation on ID (المهنة في الهوية)",
+      label_cr_number: "CR Number (رقم السجل)",
+      label_cr_name: "CR Name (اسم السجل)",
+      label_referred_by: "Referred By (من طرف)",
+      label_birth_date: "Date of Birth (تاريخ الميلاد)",
+      label_hire_date: "Work Start Date (تاريخ بدء العمل)",
+      saudi_details_heading: "Saudi Citizen Employment Record",
+      metric_saudi_payout: "Total Employee Payout",
+      metric_saudi_return: "Total Company Refund",
+      label_employee_payout: "Employee Payout (المستلم للموظف)",
+      label_company_return: "Company Refund (المسترد للشركة)",
+      label_salary_tier: "Solid Salary Tier (شريحة الراتب)",
+      tier_5500: "5,500 SAR (Return: 4,500)",
+      tier_4000: "4,000 SAR (Return: 3,000)",
+      tier_1500: "1,500 SAR (Return: 500)",
 
       // Departments & Console
       dept_section_title: "Departments & Worker Section Access Control",
@@ -383,10 +416,43 @@
       emp_section_title: "إدارة الموظفين وفريق العمل",
       emp_section_desc: "إنشاء وتعديل وحذف حسابات الموظفين مع المزامنة اللحظية في Firebase.",
       btn_add_employee: "+ إضافة موظف جديد",
+      btn_add_saudi_employee: "+ إضافة موظف سعودي",
+      emp_tab_all: "👥 جميع الموظفين",
+      emp_tab_saudi: "🇸🇦 الكادر السعودي",
+      saudi_section_subtitle: "دليل الكادر الوطني السعودي، إدارة الرواتب والاستيراد السريع عبر إكسل.",
+      btn_download_excel_sample: "📥 تحميل نموذج إكسل",
+      btn_import_excel: "📤 استيراد ملف إكسل",
+      metric_saudi_count: "إجمالي السعوديين",
+      metric_saudization_rate: "نسبة التوطين",
+      metric_saudi_payroll: "إجمالي مسيرات الرواتب",
+      metric_avg_salary: "متوسط رواتب السعوديين",
+      salary_filter_all: "جميع الرواتب",
+      salary_filter_under_5k: "أقل من 5,000 ريال",
+      salary_filter_5k_10k: "5,000 - 10,000 ريال",
+      salary_filter_10k_15k: "10,000 - 15,000 ريال",
+      salary_filter_above_15k: "أكثر من 15,000 ريال",
+      token_salary: "{salary}",
+      btn_filter_saudi_msg: "🇸🇦 الكادر السعودي",
+      msg_salary_filter_title: "تحديد السعوديين حسب الراتب:",
       search_emp_placeholder: "بحث بالاسم أو البريد أو الرتبة...",
       registered_accounts_label: "حسابات مسجلة (مباشر)",
       protected_admin_badge: "مسؤول متميز رئيسي",
       staff_member_badge: "عضو فريق العمل",
+      label_id_profession: "المهنة في الهوية",
+      label_cr_number: "رقم السجل",
+      label_cr_name: "اسم السجل",
+      label_referred_by: "من طرف",
+      label_birth_date: "تاريخ الميلاد",
+      label_hire_date: "تاريخ بدء العمل",
+      saudi_details_heading: "بيانات التوظيف والسجل للكادر السعودي",
+      metric_saudi_payout: "إجمالي المستلم للموظفين",
+      metric_saudi_return: "إجمالي المسترد للشركة",
+      label_employee_payout: "المستلم الفعلي للموظف",
+      label_company_return: "المسترد للشركة",
+      label_salary_tier: "شريحة الراتب الثابتة",
+      tier_5500: "5,500 ريال (المسترد: 4,500)",
+      tier_4000: "4,000 ريال (المسترد: 3,000)",
+      tier_1500: "1,500 ريال (المسترد: 500)",
 
       // Departments & Console
       dept_section_title: "الأقسام والتحكم في وصول العمال للأقسام",
@@ -636,7 +702,9 @@
   function getTranslation(key, lang) {
     const currentLang = lang || document.documentElement.getAttribute("lang") || "en";
     const dict = dictionary[currentLang] || dictionary.en;
-    return dict[key] || dictionary.en[key] || key;
+    if (dict && typeof dict[key] !== "undefined") return dict[key];
+    if (dictionary.en && typeof dictionary.en[key] !== "undefined") return dictionary.en[key];
+    return null;
   }
 
   function applyTranslations(lang) {
@@ -651,7 +719,7 @@
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       const translation = getTranslation(key, targetLang);
-      if (translation !== undefined) {
+      if (translation !== null && typeof translation !== "undefined") {
         el.textContent = translation;
       }
     });

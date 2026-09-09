@@ -341,5 +341,16 @@ const regularEmp = {
 };
 assert(simulateGetSectionAccess("saudi-staff", regularEmp) === "hidden", 'Saudi staff hidden for regular employee without permissions');
 
+// 8. Test Mobile & Phone Website Compatibility
+console.log('\n--- 8. Testing Mobile & Phone Compatibility ---');
+assert(html.includes('viewport-fit=cover'), 'Viewport meta tag configured with viewport-fit=cover');
+assert(html.includes('id="btn-mobile-menu-toggle"'), 'Mobile menu toggle button exists');
+assert(html.includes('id="sidebar-mobile-backdrop"'), 'Mobile drawer backdrop exists');
+assert(html.includes('toggleMobileSidebar'), 'toggleMobileSidebar function exists');
+assert(html.includes('closeMobileSidebar'), 'closeMobileSidebar function exists');
+assert(html.includes('table-responsive-wrapper'), 'table-responsive-wrapper class present for horizontal scrolling on phones');
+assert(html.includes('@media screen and (max-width: 900px)'), 'Tablet/mobile @media query (900px) defined');
+assert(html.includes('@media screen and (max-width: 540px)'), 'Small phone @media query (540px) defined');
+
 console.log(`\n=== ALL TESTS COMPLETED: ${passed} passed, ${failed} failed ===`);
 process.exit(failed > 0 ? 1 : 0);

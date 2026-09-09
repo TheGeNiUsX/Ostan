@@ -702,7 +702,9 @@
   function getTranslation(key, lang) {
     const currentLang = lang || document.documentElement.getAttribute("lang") || "en";
     const dict = dictionary[currentLang] || dictionary.en;
-    return dict[key] || dictionary.en[key] || key;
+    if (dict && typeof dict[key] !== "undefined") return dict[key];
+    if (dictionary.en && typeof dictionary.en[key] !== "undefined") return dictionary.en[key];
+    return null;
   }
 
   function applyTranslations(lang) {
@@ -717,7 +719,7 @@
     document.querySelectorAll("[data-i18n]").forEach((el) => {
       const key = el.getAttribute("data-i18n");
       const translation = getTranslation(key, targetLang);
-      if (translation !== undefined) {
+      if (translation !== null && typeof translation !== "undefined") {
         el.textContent = translation;
       }
     });
