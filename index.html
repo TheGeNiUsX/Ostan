@@ -6042,14 +6042,23 @@
         });
       });
 
-      // Open Runner Modal configured for Cloud API
+      const delayVal = parseInt(document.getElementById("msg-delay-select")?.value || "10", 10);
+      queueState.active = true;
+      queueState.paused = false;
+      queueState.delaySeconds = delayVal;
+
+      const pauseBtn = document.getElementById("runner-pause-btn");
+      if (pauseBtn) {
+        pauseBtn.textContent = "⏸️ Pause Timer";
+        pauseBtn.className = "btn btn-secondary";
+      }
+
+      // Open Runner Modal configured for Direct WhatsApp / API
       const modal = document.getElementById("modal-dispatch-runner");
       if (modal) modal.style.display = "flex";
       document.getElementById("runner-content-active").style.display = "flex";
       document.getElementById("runner-content-completed").style.display = "none";
-      document.getElementById("runner-delay-badge").textContent = isLiveConnected
-        ? `⚡ Direct WhatsApp (${state.whatsappPhone || "Linked"})`
-        : `⚡ ${cfg.provider || "API"}`;
+      document.getElementById("runner-delay-badge").textContent = `${delayVal}s Anti-Ban Delay`;
 
       const openBtn = document.getElementById("runner-open-btn");
       if (openBtn) openBtn.style.display = "none";
@@ -6058,6 +6067,8 @@
       let failureCount = 0;
 
       for (let i = 0; i < items.length; i++) {
+        if (!queueState.active) break;
+
         const item = items[i];
         const currentNum = i + 1;
         const total = items.length;
@@ -6065,7 +6076,7 @@
 
         // Update Runner UI
         const progressLabel = document.getElementById("runner-progress-label");
-        if (progressLabel) progressLabel.textContent = `Meta API Dispatching: ${currentNum} of ${total}`;
+        if (progressLabel) progressLabel.textContent = `Dispatching Contact: ${currentNum} of ${total}`;
         const overallBar = document.getElementById("runner-overall-progress-bar");
         if (overallBar) overallBar.style.width = pct + "%";
         const nameEl = document.getElementById("runner-current-name");
@@ -6078,19 +6089,27 @@
         if (avatarEl) avatarEl.textContent = item.name.charAt(0).toUpperCase();
 
         const timerEl = document.getElementById("runner-timer-countdown");
+        const timerProgressBar = document.getElementById("runner-timer-progress-bar");
         if (timerEl) timerEl.textContent = "SENDING ⚡";
+        if (timerProgressBar) timerProgressBar.style.width = "100%";
 
-        // Dispatch via Meta API
+        // Update Floating Mini Widget
+        const miniTarget = document.getElementById("mini-widget-target");
+        if (miniTarget) miniTarget.textContent = `${item.name} (${currentNum}/${total})`;
+        const miniBar = document.getElementById("mini-widget-bar");
+        if (miniBar) miniBar.style.width = pct + "%";
+
+        // Dispatch via Live WhatsApp Web gateway or API
         const sendRes = await sendSingleMetaWhatsAppMessage(item.phone, item.message);
 
         const logEntry = {
-          id: "meta-msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
+          id: "wa-msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
           recipientName: item.name,
           phone: item.phone,
           message: item.message,
           timestamp: new Date().toLocaleTimeString() + " • " + new Date().toISOString().split("T")[0],
-          status: sendRes.success ? `SENT ✅ (wamid: ${sendRes.messageId.substring(0, 14)}...)` : `FAILED ❌ (${sendRes.error})`,
-          url: "https://graph.facebook.com"
+          status: sendRes.success ? `SENT ✅` : `FAILED ❌ (${sendRes.error})`,
+          url: "WhatsApp Direct"
         };
 
         state.messageDispatchLogs.unshift(logEntry);
@@ -6108,13 +6127,36 @@
           if (timerEl) timerEl.textContent = "FAILED ❌";
         }
 
-        // Brief 1s delay between API calls
-        if (i < items.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        // Anti-Ban Delay Countdown between messages
+        if (i < items.length - 1 && queueState.active) {
+          let remaining = delayVal;
+          while (remaining > 0 && queueState.active) {
+            // Handle user pause
+            while (queueState.paused && queueState.active) {
+              if (timerEl) timerEl.textContent = "PAUSED ⏸️";
+              await new Promise(r => setTimeout(r, 400));
+            }
+            if (!queueState.active) break;
+
+            const formatted = remaining < 10 ? `00:0${remaining}` : `00:${remaining}`;
+            if (timerEl) timerEl.textContent = formatted;
+            if (timerProgressBar) {
+              const barPct = Math.round((remaining / delayVal) * 100);
+              timerProgressBar.style.width = barPct + "%";
+            }
+            const miniTimer = document.getElementById("mini-widget-timer");
+            if (miniTimer) miniTimer.textContent = formatted;
+
+            await new Promise(r => setTimeout(r, 1000));
+            remaining--;
+          }
+          if (timerEl && queueState.active) timerEl.textContent = "00:00";
+          if (timerProgressBar) timerProgressBar.style.width = "0%";
         }
       }
 
       // Finish View
+      queueState.active = false;
       document.getElementById("runner-content-active").style.display = "none";
       document.getElementById("runner-content-completed").style.display = "flex";
       document.getElementById("runner-completed-summary").textContent = isLiveConnected
