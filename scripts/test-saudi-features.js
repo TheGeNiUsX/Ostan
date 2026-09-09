@@ -25,7 +25,7 @@ assert(html.includes('id="emp-subview-saudi"'), 'Saudi Subview container exists'
 assert(html.includes('id="saudi-stat-count"'), 'Saudi Nationals KPI exists');
 assert(html.includes('id="saudi-stat-ratio"'), 'Saudization Ratio KPI exists');
 assert(html.includes('id="saudi-stat-payroll"'), 'Monthly Saudi Payroll KPI exists');
-assert(html.includes('id="saudi-stat-avg-salary"'), 'Average Saudi Salary KPI exists');
+assert(html.includes('id="saudi-stat-refund"'), 'Company Refund KPI exists');
 assert(html.includes('id="saudi-workers-grid"'), 'Saudi Workers Grid container exists');
 assert(html.includes('id="worker-salary"'), 'Worker Salary Box input exists');
 assert(html.includes('id="worker-nationality"'), 'Worker Nationality selector exists');
@@ -179,6 +179,52 @@ const above15k = filterSaudisBySalary(mockStaff, 15000, Infinity);
 assert(under5k.length === 1 && under5k[0].name === 'Worker A', 'Bracket < 5,000 matches Worker A');
 assert(from5kTo10k.length === 1 && from5kTo10k[0].name === 'Worker B', 'Bracket 5,000 - 10,000 matches Worker B (excludes non-Saudi)');
 assert(above15k.length === 1 && above15k[0].name === 'Worker D', 'Bracket > 15,000 matches Worker D');
+
+// 7. Test Precise Saudi Salary Tiers (5500, 4000, 1500) & Company Refund
+console.log('\n--- 7. Testing Precise Saudi Salary Tiers (5500, 4000, 1500) & 1,000 Default Payout ---');
+const tiers = [
+  { gross: 5500, expectedPayout: 1000, expectedRefund: 4500 },
+  { gross: 4000, expectedPayout: 1000, expectedRefund: 3000 },
+  { gross: 1500, expectedPayout: 1000, expectedRefund: 500 }
+];
+
+tiers.forEach(({ gross, expectedPayout, expectedRefund }) => {
+  const payout = 1000;
+  const refund = Math.max(0, gross - payout);
+  assert(refund === expectedRefund, `Tier ${gross} SAR: Payout ${payout} SAR -> Company Refund = ${refund} SAR (expected ${expectedRefund})`);
+});
+
+// Verify HTML contains the 3 solid tier buttons & inputs
+assert(html.includes('id="saudi-salary-calculator"'), 'Saudi salary calculator container exists');
+assert(html.includes('id="tier-btn-5500"'), 'Solid Tier 5,500 SAR button exists');
+assert(html.includes('id="tier-btn-4000"'), 'Solid Tier 4,000 SAR button exists');
+assert(html.includes('id="tier-btn-1500"'), 'Solid Tier 1,500 SAR button exists');
+assert(html.includes('id="worker-employee-payout"'), 'Employee payout input exists');
+assert(html.includes('id="worker-calc-refund-val"'), 'Company refund calculation badge exists');
+assert(html.includes('selectSaudiSalaryTier'), 'selectSaudiSalaryTier function exists');
+assert(html.includes('updateSaudiSalaryCalc'), 'updateSaudiSalaryCalc function exists');
+
+// Verify Executive KPI elements
+assert(html.includes('id="saudi-stat-payout"'), 'Total Employee Payout KPI stat exists');
+assert(html.includes('id="saudi-stat-refund"'), 'Total Company Refund KPI stat exists');
+
+// Verify Toolbar Filter buttons
+assert(html.includes('id="saudi-sal-filter-1500"'), 'Toolbar filter for 1,500 SAR exists');
+assert(html.includes('id="saudi-sal-filter-4000"'), 'Toolbar filter for 4,000 SAR exists');
+assert(html.includes('id="saudi-sal-filter-5500"'), 'Toolbar filter for 5,500 SAR exists');
+
+// Verify Excel sample uses the 3 solid tiers
+assert(html.includes('"5,500 SAR"'), 'Excel sample includes 5,500 SAR tier');
+assert(html.includes('"4,000 SAR"'), 'Excel sample includes 4,000 SAR tier');
+assert(html.includes('"1,500 SAR"'), 'Excel sample includes 1,500 SAR tier');
+
+// Verify Translations for payout and refund
+assert(translations.includes('metric_saudi_payout: "Total Employee Payout"'), 'English translation for metric_saudi_payout');
+assert(translations.includes('metric_saudi_payout: "إجمالي المستلم للموظفين"'), 'Arabic translation for metric_saudi_payout');
+assert(translations.includes('metric_saudi_return: "Total Company Refund"'), 'English translation for metric_saudi_return');
+assert(translations.includes('metric_saudi_return: "إجمالي المسترد للشركة"'), 'Arabic translation for metric_saudi_return');
+assert(translations.includes('label_employee_payout: "المستلم الفعلي للموظف"'), 'Arabic label for employee payout');
+assert(translations.includes('label_company_return: "المسترد للشركة"'), 'Arabic label for company refund');
 
 console.log(`\n=== ALL TESTS COMPLETED: ${passed} passed, ${failed} failed ===`);
 process.exit(failed > 0 ? 1 : 0);

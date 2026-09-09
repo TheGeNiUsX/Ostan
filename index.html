@@ -807,42 +807,46 @@
           <div id="emp-subview-saudi" style="display: none; flex-direction: column; gap: 1.25rem;">
             
             <!-- 4 Executive KPI Metrics Cards -->
+            <!-- 4 Executive KPI Metrics Cards with Precise Payout & Company Refund -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
               <div class="glass-panel" style="padding: 1.1rem; border-left: 4px solid #10b981; display: flex; flex-direction: column; gap: 0.35rem;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudi_count">🇸🇦 Saudi Nationals</div>
-                <div id="saudi-stat-count" style="font-size: 1.6rem; font-weight: 800; color: #10b981;">0</div>
-                <div style="font-size: 0.7rem; color: var(--text-faint);">Registered Saudi Citizens</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudi_count">🇸🇦 Saudi Workforce</div>
+                <div style="display: flex; align-items: baseline; gap: 0.5rem;">
+                  <span id="saudi-stat-count" style="font-size: 1.6rem; font-weight: 800; color: #10b981;">0</span>
+                  <span id="saudi-stat-ratio" style="font-size: 0.85rem; font-weight: 700; color: #3b82f6;">(0%)</span>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-faint);">Registered Citizens & Saudization Ratio</div>
               </div>
 
               <div class="glass-panel" style="padding: 1.1rem; border-left: 4px solid #3b82f6; display: flex; flex-direction: column; gap: 0.35rem;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudization_rate">💼 Saudization Ratio</div>
-                <div id="saudi-stat-ratio" style="font-size: 1.6rem; font-weight: 800; color: #3b82f6;">0%</div>
-                <div style="font-size: 0.7rem; color: var(--text-faint);">Of Total Company Workforce</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudi_payroll">💵 Monthly Registered Payroll</div>
+                <div id="saudi-stat-payroll" style="font-size: 1.6rem; font-weight: 800; color: #3b82f6;">0 SAR</div>
+                <div style="font-size: 0.7rem; color: var(--text-faint);">Total Contracted Gross Salaries</div>
+              </div>
+
+              <div class="glass-panel" style="padding: 1.1rem; border-left: 4px solid #10b981; display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudi_payout">👤 Actual Employee Payout</div>
+                <div id="saudi-stat-payout" style="font-size: 1.6rem; font-weight: 800; color: #34d399;">0 SAR</div>
+                <div style="font-size: 0.7rem; color: var(--text-faint);">Disbursed Net Take (1,000 SAR / emp)</div>
               </div>
 
               <div class="glass-panel" style="padding: 1.1rem; border-left: 4px solid #f59e0b; display: flex; flex-direction: column; gap: 0.35rem;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudi_payroll">💵 Monthly Saudi Payroll</div>
-                <div id="saudi-stat-payroll" style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;">0 SAR</div>
-                <div style="font-size: 0.7rem; color: var(--text-faint);">Total Monthly Disbursed</div>
-              </div>
-
-              <div class="glass-panel" style="padding: 1.1rem; border-left: 4px solid #8b5cf6; display: flex; flex-direction: column; gap: 0.35rem;">
-                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_avg_salary">📊 Average Saudi Salary</div>
-                <div id="saudi-stat-avg-salary" style="font-size: 1.6rem; font-weight: 800; color: #a78bfa;">0 SAR</div>
-                <div style="font-size: 0.7rem; color: var(--text-faint);">Per Saudi Employee / Mo</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudi_return">🔄 Company Refund Total</div>
+                <div id="saudi-stat-refund" style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;">0 SAR</div>
+                <div style="font-size: 0.7rem; color: var(--text-faint);">Cumulative Difference Returned to Company</div>
               </div>
             </div>
 
             <!-- Saudi Staff Filter & Search Toolbar -->
             <div class="glass-panel" style="padding: 0.9rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
               <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">💰 Salary Filter:</span>
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">💰 Solid Salary Filter:</span>
                 <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
                   <button id="saudi-sal-filter-all" type="button" onclick="setSaudiSalaryFilter('all', this)" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.72rem;">All Salaries</button>
-                  <button id="saudi-sal-filter-under-5k" type="button" onclick="setSaudiSalaryFilter('under_5k', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">&lt; 5,000 SAR</button>
-                  <button id="saudi-sal-filter-5k-10k" type="button" onclick="setSaudiSalaryFilter('5k_10k', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">5K - 10K SAR</button>
-                  <button id="saudi-sal-filter-10k-15k" type="button" onclick="setSaudiSalaryFilter('10k_15k', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">10K - 15K SAR</button>
-                  <button id="saudi-sal-filter-above-15k" type="button" onclick="setSaudiSalaryFilter('above_15k', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">&gt; 15,000 SAR</button>
+                  <button id="saudi-sal-filter-1500" type="button" onclick="setSaudiSalaryFilter('1500', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">1,500 SAR (Ret: 500)</button>
+                  <button id="saudi-sal-filter-4000" type="button" onclick="setSaudiSalaryFilter('4000', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">4,000 SAR (Ret: 3,000)</button>
+                  <button id="saudi-sal-filter-5500" type="button" onclick="setSaudiSalaryFilter('5500', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">5,500 SAR (Ret: 4,500)</button>
+                  <button id="saudi-sal-filter-other" type="button" onclick="setSaudiSalaryFilter('other', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">Other</button>
                 </div>
               </div>
 
@@ -1581,11 +1585,10 @@
                   <span id="msg-salary-match-count" style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;"></span>
                 </div>
                 <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
-                  <button type="button" onclick="filterSaudiBySalary(0, Infinity, this)" class="btn btn-ghost active-sal-filter" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle); font-weight: 600;">All</button>
-                  <button type="button" onclick="filterSaudiBySalary(0, 5000, this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">&lt; 5K</button>
-                  <button type="button" onclick="filterSaudiBySalary(5000, 10000, this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">5K - 10K</button>
-                  <button type="button" onclick="filterSaudiBySalary(10000, 15000, this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">10K - 15K</button>
-                  <button type="button" onclick="filterSaudiBySalary(15000, Infinity, this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">&gt; 15K</button>
+                  <button type="button" onclick="filterSaudiBySalary('all', this)" class="btn btn-ghost active-sal-filter" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle); font-weight: 600;">All</button>
+                  <button type="button" onclick="filterSaudiBySalary('1500', this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">1,500 SAR</button>
+                  <button type="button" onclick="filterSaudiBySalary('4000', this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">4,000 SAR</button>
+                  <button type="button" onclick="filterSaudiBySalary('5500', this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">5,500 SAR</button>
                 </div>
               </div>
 
@@ -1900,9 +1903,56 @@
           </label>
           <div style="position: relative; display: flex; align-items: center;">
             <span style="position: absolute; left: 12px; font-weight: 800; font-size: 0.82rem; color: #10b981; pointer-events: none;">SAR 🇸🇦</span>
-            <input id="worker-salary" type="number" min="0" step="50" placeholder="e.g. 8500" class="input-field" style="padding-left: 5rem; font-weight: 700; font-size: 0.95rem; color: #10b981;">
+            <input id="worker-salary" type="number" min="0" step="50" placeholder="e.g. 4000" class="input-field" style="padding-left: 5rem; font-weight: 700; font-size: 0.95rem; color: #10b981;" oninput="updateSaudiSalaryCalc()">
           </div>
           <div style="font-size: 0.7rem; color: var(--text-faint); margin-top: 3px;">Included in Saudi workforce payroll metrics, Saudization reports, and salary-based announcements.</div>
+
+          <!-- SAUDI SOLID SALARY TIERS & RETURN CALCULATOR (Visible strictly for Saudi employees) -->
+          <div id="saudi-salary-calculator" style="display: none; flex-direction: column; gap: 0.6rem; margin-top: 0.5rem; background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.76rem; font-weight: 700; color: #10b981;" data-i18n="label_salary_tier">🇸🇦 الشرائح الثابتة للراتب (Solid Salary Tiers):</span>
+              <span style="font-size: 0.68rem; color: var(--text-muted);">Default Take: 1,000 SAR</span>
+            </div>
+
+            <!-- 3 Solid Tier Buttons -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.45rem;">
+              <button type="button" id="tier-btn-5500" onclick="selectSaudiSalaryTier(5500)" class="btn btn-ghost" style="padding: 0.45rem 0.25rem; font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.4); text-align: center; display: flex; flex-direction: column; gap: 2px;">
+                <span style="color: #10b981;">5,500 SAR</span>
+                <span style="font-size: 0.64rem; color: #fbbf24; font-weight: 600;">المسترد: 4,500</span>
+              </button>
+              <button type="button" id="tier-btn-4000" onclick="selectSaudiSalaryTier(4000)" class="btn btn-ghost" style="padding: 0.45rem 0.25rem; font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.4); text-align: center; display: flex; flex-direction: column; gap: 2px;">
+                <span style="color: #10b981;">4,000 SAR</span>
+                <span style="font-size: 0.64rem; color: #fbbf24; font-weight: 600;">المسترد: 3,000</span>
+              </button>
+              <button type="button" id="tier-btn-1500" onclick="selectSaudiSalaryTier(1500)" class="btn btn-ghost" style="padding: 0.45rem 0.25rem; font-size: 0.76rem; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.4); text-align: center; display: flex; flex-direction: column; gap: 2px;">
+                <span style="color: #10b981;">1,500 SAR</span>
+                <span style="font-size: 0.64rem; color: #fbbf24; font-weight: 600;">المسترد: 500</span>
+              </button>
+            </div>
+
+            <!-- Financial Breakdown: Payout (Take) & Company Return (Refund) -->
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; align-items: center; margin-top: 0.2rem; border-top: 1px dashed rgba(16, 185, 129, 0.25); padding-top: 0.5rem;">
+              <div>
+                <label style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 2px;" data-i18n="label_employee_payout">المستلم الفعلي للموظف (Take)</label>
+                <div style="position: relative; display: flex; align-items: center;">
+                  <span style="position: absolute; left: 8px; font-size: 0.72rem; color: #10b981; font-weight: 700; pointer-events: none;">SAR</span>
+                  <input id="worker-employee-payout" type="number" min="0" step="50" value="1000" oninput="updateSaudiSalaryCalc()" class="input-field" style="padding-left: 2.5rem; font-size: 0.85rem; font-weight: 700; color: #10b981; height: 34px;">
+                </div>
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; font-weight: 600; color: var(--text-muted); margin-bottom: 2px;" data-i18n="label_company_return">المسترد للشركة (Refund)</div>
+                <div id="worker-company-return-badge" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.4); color: #fbbf24; padding: 0.4rem 0.65rem; border-radius: var(--radius-sm); font-weight: 800; font-size: 0.92rem; height: 34px; box-sizing: border-box; display: flex; align-items: center; justify-content: space-between;">
+                  <span id="worker-calc-refund-val">3,000</span>
+                  <span style="font-size: 0.7rem; font-weight: 600; color: #f59e0b;">SAR 🔄</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="font-size: 0.68rem; color: var(--text-faint); display: flex; justify-content: space-between; align-items: center;">
+              <span>المعادلة: المسترد = الراتب المسجل - المستلم للموظف</span>
+              <span id="worker-calc-summary-tag" style="font-weight: 700; color: #10b981;">(4,000 - 1,000 = 3,000)</span>
+            </div>
+          </div>
         </div>
 
         <div>
@@ -1967,13 +2017,15 @@
 
       <!-- Live Preview Area -->
       <div id="excel-preview-area" style="display: none; flex-direction: column; gap: 0.75rem; margin-top: 1rem; overflow-y: auto; max-height: 280px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-elevated); padding: 0.6rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-elevated); padding: 0.6rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); flex-wrap: wrap; gap: 0.5rem;">
           <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">
             Detected: <strong id="excel-preview-count" style="color: #10b981;">0</strong> employees
           </span>
-          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">
-            Total Payroll: <strong id="excel-preview-payroll" style="color: #fbbf24;">0 SAR</strong>
-          </span>
+          <div style="display: flex; gap: 0.75rem; font-size: 0.75rem; font-weight: 700; flex-wrap: wrap;">
+            <span>Gross: <strong id="excel-preview-payroll" style="color: #3b82f6;">0 SAR</strong></span>
+            <span>Take (1K): <strong id="excel-preview-payout" style="color: #10b981;">0 SAR</strong></span>
+            <span>Refund: <strong id="excel-preview-refund" style="color: #fbbf24;">0 SAR</strong></span>
+          </div>
         </div>
 
         <div style="overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
@@ -1988,7 +2040,9 @@
                 <th style="white-space: nowrap;">رقم الهوية</th>
                 <th style="white-space: nowrap;">الإيميل</th>
                 <th style="white-space: nowrap;">تاريخ الميلاد</th>
-                <th style="white-space: nowrap;">الراتب</th>
+                <th style="white-space: nowrap;">الراتب المسجل</th>
+                <th style="white-space: nowrap;">المستلم (Take)</th>
+                <th style="white-space: nowrap;">المسترد (Refund)</th>
                 <th style="white-space: nowrap;">بدء العمل</th>
                 <th style="white-space: nowrap;">الحالة</th>
               </tr>
@@ -2811,6 +2865,8 @@
         phone: phone,
         compactPhone: compactPhone,
         salary: typeof targetUser.salary !== "undefined" ? Number(targetUser.salary) : 0,
+        employeePayout: isSaudiVal ? (typeof targetUser.employeePayout !== "undefined" && targetUser.employeePayout !== null ? Number(targetUser.employeePayout) : 1000) : null,
+        companyReturn: isSaudiVal ? (typeof targetUser.companyReturn !== "undefined" && targetUser.companyReturn !== null ? Number(targetUser.companyReturn) : Math.max(0, (Number(targetUser.salary) || 0) - 1000)) : null,
         nationality: targetUser.nationality || (isSaudiVal ? "Saudi Arabian" : "Non-Saudi"),
         nationalId: targetUser.nationalId || null,
         isSaudi: isSaudiVal,
@@ -3366,9 +3422,53 @@
     }
     window.setEmployeeViewTab = setEmployeeViewTab;
 
+    function selectSaudiSalaryTier(tier) {
+      const salInput = document.getElementById("worker-salary");
+      if (salInput) salInput.value = tier;
+      const payoutInput = document.getElementById("worker-employee-payout");
+      if (payoutInput && (!payoutInput.value || payoutInput.value === "0")) {
+        payoutInput.value = 1000;
+      }
+      updateSaudiSalaryCalc();
+    }
+    window.selectSaudiSalaryTier = selectSaudiSalaryTier;
+
+    function updateSaudiSalaryCalc() {
+      const salInput = document.getElementById("worker-salary");
+      const payoutInput = document.getElementById("worker-employee-payout");
+      const refundValEl = document.getElementById("worker-calc-refund-val");
+      const summaryTagEl = document.getElementById("worker-calc-summary-tag");
+
+      const sal = parseFloat(salInput?.value) || 0;
+      const payout = parseFloat(payoutInput?.value) || 1000;
+      const refund = Math.max(0, sal - payout);
+
+      if (refundValEl) refundValEl.textContent = refund.toLocaleString();
+      if (summaryTagEl) {
+        summaryTagEl.textContent = `(${sal.toLocaleString()} - ${payout.toLocaleString()} = ${refund.toLocaleString()})`;
+      }
+
+      // Highlight matching solid tier button if any
+      [5500, 4000, 1500].forEach(t => {
+        const btn = document.getElementById(`tier-btn-${t}`);
+        if (btn) {
+          if (Math.round(sal) === t) {
+            btn.style.background = "rgba(16, 185, 129, 0.2)";
+            btn.style.borderColor = "#10b981";
+            btn.style.boxShadow = "0 0 0 1px #10b981";
+          } else {
+            btn.style.background = "";
+            btn.style.borderColor = "rgba(16, 185, 129, 0.4)";
+            btn.style.boxShadow = "none";
+          }
+        }
+      });
+    }
+    window.updateSaudiSalaryCalc = updateSaudiSalaryCalc;
+
     function setSaudiSalaryFilter(filterKey, btnEl) {
       currentSaudiSalaryFilter = filterKey || "all";
-      const btnIds = ["saudi-sal-filter-all", "saudi-sal-filter-under-5k", "saudi-sal-filter-5k-10k", "saudi-sal-filter-10k-15k", "saudi-sal-filter-above-15k"];
+      const btnIds = ["saudi-sal-filter-all", "saudi-sal-filter-1500", "saudi-sal-filter-4000", "saudi-sal-filter-5500", "saudi-sal-filter-other"];
       btnIds.forEach(id => {
         const btn = document.getElementById(id);
         if (btn) {
@@ -3391,35 +3491,38 @@
       const canEdit = hasUserPermission("employees", "edit", currentUser);
       const canDelete = hasUserPermission("employees", "delete", currentUser);
 
-      // 1. Calculate executive KPI Metrics
+      // 1. Calculate executive KPI Metrics (Gross Payroll, Net Employee Payout, and Company Refund)
       const allUsers = state.users || [];
       const saudiUsers = allUsers.filter(isSaudiEmployee);
       const totalCompanyCount = allUsers.length;
       const saudiCount = saudiUsers.length;
       const saudizationRate = totalCompanyCount > 0 ? Math.round((saudiCount / totalCompanyCount) * 100) : 0;
       const totalPayroll = saudiUsers.reduce((sum, u) => sum + (parseFloat(u.salary) || 0), 0);
-      const avgSalary = saudiCount > 0 ? Math.round(totalPayroll / saudiCount) : 0;
+      const totalPayout = saudiUsers.reduce((sum, u) => sum + (parseFloat(u.employeePayout) || 1000), 0);
+      const totalRefund = saudiUsers.reduce((sum, u) => sum + ((typeof u.companyReturn !== 'undefined' && u.companyReturn !== null) ? parseFloat(u.companyReturn) : Math.max(0, (parseFloat(u.salary) || 0) - (parseFloat(u.employeePayout) || 1000))), 0);
 
       const statCountEl = document.getElementById("saudi-stat-count");
       const statRatioEl = document.getElementById("saudi-stat-ratio");
       const statPayrollEl = document.getElementById("saudi-stat-payroll");
-      const statAvgSalaryEl = document.getElementById("saudi-stat-avg-salary");
+      const statPayoutEl = document.getElementById("saudi-stat-payout");
+      const statRefundEl = document.getElementById("saudi-stat-refund");
 
       if (statCountEl) statCountEl.textContent = saudiCount;
-      if (statRatioEl) statRatioEl.textContent = `${saudizationRate}%`;
+      if (statRatioEl) statRatioEl.textContent = `(${saudizationRate}%)`;
       if (statPayrollEl) statPayrollEl.textContent = `${totalPayroll.toLocaleString()} SAR`;
-      if (statAvgSalaryEl) statAvgSalaryEl.textContent = `${avgSalary.toLocaleString()} SAR`;
+      if (statPayoutEl) statPayoutEl.textContent = `${totalPayout.toLocaleString()} SAR`;
+      if (statRefundEl) statRefundEl.textContent = `${totalRefund.toLocaleString()} SAR`;
 
       if (!grid) return;
 
-      // 2. Filter Saudi workers by salary & search
+      // 2. Filter Saudi workers by precise salary tier & search
       const searchQuery = (document.getElementById("saudi-search-input")?.value || "").toLowerCase().trim();
       let displayedUsers = saudiUsers.filter(u => {
         const sal = parseFloat(u.salary) || 0;
-        if (currentSaudiSalaryFilter === "under_5k" && sal >= 5000) return false;
-        if (currentSaudiSalaryFilter === "5k_10k" && (sal < 5000 || sal > 10000)) return false;
-        if (currentSaudiSalaryFilter === "10k_15k" && (sal < 10000 || sal > 15000)) return false;
-        if (currentSaudiSalaryFilter === "above_15k" && sal <= 15000) return false;
+        if (currentSaudiSalaryFilter === "1500" && Math.round(sal) !== 1500) return false;
+        if (currentSaudiSalaryFilter === "4000" && Math.round(sal) !== 4000) return false;
+        if (currentSaudiSalaryFilter === "5500" && Math.round(sal) !== 5500) return false;
+        if (currentSaudiSalaryFilter === "other" && (Math.round(sal) === 1500 || Math.round(sal) === 4000 || Math.round(sal) === 5500)) return false;
 
         if (searchQuery) {
           const name = (u.name || "").toLowerCase();
@@ -3451,6 +3554,8 @@
         const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
         const canEditThis = canEdit || isSelf;
         const salaryFormatted = (parseFloat(u.salary) || 0).toLocaleString();
+        const employeePayoutVal = typeof u.employeePayout !== "undefined" && u.employeePayout !== null ? parseFloat(u.employeePayout) : 1000;
+        const companyReturnVal = (typeof u.companyReturn !== "undefined" && u.companyReturn !== null) ? parseFloat(u.companyReturn) : Math.max(0, (parseFloat(u.salary) || 0) - employeePayoutVal);
 
         return `
           <div class="glass-panel card-hover" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border: ${isMaster ? '1px solid rgba(244, 63, 94, 0.35)' : '1px solid rgba(16, 185, 129, 0.25)'}; overflow: hidden; box-sizing: border-box; background: linear-gradient(180deg, rgba(16, 185, 129, 0.03) 0%, var(--bg-surface) 100%);">
@@ -3481,15 +3586,34 @@
               </div>
             </div>
 
-            <!-- SALARY DISPLAY BOX -->
-            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.6rem 0.85rem; display: flex; justify-content: space-between; align-items: center;">
-              <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
-                ${lang === 'ar' ? 'الراتب الشهري:' : 'Monthly Salary:'}
-              </span>
-              <span style="font-weight: 800; font-size: 1.05rem; color: #10b981; display: flex; align-items: center; gap: 0.35rem;">
-                <span>${salaryFormatted}</span>
-                <span style="font-size: 0.72rem; color: #34d399; font-weight: 700;">SAR 🇸🇦</span>
-              </span>
+            <!-- PRECISE SAUDI SALARY & REFUND BREAKDOWN -->
+            <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; display: flex; flex-direction: column; gap: 0.45rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">
+                  ${lang === 'ar' ? '💵 الراتب المسجل:' : '💵 Registered Salary:'}
+                </span>
+                <span style="font-weight: 800; font-size: 1rem; color: #10b981;">
+                  ${salaryFormatted} <span style="font-size: 0.7rem;">SAR</span>
+                </span>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; border-top: 1px dashed rgba(16, 185, 129, 0.2); padding-top: 0.45rem;">
+                <div style="display: flex; flex-direction: column; gap: 1px;">
+                  <span style="font-size: 0.66rem; color: var(--text-muted); font-weight: 600;">
+                    ${lang === 'ar' ? '👤 المستلم للموظف:' : '👤 Employee Take:'}
+                  </span>
+                  <span style="font-weight: 700; font-size: 0.85rem; color: #34d399;">
+                    ${employeePayoutVal.toLocaleString()} SAR
+                  </span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 1px; text-align: ${lang === 'ar' ? 'left' : 'right'};">
+                  <span style="font-size: 0.66rem; color: #f59e0b; font-weight: 600;">
+                    ${lang === 'ar' ? '🔄 المسترد للشركة:' : '🔄 Company Refund:'}
+                  </span>
+                  <span style="font-weight: 800; font-size: 0.85rem; color: #fbbf24;">
+                    ${companyReturnVal.toLocaleString()} SAR
+                  </span>
+                </div>
+              </div>
             </div>
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
@@ -3532,7 +3656,7 @@
           "رقم الهوية": "1076543210",
           "الإيميل": "fahad.harbi@company.sa",
           "تاريخ الميلاد": "1990-04-15",
-          "الراتب": "12,500 SAR",
+          "الراتب": "5,500 SAR",
           "تاريخ بدء العمل": "2022-03-01"
         },
         {
@@ -3545,7 +3669,7 @@
           "رقم الهوية": "1098765432",
           "الإيميل": "mohammed.otaibi@company.sa",
           "تاريخ الميلاد": "1994-08-22",
-          "الراتب": "9,500 SAR",
+          "الراتب": "4,000 SAR",
           "تاريخ بدء العمل": "2023-06-15"
         },
         {
@@ -3558,7 +3682,7 @@
           "رقم الهوية": "1087654321",
           "الإيميل": "sarah.dosari@company.sa",
           "تاريخ الميلاد": "1992-11-05",
-          "الراتب": "14,000 SAR",
+          "الراتب": "1,500 SAR",
           "تاريخ بدء العمل": "2021-10-01"
         },
         {
@@ -3571,7 +3695,7 @@
           "رقم الهوية": "1065432109",
           "الإيميل": "abdulaziz.shehri@company.sa",
           "تاريخ الميلاد": "1996-02-18",
-          "الراتب": "8,500 SAR",
+          "الراتب": "4,000 SAR",
           "تاريخ بدء العمل": "2024-01-10"
         },
         {
@@ -3584,7 +3708,7 @@
           "رقم الهوية": "1054321098",
           "الإيميل": "reem.qahtani@company.sa",
           "تاريخ الميلاد": "1988-07-30",
-          "الراتب": "18,000 SAR",
+          "الراتب": "5,500 SAR",
           "تاريخ بدء العمل": "2020-05-01"
         }
       ];
@@ -3701,6 +3825,8 @@
 
           pendingExcelParsedWorkers = [];
           let totalSalary = 0;
+          let totalPayout = 0;
+          let totalRefund = 0;
 
           rawRows.forEach(row => {
             const getVal = (...keys) => {
@@ -3744,8 +3870,12 @@
             else if (roleRaw.includes("STOCK") || roleRaw.includes("مستودع")) cleanRole = "STOCK_MANAGER";
             else if (roleRaw.includes("MANAGE") || roleRaw.includes("مدير")) cleanRole = "MANAGER";
 
-            let parsedSalary = parseFloat(salaryRaw.replace(/[^0-9.]/g, "")) || 8500;
+            let parsedSalary = parseFloat(salaryRaw.replace(/[^0-9.]/g, "")) || 4000;
+            let employeePayout = 1000;
+            let companyReturn = Math.max(0, parsedSalary - employeePayout);
             totalSalary += parsedSalary;
+            totalPayout += employeePayout;
+            totalRefund += companyReturn;
 
             let phoneNorm = normalizeSaudiPhoneNumber(phoneRaw);
             let validPhone = phoneNorm.valid ? phoneNorm.phone : (phoneRaw.startsWith("+") ? phoneRaw : `+966 ${phoneRaw}`);
@@ -3771,6 +3901,8 @@
               email: email.toLowerCase(),
               birthDate: normalizeDateVal(birthDateRaw),
               salary: parsedSalary,
+              employeePayout: employeePayout,
+              companyReturn: companyReturn,
               hireDate: normalizeDateVal(hireDateRaw),
               nationality: "Saudi Arabian",
               isSaudi: true,
@@ -3802,11 +3934,15 @@
           const previewArea = document.getElementById("excel-preview-area");
           const previewCount = document.getElementById("excel-preview-count");
           const previewPayroll = document.getElementById("excel-preview-payroll");
+          const previewPayout = document.getElementById("excel-preview-payout");
+          const previewRefund = document.getElementById("excel-preview-refund");
           const previewTbody = document.getElementById("excel-preview-tbody");
           const confirmBtn = document.getElementById("btn-confirm-excel-import");
 
           if (previewCount) previewCount.textContent = pendingExcelParsedWorkers.length;
           if (previewPayroll) previewPayroll.textContent = `${totalSalary.toLocaleString()} SAR`;
+          if (previewPayout) previewPayout.textContent = `${totalPayout.toLocaleString()} SAR`;
+          if (previewRefund) previewRefund.textContent = `${totalRefund.toLocaleString()} SAR`;
 
           if (previewTbody) {
             previewTbody.innerHTML = pendingExcelParsedWorkers.slice(0, 50).map(w => `
@@ -3819,7 +3955,9 @@
                 <td style="font-family: monospace; white-space: nowrap;">${w.nationalId}</td>
                 <td style="color: var(--text-muted); font-size: 0.72rem; white-space: nowrap;">${w.email}</td>
                 <td style="white-space: nowrap;">${w.birthDate || '-'}</td>
-                <td style="font-weight: 700; color: #10b981; white-space: nowrap;">${w.salary.toLocaleString()} SAR</td>
+                <td style="font-weight: 700; color: #3b82f6; white-space: nowrap;">${w.salary.toLocaleString()} SAR</td>
+                <td style="font-weight: 700; color: #10b981; white-space: nowrap;">${(w.employeePayout || 1000).toLocaleString()} SAR</td>
+                <td style="font-weight: 700; color: #fbbf24; white-space: nowrap;">${(w.companyReturn || 0).toLocaleString()} SAR</td>
                 <td style="white-space: nowrap;">${w.hireDate || '-'}</td>
                 <td><span class="badge badge-emerald">Ready</span></td>
               </tr>
@@ -4039,6 +4177,19 @@
       const salaryInput = document.getElementById("worker-salary");
       if (salaryInput) {
         salaryInput.value = (typeof u.salary !== "undefined" && u.salary !== null) ? u.salary : 0;
+      }
+
+      // Populate Saudi salary calculator and employee payout
+      const saudiCalc = document.getElementById("saudi-salary-calculator");
+      if (saudiCalc) {
+        saudiCalc.style.display = isSaudi ? "flex" : "none";
+      }
+      const payoutInput = document.getElementById("worker-employee-payout");
+      if (payoutInput) {
+        payoutInput.value = (typeof u.employeePayout !== "undefined" && u.employeePayout !== null) ? u.employeePayout : 1000;
+      }
+      if (isSaudi) {
+        updateSaudiSalaryCalc();
       }
 
       const roleSelect = document.getElementById("worker-role");
@@ -4604,6 +4755,8 @@
       const nationalityVal = document.getElementById("worker-nationality")?.value || "Non-Saudi";
       const nationalIdVal = (document.getElementById("worker-national-id")?.value || "").trim();
       const isSaudiVal = (nationalityVal === "Saudi Arabian");
+      const employeePayoutVal = isSaudiVal ? (parseFloat(document.getElementById("worker-employee-payout")?.value) || 1000) : null;
+      const companyReturnVal = isSaudiVal ? Math.max(0, salaryVal - employeePayoutVal) : null;
 
       const idProfession = (document.getElementById("worker-id-profession")?.value || "").trim();
       const crNumber = (document.getElementById("worker-cr-number")?.value || "").trim();
@@ -4638,6 +4791,8 @@
             u.referredBy = referredBy;
             u.birthDate = birthDate;
             u.hireDate = hireDate;
+            u.employeePayout = employeePayoutVal;
+            u.companyReturn = companyReturnVal;
           } else {
             delete u.idProfession;
             delete u.crNumber;
@@ -4645,6 +4800,8 @@
             delete u.referredBy;
             delete u.birthDate;
             delete u.hireDate;
+            delete u.employeePayout;
+            delete u.companyReturn;
           }
 
           if (hasAdminEdit) {
@@ -4668,6 +4825,8 @@
           phone,
           compactPhone,
           salary: salaryVal,
+          employeePayout: isSaudiVal ? employeePayoutVal : null,
+          companyReturn: isSaudiVal ? companyReturnVal : null,
           nationality: nationalityVal,
           nationalId: nationalIdVal,
           isSaudi: isSaudiVal,
@@ -5679,9 +5838,22 @@
       document.getElementById("modal-task").style.display = "flex";
     }
     function handleWorkerNationalityChange(val) {
+      const isSaudi = (val === "Saudi Arabian");
       const saudiFields = document.getElementById("saudi-worker-fields");
       if (saudiFields) {
-        saudiFields.style.display = (val === "Saudi Arabian") ? "block" : "none";
+        saudiFields.style.display = isSaudi ? "block" : "none";
+      }
+      const saudiCalc = document.getElementById("saudi-salary-calculator");
+      if (saudiCalc) {
+        saudiCalc.style.display = isSaudi ? "flex" : "none";
+      }
+      if (isSaudi) {
+        const currentSal = parseFloat(document.getElementById("worker-salary")?.value) || 0;
+        if (!currentSal || currentSal === 8000 || currentSal === 8500) {
+          selectSaudiSalaryTier(4000);
+        } else {
+          updateSaudiSalaryCalc();
+        }
       }
     }
     window.handleWorkerNationalityChange = handleWorkerNationalityChange;
@@ -5708,7 +5880,7 @@
 
       const salaryInput = document.getElementById("worker-salary");
       if (salaryInput) {
-        salaryInput.value = forSaudi ? "8500" : "8000";
+        salaryInput.value = forSaudi ? "4000" : "8000";
       }
 
       // Reset and toggle Saudi-specific fields
@@ -5716,6 +5888,18 @@
       if (saudiFields) {
         saudiFields.style.display = forSaudi ? "block" : "none";
       }
+      const saudiCalc = document.getElementById("saudi-salary-calculator");
+      if (saudiCalc) {
+        saudiCalc.style.display = forSaudi ? "flex" : "none";
+      }
+      const payoutInput = document.getElementById("worker-employee-payout");
+      if (payoutInput) {
+        payoutInput.value = 1000;
+      }
+      if (forSaudi) {
+        selectSaudiSalaryTier(4000);
+      }
+
       const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
       setEl("worker-id-profession", "");
       setEl("worker-cr-number", "");
@@ -6303,21 +6487,46 @@
     }
     window.selectRecipientGroup = selectRecipientGroup;
 
-    function filterSaudiBySalary(minSalary, maxSalary, btnEl) {
+    function filterSaudiBySalary(targetTier, btnEl) {
+      // Support (targetTier, btnEl) or legacy (minSalary, maxSalary, btnEl)
+      let actualBtn = btnEl;
+      let filter = targetTier;
+      if (arguments.length === 3 && typeof arguments[1] !== "undefined") {
+        actualBtn = arguments[2];
+        const min = arguments[0];
+        const max = arguments[1];
+        if (min === 0 && max === Infinity) filter = "all";
+        else if (min === 1500 || max === 1500) filter = "1500";
+        else if (min === 4000 || max === 4000) filter = "4000";
+        else if (min === 5500 || max === 5500) filter = "5500";
+      }
+
       selectedRecipientIds.clear();
       let matchCount = 0;
       state.users.forEach(u => {
         if (isSaudiEmployee(u)) {
-          const sal = parseFloat(u.salary) || 0;
-          if (sal >= minSalary && (maxSalary === Infinity || sal < maxSalary || (sal <= maxSalary))) {
+          const sal = Math.round(parseFloat(u.salary) || 0);
+          let match = false;
+          if (!filter || filter === "all" || filter === 0) {
+            match = true;
+          } else if (filter === "1500" || filter === 1500) {
+            match = (sal === 1500);
+          } else if (filter === "4000" || filter === 4000) {
+            match = (sal === 4000);
+          } else if (filter === "5500" || filter === 5500) {
+            match = (sal === 5500);
+          } else if (typeof filter === "number") {
+            match = (sal === filter);
+          }
+          if (match) {
             selectedRecipientIds.add(u.id);
             matchCount++;
           }
         }
       });
 
-      if (btnEl) {
-        const parent = btnEl.parentElement;
+      if (actualBtn) {
+        const parent = actualBtn.parentElement;
         if (parent) {
           parent.querySelectorAll("button").forEach(b => {
             b.classList.remove("active-sal-filter");
@@ -6325,10 +6534,10 @@
             b.style.color = "";
             b.style.borderColor = "var(--border-subtle)";
           });
-          btnEl.classList.add("active-sal-filter");
-          btnEl.style.background = "rgba(16, 185, 129, 0.2)";
-          btnEl.style.color = "#10b981";
-          btnEl.style.borderColor = "#10b981";
+          actualBtn.classList.add("active-sal-filter");
+          actualBtn.style.background = "rgba(16, 185, 129, 0.2)";
+          actualBtn.style.color = "#10b981";
+          actualBtn.style.borderColor = "#10b981";
         }
       }
 
@@ -6342,7 +6551,7 @@
         const lang = document.documentElement.getAttribute("lang") || "en";
         window.OstanStyle.showToast(
           lang === "ar" ? "تصفية حسب الراتب" : "Salary Filter Applied",
-          lang === "ar" ? `تم تحديد ${matchCount} موظف سعودي` : `Selected ${matchCount} Saudi staff in salary range`
+          lang === "ar" ? `تم تحديد ${matchCount} موظف سعودي` : `Selected ${matchCount} Saudi staff in salary filter`
         );
       }
     }
@@ -7919,6 +8128,12 @@
               if (docData.referredBy) targetUser.referredBy = docData.referredBy;
               if (docData.birthDate) targetUser.birthDate = docData.birthDate;
               if (docData.hireDate) targetUser.hireDate = docData.hireDate;
+              if (typeof docData.employeePayout !== "undefined") {
+                targetUser.employeePayout = Number(docData.employeePayout);
+              }
+              if (typeof docData.companyReturn !== "undefined") {
+                targetUser.companyReturn = Number(docData.companyReturn);
+              }
               if (docId && targetUser.id !== docId) {
                 const oldId = targetUser.id;
                 targetUser.id = docId;
@@ -7940,7 +8155,9 @@
                 role: docData.role || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
                 status: "ACTIVE",
                 isProtected: isSuper,
-                salary: typeof docData.salary !== "undefined" ? Number(docData.salary) : 8000,
+                salary: typeof docData.salary !== "undefined" ? Number(docData.salary) : (isSaudiUser ? 4000 : 8000),
+                employeePayout: typeof docData.employeePayout !== "undefined" ? Number(docData.employeePayout) : (isSaudiUser ? 1000 : null),
+                companyReturn: typeof docData.companyReturn !== "undefined" ? Number(docData.companyReturn) : (isSaudiUser ? Math.max(0, (Number(docData.salary) || 4000) - 1000) : null),
                 nationality: isSaudiUser ? "Saudi Arabian" : "Non-Saudi",
                 nationalId: isSaudiUser ? (docData.nationalId || null) : null,
                 isSaudi: isSaudiUser,

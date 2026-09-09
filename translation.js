@@ -97,6 +97,14 @@
       label_birth_date: "Date of Birth (تاريخ الميلاد)",
       label_hire_date: "Work Start Date (تاريخ بدء العمل)",
       saudi_details_heading: "Saudi Citizen Employment Record",
+      metric_saudi_payout: "Total Employee Payout",
+      metric_saudi_return: "Total Company Refund",
+      label_employee_payout: "Employee Payout (المستلم للموظف)",
+      label_company_return: "Company Refund (المسترد للشركة)",
+      label_salary_tier: "Solid Salary Tier (شريحة الراتب)",
+      tier_5500: "5,500 SAR (Return: 4,500)",
+      tier_4000: "4,000 SAR (Return: 3,000)",
+      tier_1500: "1,500 SAR (Return: 500)",
 
       // Departments & Console
       dept_section_title: "Departments & Worker Section Access Control",
@@ -423,6 +431,14 @@
       label_birth_date: "تاريخ الميلاد",
       label_hire_date: "تاريخ بدء العمل",
       saudi_details_heading: "بيانات التوظيف والسجل للكادر السعودي",
+      metric_saudi_payout: "إجمالي المستلم للموظفين",
+      metric_saudi_return: "إجمالي المسترد للشركة",
+      label_employee_payout: "المستلم الفعلي للموظف",
+      label_company_return: "المسترد للشركة",
+      label_salary_tier: "شريحة الراتب الثابتة",
+      tier_5500: "5,500 ريال (المسترد: 4,500)",
+      tier_4000: "4,000 ريال (المسترد: 3,000)",
+      tier_1500: "1,500 ريال (المسترد: 500)",
 
       // Departments & Console
       dept_section_title: "الأقسام والتحكم في وصول العمال للأقسام",
