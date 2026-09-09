@@ -244,5 +244,102 @@ assert(translations.includes('btn_gen_password'), 'btn_gen_password exists in tr
 assert(translations.includes('btn_copy_credentials'), 'btn_copy_credentials exists in translation.js');
 assert(translations.includes('modal_cred_title'), 'modal_cred_title exists in translation.js');
 
+// 7. Test Saudi Staff Permissions & Department Matrix
+console.log('\n--- 7. Testing Saudi Staff Granular Permissions & Matrix ---');
+assert(html.includes('id="nav-saudi-staff"'), 'Sidebar nav-saudi-staff exists');
+assert(html.includes("setModule('saudi-staff')"), 'nav-saudi-staff onclick calls setModule("saudi-staff")');
+assert(html.includes('value="saudi-staff"'), 'Department policy section dropdown includes saudi-staff');
+assert(html.includes('id="chk-perm-saudi-view"'), 'chk-perm-saudi-view checkbox exists');
+assert(html.includes('id="chk-perm-saudi-create"'), 'chk-perm-saudi-create checkbox exists');
+assert(html.includes('id="chk-perm-saudi-edit"'), 'chk-perm-saudi-edit checkbox exists');
+assert(html.includes('id="chk-perm-saudi-delete"'), 'chk-perm-saudi-delete checkbox exists');
+assert(html.includes('id="chk-perm-saudi-excel"'), 'chk-perm-saudi-excel checkbox exists');
+assert(html.includes('{ key: "saudi-staff", label: "🇸🇦 Saudi Staff" }'), 'renderDepartments matrix includes saudi-staff column');
+
+assert(translations.includes('nav_saudi_staff: "Saudi Staff"'), 'nav_saudi_staff translation EN');
+assert(translations.includes('nav_saudi_staff: "الكادر السعودي"'), 'nav_saudi_staff translation AR');
+assert(translations.includes('perm_sec_saudi: "🇸🇦 Saudi Staff & Payroll Hub"'), 'perm_sec_saudi translation EN');
+assert(translations.includes('perm_sec_saudi: "🇸🇦 الكادر الوطني وإدارة الرواتب"'), 'perm_sec_saudi translation AR');
+assert(translations.includes('perm_saudi_view'), 'perm_saudi_view translation key exists');
+assert(translations.includes('perm_saudi_create'), 'perm_saudi_create translation key exists');
+assert(translations.includes('perm_saudi_edit'), 'perm_saudi_edit translation key exists');
+assert(translations.includes('perm_saudi_delete'), 'perm_saudi_delete translation key exists');
+assert(translations.includes('perm_saudi_excel'), 'perm_saudi_excel translation key exists');
+
+// Verify Simulated Permission Evaluation Logic
+function simulateGetSectionAccess(mod, user) {
+  if (!user) return "hidden";
+  if (user.role === "SUPER_ADMIN") return "accessible";
+  const normMod = (mod === "saudi-staff" || mod === "saudi_staff") ? "saudi-staff" : mod;
+
+  if (user.sectionAccess && user.sectionAccess[normMod] === "locked") return "locked";
+
+  if (user.permissions) {
+    if (normMod === "saudi-staff") {
+      const sP = user.permissions["saudi-staff"] || user.permissions.saudi_staff;
+      if (sP && typeof sP.view !== "undefined") {
+        return sP.view ? "accessible" : "hidden";
+      }
+    }
+    if (normMod === "employees") {
+      const empView = user.permissions.employees ? user.permissions.employees.view : null;
+      const saudiView = (user.permissions["saudi-staff"] || user.permissions.saudi_staff) ? (user.permissions["saudi-staff"] || user.permissions.saudi_staff).view : null;
+      if (empView === true || saudiView === true) return "accessible";
+      if (empView === false && (saudiView === false || saudiView === null)) return "hidden";
+    }
+    if (user.permissions[normMod] && typeof user.permissions[normMod].view !== "undefined") {
+      return user.permissions[normMod].view ? "accessible" : "hidden";
+    }
+  }
+
+  if (user.sectionAccess && user.sectionAccess[normMod]) return user.sectionAccess[normMod];
+  if (normMod === "saudi-staff") {
+    if (user.sectionAccess && user.sectionAccess.employees) return user.sectionAccess.employees;
+    return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER") ? "accessible" : "hidden";
+  }
+  if (normMod === "employees") {
+    if (user.sectionAccess && user.sectionAccess["saudi-staff"] === "accessible") return "accessible";
+    return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER") ? "accessible" : "hidden";
+  }
+  return "accessible";
+}
+
+// Test Case A: User with explicit granular saudi-staff view: true, employees view: false
+const saudiOnlyUser = {
+  id: "u-saudi-auditor",
+  role: "EMPLOYEE",
+  permissions: {
+    employees: { view: false, create: false, edit: false, delete: false },
+    "saudi-staff": { view: true, create: true, edit: true, delete: false, excel: true }
+  },
+  sectionAccess: {
+    employees: "accessible",
+    "saudi-staff": "accessible"
+  }
+};
+assert(simulateGetSectionAccess("saudi-staff", saudiOnlyUser) === "accessible", 'Saudi staff access is accessible for Saudi Auditor');
+assert(simulateGetSectionAccess("employees", saudiOnlyUser) === "accessible", 'Container employees is accessible so Saudi Auditor can open Saudi Hub');
+
+// Test Case B: User with saudi-staff locked in sectionAccess
+const lockedSaudiUser = {
+  id: "u-locked",
+  role: "EMPLOYEE",
+  permissions: {
+    "saudi-staff": { view: true, create: true, edit: false, delete: false, excel: false }
+  },
+  sectionAccess: {
+    "saudi-staff": "locked"
+  }
+};
+assert(simulateGetSectionAccess("saudi-staff", lockedSaudiUser) === "locked", 'Explicit locked sectionAccess returns locked even if permissions.view was true');
+
+// Test Case C: Standard employee with no permissions
+const regularEmp = {
+  id: "u-regular",
+  role: "EMPLOYEE",
+  sectionAccess: { employees: "hidden" }
+};
+assert(simulateGetSectionAccess("saudi-staff", regularEmp) === "hidden", 'Saudi staff hidden for regular employee without permissions');
+
 console.log(`\n=== ALL TESTS COMPLETED: ${passed} passed, ${failed} failed ===`);
 process.exit(failed > 0 ? 1 : 0);

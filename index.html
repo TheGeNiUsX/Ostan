@@ -501,10 +501,16 @@
         <!-- ORGANIZATION -->
         <div id="group-organization" class="nav-group-wrapper">
           <div class="nav-section-title" data-i18n="nav_group_org">ORGANIZATION</div>
-          <a id="nav-employees" class="nav-item" onclick="setModule('employees')">
+          <a id="nav-employees" class="nav-item" onclick="setModule('employees'); setEmployeeViewTab('all');">
             <span style="display: flex; align-items: center; gap: 0.6rem;">
               <span>👥</span>
               <span data-i18n="nav_employees">Employees</span>
+            </span>
+          </a>
+          <a id="nav-saudi-staff" class="nav-item" onclick="setModule('saudi-staff')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>🇸🇦</span>
+              <span data-i18n="nav_saudi_staff">Saudi Staff</span>
             </span>
           </a>
           <a id="nav-departments" class="nav-item" onclick="setModule('departments')">
@@ -887,6 +893,7 @@
                   <select id="dept-ctrl-section" class="input-field">
                     <option value="reminders">⏰ Reminders</option>
                     <option value="employees">👥 Employees</option>
+                    <option value="saudi-staff">🇸🇦 Saudi Staff (الكادر السعودي)</option>
                     <option value="tasks">☑️ Tasks</option>
                     <option value="stock">📦 Warehouse & Stock</option>
                     <option value="reports">📈 Reports</option>
@@ -954,6 +961,36 @@
                   <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
                     <input type="checkbox" id="chk-perm-emp-delete">
                     <span data-i18n="perm_delete" style="font-size: 0.82rem; color: #fb7185;">Delete Employee (🗑️ حذف موظف)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 1.1 Saudi Staff & Payroll Hub Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; border: 1px solid rgba(16, 185, 129, 0.35); background: linear-gradient(180deg, rgba(16, 185, 129, 0.04) 0%, var(--bg-surface) 100%);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(16, 185, 129, 0.25); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_saudi" style="font-weight: 700; font-size: 0.95rem; color: #10b981;">🇸🇦 Saudi Staff & Payroll Hub</span>
+                  <span class="badge badge-emerald">Dedicated Hub</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-saudi-view">
+                    <span data-i18n="perm_saudi_view" style="font-size: 0.82rem; font-weight: 700; color: #10b981;">View Directory & Payroll (استعراض ورؤية الكادر والرواتب)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-saudi-create">
+                    <span data-i18n="perm_saudi_create" style="font-size: 0.82rem;">Add Saudi Employee (+ إضافة موظف سعودي)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-saudi-edit">
+                    <span data-i18n="perm_saudi_edit" style="font-size: 0.82rem;">Edit Saudi Profile & Salary (✏️ تعديل بيانات والراتب)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-saudi-delete">
+                    <span data-i18n="perm_saudi_delete" style="font-size: 0.82rem; color: #fb7185;">Delete Saudi Employee (🗑️ حذف موظف)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-saudi-excel">
+                    <span data-i18n="perm_saudi_excel" style="font-size: 0.82rem; color: #34d399;">Excel Batch Import / Export (📥 استيراد وتصدير إكسل)</span>
                   </label>
                 </div>
               </div>
@@ -2678,6 +2715,7 @@
         sectionAccess: {
           reminders: "accessible",
           employees: "accessible",
+          "saudi-staff": "accessible",
           departments: "accessible",
           tasks: "accessible",
           stock: "accessible",
@@ -3004,21 +3042,33 @@
       if (!user) return false;
       if (isMasterSuperAdmin(user)) return true;
 
+      const normKey = (sectionKey === "saudi-staff" || sectionKey === "saudi_staff") ? "saudi-staff" : sectionKey;
+
       // 1. Check custom granular permissions if configured for this worker
-      if (user.permissions && user.permissions[sectionKey]) {
-        if (typeof user.permissions[sectionKey][action] !== "undefined") {
-          return !!user.permissions[sectionKey][action];
+      if (user.permissions) {
+        if (normKey === "saudi-staff") {
+          const sP = user.permissions["saudi-staff"] || user.permissions.saudi_staff;
+          if (sP && typeof sP[action] !== "undefined") {
+            return !!sP[action];
+          }
+        } else if (user.permissions[normKey]) {
+          if (typeof user.permissions[normKey][action] !== "undefined") {
+            return !!user.permissions[normKey][action];
+          }
         }
       }
 
       // 2. Check baseline section access
-      const secAccess = (user.sectionAccess && user.sectionAccess[sectionKey]) || getSectionAccess(sectionKey, user);
+      const secAccess = (user.sectionAccess && user.sectionAccess[normKey]) || getSectionAccess(normKey, user);
       if (secAccess !== "accessible") return false;
 
       // 3. Fallback to standard role capabilities if granular hasn't been set yet
       if (action === "view") return true;
       if (action === "create" || action === "edit" || action === "delete") {
-        return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || (sectionKey === "stock" && user.role === "STOCK_MANAGER");
+        return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || (normKey === "stock" && user.role === "STOCK_MANAGER");
+      }
+      if (action === "excel") {
+        return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER";
       }
       if (action === "approve_requests") {
         return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER";
@@ -3035,38 +3085,69 @@
       if (isMasterSuperAdmin(user)) return "accessible";
       if (mod === "dashboard") return "accessible";
 
+      const normMod = (mod === "saudi-staff" || mod === "saudi_staff") ? "saudi-staff" : mod;
+
+      // Explicit lock policy takes precedence
+      if (user.sectionAccess && user.sectionAccess[normMod] === "locked") {
+        return "locked";
+      }
+
       // 1. If user has granular permissions configured, view/action flags govern visibility
       if (user.permissions) {
-        if (mod === "stock-requests" && user.permissions.stock) {
+        if (normMod === "stock-requests" && user.permissions.stock) {
           return (user.permissions.stock.request || user.permissions.stock.approve_requests) ? "accessible" : "hidden";
         }
-        if (mod === "stock" && user.permissions.stock) {
+        if (normMod === "stock" && user.permissions.stock) {
           return user.permissions.stock.view ? "accessible" : "hidden";
         }
-        if (mod === "departments" && user.permissions.employees) {
+        if (normMod === "departments" && user.permissions.employees) {
           return user.permissions.employees.view ? "accessible" : "hidden";
         }
-        if (user.permissions[mod] && typeof user.permissions[mod].view !== "undefined") {
-          return user.permissions[mod].view ? "accessible" : "hidden";
+        if (normMod === "saudi-staff") {
+          const sP = user.permissions["saudi-staff"] || user.permissions.saudi_staff;
+          if (sP && typeof sP.view !== "undefined") {
+            return sP.view ? "accessible" : "hidden";
+          }
+        }
+        if (normMod === "employees") {
+          const empView = user.permissions.employees ? user.permissions.employees.view : null;
+          const saudiView = (user.permissions["saudi-staff"] || user.permissions.saudi_staff) ? (user.permissions["saudi-staff"] || user.permissions.saudi_staff).view : null;
+          if (empView === true || saudiView === true) return "accessible";
+          if (empView === false && (saudiView === false || saudiView === null)) return "hidden";
+        }
+        if (user.permissions[normMod] && typeof user.permissions[normMod].view !== "undefined") {
+          return user.permissions[normMod].view ? "accessible" : "hidden";
         }
       }
 
-      if (user.sectionAccess && user.sectionAccess[mod]) {
-        return user.sectionAccess[mod];
+      if (user.sectionAccess && user.sectionAccess[normMod]) {
+        return user.sectionAccess[normMod];
       }
-      if (mod === "employees" || mod === "departments") {
+      if (normMod === "saudi-staff") {
+        if (user.sectionAccess && user.sectionAccess.employees) {
+          return user.sectionAccess.employees;
+        }
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER") ? "accessible" : "hidden";
       }
-      if (mod === "stock") {
+      if (normMod === "employees") {
+        if (user.sectionAccess && user.sectionAccess["saudi-staff"] === "accessible") {
+          return "accessible";
+        }
+        return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER") ? "accessible" : "hidden";
+      }
+      if (normMod === "departments") {
+        return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER") ? "accessible" : "hidden";
+      }
+      if (normMod === "stock") {
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER") ? "accessible" : "hidden";
       }
-      if (mod === "stock-requests") {
+      if (normMod === "stock-requests") {
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER") ? "accessible" : "hidden";
       }
-      if (mod === "reports" || mod === "audit-logs") {
+      if (normMod === "reports" || normMod === "audit-logs") {
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN") ? "accessible" : "hidden";
       }
-      if (mod === "messages") {
+      if (normMod === "messages") {
         if (user.permissions && user.permissions.messages) {
           return user.permissions.messages.view ? "accessible" : "hidden";
         }
@@ -3076,6 +3157,20 @@
     }
 
     function setModule(mod) {
+      if (mod === "saudi-staff") {
+        const access = getSectionAccess("saudi-staff");
+        if (access === "locked") {
+          document.getElementById("modal-section-locked").style.display = "flex";
+          return;
+        }
+        if (access === "hidden") {
+          return;
+        }
+        setModule("employees");
+        setEmployeeViewTab("saudi");
+        return;
+      }
+
       const access = getSectionAccess(mod);
       if (access === "locked") {
         document.getElementById("modal-section-locked").style.display = "flex";
@@ -3108,8 +3203,16 @@
       if (mod === "dashboard") renderDashboard();
       if (mod === "employees") {
         if (typeof activeEmployeeTab !== "undefined" && activeEmployeeTab === "saudi") {
+          const navSaudi = document.getElementById("nav-saudi-staff");
+          const navEmp = document.getElementById("nav-employees");
+          if (navSaudi) navSaudi.classList.add("active");
+          if (navEmp) navEmp.classList.remove("active");
           renderSaudiWorkers();
         } else {
+          const navSaudi = document.getElementById("nav-saudi-staff");
+          const navEmp = document.getElementById("nav-employees");
+          if (navEmp) navEmp.classList.add("active");
+          if (navSaudi) navSaudi.classList.remove("active");
           renderWorkers();
         }
       }
@@ -3135,6 +3238,7 @@
       const modMap = {
         "dashboard": "nav-dashboard",
         "employees": "nav-employees",
+        "saudi-staff": "nav-saudi-staff",
         "departments": "nav-departments",
         "tasks": "nav-tasks",
         "reminders": "nav-reminders",
@@ -3163,7 +3267,7 @@
 
       // Hide whole section group header if all child navs are hidden
       const groups = [
-        { id: "group-organization", items: ["nav-employees", "nav-departments"] },
+        { id: "group-organization", items: ["nav-employees", "nav-saudi-staff", "nav-departments"] },
         { id: "group-operations", items: ["nav-tasks", "nav-reminders"] },
         { id: "group-inventory", items: ["nav-stock", "nav-stock-requests"] },
         { id: "group-security", items: ["nav-reports", "nav-audit-logs"] },
@@ -3185,6 +3289,25 @@
       const tasksAccess = getSectionAccess("tasks", user);
       const remindersAccess = getSectionAccess("reminders", user);
       const employeesAccess = getSectionAccess("employees", user);
+      const saudiAccess = getSectionAccess("saudi-staff", user);
+
+      // Manage Employees vs Saudi Staff tabs visibility inside the Employees Section
+      const canAccessAllEmp = (employeesAccess === "accessible") && hasUserPermission("employees", "view", user);
+      const canAccessSaudiStaff = (saudiAccess === "accessible");
+      const tabAll = document.getElementById("emp-tab-all");
+      const tabSaudi = document.getElementById("emp-tab-saudi");
+      if (tabAll) tabAll.style.display = canAccessAllEmp ? "inline-flex" : "none";
+      if (tabSaudi) tabSaudi.style.display = canAccessSaudiStaff ? "inline-flex" : "none";
+
+      if (canAccessSaudiStaff && !canAccessAllEmp) {
+        if (typeof activeEmployeeTab !== "undefined" && activeEmployeeTab !== "saudi") {
+          setEmployeeViewTab("saudi");
+        }
+      } else if (!canAccessSaudiStaff && canAccessAllEmp) {
+        if (typeof activeEmployeeTab !== "undefined" && activeEmployeeTab !== "all") {
+          setEmployeeViewTab("all");
+        }
+      }
 
       // Dashboard: HIDE features if they are 'locked' OR 'hidden'
       const cardLowStock = document.getElementById("card-low-stock");
@@ -3194,7 +3317,7 @@
       if (quickOpStock) quickOpStock.style.display = (stockAccess === "accessible") ? "flex" : "none";
 
       const cardTotalEmp = document.getElementById("card-total-employees");
-      if (cardTotalEmp) cardTotalEmp.style.display = (employeesAccess === "accessible") ? "block" : "none";
+      if (cardTotalEmp) cardTotalEmp.style.display = (employeesAccess === "accessible" || saudiAccess === "accessible") ? "block" : "none";
 
       const cardTasks = document.getElementById("card-open-tasks");
       if (cardTasks) cardTasks.style.display = (tasksAccess === "accessible") ? "block" : "none";
@@ -3427,6 +3550,28 @@
     window.isSaudiEmployee = isSaudiEmployee;
 
     function setEmployeeViewTab(tab) {
+      const user = getCurrentUser();
+      const allAccess = getSectionAccess("employees", user);
+      const canAccessAllEmp = (allAccess === "accessible") && hasUserPermission("employees", "view", user);
+      const saudiAccess = getSectionAccess("saudi-staff", user);
+      const canAccessSaudiStaff = (saudiAccess === "accessible");
+
+      if (tab === "saudi") {
+        if (saudiAccess === "locked") {
+          document.getElementById("modal-section-locked").style.display = "flex";
+          return;
+        }
+        if (!canAccessSaudiStaff && canAccessAllEmp) {
+          tab = "all";
+        }
+      } else {
+        if (allAccess === "locked" && canAccessSaudiStaff) {
+          tab = "saudi";
+        } else if (!canAccessAllEmp && canAccessSaudiStaff) {
+          tab = "saudi";
+        }
+      }
+
       activeEmployeeTab = tab || "all";
       const tabAll = document.getElementById("emp-tab-all");
       const tabSaudi = document.getElementById("emp-tab-saudi");
@@ -3437,6 +3582,21 @@
       const heading = document.getElementById("emp-main-heading");
       const subheading = document.getElementById("emp-main-subheading");
       const lang = document.documentElement.getAttribute("lang") || "en";
+
+      if (tabAll) tabAll.style.display = canAccessAllEmp ? "inline-flex" : "none";
+      if (tabSaudi) tabSaudi.style.display = canAccessSaudiStaff ? "inline-flex" : "none";
+
+      const navSaudi = document.getElementById("nav-saudi-staff");
+      const navEmp = document.getElementById("nav-employees");
+      if (state.activeModule === "employees") {
+        if (tab === "saudi") {
+          if (navSaudi) navSaudi.classList.add("active");
+          if (navEmp) navEmp.classList.remove("active");
+        } else {
+          if (navEmp) navEmp.classList.add("active");
+          if (navSaudi) navSaudi.classList.remove("active");
+        }
+      }
 
       if (tab === "saudi") {
         if (tabAll) { tabAll.className = "btn btn-ghost"; tabAll.style.fontWeight = "600"; }
@@ -3532,8 +3692,17 @@
       const grid = document.getElementById("saudi-workers-grid");
       const lang = document.documentElement.getAttribute("lang") || "en";
       const currentUser = getCurrentUser();
-      const canEdit = hasUserPermission("employees", "edit", currentUser);
-      const canDelete = hasUserPermission("employees", "delete", currentUser);
+      const canCreate = hasUserPermission("saudi-staff", "create", currentUser) || hasUserPermission("employees", "create", currentUser);
+      const canEdit = hasUserPermission("saudi-staff", "edit", currentUser) || hasUserPermission("employees", "edit", currentUser);
+      const canDelete = hasUserPermission("saudi-staff", "delete", currentUser) || hasUserPermission("employees", "delete", currentUser);
+      const canExcel = hasUserPermission("saudi-staff", "excel", currentUser) || canCreate;
+
+      const btnAddSaudi = document.querySelector("#emp-actions-saudi button[onclick*='openWorkerHUD(true)']");
+      if (btnAddSaudi) btnAddSaudi.style.display = canCreate ? "inline-flex" : "none";
+      const btnSample = document.querySelector("#emp-actions-saudi button[onclick*='downloadSaudiExcelSample']");
+      if (btnSample) btnSample.style.display = canExcel ? "inline-flex" : "none";
+      const btnImport = document.querySelector("#emp-actions-saudi button[onclick*='openExcelImportModal']");
+      if (btnImport) btnImport.style.display = canExcel ? "inline-flex" : "none";
 
       // 1. Calculate executive KPI Metrics (Gross Payroll, Net Employee Payout, and Company Refund)
       const allUsers = state.users || [];
@@ -3689,6 +3858,11 @@
     window.renderSaudiWorkers = renderSaudiWorkers;
 
     function downloadSaudiExcelSample() {
+      const canExcel = hasUserPermission("saudi-staff", "excel") || hasUserPermission("saudi-staff", "create") || hasUserPermission("employees", "create") || hasUserPermission("saudi-staff", "view");
+      if (!canExcel) {
+        alert("Permission denied: You do not have permission to download employee spreadsheets.");
+        return;
+      }
       const sampleData = [
         {
           "اسم الموظف": "فهد بن ناصر الحربي",
@@ -3816,6 +3990,11 @@
     let pendingExcelParsedWorkers = [];
 
     function openExcelImportModal() {
+      const canExcel = hasUserPermission("saudi-staff", "excel") || hasUserPermission("saudi-staff", "create") || hasUserPermission("employees", "create");
+      if (!canExcel) {
+        alert("Permission denied: You do not have permission to import employee spreadsheets.");
+        return;
+      }
       pendingExcelParsedWorkers = [];
       const fileInput = document.getElementById("excel-file-input");
       if (fileInput) fileInput.value = "";
@@ -4181,11 +4360,14 @@
       const u = state.users.find(x => x.id === id);
       if (!u) return;
 
+      const isSaudi = isSaudiEmployee(u);
       const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
-      const hasAdminEdit = hasUserPermission("employees", "edit", currentUser);
+      const hasAdminEdit = isSaudi 
+        ? (hasUserPermission("saudi-staff", "edit", currentUser) || hasUserPermission("employees", "edit", currentUser))
+        : hasUserPermission("employees", "edit", currentUser);
 
       if (!hasAdminEdit && !isSelf) {
-        alert("Permission denied: You do not have permission to edit other employees.");
+        alert(isSaudi ? "Permission denied: You do not have permission to edit Saudi employee profiles." : "Permission denied: You do not have permission to edit other employees.");
         return;
       }
 
@@ -4194,7 +4376,6 @@
       document.getElementById("worker-email").value = u.email;
       document.getElementById("worker-phone").value = u.phone || "+966 ";
 
-      const isSaudi = isSaudiEmployee(u);
       const nationalitySelect = document.getElementById("worker-nationality");
       if (nationalitySelect) {
         nationalitySelect.value = isSaudi ? "Saudi Arabian" : (u.nationality && !u.nationality.toLowerCase().includes("saudi") ? u.nationality : "Non-Saudi");
@@ -4785,14 +4966,20 @@
     window.renderAuditRecycleBinTable = renderAuditRecycleBinTable;
 
     function deleteWorkerById(id) {
-      if (!hasUserPermission("employees", "delete")) {
-        alert("Permission denied: You do not have permission to delete employees.");
-        return;
-      }
       const u = state.users.find(x => x.id === id);
       if (!u) return;
       if (u.isProtected || u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
         alert("The protected Super Admin account cannot be deleted.");
+        return;
+      }
+
+      const isSaudi = isSaudiEmployee(u);
+      const canDelete = isSaudi
+        ? (hasUserPermission("saudi-staff", "delete") || hasUserPermission("employees", "delete"))
+        : hasUserPermission("employees", "delete");
+
+      if (!canDelete) {
+        alert(isSaudi ? "Permission denied: You do not have permission to delete Saudi employees." : "Permission denied: You do not have permission to delete employees.");
         return;
       }
 
@@ -4808,6 +4995,7 @@
           state.users = state.users.filter(x => x.id !== id);
           saveState();
           renderWorkers();
+          renderSaudiWorkers();
           renderDepartments();
           updateCounts();
 
@@ -4885,9 +5073,11 @@
         const u = state.users.find(x => x.id === editId);
         if (u) {
           const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
-          const hasAdminEdit = hasUserPermission("employees", "edit", currentUser);
+          const hasAdminEdit = (isSaudiEmployee(u) || isSaudiVal)
+            ? (hasUserPermission("saudi-staff", "edit", currentUser) || hasUserPermission("employees", "edit", currentUser))
+            : hasUserPermission("employees", "edit", currentUser);
           if (!hasAdminEdit && !isSelf) {
-            alert("Permission denied.");
+            alert(isSaudiVal ? "Permission denied: You do not have permission to edit Saudi employee profiles." : "Permission denied: You do not have permission to edit employees.");
             return;
           }
 
@@ -4937,6 +5127,14 @@
         }
       } else {
         const isFromSaudiTab = (activeEmployeeTab === "saudi") || isSaudiVal;
+        const canCreate = isFromSaudiTab
+          ? (hasUserPermission("saudi-staff", "create", currentUser) || hasUserPermission("employees", "create", currentUser))
+          : hasUserPermission("employees", "create", currentUser);
+        if (!canCreate) {
+          alert(isFromSaudiTab ? "Permission denied: You do not have permission to add Saudi employees." : "Permission denied: You do not have permission to add employees.");
+          return;
+        }
+
         const statusVal = document.getElementById("worker-status")?.value || "ACTIVE";
         const passHash = await hashPassword(passRaw);
         const newUser = {
@@ -4966,6 +5164,7 @@
           sectionAccess: {
             reminders: "accessible",
             employees: role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER" ? "accessible" : "hidden",
+            "saudi-staff": role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER" ? "accessible" : "hidden",
             departments: role === "SUPER_ADMIN" || role === "ADMIN" || role === "MANAGER" ? "accessible" : "hidden",
             tasks: "accessible",
             stock: (role === "SUPER_ADMIN" || role === "ADMIN" || role === "STOCK_MANAGER") ? "accessible" : "hidden",
@@ -5052,6 +5251,13 @@
         edit: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
         delete: user.role === "SUPER_ADMIN" || user.role === "ADMIN"
       };
+      const saudiP = p["saudi-staff"] || p.saudi_staff || {
+        view: getSectionAccess("saudi-staff", user) === "accessible",
+        create: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
+        edit: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
+        delete: user.role === "SUPER_ADMIN" || user.role === "ADMIN",
+        excel: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER"
+      };
       const stockP = p.stock || {
         view: getSectionAccess("stock", user) === "accessible",
         create: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "STOCK_MANAGER",
@@ -5099,6 +5305,12 @@
       setChecked("chk-perm-emp-edit", empP.edit);
       setChecked("chk-perm-emp-delete", empP.delete);
 
+      setChecked("chk-perm-saudi-view", saudiP.view);
+      setChecked("chk-perm-saudi-create", saudiP.create);
+      setChecked("chk-perm-saudi-edit", saudiP.edit);
+      setChecked("chk-perm-saudi-delete", saudiP.delete);
+      setChecked("chk-perm-saudi-excel", saudiP.excel);
+
       setChecked("chk-perm-stock-view", stockP.view);
       setChecked("chk-perm-stock-create", stockP.create);
       setChecked("chk-perm-stock-edit", stockP.edit);
@@ -5138,6 +5350,7 @@
       };
 
       const empView = getChecked("chk-perm-emp-view");
+      const saudiView = getChecked("chk-perm-saudi-view");
       const stockView = getChecked("chk-perm-stock-view");
       const stockReqPerm = getChecked("chk-perm-stock-request");
       const stockApprovePerm = getChecked("chk-perm-stock-approve_requests");
@@ -5156,6 +5369,13 @@
           create: getChecked("chk-perm-emp-create"),
           edit: getChecked("chk-perm-emp-edit"),
           delete: getChecked("chk-perm-emp-delete")
+        },
+        "saudi-staff": {
+          view: saudiView,
+          create: getChecked("chk-perm-saudi-create"),
+          edit: getChecked("chk-perm-saudi-edit"),
+          delete: getChecked("chk-perm-saudi-delete"),
+          excel: getChecked("chk-perm-saudi-excel")
         },
         stock: {
           view: stockView,
@@ -5188,7 +5408,8 @@
         settings: { view: settingsView }
       };
 
-      user.sectionAccess.employees = empView ? "accessible" : "hidden";
+      user.sectionAccess.employees = (empView || saudiView) ? "accessible" : "hidden";
+      user.sectionAccess["saudi-staff"] = saudiView ? "accessible" : "hidden";
       user.sectionAccess.departments = empView ? "accessible" : "hidden";
       user.sectionAccess.stock = stockView ? "accessible" : "hidden";
       user.sectionAccess["stock-requests"] = (stockReqPerm || stockApprovePerm) ? "accessible" : "hidden";
@@ -5202,6 +5423,7 @@
       saveState();
       renderDepartments();
       applyModuleVisibility();
+      renderSaudiWorkers();
       renderWarehouse();
       renderTasks();
       renderReminders();
@@ -5238,6 +5460,7 @@
       const sections = [
         { key: "reminders", label: "⏰ Reminders" },
         { key: "employees", label: "👥 Employees" },
+        { key: "saudi-staff", label: "🇸🇦 Saudi Staff" },
         { key: "tasks", label: "☑️ Tasks" },
         { key: "stock", label: "📦 Warehouse" },
         { key: "reports", label: "📈 Reports" },
@@ -5293,6 +5516,20 @@
       const current = u.sectionAccess[sectionKey] || "accessible";
       const next = current === "accessible" ? "locked" : current === "locked" ? "hidden" : "accessible";
       u.sectionAccess[sectionKey] = next;
+
+      // Keep granular permissions in sync if defined
+      if (u.permissions) {
+        if (sectionKey === "saudi-staff") {
+          if (!u.permissions["saudi-staff"]) u.permissions["saudi-staff"] = {};
+          u.permissions["saudi-staff"].view = (next === "accessible");
+        } else if (sectionKey === "employees") {
+          if (!u.permissions.employees) u.permissions.employees = {};
+          u.permissions.employees.view = (next === "accessible");
+        } else if (u.permissions[sectionKey]) {
+          u.permissions[sectionKey].view = (next === "accessible");
+        }
+      }
+
       saveState();
       renderDepartments();
       applyModuleVisibility();
@@ -5313,6 +5550,20 @@
       if (worker) {
         if (!worker.sectionAccess) worker.sectionAccess = {};
         worker.sectionAccess[sectionKey] = action;
+
+        // Keep granular permissions in sync if defined
+        if (worker.permissions) {
+          if (sectionKey === "saudi-staff") {
+            if (!worker.permissions["saudi-staff"]) worker.permissions["saudi-staff"] = {};
+            worker.permissions["saudi-staff"].view = (action === "accessible");
+          } else if (sectionKey === "employees") {
+            if (!worker.permissions.employees) worker.permissions.employees = {};
+            worker.permissions.employees.view = (action === "accessible");
+          } else if (worker.permissions[sectionKey]) {
+            worker.permissions[sectionKey].view = (action === "accessible");
+          }
+        }
+
         saveState();
         renderDepartments();
         applyModuleVisibility();
@@ -5992,8 +6243,11 @@
     window.handleWorkerNationalityChange = handleWorkerNationalityChange;
 
     function openWorkerHUD(forSaudi = false) {
-      if (!hasUserPermission("employees", "create")) {
-        alert("Permission denied: You do not have permission to add employees.");
+      const canCreate = forSaudi 
+        ? (hasUserPermission("saudi-staff", "create") || hasUserPermission("employees", "create"))
+        : hasUserPermission("employees", "create");
+      if (!canCreate) {
+        alert(forSaudi ? "Permission denied: You do not have permission to add Saudi employees." : "Permission denied: You do not have permission to add employees.");
         return;
       }
       document.getElementById("worker-edit-id").value = "";
