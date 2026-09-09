@@ -132,12 +132,33 @@ function getOrCreateUserSession(rawUserId) {
   return sessionObj;
 }
 
-async function startWhatsAppSocketForUser(cleanUserId) {
-  const session = userSessions.get(cleanUserId);
-  if (!session || session.isStarting) return;
+async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
+  let session = userSessions.get(cleanUserId);
+  if (!session) {
+    session = {
+      userId: cleanUserId,
+      status: 'disconnected',
+      qr: null,
+      phone: null,
+      name: null,
+      sock: null,
+      isStarting: false,
+      authDir: getUserAuthDir(cleanUserId)
+    };
+    userSessions.set(cleanUserId, session);
+  }
+
+  if (session.isStarting && !forceRestart) return;
+
+  if (forceRestart && session.sock) {
+    try { session.sock.end(); } catch (e) {}
+    session.sock = null;
+  }
 
   session.isStarting = true;
   session.status = 'connecting';
+  session.qr = null;
+  syncSessionStateToFirestore(cleanUserId, session);
 
   try {
     const { state, saveCreds } = await useMultiFileAuthState(session.authDir);
@@ -423,6 +444,36 @@ server.listen(PORT, HOST, () => {
     console.warn('[WhatsApp Gateway] Could not attach Firestore outbox listener:', e);
   }
 
+  // Real-time Cloud Requests Listener for Remote Users (e.g. Adel from outside localhost)
+  try {
+    onSnapshot(collection(fbDb, 'whatsappRequests'), (snapshot) => {
+      snapshot.docChanges().forEach(async (change) => {
+        if (change.type === 'added' || change.type === 'modified') {
+          const reqData = change.doc.data();
+          if (reqData && reqData.userId) {
+            const cleanId = sanitizeUserId(reqData.userId);
+            console.log(`[WhatsApp Gateway] ⚡ Cloud QR request received for user: ${cleanId} (action: ${reqData.action || 'request_qr'})`);
+            const session = getOrCreateUserSession(cleanId);
+            if (reqData.action === 'refresh' || reqData.action === 'restart') {
+              await startWhatsAppSocketForUser(cleanId, true);
+            } else if (session.status === 'disconnected' || !session.sock) {
+              await startWhatsAppSocketForUser(cleanId, true);
+            } else if (session.status === 'qr_ready' && session.qr) {
+              syncSessionStateToFirestore(cleanId, session);
+            } else if (session.status === 'connected') {
+              syncSessionStateToFirestore(cleanId, session);
+            }
+          }
+        }
+      });
+    }, (err) => {
+      console.warn('[WhatsApp Gateway] Requests listener notice:', err?.message || err);
+    });
+    console.log('[WhatsApp Gateway] ☁️ Cloud Firestore Requests Listener active');
+  } catch (e) {
+    console.warn('[WhatsApp Gateway] Could not attach Firestore requests listener:', e);
+  }
+
   // Real-time Cloud Commands Listener for Remote Admin Actions (Refresh, Restart, Logout)
   try {
     onSnapshot(doc(fbDb, 'systemSettings', 'whatsapp_commands'), async (snap) => {
@@ -432,7 +483,7 @@ server.listen(PORT, HOST, () => {
           const cleanId = sanitizeUserId(cmd.userId || 'u-osama');
           console.log(`[WhatsApp Gateway] ⚡ Received remote command: ${cmd.action} for ${cleanId}`);
           if (cmd.action === 'restart' || cmd.action === 'refresh') {
-            await startWhatsAppSocketForUser(cleanId);
+            await startWhatsAppSocketForUser(cleanId, true);
           } else if (cmd.action === 'logout') {
             await logoutWhatsAppForUser(cleanId);
           }

@@ -7376,6 +7376,45 @@
     }
     window.handleLiveWhatsAppSnapshot = handleLiveWhatsAppSnapshot;
 
+    /** Request the gateway (locally or via Cloud Firestore) to initialize Baileys & generate a real QR */
+    async function requestWhatsAppSessionForUser(forceRefresh = false) {
+      const activeUid = getActiveUserId();
+      const curUser = getCurrentUser();
+
+      // 1. Try local/LAN gateway directly if reachable
+      try {
+        const gwBase = getWaGatewayUrl();
+        const url = forceRefresh ? `${gwBase}/api/restart` : `${gwBase}/api/status?userId=${encodeURIComponent(activeUid)}`;
+        const res = await fetch(url, {
+          method: forceRefresh ? "POST" : "GET",
+          headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+          body: forceRefresh ? JSON.stringify({ userId: activeUid }) : undefined,
+          signal: AbortSignal.timeout(2000)
+        });
+        if (res && res.ok) {
+          const d = await res.json();
+          handleLiveWhatsAppSnapshot(d);
+          return;
+        }
+      } catch (e) {}
+
+      // 2. If remote user (like Adel outside localhost), signal gateway via Cloud Firestore!
+      if (window.fbDb) {
+        try {
+          await window.fbDb.collection("whatsappRequests").doc(activeUid).set({
+            userId: activeUid,
+            userName: curUser?.name || activeUid,
+            userEmail: curUser?.email || "",
+            action: forceRefresh ? "refresh" : "request_qr",
+            timestamp: Date.now()
+          }, { merge: true });
+        } catch (err) {
+          console.warn("Firestore whatsappRequests notice:", err);
+        }
+      }
+    }
+    window.requestWhatsAppSessionForUser = requestWhatsAppSessionForUser;
+
     let currentWaFirestoreUnsub = null;
     function subscribeToUserWhatsAppFirestore() {
       if (!window.fbDb) return;
@@ -7398,6 +7437,12 @@
       }, (err) => {
         console.warn(`Firestore whatsappSessions for '${activeUid}' notice:`, err);
       });
+
+      // Also alert gateway in case user has no session running yet!
+      const curSession = getCurUserWaSession();
+      if (!curSession.connected) {
+        requestWhatsAppSessionForUser(false);
+      }
     }
     window.subscribeToUserWhatsAppFirestore = subscribeToUserWhatsAppFirestore;
 
@@ -7439,6 +7484,9 @@
             if (fallbackSnap.exists) {
               handleLiveWhatsAppSnapshot(fallbackSnap.data());
             }
+          } else {
+            // Signal gateway to initialize QR for this remote user!
+            requestWhatsAppSessionForUser(false);
           }
         }
       } catch (e) {
@@ -7447,6 +7495,8 @@
             const docSnap = await window.fbDb.collection("whatsappSessions").doc(activeUid).get();
             if (docSnap.exists) {
               handleLiveWhatsAppSnapshot(docSnap.data());
+            } else {
+              requestWhatsAppSessionForUser(false);
             }
           } catch (err2) {}
         }
@@ -7487,6 +7537,7 @@
         qrImg.style.opacity = "0.4";
         setTimeout(() => { qrImg.style.opacity = "1"; }, 300);
       }
+      requestWhatsAppSessionForUser(true);
       sendWhatsAppRemoteCommand("refresh");
       await checkLiveWhatsAppGatewayStatus();
       startWhatsAppQRTimer();
@@ -7498,6 +7549,7 @@
 
     async function restartWhatsAppGatewaySession() {
       const activeUid = getActiveUserId();
+      requestWhatsAppSessionForUser(true);
       sendWhatsAppRemoteCommand("restart");
       try {
         try {
