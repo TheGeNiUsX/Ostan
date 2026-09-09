@@ -4907,11 +4907,51 @@
     }
     window.renderMessagesSender = renderMessagesSender;
 
+    function isOsamaUser(u = getCurrentUser()) {
+      if (!u) {
+        if (state.currentUserId) {
+          const raw = String(state.currentUserId).toLowerCase().trim();
+          return raw === "u-osama" || raw === "gtc0y8aj1ne4uzdf4fjdcuowkpf1" || raw.includes("osama") || raw.includes("waseem");
+        }
+        return false;
+      }
+      const email = String(u.email || "").toLowerCase().trim();
+      const name = String(u.name || "").toLowerCase().trim();
+      const id = String(u.id || "").toLowerCase().trim();
+      return email === "waseem.tw@hotmail.com" ||
+             id === "u-osama" ||
+             id === "gtc0y8aj1ne4uzdf4fjdcuowkpf1" ||
+             name.includes("osama") ||
+             name.includes("اسامة") ||
+             u.role === "SUPER_ADMIN";
+    }
+    window.isOsamaUser = isOsamaUser;
+
     function getActiveUserId() {
       const u = getCurrentUser();
-      if (u && u.id) return String(u.id);
-      if (u && u.email) return String(u.email);
-      if (state.currentUserId) return String(state.currentUserId);
+      if (!u) {
+        if (state.currentUserId) {
+          const raw = String(state.currentUserId).toLowerCase().trim();
+          if (raw === "u-osama" || raw === "gtc0y8aj1ne4uzdf4fjdcuowkpf1" || raw.includes("osama") || raw.includes("waseem")) {
+            return "u-osama";
+          }
+          return raw.replace(/[^a-z0-9_-]/g, "_");
+        }
+        return "guest";
+      }
+      if (isOsamaUser(u)) {
+        return "u-osama";
+      }
+      // For any other employee (e.g. soso):
+      if (u.email && !u.email.includes("hotmail")) {
+        const prefix = u.email.split("@")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+        if (prefix) return prefix;
+      }
+      if (u.name) {
+        const nameSlug = u.name.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+        if (nameSlug) return nameSlug;
+      }
+      if (u.id) return String(u.id).replace(/[^a-z0-9_-]/g, "_");
       return "guest";
     }
     window.getActiveUserId = getActiveUserId;
@@ -4919,7 +4959,7 @@
     function getCurUserWaSession() {
       state.userWhatsAppSessions = state.userWhatsAppSessions || {};
       const uid = getActiveUserId();
-      const isOsama = uid.toLowerCase().includes("osama") || uid.toLowerCase().includes("waseem") || uid === "u-osama";
+      const isOsama = (uid === "u-osama") || isOsamaUser(getCurrentUser());
 
       if (!state.userWhatsAppSessions[uid]) {
         state.userWhatsAppSessions[uid] = {
@@ -4962,7 +5002,7 @@
         if (statusText) statusText.textContent = lang === "ar" ? "متصل ونشط" : "Connected & Active";
         if (unpairedView) unpairedView.style.display = "none";
         if (pairedView) pairedView.style.display = "flex";
-        if (phoneDisplay) phoneDisplay.textContent = curSession.phone || "+966 50 123 4567";
+        if (phoneDisplay) phoneDisplay.textContent = curSession.phone || "+966 58 053 9698";
       } else {
         if (statusPill) {
           statusPill.className = "badge badge-amber";
