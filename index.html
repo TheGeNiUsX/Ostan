@@ -18,6 +18,8 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+  <!-- SheetJS / XLSX for high-speed client-side Excel batch processing & template export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <style>
     :root {
@@ -757,17 +759,102 @@
              VIEW 2: EMPLOYEES
              ===================================================================== -->
         <section id="view-employees" style="display: none; flex-direction: column; gap: 1.25rem;">
+          
+          <!-- Top Header with Segmented Tabs -->
           <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
             <div>
-              <h2 data-i18n="emp_section_title" style="font-size: 1.3rem; font-weight: 800;">Employees & User Management</h2>
-              <p data-i18n="emp_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Create, edit, and delete real employee accounts with real-time Firebase sync.</p>
+              <h2 id="emp-main-heading" data-i18n="emp_section_title" style="font-size: 1.3rem; font-weight: 800;">Employees & User Management</h2>
+              <p id="emp-main-subheading" data-i18n="emp_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Create, edit, and delete real employee accounts with real-time Firebase sync.</p>
             </div>
-            <button class="btn btn-primary" onclick="openWorkerHUD()">
-              <span data-i18n="btn_add_employee">+ Add New Employee</span>
-            </button>
+
+            <!-- Tab Switcher: All Employees vs Saudi Staff -->
+            <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+              <div style="display: flex; gap: 0.4rem; background: var(--bg-surface-elevated); padding: 4px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+                <button id="emp-tab-all" type="button" onclick="setEmployeeViewTab('all')" class="btn btn-primary" style="padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 700;">
+                  <span data-i18n="emp_tab_all">👥 All Employees</span>
+                </button>
+                <button id="emp-tab-saudi" type="button" onclick="setEmployeeViewTab('saudi')" class="btn btn-ghost" style="padding: 0.45rem 1rem; font-size: 0.82rem; font-weight: 700;">
+                  <span data-i18n="emp_tab_saudi">🇸🇦 Saudi Staff</span>
+                </button>
+              </div>
+
+              <div id="emp-actions-all">
+                <button class="btn btn-primary" onclick="openWorkerHUD(false)">
+                  <span data-i18n="btn_add_employee">+ Add New Employee</span>
+                </button>
+              </div>
+
+              <div id="emp-actions-saudi" style="display: none; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                <button type="button" onclick="downloadSaudiExcelSample()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.85rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981;" title="Download sample Excel spreadsheet pre-formatted for Saudi employees">
+                  <span data-i18n="btn_download_excel_sample">📥 Download Excel Sample</span>
+                </button>
+                <button type="button" onclick="openExcelImportModal()" class="btn btn-secondary" style="font-size: 0.8rem; padding: 0.45rem 0.85rem; background: rgba(99, 102, 241, 0.12); color: #818cf8; border-color: rgba(99, 102, 241, 0.4);" title="Batch upload and import Saudi employees from Excel/CSV">
+                  <span data-i18n="btn_import_excel">📤 Import Excel File</span>
+                </button>
+                <button type="button" onclick="openWorkerHUD(true)" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.45rem 0.95rem; background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981;">
+                  <span data-i18n="btn_add_saudi_employee">+ Add Saudi Employee</span>
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div id="workers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;"></div>
+          <!-- SUBVIEW 1: ALL EMPLOYEES -->
+          <div id="emp-subview-all" style="display: flex; flex-direction: column; gap: 1rem;">
+            <div id="workers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;"></div>
+          </div>
+
+          <!-- SUBVIEW 2: DEDICATED SAUDI NATIONAL STAFF HUB -->
+          <div id="emp-subview-saudi" style="display: none; flex-direction: column; gap: 1.25rem;">
+            
+            <!-- 4 Executive KPI Metrics Cards -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
+              <div class="glass-panel" style="padding: 1.1rem; border-left: 4px solid #10b981; display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudi_count">🇸🇦 Saudi Nationals</div>
+                <div id="saudi-stat-count" style="font-size: 1.6rem; font-weight: 800; color: #10b981;">0</div>
+                <div style="font-size: 0.7rem; color: var(--text-faint);">Registered Saudi Citizens</div>
+              </div>
+
+              <div class="glass-panel" style="padding: 1.1rem; border-left: 4px solid #3b82f6; display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudization_rate">💼 Saudization Ratio</div>
+                <div id="saudi-stat-ratio" style="font-size: 1.6rem; font-weight: 800; color: #3b82f6;">0%</div>
+                <div style="font-size: 0.7rem; color: var(--text-faint);">Of Total Company Workforce</div>
+              </div>
+
+              <div class="glass-panel" style="padding: 1.1rem; border-left: 4px solid #f59e0b; display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_saudi_payroll">💵 Monthly Saudi Payroll</div>
+                <div id="saudi-stat-payroll" style="font-size: 1.6rem; font-weight: 800; color: #fbbf24;">0 SAR</div>
+                <div style="font-size: 0.7rem; color: var(--text-faint);">Total Monthly Disbursed</div>
+              </div>
+
+              <div class="glass-panel" style="padding: 1.1rem; border-left: 4px solid #8b5cf6; display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;" data-i18n="metric_avg_salary">📊 Average Saudi Salary</div>
+                <div id="saudi-stat-avg-salary" style="font-size: 1.6rem; font-weight: 800; color: #a78bfa;">0 SAR</div>
+                <div style="font-size: 0.7rem; color: var(--text-faint);">Per Saudi Employee / Mo</div>
+              </div>
+            </div>
+
+            <!-- Saudi Staff Filter & Search Toolbar -->
+            <div class="glass-panel" style="padding: 0.9rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">💰 Salary Filter:</span>
+                <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
+                  <button id="saudi-sal-filter-all" type="button" onclick="setSaudiSalaryFilter('all', this)" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.72rem;">All Salaries</button>
+                  <button id="saudi-sal-filter-under-5k" type="button" onclick="setSaudiSalaryFilter('under_5k', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">&lt; 5,000 SAR</button>
+                  <button id="saudi-sal-filter-5k-10k" type="button" onclick="setSaudiSalaryFilter('5k_10k', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">5K - 10K SAR</button>
+                  <button id="saudi-sal-filter-10k-15k" type="button" onclick="setSaudiSalaryFilter('10k_15k', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">10K - 15K SAR</button>
+                  <button id="saudi-sal-filter-above-15k" type="button" onclick="setSaudiSalaryFilter('above_15k', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">&gt; 15,000 SAR</button>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <input id="saudi-search-input" type="text" placeholder="Search Saudi staff..." oninput="renderSaudiWorkers()" class="input-field" style="font-size: 0.8rem; padding: 0.35rem 0.75rem; width: 220px;">
+              </div>
+            </div>
+
+            <!-- Saudi Staff Cards Grid -->
+            <div id="saudi-workers-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 1rem;"></div>
+          </div>
+
         </section>
 
         <!-- =====================================================================
@@ -1472,9 +1559,12 @@
               </div>
 
               <!-- Quick Filter Buttons -->
-              <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
                 <button type="button" onclick="selectRecipientGroup('all')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
                   👥 <span data-i18n="msg_recipients_all">All Staff</span>
+                </button>
+                <button type="button" onclick="selectRecipientGroup('saudi')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
+                  🇸🇦 <span data-i18n="btn_filter_saudi_msg">Saudi Staff</span>
                 </button>
                 <button type="button" onclick="selectRecipientGroup('stock')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
                   📦 <span data-i18n="msg_recipients_stock">Warehouse</span>
@@ -1482,6 +1572,21 @@
                 <button type="button" onclick="selectRecipientGroup('clear')" class="btn btn-ghost" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
                   ✕ Clear
                 </button>
+              </div>
+
+              <!-- Salary Filter for Saudi Staff -->
+              <div style="background: rgba(16, 185, 129, 0.06); border: 1px dashed rgba(16, 185, 129, 0.3); padding: 0.5rem 0.65rem; border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.35rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 0.72rem; font-weight: 700; color: #10b981;" data-i18n="msg_salary_filter_title">💰 Filter Saudis by Salary Range:</span>
+                  <span id="msg-salary-match-count" style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;"></span>
+                </div>
+                <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                  <button type="button" onclick="filterSaudiBySalary(0, Infinity, this)" class="btn btn-ghost active-sal-filter" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle); font-weight: 600;">All</button>
+                  <button type="button" onclick="filterSaudiBySalary(0, 5000, this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">&lt; 5K</button>
+                  <button type="button" onclick="filterSaudiBySalary(5000, 10000, this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">5K - 10K</button>
+                  <button type="button" onclick="filterSaudiBySalary(10000, 15000, this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">10K - 15K</button>
+                  <button type="button" onclick="filterSaudiBySalary(15000, Infinity, this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">&gt; 15K</button>
+                </div>
               </div>
 
               <!-- Search Staff Filter -->
@@ -1517,8 +1622,9 @@
                 <span data-i18n="msg_vars_title" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Insert Tokens:</span>
                 <button type="button" onclick="insertMessageVariable('{name}')" class="badge badge-primary" style="cursor: pointer; border: none;" title="Inserts recipient worker name">{name}</button>
                 <button type="button" onclick="insertMessageVariable('{role}')" class="badge badge-cyan" style="cursor: pointer; border: none;" title="Inserts job title/role">{role}</button>
+                <button type="button" onclick="insertMessageVariable('{salary}')" class="badge badge-emerald" style="cursor: pointer; border: none; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);" title="Inserts recipient monthly salary">{salary}</button>
                 <button type="button" onclick="insertMessageVariable('{date}')" class="badge badge-amber" style="cursor: pointer; border: none;" title="Inserts today's date">{date}</button>
-                <button type="button" onclick="insertMessageVariable('{time}')" class="badge badge-emerald" style="cursor: pointer; border: none;" title="Inserts current time">{time}</button>
+                <button type="button" onclick="insertMessageVariable('{time}')" class="badge badge-secondary" style="cursor: pointer; border: none;" title="Inserts current time">{time}</button>
                 <button type="button" onclick="insertMessageVariable('{company}')" class="badge badge-rose" style="cursor: pointer; border: none;" title="Inserts Ostan company name">{company}</button>
               </div>
             </div>
@@ -1716,7 +1822,7 @@
 
   <!-- WORKER MODAL (ADD & EDIT) -->
   <div id="modal-worker" class="hud-modal-overlay" style="display: none;">
-    <div class="hud-modal-box">
+    <div class="hud-modal-box" style="max-width: 540px;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
         <h2 id="modal-worker-heading" style="font-size: 1.25rem; font-weight: 800;">👥 Add New Employee</h2>
         <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
@@ -1731,32 +1837,129 @@
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Email Address *</label>
           <input id="worker-email" type="email" required placeholder="khalid@company.com" class="input-field">
         </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Nationality (الجنسية)</label>
+            <select id="worker-nationality" class="input-field">
+              <option value="Saudi Arabian">🇸🇦 Saudi Arabian (سعودي)</option>
+              <option value="Non-Saudi">🌐 Non-Saudi (غير سعودي)</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">National ID / Iqama (الهوية)</label>
+            <input id="worker-national-id" type="text" placeholder="10XXXXXXXX" class="input-field">
+          </div>
+        </div>
+
+        <!-- SALARY BOX (MONTHLY IN SAR) -->
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 700; color: #10b981; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+            <span>💵 Monthly Salary (الراتب الشهري - ريال سعودي) *</span>
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: normal;">Tax-Free Gross (SAR)</span>
+          </label>
+          <div style="position: relative; display: flex; align-items: center;">
+            <span style="position: absolute; left: 12px; font-weight: 800; font-size: 0.82rem; color: #10b981; pointer-events: none;">SAR 🇸🇦</span>
+            <input id="worker-salary" type="number" min="0" step="50" placeholder="e.g. 8500" class="input-field" style="padding-left: 5rem; font-weight: 700; font-size: 0.95rem; color: #10b981;">
+          </div>
+          <div style="font-size: 0.7rem; color: var(--text-faint); margin-top: 3px;">Included in Saudi workforce payroll metrics, Saudization reports, and salary-based announcements.</div>
+        </div>
+
         <div>
           <label data-i18n="label_phone" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Phone / WhatsApp Number (+966) *</label>
           <input id="worker-phone" type="tel" required placeholder="+966 5X XXX XXXX" data-i18n-placeholder="placeholder_phone" class="input-field" style="direction: ltr; font-weight: 600;" oninput="formatSaudiPhoneInput(this)">
           <div data-i18n="phone_hint" style="font-size: 0.72rem; color: var(--text-faint); margin-top: 4px;">Starts with +966 by default. Must contain exactly 9 digits (e.g. +966 50 123 4567). Spaces are ignored.</div>
         </div>
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Role</label>
-          <select id="worker-role" class="input-field">
-            <option value="EMPLOYEE">Employee (عامل / موظف)</option>
-            <option value="MANAGER">Manager (مدير قسم)</option>
-            <option value="STOCK_MANAGER">Stock Manager (مدير المستودع)</option>
-            <option value="ADMIN">Administrator (مدير النظام)</option>
-          </select>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Role</label>
+            <select id="worker-role" class="input-field">
+              <option value="EMPLOYEE">Employee (عامل / موظف)</option>
+              <option value="MANAGER">Manager (مدير قسم)</option>
+              <option value="STOCK_MANAGER">Stock Manager (مدير المستودع)</option>
+              <option value="ADMIN">Administrator (مدير النظام)</option>
+            </select>
+          </div>
+          <div id="worker-status-group">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Account Status</label>
+            <select id="worker-status" class="input-field">
+              <option value="ACTIVE">✅ Active (نشط)</option>
+              <option value="BLOCKED">🚫 Blocked (محظور)</option>
+            </select>
+          </div>
         </div>
-        <div id="worker-status-group">
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Account Status (حالة الحساب)</label>
-          <select id="worker-status" class="input-field">
-            <option value="ACTIVE">✅ Active (نشط ومصرح له بالدخول)</option>
-            <option value="BLOCKED">🚫 Blocked (محظور وممنوع من تسجيل الدخول)</option>
-          </select>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-subtle); padding-top: 1rem; margin-top: 0.25rem;">
           <button type="button" onclick="closeModals()" class="btn btn-secondary">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Employee</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- EXCEL BATCH IMPORT MODAL -->
+  <div id="modal-excel-import" class="hud-modal-overlay" style="display: none;">
+    <div class="hud-modal-box" style="max-width: 680px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.3rem;">📤</span>
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">Excel Batch Import • Saudi Staff</h2>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Upload your spreadsheet (.xlsx, .xls, .csv) for fast automatic bulk processing.</p>
+          </div>
+        </div>
+        <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <!-- Dropzone -->
+      <div id="excel-dropzone" onclick="document.getElementById('excel-file-input').click()" style="border: 2px dashed rgba(99, 102, 241, 0.4); background: rgba(99, 102, 241, 0.05); border-radius: var(--radius-md); padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s;" ondragover="event.preventDefault(); this.style.borderColor='#10b981';" ondragleave="this.style.borderColor='rgba(99, 102, 241, 0.4)';" ondrop="handleExcelDrop(event)">
+        <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleExcelFileUpload(event)">
+        <div style="font-size: 2.2rem; margin-bottom: 0.5rem;">📊</div>
+        <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);">Click to select or drag & drop Excel file here</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Supports .xlsx, .xls, and .csv formats</div>
+        <div style="margin-top: 0.75rem;">
+          <button type="button" onclick="event.stopPropagation(); downloadSaudiExcelSample()" class="btn btn-ghost" style="font-size: 0.75rem; color: #10b981; border: 1px solid rgba(16, 185, 129, 0.35);">
+            📥 Need the format? Download Excel Sample first
+          </button>
+        </div>
+      </div>
+
+      <!-- Live Preview Area -->
+      <div id="excel-preview-area" style="display: none; flex-direction: column; gap: 0.75rem; margin-top: 1rem; overflow-y: auto; max-height: 280px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-surface-elevated); padding: 0.6rem 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">
+            Detected: <strong id="excel-preview-count" style="color: #10b981;">0</strong> employees
+          </span>
+          <span style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">
+            Total Payroll: <strong id="excel-preview-payroll" style="color: #fbbf24;">0 SAR</strong>
+          </span>
+        </div>
+
+        <div style="overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+          <table class="matrix-table" style="font-size: 0.75rem;">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>National ID</th>
+                <th>Phone</th>
+                <th>Role</th>
+                <th>Salary (SAR)</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="excel-preview-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Action Footer -->
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; border-top: 1px solid var(--border-subtle); padding-top: 0.9rem;">
+        <button type="button" onclick="closeModals()" class="btn btn-secondary">Cancel</button>
+        <button id="btn-confirm-excel-import" type="button" onclick="confirmExcelImport()" class="btn btn-primary" disabled style="background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981;">
+          ✅ Confirm & Import to System
+        </button>
+      </div>
     </div>
   </div>
 
@@ -2345,10 +2548,24 @@
     let rawStoredUsers = JSON.parse(localStorage.getItem("ostan_users") || "null") || DEFAULT_USERS;
     let sanitizedUsers = rawStoredUsers.filter(u => !u.email.endsWith("@ostan.internal") && !u.email.endsWith("@company.local"));
     
-    // Ensure Super Admin profile integrity & default valid phone
+    // Ensure Super Admin profile integrity & default valid phone, salary, nationality
     sanitizedUsers = sanitizedUsers.map(u => {
       if (!u.phone) {
         u.phone = "+966 5" + (Math.abs((u.id || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000);
+      }
+      if (typeof u.salary === "undefined" || u.salary === null || u.salary === 0) {
+        if (u.role === "SUPER_ADMIN") u.salary = 25000;
+        else if (u.role === "ADMIN") u.salary = 16000;
+        else if (u.role === "MANAGER") u.salary = 12500;
+        else if (u.role === "STOCK_MANAGER") u.salary = 9500;
+        else u.salary = 8000;
+      }
+      if (!u.nationality) {
+        u.nationality = "Saudi Arabian";
+        u.isSaudi = true;
+      }
+      if (!u.nationalId) {
+        u.nationalId = "10" + (Math.abs((u.id || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000);
       }
       if (u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
         return {
@@ -2357,7 +2574,11 @@
           nameAr: "اسامة الطويش",
           role: "SUPER_ADMIN",
           isProtected: true,
-          phone: u.phone || "+966 50 123 4567"
+          phone: u.phone || "+966 58 053 9698",
+          salary: u.salary || 25000,
+          nationality: "Saudi Arabian",
+          isSaudi: true,
+          nationalId: u.nationalId || "1012345678"
         };
       }
       delete u.password;
@@ -2528,6 +2749,10 @@
         role: targetUser.role || "EMPLOYEE",
         phone: phone,
         compactPhone: compactPhone,
+        salary: targetUser.salary || 0,
+        nationality: targetUser.nationality || "Saudi Arabian",
+        nationalId: targetUser.nationalId || null,
+        isSaudi: (targetUser.nationality === "Saudi Arabian" || targetUser.isSaudi === true),
         isProtected: !!targetUser.isProtected,
         status: targetUser.status || "ACTIVE",
         sectionAccess: targetUser.sectionAccess || {},
@@ -2713,7 +2938,13 @@
       });
 
       if (mod === "dashboard") renderDashboard();
-      if (mod === "employees") renderWorkers();
+      if (mod === "employees") {
+        if (typeof activeEmployeeTab !== "undefined" && activeEmployeeTab === "saudi") {
+          renderSaudiWorkers();
+        } else {
+          renderWorkers();
+        }
+      }
       if (mod === "departments") renderDepartments();
       if (mod === "tasks") renderTasks();
       if (mod === "reminders") renderReminders();
@@ -3010,6 +3241,505 @@
     }
     window.normalizeSaudiPhoneNumber = normalizeSaudiPhoneNumber;
 
+    let activeEmployeeTab = "all";
+    let currentSaudiSalaryFilter = "all";
+
+    function isSaudiEmployee(u) {
+      if (!u) return false;
+      if (u.isSaudi === true) return true;
+      if (u.nationality && (u.nationality.toLowerCase().includes("saudi") || u.nationality.includes("سعودي"))) return true;
+      if (u.nationality && (u.nationality.toLowerCase().includes("non-saudi") || u.nationality.includes("غير"))) return false;
+      // Default: All default system workers are Saudi nationals
+      return true;
+    }
+    window.isSaudiEmployee = isSaudiEmployee;
+
+    function setEmployeeViewTab(tab) {
+      activeEmployeeTab = tab || "all";
+      const tabAll = document.getElementById("emp-tab-all");
+      const tabSaudi = document.getElementById("emp-tab-saudi");
+      const subviewAll = document.getElementById("emp-subview-all");
+      const subviewSaudi = document.getElementById("emp-subview-saudi");
+      const actionsAll = document.getElementById("emp-actions-all");
+      const actionsSaudi = document.getElementById("emp-actions-saudi");
+      const heading = document.getElementById("emp-main-heading");
+      const subheading = document.getElementById("emp-main-subheading");
+      const lang = document.documentElement.getAttribute("lang") || "en";
+
+      if (tab === "saudi") {
+        if (tabAll) { tabAll.className = "btn btn-ghost"; tabAll.style.fontWeight = "600"; }
+        if (tabSaudi) { tabSaudi.className = "btn btn-primary"; tabSaudi.style.fontWeight = "700"; }
+        if (subviewAll) subviewAll.style.display = "none";
+        if (subviewSaudi) subviewSaudi.style.display = "flex";
+        if (actionsAll) actionsAll.style.display = "none";
+        if (actionsSaudi) actionsSaudi.style.display = "flex";
+
+        if (heading) heading.textContent = lang === "ar" ? "الكادر الوطني السعودي وإدارة الرواتب" : "Saudi National Staff & Payroll Hub";
+        if (subheading) subheading.textContent = lang === "ar" ? "دليل الكادر الوطني السعودي، إدارة الرواتب والاستيراد السريع عبر إكسل." : "Dedicated Saudi National Staff directory, payroll metrics, and fast Excel batch processing.";
+
+        renderSaudiWorkers();
+      } else {
+        if (tabAll) { tabAll.className = "btn btn-primary"; tabAll.style.fontWeight = "700"; }
+        if (tabSaudi) { tabSaudi.className = "btn btn-ghost"; tabSaudi.style.fontWeight = "600"; }
+        if (subviewAll) subviewAll.style.display = "flex";
+        if (subviewSaudi) subviewSaudi.style.display = "none";
+        if (actionsAll) actionsAll.style.display = "inline-flex";
+        if (actionsSaudi) actionsSaudi.style.display = "none";
+
+        if (heading) heading.textContent = lang === "ar" ? "إدارة الموظفين وفريق العمل" : "Employees & User Management";
+        if (subheading) subheading.textContent = lang === "ar" ? "إنشاء وتعديل وحذف حسابات الموظفين مع المزامنة اللحظية في Firebase." : "Create, edit, and delete real employee accounts with real-time Firebase sync.";
+
+        renderWorkers();
+      }
+    }
+    window.setEmployeeViewTab = setEmployeeViewTab;
+
+    function setSaudiSalaryFilter(filterKey, btnEl) {
+      currentSaudiSalaryFilter = filterKey || "all";
+      const btnIds = ["saudi-sal-filter-all", "saudi-sal-filter-under-5k", "saudi-sal-filter-5k-10k", "saudi-sal-filter-10k-15k", "saudi-sal-filter-above-15k"];
+      btnIds.forEach(id => {
+        const btn = document.getElementById(id);
+        if (btn) {
+          btn.className = "btn btn-ghost";
+          btn.style.border = "1px solid var(--border-subtle)";
+        }
+      });
+      if (btnEl) {
+        btnEl.className = "btn btn-primary";
+        btnEl.style.border = "none";
+      }
+      renderSaudiWorkers();
+    }
+    window.setSaudiSalaryFilter = setSaudiSalaryFilter;
+
+    function renderSaudiWorkers() {
+      const grid = document.getElementById("saudi-workers-grid");
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const currentUser = getCurrentUser();
+      const canEdit = hasUserPermission("employees", "edit", currentUser);
+      const canDelete = hasUserPermission("employees", "delete", currentUser);
+
+      // 1. Calculate executive KPI Metrics
+      const allUsers = state.users || [];
+      const saudiUsers = allUsers.filter(isSaudiEmployee);
+      const totalCompanyCount = allUsers.length;
+      const saudiCount = saudiUsers.length;
+      const saudizationRate = totalCompanyCount > 0 ? Math.round((saudiCount / totalCompanyCount) * 100) : 0;
+      const totalPayroll = saudiUsers.reduce((sum, u) => sum + (parseFloat(u.salary) || 0), 0);
+      const avgSalary = saudiCount > 0 ? Math.round(totalPayroll / saudiCount) : 0;
+
+      const statCountEl = document.getElementById("saudi-stat-count");
+      const statRatioEl = document.getElementById("saudi-stat-ratio");
+      const statPayrollEl = document.getElementById("saudi-stat-payroll");
+      const statAvgSalaryEl = document.getElementById("saudi-stat-avg-salary");
+
+      if (statCountEl) statCountEl.textContent = saudiCount;
+      if (statRatioEl) statRatioEl.textContent = `${saudizationRate}%`;
+      if (statPayrollEl) statPayrollEl.textContent = `${totalPayroll.toLocaleString()} SAR`;
+      if (statAvgSalaryEl) statAvgSalaryEl.textContent = `${avgSalary.toLocaleString()} SAR`;
+
+      if (!grid) return;
+
+      // 2. Filter Saudi workers by salary & search
+      const searchQuery = (document.getElementById("saudi-search-input")?.value || "").toLowerCase().trim();
+      let displayedUsers = saudiUsers.filter(u => {
+        const sal = parseFloat(u.salary) || 0;
+        if (currentSaudiSalaryFilter === "under_5k" && sal >= 5000) return false;
+        if (currentSaudiSalaryFilter === "5k_10k" && (sal < 5000 || sal > 10000)) return false;
+        if (currentSaudiSalaryFilter === "10k_15k" && (sal < 10000 || sal > 15000)) return false;
+        if (currentSaudiSalaryFilter === "above_15k" && sal <= 15000) return false;
+
+        if (searchQuery) {
+          const name = (u.name || "").toLowerCase();
+          const nameAr = (u.nameAr || "").toLowerCase();
+          const role = (u.role || "").toLowerCase();
+          const email = (u.email || "").toLowerCase();
+          const nationalId = (u.nationalId || "").toLowerCase();
+          const phone = (u.phone || "").toLowerCase();
+          return name.includes(searchQuery) || nameAr.includes(searchQuery) || role.includes(searchQuery) || email.includes(searchQuery) || nationalId.includes(searchQuery) || phone.includes(searchQuery);
+        }
+        return true;
+      });
+
+      if (displayedUsers.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 3rem; text-align: center; color: var(--text-faint); background: var(--bg-surface-elevated); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">🇸🇦</div>
+            <div style="font-weight: 700; font-size: 1rem; color: var(--text-main);">${lang === 'ar' ? 'لا يوجد موظفون سعوديون يطابقون شروط البحث أو التصفية.' : 'No Saudi employees match current salary filter or search.'}</div>
+            <div style="font-size: 0.8rem; margin-top: 4px;">${lang === 'ar' ? 'يمكنك إضافة موظف جديد أو استيراد ملف إكسل.' : 'You can add a new Saudi employee or import an Excel spreadsheet.'}</div>
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = displayedUsers.map(u => {
+        const isMaster = u.email.toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
+        const roleBadgeClass = u.role === "SUPER_ADMIN" ? "badge-rose" : u.role === "ADMIN" ? "badge-primary" : u.role === "MANAGER" ? "badge-emerald" : u.role === "STOCK_MANAGER" ? "badge-amber" : "badge-cyan";
+        const displayName = lang === "ar" && u.nameAr ? u.nameAr : u.name;
+        const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
+        const canEditThis = canEdit || isSelf;
+        const salaryFormatted = (parseFloat(u.salary) || 0).toLocaleString();
+
+        return `
+          <div class="glass-panel card-hover" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border: ${isMaster ? '1px solid rgba(244, 63, 94, 0.35)' : '1px solid rgba(16, 185, 129, 0.25)'}; overflow: hidden; box-sizing: border-box; background: linear-gradient(180deg, rgba(16, 185, 129, 0.03) 0%, var(--bg-surface) 100%);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; min-width: 0; width: 100%;">
+              <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0; flex: 1;">
+                <div class="user-avatar-circle" style="flex-shrink: 0; background: ${isMaster ? 'linear-gradient(135deg, #f43f5e, #fb7185)' : 'linear-gradient(135deg, #10b981, #059669)'};">
+                  ${u.name.charAt(0).toUpperCase()}
+                </div>
+                <div style="min-width: 0; flex: 1;">
+                  <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</span>
+                    <span title="Saudi Citizen" style="font-size: 0.9rem;">🇸🇦</span>
+                    ${isMaster ? '<span style="flex-shrink: 0;">👑</span>' : ''}
+                  </div>
+                  <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${u.email}">${u.email}</div>
+                  <div style="font-size: 0.78rem; color: #10b981; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <span style="flex-shrink: 0;">📱</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.phone || '+966 50 123 4567'}</span>
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0;">
+                <span class="badge ${roleBadgeClass}" style="white-space: nowrap; line-height: 1;">${u.role}</span>
+                ${u.nationalId ? `<span class="badge badge-secondary" style="font-size: 0.65rem; font-family: monospace;" title="National ID">🆔 ${u.nationalId}</span>` : ''}
+              </div>
+            </div>
+
+            <!-- SALARY DISPLAY BOX -->
+            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.6rem 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+              <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">
+                ${lang === 'ar' ? 'الراتب الشهري:' : 'Monthly Salary:'}
+              </span>
+              <span style="font-weight: 800; font-size: 1.05rem; color: #10b981; display: flex; align-items: center; gap: 0.35rem;">
+                <span>${salaryFormatted}</span>
+                <span style="font-size: 0.72rem; color: #34d399; font-weight: 700;">SAR 🇸🇦</span>
+              </span>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+              <span class="badge" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); font-size: 0.68rem; font-weight: 700;">
+                ${lang === 'ar' ? '🇸🇦 مواطن سعودي' : '🇸🇦 Saudi National'}
+              </span>
+              <div style="display: flex; gap: 0.35rem;">
+                ${(!isMaster && (currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'ADMIN' || canEdit))) ? `
+                  <button onclick="toggleBlockWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem; color: ${u.status === 'BLOCKED' || u.isBlocked ? '#34d399' : '#f59e0b'};" title="${u.status === 'BLOCKED' || u.isBlocked ? 'Unblock' : 'Block'}">
+                    ${u.status === 'BLOCKED' || u.isBlocked ? '✅' : '🚫'}
+                  </button>
+                ` : ''}
+                ${canEditThis ? `
+                  <button onclick="editWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem;" title="Edit">
+                    ✏️
+                  </button>
+                ` : ''}
+                ${(!isMaster && canDelete) ? `
+                  <button onclick="deleteWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; color: #fb7185; font-size: 0.75rem;" title="Delete">
+                    🗑️
+                  </button>
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+    window.renderSaudiWorkers = renderSaudiWorkers;
+
+    function downloadSaudiExcelSample() {
+      const sampleData = [
+        {
+          "Name": "Mohammed Al-Otaibi",
+          "Name_Ar": "محمد العتيبي",
+          "National_ID": "1098765432",
+          "Phone": "+966 50 234 5678",
+          "Email": "mohammed.otaibi@company.sa",
+          "Role": "EMPLOYEE",
+          "Department": "Operations",
+          "Salary_SAR": 9500
+        },
+        {
+          "Name": "Sarah Al-Dosari",
+          "Name_Ar": "سارة الدوسري",
+          "National_ID": "1087654321",
+          "Phone": "+966 55 876 5432",
+          "Email": "sarah.dosari@company.sa",
+          "Role": "MANAGER",
+          "Department": "Human Resources",
+          "Salary_SAR": 14000
+        },
+        {
+          "Name": "Fahad Al-Harbi",
+          "Name_Ar": "فهد الحربي",
+          "National_ID": "1076543210",
+          "Phone": "+966 56 345 6789",
+          "Email": "fahad.harbi@company.sa",
+          "Role": "STOCK_MANAGER",
+          "Department": "Warehouse",
+          "Salary_SAR": 10500
+        },
+        {
+          "Name": "Abdulaziz Al-Shehri",
+          "Name_Ar": "عبدالعزيز الشهري",
+          "National_ID": "1065432109",
+          "Phone": "+966 54 987 6543",
+          "Email": "abdulaziz.shehri@company.sa",
+          "Role": "EMPLOYEE",
+          "Department": "Maintenance",
+          "Salary_SAR": 8000
+        },
+        {
+          "Name": "Reem Al-Qahtani",
+          "Name_Ar": "ريم القحطاني",
+          "National_ID": "1054321098",
+          "Phone": "+966 53 112 2334",
+          "Email": "reem.qahtani@company.sa",
+          "Role": "ADMIN",
+          "Department": "Finance",
+          "Salary_SAR": 17500
+        }
+      ];
+
+      if (typeof XLSX !== "undefined") {
+        try {
+          const ws = XLSX.utils.json_to_sheet(sampleData);
+          ws["!cols"] = [
+            { wch: 22 },
+            { wch: 18 },
+            { wch: 16 },
+            { wch: 20 },
+            { wch: 28 },
+            { wch: 16 },
+            { wch: 18 },
+            { wch: 14 }
+          ];
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Saudi Staff");
+          XLSX.writeFile(wb, "Saudi_Employees_Sample.xlsx");
+          if (window.OstanStyle) window.OstanStyle.showToast("Excel Sample Ready", "Downloaded Saudi_Employees_Sample.xlsx");
+          return;
+        } catch (e) {
+          console.warn("XLSX export fallback:", e);
+        }
+      }
+
+      // CSV Fallback
+      const headers = ["Name", "Name_Ar", "National_ID", "Phone", "Email", "Role", "Department", "Salary_SAR"];
+      const rows = sampleData.map(r => headers.map(h => `"${(r[h] || "").toString().replace(/"/g, '""')}"`).join(","));
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.setAttribute("href", url);
+      link.setAttribute("download", "Saudi_Employees_Sample.csv");
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      if (window.OstanStyle) window.OstanStyle.showToast("CSV Sample Ready", "Downloaded Saudi_Employees_Sample.csv");
+    }
+    window.downloadSaudiExcelSample = downloadSaudiExcelSample;
+
+    let pendingExcelParsedWorkers = [];
+
+    function openExcelImportModal() {
+      pendingExcelParsedWorkers = [];
+      const fileInput = document.getElementById("excel-file-input");
+      if (fileInput) fileInput.value = "";
+      const previewArea = document.getElementById("excel-preview-area");
+      if (previewArea) previewArea.style.display = "none";
+      const confirmBtn = document.getElementById("btn-confirm-excel-import");
+      if (confirmBtn) confirmBtn.disabled = true;
+
+      const modal = document.getElementById("modal-excel-import");
+      if (modal) modal.style.display = "flex";
+    }
+    window.openExcelImportModal = openExcelImportModal;
+
+    function handleExcelDrop(e) {
+      e.preventDefault();
+      const dropzone = document.getElementById("excel-dropzone");
+      if (dropzone) dropzone.style.borderColor = "rgba(99, 102, 241, 0.4)";
+      if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+        processExcelFile(e.dataTransfer.files[0]);
+      }
+    }
+    window.handleExcelDrop = handleExcelDrop;
+
+    function handleExcelFileUpload(e) {
+      if (e.target && e.target.files && e.target.files.length > 0) {
+        processExcelFile(e.target.files[0]);
+      }
+    }
+    window.handleExcelFileUpload = handleExcelFileUpload;
+
+    function processExcelFile(file) {
+      if (!file) return;
+      const reader = new FileReader();
+
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          if (typeof XLSX === "undefined") {
+            alert("Excel parser library is still loading. Please try again in a few seconds.");
+            return;
+          }
+          const workbook = XLSX.read(data, { type: "array" });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+          if (!rawRows || rawRows.length === 0) {
+            alert("No data rows found in uploaded Excel file. Please use the provided Excel Sample.");
+            return;
+          }
+
+          pendingExcelParsedWorkers = [];
+          let totalSalary = 0;
+
+          rawRows.forEach(row => {
+            const getVal = (...keys) => {
+              for (const k of keys) {
+                for (const rowKey of Object.keys(row)) {
+                  if (rowKey.trim().toLowerCase() === k.toLowerCase()) {
+                    return String(row[rowKey]).trim();
+                  }
+                }
+              }
+              return "";
+            };
+
+            const name = getVal("name", "full name", "الاسم", "اسم الموظف", "employee name");
+            const nameAr = getVal("name_ar", "name ar", "الاسم بالعربي", "الاسم العربي", "arabic name");
+            const nationalId = getVal("national_id", "national id", "nationalid", "الهوية", "الهوية الوطنية", "رقم الهوية", "iqama");
+            const phoneRaw = getVal("phone", "mobile", "whatsapp", "جوال", "الجوال", "رقم الجوال", "الهاتف");
+            const emailRaw = getVal("email", "e-mail", "البريد", "البريد الإلكتروني");
+            const roleRaw = getVal("role", "الرتبة", "الدور", "المسمى الوظيفي").toUpperCase();
+            const salaryRaw = getVal("salary_sar", "salary", "الراتب", "راتب", "الراتب الشهري", "monthly salary");
+
+            if (!name && !phoneRaw) return;
+
+            let cleanRole = "EMPLOYEE";
+            if (roleRaw.includes("SUPER") || roleRaw.includes("رئيس")) cleanRole = "SUPER_ADMIN";
+            else if (roleRaw.includes("ADMIN") || roleRaw.includes("مدير نظام")) cleanRole = "ADMIN";
+            else if (roleRaw.includes("STOCK") || roleRaw.includes("مستودع")) cleanRole = "STOCK_MANAGER";
+            else if (roleRaw.includes("MANAGE") || roleRaw.includes("مدير")) cleanRole = "MANAGER";
+
+            let parsedSalary = parseFloat(salaryRaw.replace(/[^0-9.]/g, "")) || 8500;
+            totalSalary += parsedSalary;
+
+            let phoneNorm = normalizeSaudiPhoneNumber(phoneRaw);
+            let validPhone = phoneNorm.valid ? phoneNorm.phone : (phoneRaw.startsWith("+") ? phoneRaw : `+966 ${phoneRaw}`);
+            let compactPhone = phoneNorm.valid ? phoneNorm.compactPhone : validPhone.replace(/[\s\-\(\)]/g, "");
+
+            let email = emailRaw;
+            if (!email || !email.includes("@")) {
+              const slug = name.toLowerCase().replace(/[^a-z0-9]/g, "");
+              email = `${slug || "employee" + Math.floor(Math.random()*1000)}@ostan.sa`;
+            }
+
+            pendingExcelParsedWorkers.push({
+              id: "u-saudi-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
+              name: name || "Saudi Employee",
+              nameAr: nameAr || null,
+              email: email.toLowerCase(),
+              phone: validPhone,
+              compactPhone: compactPhone,
+              nationalId: nationalId || ("10" + Math.floor(Math.random() * 90000000 + 10000000)),
+              nationality: "Saudi Arabian",
+              isSaudi: true,
+              salary: parsedSalary,
+              role: cleanRole,
+              status: "ACTIVE",
+              isBlocked: false,
+              isProtected: false,
+              sectionAccess: {
+                reminders: "accessible",
+                employees: cleanRole !== "EMPLOYEE" ? "accessible" : "hidden",
+                departments: cleanRole !== "EMPLOYEE" ? "accessible" : "hidden",
+                tasks: "accessible",
+                stock: (cleanRole === "SUPER_ADMIN" || cleanRole === "ADMIN" || cleanRole === "STOCK_MANAGER") ? "accessible" : "hidden",
+                "stock-requests": "accessible",
+                reports: cleanRole !== "EMPLOYEE" ? "accessible" : "hidden",
+                "audit-logs": cleanRole === "SUPER_ADMIN" || cleanRole === "ADMIN" ? "accessible" : "hidden",
+                messages: cleanRole !== "EMPLOYEE" ? "accessible" : "hidden",
+                settings: "accessible"
+              }
+            });
+          });
+
+          if (pendingExcelParsedWorkers.length === 0) {
+            alert("No valid employee rows could be extracted. Please ensure columns include Name, Phone, and Salary.");
+            return;
+          }
+
+          const previewArea = document.getElementById("excel-preview-area");
+          const previewCount = document.getElementById("excel-preview-count");
+          const previewPayroll = document.getElementById("excel-preview-payroll");
+          const previewTbody = document.getElementById("excel-preview-tbody");
+          const confirmBtn = document.getElementById("btn-confirm-excel-import");
+
+          if (previewCount) previewCount.textContent = pendingExcelParsedWorkers.length;
+          if (previewPayroll) previewPayroll.textContent = `${totalSalary.toLocaleString()} SAR`;
+
+          if (previewTbody) {
+            previewTbody.innerHTML = pendingExcelParsedWorkers.slice(0, 50).map(w => `
+              <tr>
+                <td style="font-weight: 700; color: var(--text-main);">${w.name} ${w.nameAr ? `<span style="font-size: 0.7rem; color: var(--text-muted);">(${w.nameAr})</span>` : ''}</td>
+                <td style="font-family: monospace;">${w.nationalId}</td>
+                <td style="color: #10b981; font-weight: 600;">${w.phone}</td>
+                <td><span class="badge badge-secondary">${w.role}</span></td>
+                <td style="font-weight: 700; color: #10b981;">${w.salary.toLocaleString()} SAR</td>
+                <td><span class="badge badge-emerald">Ready</span></td>
+              </tr>
+            `).join("");
+          }
+
+          if (previewArea) previewArea.style.display = "flex";
+          if (confirmBtn) {
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = `✅ Confirm & Import ${pendingExcelParsedWorkers.length} Saudi Employees`;
+          }
+        } catch (err) {
+          console.error("Excel parse error:", err);
+          alert("Error parsing Excel file: " + err.message);
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+
+    function confirmExcelImport() {
+      if (!pendingExcelParsedWorkers || pendingExcelParsedWorkers.length === 0) return;
+
+      const importCount = pendingExcelParsedWorkers.length;
+      pendingExcelParsedWorkers.forEach(worker => {
+        const existingIdx = state.users.findIndex(u => u.email.toLowerCase().trim() === worker.email.toLowerCase().trim());
+        if (existingIdx !== -1) {
+          state.users[existingIdx] = { ...state.users[existingIdx], ...worker, id: state.users[existingIdx].id };
+          syncUserToFirestore(state.users[existingIdx]);
+        } else {
+          state.users.push(worker);
+          syncUserToFirestore(worker);
+        }
+      });
+
+      saveState();
+      closeModals();
+      setEmployeeViewTab("saudi");
+      renderWorkers();
+      renderSaudiWorkers();
+      renderDepartments();
+      updateCounts();
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast(
+          lang === "ar" ? "تم استيراد الكادر بنجاح" : "Batch Import Complete",
+          lang === "ar" ? `تم استيراد ${importCount} موظف سعودي وتحديث المسيرات.` : `Successfully imported ${importCount} Saudi staff members.`
+        );
+      }
+    }
+    window.confirmExcelImport = confirmExcelImport;
+
     function renderWorkers() {
       const grid = document.getElementById("workers-grid");
       if (!grid) return;
@@ -3030,28 +3760,37 @@
         const displayName = lang === "ar" && u.nameAr ? u.nameAr : u.name;
         const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
         const canEditThis = canEdit || isSelf;
+        const isSaudi = isSaudiEmployee(u);
+        const salaryVal = parseFloat(u.salary) || 0;
 
         return `
-          <div class="glass-panel card-hover" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border: ${isMaster ? '1px solid rgba(244, 63, 94, 0.35)' : '1px solid var(--border-subtle)'}; overflow: hidden; box-sizing: border-box;">
+          <div class="glass-panel card-hover" style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1rem; border: ${isMaster ? '1px solid rgba(244, 63, 94, 0.35)' : isSaudi ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid var(--border-subtle)'}; overflow: hidden; box-sizing: border-box;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.6rem; min-width: 0; width: 100%;">
               <div style="display: flex; align-items: center; gap: 0.75rem; min-width: 0; flex: 1;">
-                <div class="user-avatar-circle" style="flex-shrink: 0; background: ${isMaster ? 'linear-gradient(135deg, #f43f5e, #fb7185)' : 'linear-gradient(135deg, #6366f1, #06b6d4)'};">
+                <div class="user-avatar-circle" style="flex-shrink: 0; background: ${isMaster ? 'linear-gradient(135deg, #f43f5e, #fb7185)' : isSaudi ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #6366f1, #06b6d4)'};">
                   ${u.name.charAt(0).toUpperCase()}
                 </div>
                 <div style="min-width: 0; flex: 1;">
                   <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${displayName}</span>
+                    ${isSaudi ? '<span title="Saudi Citizen" style="font-size: 0.85rem;">🇸🇦</span>' : ''}
                     ${isMaster ? '<span style="flex-shrink: 0;">👑</span>' : ''}
                   </div>
                   <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${u.email}">${u.email}</div>
                   <div style="font-size: 0.78rem; color: #10b981; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <span style="flex-shrink: 0;">📱</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.phone || '+966 50 123 4567'}</span>
                   </div>
+                  ${salaryVal > 0 ? `
+                    <div style="font-size: 0.74rem; color: #34d399; font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 0.3rem;">
+                      <span>💵</span> <span>${salaryVal.toLocaleString()} SAR</span>
+                    </div>
+                  ` : ''}
                 </div>
               </div>
               <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0;">
                 ${u.status === 'BLOCKED' || u.isBlocked ? `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700; font-size: 0.68rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.25rem; line-height: 1;">🚫 ${lang === 'ar' ? 'محظور' : 'BLOCKED'}</span>` : ''}
                 <span class="badge ${roleBadgeClass}" style="white-space: nowrap; line-height: 1;">${u.role}</span>
+                ${isSaudi ? `<span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); font-size: 0.62rem; font-weight: 700;">🇸🇦 Saudi</span>` : ''}
               </div>
             </div>
 
@@ -3079,6 +3818,7 @@
         `;
       }).join("");
     }
+    window.renderWorkers = renderWorkers;
 
     function toggleBlockWorkerById(id) {
       const currentUser = getCurrentUser();
@@ -3100,6 +3840,7 @@
 
       saveState();
       renderWorkers();
+      if (activeEmployeeTab === "saudi") renderSaudiWorkers();
 
       // Sync to Cloud Firestore users collection
       if (window.fbDb) {
@@ -3137,6 +3878,21 @@
       document.getElementById("worker-name").value = u.name;
       document.getElementById("worker-email").value = u.email;
       document.getElementById("worker-phone").value = u.phone || "+966 ";
+
+      const nationalitySelect = document.getElementById("worker-nationality");
+      if (nationalitySelect) {
+        nationalitySelect.value = u.nationality || (isSaudiEmployee(u) ? "Saudi Arabian" : "Non-Saudi");
+      }
+
+      const nationalIdInput = document.getElementById("worker-national-id");
+      if (nationalIdInput) {
+        nationalIdInput.value = u.nationalId || "";
+      }
+
+      const salaryInput = document.getElementById("worker-salary");
+      if (salaryInput) {
+        salaryInput.value = (typeof u.salary !== "undefined" && u.salary !== null) ? u.salary : 0;
+      }
 
       const roleSelect = document.getElementById("worker-role");
       if (roleSelect) {
@@ -3697,6 +4453,11 @@
       const phone = phoneRes.phone;
       const compactPhone = phoneRes.compactPhone;
 
+      const salaryVal = parseFloat(document.getElementById("worker-salary")?.value) || 0;
+      const nationalityVal = document.getElementById("worker-nationality")?.value || "Saudi Arabian";
+      const nationalIdVal = (document.getElementById("worker-national-id")?.value || "").trim();
+      const isSaudiVal = (nationalityVal === "Saudi Arabian");
+
       if (editId) {
         const u = state.users.find(x => x.id === editId);
         if (u) {
@@ -3710,6 +4471,11 @@
           u.name = name;
           u.phone = phone;
           u.compactPhone = compactPhone;
+          u.salary = salaryVal;
+          u.nationality = nationalityVal;
+          u.nationalId = nationalIdVal;
+          u.isSaudi = isSaudiVal;
+
           if (hasAdminEdit) {
             u.email = email;
             u.role = role;
@@ -3729,6 +4495,10 @@
           email,
           phone,
           compactPhone,
+          salary: salaryVal,
+          nationality: nationalityVal,
+          nationalId: nationalIdVal,
+          isSaudi: isSaudiVal,
           role,
           status: statusVal,
           isBlocked: (statusVal === "BLOCKED"),
@@ -3754,7 +4524,11 @@
       saveState();
       closeModals();
       renderWorkers();
+      if (typeof activeEmployeeTab !== "undefined" && activeEmployeeTab === "saudi") {
+        renderSaudiWorkers();
+      }
       renderDepartments();
+      updateCounts();
       if (window.OstanStyle) window.OstanStyle.showToast("Worker Saved", `${name} (${phone})`);
     }
     window.saveWorker = saveWorker;
@@ -4725,7 +5499,7 @@
       }
       document.getElementById("modal-task").style.display = "flex";
     }
-    function openWorkerHUD() {
+    function openWorkerHUD(forSaudi = false) {
       if (!hasUserPermission("employees", "create")) {
         alert("Permission denied: You do not have permission to add employees.");
         return;
@@ -4734,12 +5508,32 @@
       document.getElementById("worker-name").value = "";
       document.getElementById("worker-email").value = "";
       document.getElementById("worker-phone").value = "+966 ";
+
+      const nationalitySelect = document.getElementById("worker-nationality");
+      if (nationalitySelect) {
+        nationalitySelect.value = forSaudi ? "Saudi Arabian" : "Saudi Arabian";
+      }
+
+      const nationalIdInput = document.getElementById("worker-national-id");
+      if (nationalIdInput) {
+        nationalIdInput.value = "";
+      }
+
+      const salaryInput = document.getElementById("worker-salary");
+      if (salaryInput) {
+        salaryInput.value = forSaudi ? "8500" : "8000";
+      }
+
       const statusSelect = document.getElementById("worker-status");
       if (statusSelect) {
         statusSelect.value = "ACTIVE";
         statusSelect.disabled = false;
       }
-      document.getElementById("modal-worker-heading").textContent = "👥 Add New Employee";
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      document.getElementById("modal-worker-heading").textContent = forSaudi
+        ? (lang === "ar" ? "🇸🇦 إضافة موظف سعودي" : "🇸🇦 Add Saudi Employee")
+        : (lang === "ar" ? "👥 إضافة موظف جديد" : "👥 Add New Employee");
       document.getElementById("modal-worker").style.display = "flex";
     }
     function openStockHUD() {
@@ -5230,19 +6024,27 @@
           const isChecked = selectedRecipientIds.has(u.id);
           const phone = u.phone || ("+966 5" + (Math.abs(u.id.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000));
           u.phone = phone;
+          const isSaudi = isSaudiEmployee(u);
+          const sal = parseFloat(u.salary) || 0;
           return `
             <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? 'var(--primary)' : 'var(--border-subtle)'};">
               <div style="display: flex; align-items: center; gap: 0.6rem;">
                 <input type="checkbox" onchange="toggleRecipientSelect('${u.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer;">
-                <div style="width: 28px; height: 28px; border-radius: 50%; background: linear-gradient(135deg, #6366f1, #3b82f6); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #ffffff;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: ${isSaudi ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #6366f1, #3b82f6)'}; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #ffffff;">
                   ${(u.name || "U")[0]}
                 </div>
                 <div>
-                  <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">${u.name}</div>
+                  <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.35rem;">
+                    <span>${u.name}</span>
+                    ${isSaudi ? '<span style="font-size: 0.75rem;" title="Saudi National">🇸🇦</span>' : ''}
+                  </div>
                   <div style="font-size: 0.7rem; color: var(--text-muted);">${phone}</div>
                 </div>
               </div>
-              <span class="badge badge-secondary" style="font-size: 0.65rem;">${u.role}</span>
+              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
+                <span class="badge badge-secondary" style="font-size: 0.65rem;">${u.role}</span>
+                ${sal > 0 ? `<span style="font-size: 0.68rem; font-weight: 700; color: #10b981;">💰 ${sal.toLocaleString()} SAR</span>` : ''}
+              </div>
             </label>
           `;
         }).join("");
@@ -5279,6 +6081,13 @@
     function selectRecipientGroup(type) {
       if (type === "all") {
         state.users.forEach(u => selectedRecipientIds.add(u.id));
+      } else if (type === "saudi") {
+        selectedRecipientIds.clear();
+        state.users.forEach(u => {
+          if (isSaudiEmployee(u)) {
+            selectedRecipientIds.add(u.id);
+          }
+        });
       } else if (type === "stock") {
         selectedRecipientIds.clear();
         state.users.forEach(u => {
@@ -5293,6 +6102,51 @@
       renderMessageRecipientsList();
     }
     window.selectRecipientGroup = selectRecipientGroup;
+
+    function filterSaudiBySalary(minSalary, maxSalary, btnEl) {
+      selectedRecipientIds.clear();
+      let matchCount = 0;
+      state.users.forEach(u => {
+        if (isSaudiEmployee(u)) {
+          const sal = parseFloat(u.salary) || 0;
+          if (sal >= minSalary && (maxSalary === Infinity || sal < maxSalary || (sal <= maxSalary))) {
+            selectedRecipientIds.add(u.id);
+            matchCount++;
+          }
+        }
+      });
+
+      if (btnEl) {
+        const parent = btnEl.parentElement;
+        if (parent) {
+          parent.querySelectorAll("button").forEach(b => {
+            b.classList.remove("active-sal-filter");
+            b.style.background = "";
+            b.style.color = "";
+            b.style.borderColor = "var(--border-subtle)";
+          });
+          btnEl.classList.add("active-sal-filter");
+          btnEl.style.background = "rgba(16, 185, 129, 0.2)";
+          btnEl.style.color = "#10b981";
+          btnEl.style.borderColor = "#10b981";
+        }
+      }
+
+      const matchCountEl = document.getElementById("msg-salary-match-count");
+      if (matchCountEl) {
+        matchCountEl.textContent = `(${matchCount} matched)`;
+      }
+
+      renderMessageRecipientsList();
+      if (window.OstanStyle) {
+        const lang = document.documentElement.getAttribute("lang") || "en";
+        window.OstanStyle.showToast(
+          lang === "ar" ? "تصفية حسب الراتب" : "Salary Filter Applied",
+          lang === "ar" ? `تم تحديد ${matchCount} موظف سعودي` : `Selected ${matchCount} Saudi staff in salary range`
+        );
+      }
+    }
+    window.filterSaudiBySalary = filterSaudiBySalary;
 
     function addManualPhoneRecipient() {
       const input = document.getElementById("msg-manual-phone");
@@ -6365,10 +7219,14 @@
       const name = user ? (user.nameAr || user.name) : "Staff";
       const role = user ? user.role : "EMPLOYEE";
       const company = "Ostan Enterprise";
+      const salary = (user && typeof user.salary !== "undefined" && user.salary !== null)
+        ? `${Number(user.salary).toLocaleString()} SAR`
+        : "N/A";
 
       return rawText
         .replace(/{name}/g, name)
         .replace(/{role}/g, role)
+        .replace(/{salary}/g, salary)
         .replace(/{date}/g, today)
         .replace(/{time}/g, nowTime)
         .replace(/{company}/g, company);
