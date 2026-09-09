@@ -1817,13 +1817,6 @@
               </p>
             </div>
             <div id="wa-connection-status-container" style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-              <button type="button" onclick="openWhatsAppApiModal()" class="btn btn-secondary" style="font-size: 0.8rem; font-weight: 700; padding: 0.45rem 0.85rem; display: flex; align-items: center; gap: 0.4rem;">
-                <span data-i18n="whatsapp_api_config_btn">⚙️ Meta API Settings</span>
-              </button>
-              <span id="wa-api-status-pill" class="badge badge-secondary" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 9999px;">
-                <span id="wa-api-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #94a3b8;"></span>
-                <span id="wa-api-status-text" data-i18n="whatsapp_api_status_web">🟠 WhatsApp Web Mode</span>
-              </span>
               <span id="wa-status-pill" class="badge badge-amber" style="padding: 0.45rem 0.9rem; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.45rem; border-radius: 9999px;">
                 <span id="wa-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
                 <span id="wa-status-text" data-i18n="whatsapp_status_disconnected">Disconnected / Ready to Pair</span>
@@ -3034,109 +3027,7 @@
     </div>
   </div>
 
-  <!-- MODAL: META WHATSAPP BUSINESS CLOUD API CONFIGURATION -->
-  <div id="modal-whatsapp-api-config" class="hud-modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10001;">
-    <div class="hud-modal-box" style="max-width: 620px; width: 95%; max-height: 90vh; overflow-y: auto;">
-      <!-- Header -->
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-          <div style="width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, #0084ff, #00c6ff); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; box-shadow: 0 4px 15px rgba(0, 132, 255, 0.35); flex-shrink: 0;">
-            ⚡
-          </div>
-          <div>
-            <h2 data-i18n="whatsapp_api_modal_title" style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">Meta WhatsApp Business Cloud API Configuration</h2>
-            <div style="font-size: 0.75rem; color: #38bdf8; font-weight: 600;">Official Direct Cloud Integration • 1,000 Free Messages/Month</div>
-          </div>
-        </div>
-        <button type="button" onclick="closeWhatsAppApiModal()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
-      </div>
 
-      <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 1rem; line-height: 1.45;">
-        Link your WhatsApp account to dispatch automated background messages. Supports <strong>Normal Personal WhatsApp</strong> (via UltraMsg or Green-API QR gateway) and <strong>Official Meta Business Cloud API</strong>.
-      </p>
-
-      <!-- Form Inputs -->
-      <div style="display: flex; flex-direction: column; gap: 0.9rem;">
-        <!-- Account Type / Provider Selector -->
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">WhatsApp Account Type & API Provider</label>
-          <select id="wa-cfg-provider" class="input-field" style="font-size: 0.85rem; font-weight: 700;" onchange="handleWaProviderChange()">
-            <option value="ultramsg" selected>📱 Normal Personal WhatsApp (via UltraMsg Gateway - Recommended)</option>
-            <option value="greenapi">📱 Normal Personal WhatsApp (via Green-API Gateway)</option>
-            <option value="meta">💼 WhatsApp Business (via Official Meta Cloud API)</option>
-          </select>
-        </div>
-
-        <!-- Dispatch Mode Toggle -->
-        <div>
-          <label data-i18n="label_sender_mode" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">Preferred Dispatch Mode</label>
-          <select id="wa-cfg-mode" class="input-field" style="font-size: 0.85rem; font-weight: 700;">
-            <option value="api">⚡ Direct Cloud API (Instant Background - No Tabs Opened)</option>
-            <option value="web">🌐 WhatsApp Web (Browser Tab & Extension Runner - 100% Free)</option>
-          </select>
-        </div>
-
-        <!-- Local Gateway URL (Mode B) -->
-        <div id="wa-group-gateway-url" style="border: 1px solid rgba(129,140,248,0.3); border-radius: var(--radius-md); padding: 0.75rem 1rem; background: rgba(129,140,248,0.05);">
-          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">🖥️ Local Gateway URL <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 500;">(Mode B — Local QR pairing)</span></label>
-          <input id="wa-cfg-gateway-url" type="url" placeholder="http://localhost:5001" class="input-field" style="font-size: 0.85rem; font-family: monospace;" value="http://localhost:5001">
-          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; line-height: 1.45;">
-            Default: <code>http://localhost:5001</code> — if accessing from another computer on the same network, replace <code>localhost</code> with the host machine's IP (e.g. <code>http://192.168.1.100:5001</code>). Run <code>npm run whatsapp</code> on the host to see the exact URL.
-          </div>
-        </div>
-
-        <!-- Test Connection Live Status Box -->
-        <div id="wa-cfg-test-result" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.82rem; line-height: 1.45;"></div>
-
-        <!-- Phone Number ID / Instance ID -->
-        <div>
-          <label id="wa-lbl-phone-id" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">UltraMsg Instance ID *</label>
-          <input id="wa-cfg-phone-id" type="text" placeholder="e.g. instance105820" class="input-field" style="font-size: 0.88rem; font-family: monospace;">
-          <div id="wa-desc-phone-id" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Your Instance ID from your UltraMsg dashboard (ultramsg.com).</div>
-        </div>
-
-        <!-- Token / Password -->
-        <div>
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
-            <label id="wa-lbl-token" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">UltraMsg Token *</label>
-            <button type="button" onclick="toggleWaApiTokenVisibility()" class="btn btn-ghost" style="padding: 0 4px; font-size: 0.75rem; color: var(--text-muted);">👁️ Show/Hide</button>
-          </div>
-          <input id="wa-cfg-token" type="password" placeholder="e.g. 5x7ab... (Token)" class="input-field" style="font-size: 0.85rem; font-family: monospace;">
-          <div id="wa-desc-token" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Your private API authentication token.</div>
-        </div>
-
-        <!-- Quick Setup Guide Collapsible -->
-        <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem 1rem; background: var(--bg-surface-elevated);">
-          <details open>
-            <summary style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); cursor: pointer; display: flex; align-items: center; gap: 0.5rem;">
-              <span>📘</span> <span id="wa-guide-title">How to connect Normal Personal WhatsApp via UltraMsg (3 Steps)</span>
-            </summary>
-            <div id="wa-guide-content" style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.78rem; color: var(--text-muted); line-height: 1.5;">
-              <div><strong style="color: var(--text-main);">Step 1:</strong> Go to <a href="https://ultramsg.com" target="_blank" style="color: #38bdf8; text-decoration: underline;">ultramsg.com</a> and sign up for a free account.</div>
-              <div><strong style="color: var(--text-main);">Step 2:</strong> Scan the QR code on your UltraMsg dashboard using your <strong>normal personal WhatsApp</strong> (Settings > Linked Devices > Link a Device).</div>
-              <div><strong style="color: var(--text-main);">Step 3:</strong> Copy your <strong>Instance ID</strong> and <strong>Token</strong> from UltraMsg, paste them above, and click <strong>Test Connection</strong>!</div>
-              <div style="margin-top: 4px; padding: 6px 10px; background: rgba(37, 211, 102, 0.1); border-radius: 6px; color: #10b981; font-weight: 600;">
-                💡 <em>Note: If you don't want an external API service, you can use our built-in <strong>WhatsApp Web Auto-Sender</strong> right now for free with your normal WhatsApp!</em>
-              </div>
-            </div>
-          </details>
-        </div>
-      </div>
-
-      <!-- Footer Buttons -->
-      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 1rem; margin-top: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
-        <button type="button" onclick="testWhatsAppApiConnection()" class="btn btn-secondary" id="btn-test-wa-api" style="font-size: 0.85rem; font-weight: 700; display: flex; align-items: center; gap: 0.4rem;">
-          ⚡ <span data-i18n="btn_test_api">Test Meta API Connection</span>
-        </button>
-        <div style="display: flex; gap: 0.5rem;">
-          <button type="button" onclick="closeWhatsAppApiModal()" class="btn btn-ghost" style="font-size: 0.85rem;">Cancel</button>
-          <button type="button" onclick="saveWhatsAppApiConfig()" class="btn btn-primary" style="background: linear-gradient(135deg, #0084ff, #00c6ff); border-color: #0084ff; font-size: 0.85rem; font-weight: 800; padding: 0.5rem 1.2rem;">
-            💾 <span data-i18n="btn_save_api">Save & Activate</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
 
 
   <!-- =========================================================================
@@ -7136,14 +7027,21 @@
     function getCurUserWaSession() {
       state.userWhatsAppSessions = state.userWhatsAppSessions || {};
       const uid = getActiveUserId();
-      const u = getCurrentUser();
-      const isOsama = (uid === "u-osama") || isOsamaUser(u);
+
+      if (!state.userWhatsAppSessions[uid]) {
+        try {
+          const cached = localStorage.getItem("ostan_wa_session_" + uid);
+          if (cached) {
+            state.userWhatsAppSessions[uid] = JSON.parse(cached);
+          }
+        } catch (e) {}
+      }
 
       if (!state.userWhatsAppSessions[uid]) {
         state.userWhatsAppSessions[uid] = {
-          connected: isOsama ? true : false,
-          phone: isOsama ? "+966 58 053 9698" : "",
-          name: isOsama ? "Osama Al-Twaish" : (u?.name || "Employee")
+          connected: false,
+          phone: "",
+          name: ""
         };
       }
       return state.userWhatsAppSessions[uid];
@@ -7311,12 +7209,46 @@
         cloudBadge.style.color = "#10b981";
       }
 
-      if (liveData.status === "connected" || liveData.connected) {
+      // 1. Explicit Disconnect / Logout
+      if (liveData.status === "disconnected" && (liveData.loggedOut === true || !curSession.connected)) {
+        curSession.connected = false;
+        curSession.phone = "";
+        curSession.name = "";
+        state.userWhatsAppSessions[activeUid] = curSession;
+        try { localStorage.removeItem("ostan_wa_session_" + activeUid); } catch(e) {}
+        saveState();
+        updateWhatsAppConnectionUI();
+
+        if (qrImg) qrImg.style.display = "none";
+        if (qrSvg) qrSvg.style.display = "block";
+        if (beam) beam.style.display = "none";
+        if (statusUnified) statusUnified.textContent = `Disconnected • Ready to Pair`;
+        if (indicator) {
+          indicator.style.color = "#94a3b8";
+          indicator.textContent = "⚪ Disconnected";
+        }
+        return;
+      }
+
+      // 2. Connected / Linked State (Keep rock-solid!)
+      const isConnectedOrHasPhone = Boolean(
+        liveData.status === "connected" ||
+        liveData.connected ||
+        (liveData.phone && liveData.phone !== "none") ||
+        (curSession.connected && curSession.phone && liveData.status !== "disconnected")
+      );
+
+      if (isConnectedOrHasPhone) {
         const wasConnected = curSession.connected;
         curSession.connected = true;
-        if (liveData.phone) curSession.phone = "+" + String(liveData.phone).replace(/[^0-9]/g, "");
+        if (liveData.phone && liveData.phone !== "none") {
+          curSession.phone = "+" + String(liveData.phone).replace(/[^0-9]/g, "");
+        }
         if (liveData.name) curSession.name = liveData.name;
         state.userWhatsAppSessions[activeUid] = curSession;
+        try {
+          localStorage.setItem("ostan_wa_session_" + activeUid, JSON.stringify(curSession));
+        } catch(e) {}
         saveState();
         updateWhatsAppConnectionUI();
 
@@ -7334,13 +7266,20 @@
             lang === "ar" ? `رقمك الآن متصل بالنظام: ${curSession.phone}` : `Your phone ${curSession.phone} is now linked.`
           );
         }
-      } else if (liveData.status === "qr_ready" && liveData.qr) {
+        return;
+      }
+
+      // 3. QR Code Ready (for unpaired state)
+      if (liveData.status === "qr_ready" && liveData.qr) {
         curSession.connected = false;
         curSession.phone = "";
         state.userWhatsAppSessions[activeUid] = curSession;
         updateWhatsAppConnectionUI();
 
-        if (qrImg) { qrImg.src = liveData.qr; qrImg.style.display = "block"; }
+        if (qrImg) {
+          qrImg.src = liveData.qr;
+          qrImg.style.display = "block";
+        }
         if (qrSvg) qrSvg.style.display = "none";
         if (beam) beam.style.display = "none";
         if (indicator) {
@@ -7350,27 +7289,21 @@
         if (statusUnified) {
           statusUnified.textContent = `Scan QR Code to Link for ${userName}`;
         }
-      } else if (liveData.status === "connecting") {
-        if (qrImg) qrImg.style.display = "none";
-        if (qrSvg) qrSvg.style.display = "block";
-        if (beam) beam.style.display = "block";
+        return;
+      }
+
+      // 4. Connecting (Do NOT hide existing QR if one is already visible, prevents flickering!)
+      if (liveData.status === "connecting") {
         if (statusUnified) statusUnified.textContent = `Connecting ${userName}'s WhatsApp...`;
         if (indicator) {
           indicator.style.color = "#f59e0b";
           indicator.textContent = "⏳ Establishing WebSocket connection...";
         }
-      } else if (liveData.status === "disconnected") {
-        curSession.connected = false;
-        curSession.phone = "";
-        state.userWhatsAppSessions[activeUid] = curSession;
-        updateWhatsAppConnectionUI();
-        if (qrImg) qrImg.style.display = "none";
-        if (qrSvg) qrSvg.style.display = "block";
-        if (beam) beam.style.display = "none";
-        if (statusUnified) statusUnified.textContent = `Disconnected • Ready to Pair`;
-        if (indicator) {
-          indicator.style.color = "#94a3b8";
-          indicator.textContent = "⚪ Disconnected";
+        const hasExistingQr = qrImg && qrImg.src && qrImg.src.startsWith("data:");
+        if (!hasExistingQr) {
+          if (qrImg) qrImg.style.display = "none";
+          if (qrSvg) qrSvg.style.display = "block";
+          if (beam) beam.style.display = "block";
         }
       }
     }
@@ -7576,37 +7509,75 @@
     window.restartWhatsAppGatewaySession = restartWhatsAppGatewaySession;
 
     async function disconnectWhatsApp() {
-      if (!confirm("Are you sure you want to disconnect your WhatsApp session?")) return;
+      if (!confirm("Are you sure you want to disconnect and log out your WhatsApp account? This will unpair it from your phone.")) return;
       const activeUid = getActiveUserId();
-      sendWhatsAppRemoteCommand("logout");
 
-      try {
-        try {
-          await fetch("http://localhost:5001/api/logout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-user-id": activeUid },
-            body: JSON.stringify({ userId: activeUid })
-          });
-        } catch (e) {
-          await fetch("/api/whatsapp/live-qr", {
-            method: "POST",
-            headers: { "Content-Type": "application/json", "x-user-id": activeUid },
-            body: JSON.stringify({ action: "logout", userId: activeUid })
-          });
-        }
-      } catch (err) {
-        console.warn("Logout request:", err);
-      }
-
+      // Clear local state immediately
       state.userWhatsAppSessions = state.userWhatsAppSessions || {};
       state.userWhatsAppSessions[activeUid] = { connected: false, phone: "", name: "" };
+      try { localStorage.removeItem("ostan_wa_session_" + activeUid); } catch (e) {}
       saveState();
       updateWhatsAppConnectionUI();
       updateWhatsAppApiStatusUI();
+
+      // Update Firestore session doc immediately
+      if (window.fbDb) {
+        try {
+          await window.fbDb.collection("whatsappSessions").doc(activeUid).set({
+            userId: activeUid,
+            status: "disconnected",
+            connected: false,
+            loggedOut: true,
+            phone: null,
+            name: null,
+            qr: null,
+            updatedAt: Date.now()
+          }, { merge: true });
+
+          if (activeUid === "u-osama") {
+            await window.fbDb.collection("systemSettings").doc("whatsapp_live").set({
+              userId: activeUid,
+              status: "disconnected",
+              connected: false,
+              loggedOut: true,
+              phone: null,
+              name: null,
+              qr: null,
+              updatedAt: Date.now()
+            }, { merge: true });
+          }
+
+          // Add to whatsappRequests so gateway processes logout immediately
+          await window.fbDb.collection("whatsappRequests").doc("req_" + activeUid).set({
+            userId: activeUid,
+            action: "logout",
+            timestamp: Date.now()
+          });
+        } catch (e) {
+          console.warn("Firestore logout update notice:", e);
+        }
+      }
+
+      // Send remote control command to gateway
+      sendWhatsAppRemoteCommand("logout");
+
+      // Also call local gateway if reachable
+      try {
+        const gwBase = getWaGatewayUrl();
+        await fetch(`${gwBase}/api/logout`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+          body: JSON.stringify({ userId: activeUid }),
+          signal: AbortSignal.timeout(3000)
+        });
+      } catch (err) {
+        console.warn("Local logout fetch notice:", err?.message);
+      }
+
       checkLiveWhatsAppGatewayStatus();
 
       if (window.OstanStyle) {
-        window.OstanStyle.showToast("WhatsApp Disconnected", "Session unlinked for your user. Generated fresh QR code.");
+        window.OstanStyle.showToast("WhatsApp Unpaired & Logged Out", "Session unlinked from mobile phone. A fresh QR code will appear.");
       }
     }
     window.disconnectWhatsApp = disconnectWhatsApp;
@@ -8301,33 +8272,10 @@
     }
     window.handleWaProviderChange = handleWaProviderChange;
 
-    function openWhatsAppApiModal() {
-      const cfg = state.whatsappApiConfig || {};
-      const providerInput = document.getElementById("wa-cfg-provider");
-      const phoneInput = document.getElementById("wa-cfg-phone-id");
-      const tokenInput = document.getElementById("wa-cfg-token");
-      const modeInput = document.getElementById("wa-cfg-mode");
-      const gatewayInput = document.getElementById("wa-cfg-gateway-url");
-      const resBox = document.getElementById("wa-cfg-test-result");
-
-      if (providerInput) providerInput.value = cfg.provider || "ultramsg";
-      if (phoneInput) phoneInput.value = cfg.phoneNumberId || "";
-      if (tokenInput) tokenInput.value = cfg.accessToken || "";
-      if (modeInput) modeInput.value = cfg.mode || "api";
-      if (gatewayInput) gatewayInput.value = cfg.gatewayUrl || "http://localhost:5001";
-      if (resBox) { resBox.style.display = "none"; resBox.textContent = ""; }
-
-      handleWaProviderChange();
-
-      const modal = document.getElementById("modal-whatsapp-api-config");
-      if (modal) modal.style.display = "flex";
-    }
+    function openWhatsAppApiModal() {}
     window.openWhatsAppApiModal = openWhatsAppApiModal;
 
-    function closeWhatsAppApiModal() {
-      const modal = document.getElementById("modal-whatsapp-api-config");
-      if (modal) modal.style.display = "none";
-    }
+    function closeWhatsAppApiModal() {}
     window.closeWhatsAppApiModal = closeWhatsAppApiModal;
 
     function toggleWaApiTokenVisibility() {
@@ -8693,12 +8641,10 @@
         return;
       }
 
-      const cfg = state.whatsappApiConfig || {};
       const isLiveConnected = isCurrentWaConnected();
       const currentPhone = getCurrentWaPhone();
-      if (!isLiveConnected && (!cfg.phoneNumberId || !cfg.accessToken)) {
-        const proceed = confirm("WhatsApp credentials are not configured yet. Would you like to configure them now?");
-        if (proceed) openWhatsAppApiModal();
+      if (!isLiveConnected) {
+        alert("WhatsApp is not linked yet. Please scan the QR code above to link your WhatsApp phone before dispatching.");
         return;
       }
 

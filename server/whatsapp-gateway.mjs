@@ -42,13 +42,14 @@ function getLanIPs() {
 /** Sync live session state directly to Cloud Firestore so each user has their own separate number and QR */
 async function syncSessionStateToFirestore(cleanUserId, session) {
   try {
+    const isConnected = (session.status === 'connected' || Boolean(session.phone)) && session.status !== 'disconnected';
     const data = {
       userId: cleanUserId,
       status: session.status,
       qr: session.qr || null,
       phone: session.phone || null,
       name: session.name || null,
-      connected: session.status === 'connected',
+      connected: isConnected,
       lanIPs: getLanIPs(),
       gatewayPort: PORT,
       updatedAt: Date.now()
@@ -156,12 +157,22 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
   }
 
   session.isStarting = true;
-  session.status = 'connecting';
+  session.status = session.phone ? 'connected' : 'connecting';
   session.qr = null;
   syncSessionStateToFirestore(cleanUserId, session);
 
   try {
     const { state, saveCreds } = await useMultiFileAuthState(session.authDir);
+
+    // If already paired from saved credentials on disk, restore identity immediately
+    if (state.creds?.me?.id) {
+      const id = state.creds.me.id;
+      session.phone = id.split(':')[0] || id.split('@')[0];
+      session.name = state.creds.me.name || `User ${cleanUserId}`;
+      session.status = 'connecting';
+      console.log(`[WhatsApp Gateway] 📱 Restored saved pairing credentials for '${cleanUserId}' (Phone: +${session.phone})`);
+      syncSessionStateToFirestore(cleanUserId, session);
+    }
 
     const sock = makeWASocket({
       auth: state,
@@ -182,41 +193,60 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        session.status = 'qr_ready';
-        try {
-          session.qr = await QRCode.toDataURL(qr, {
-            margin: 1,
-            scale: 7,
-            color: { dark: '#111827', light: '#ffffff' }
-          });
-          console.log(`[WhatsApp Gateway] 📱 New Live QR Code ready for user: ${cleanUserId}`);
-          syncSessionStateToFirestore(cleanUserId, session);
-        } catch (err) {
-          console.error(`[WhatsApp Gateway] Failed to convert QR for ${cleanUserId}:`, err);
+        // If user already has authenticated credentials, do not let transient QR wipe the linked state
+        if (session.phone && sock?.user?.id) {
+          console.log(`[WhatsApp Gateway] User '${cleanUserId}' already paired (+${session.phone}), ignoring transient QR`);
+        } else {
+          session.status = 'qr_ready';
+          session.phone = null;
+          try {
+            session.qr = await QRCode.toDataURL(qr, {
+              margin: 1,
+              scale: 7,
+              color: { dark: '#111827', light: '#ffffff' }
+            });
+            console.log(`[WhatsApp Gateway] 📱 New Live QR Code ready for user: ${cleanUserId}`);
+            syncSessionStateToFirestore(cleanUserId, session);
+          } catch (err) {
+            console.error(`[WhatsApp Gateway] Failed to convert QR for ${cleanUserId}:`, err);
+          }
         }
       }
 
       if (connection === 'close') {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
-        const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-        session.status = 'disconnected';
-        session.qr = null;
-        session.isStarting = false;
-        syncSessionStateToFirestore(cleanUserId, session);
+        const isLoggedOut = statusCode === DisconnectReason.loggedOut || statusCode === 401;
+        const shouldReconnect = !isLoggedOut;
 
         console.log(`[WhatsApp Gateway] User '${cleanUserId}' connection closed (code: ${statusCode}). Reconnecting: ${shouldReconnect}`);
 
         if (shouldReconnect) {
+          // Socket closed transiently (e.g. code 408, 440, 515, keepalive). Keep phone and paired status intact!
+          session.status = session.phone ? 'connected' : 'connecting';
+          session.qr = null;
+          session.isStarting = false;
+          syncSessionStateToFirestore(cleanUserId, session);
+
           setTimeout(() => {
             startWhatsAppSocketForUser(cleanUserId);
-          }, 4000);
+          }, 3000);
         } else {
-          console.log(`[WhatsApp Gateway] User '${cleanUserId}' logged out. Cleaning session files...`);
+          console.log(`[WhatsApp Gateway] ⚠️ User '${cleanUserId}' was unpaired / logged out from mobile. Cleaning session files...`);
+          session.status = 'disconnected';
+          session.qr = null;
+          session.phone = null;
+          session.name = null;
+          session.isStarting = false;
           try {
             fs.rmSync(session.authDir, { recursive: true, force: true });
           } catch (e) {}
+          if (cleanUserId === 'u-osama') {
+            try { fs.rmSync(LEGACY_DIR, { recursive: true, force: true }); } catch (e) {}
+          }
+          syncSessionStateToFirestore(cleanUserId, session);
+
           setTimeout(() => {
-            startWhatsAppSocketForUser(cleanUserId);
+            startWhatsAppSocketForUser(cleanUserId, true);
           }, 1500);
         }
       } else if (connection === 'open') {
@@ -240,7 +270,7 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
   } catch (err) {
     console.error(`[WhatsApp Gateway] Error starting socket for user '${cleanUserId}':`, err);
     session.isStarting = false;
-    session.status = 'disconnected';
+    session.status = session.phone ? 'connected' : 'disconnected';
     setTimeout(() => startWhatsAppSocketForUser(cleanUserId), 5000);
   }
 }
@@ -268,22 +298,80 @@ async function sendWhatsAppMessageForUser(userId, targetPhone, messageText) {
 async function logoutWhatsAppForUser(userId) {
   const cleanId = sanitizeUserId(userId);
   const session = userSessions.get(cleanId);
-  if (session) {
+  console.log(`[WhatsApp Gateway] 🔌 Logging out and unpairing session for ${cleanId}...`);
+
+  if (session && session.sock) {
     try {
-      if (session.sock) await session.sock.logout();
-    } catch (e) {}
+      const jid = session.sock.user?.id || session.sock.authState?.creds?.me?.id;
+      if (jid) {
+        console.log(`[WhatsApp Gateway] Sending remove-companion-device packet for ${jid} to WhatsApp servers...`);
+        try {
+          await session.sock.sendNode({
+            tag: 'iq',
+            attrs: {
+              to: '@s.whatsapp.net',
+              type: 'set',
+              id: session.sock.generateMessageTag ? session.sock.generateMessageTag() : `${Date.now()}-logout`,
+              xmlns: 'md'
+            },
+            content: [
+              {
+                tag: 'remove-companion-device',
+                attrs: {
+                  jid,
+                  reason: 'user_initiated'
+                }
+              }
+            ]
+          });
+          console.log(`[WhatsApp Gateway] ✅ remove-companion-device sent to WhatsApp! Mobile phone will unpair.`);
+        } catch (nodeErr) {
+          console.warn('[WhatsApp Gateway] sendNode unpair warning:', nodeErr?.message);
+        }
+      }
+
+      await session.sock.logout('User logged out from web client');
+      console.log(`[WhatsApp Gateway] ✅ Baileys sock.logout completed.`);
+    } catch (e) {
+      console.warn(`[WhatsApp Gateway] Logout notice for ${cleanId}:`, e?.message);
+    }
+
+    try { session.sock.end(); } catch (e) {}
+    session.sock = null;
+  }
+
+  // Wait 700ms for network buffers to clear
+  await new Promise(r => setTimeout(r, 700));
+
+  if (session && session.authDir) {
     try {
       fs.rmSync(session.authDir, { recursive: true, force: true });
+      console.log(`[WhatsApp Gateway] Cleared auth files for ${cleanId}`);
     } catch (e) {}
+  }
+
+  if (cleanId === 'u-osama') {
+    try {
+      fs.rmSync(LEGACY_DIR, { recursive: true, force: true });
+      console.log(`[WhatsApp Gateway] Cleared legacy session dir for u-osama`);
+    } catch (e) {}
+  }
+
+  if (session) {
     session.status = 'disconnected';
     session.qr = null;
     session.phone = null;
     session.name = null;
     session.isStarting = false;
-    syncSessionStateToFirestore(cleanId, session);
-    setTimeout(() => startWhatsAppSocketForUser(cleanId), 1500);
+    await syncSessionStateToFirestore(cleanId, session);
   }
-  return { success: true, message: `Logged out session for user ${cleanId}` };
+
+  // Generate fresh QR code for this user so they can link again immediately
+  setTimeout(() => {
+    startWhatsAppSocketForUser(cleanId, true);
+  }, 1200);
+
+  return { success: true, message: `Logged out and unpaired session for user ${cleanId}` };
 }
 
 const corsHeaders = {
@@ -452,10 +540,12 @@ server.listen(PORT, HOST, () => {
           const reqData = change.doc.data();
           if (reqData && reqData.userId) {
             const cleanId = sanitizeUserId(reqData.userId);
-            console.log(`[WhatsApp Gateway] ⚡ Cloud QR request received for user: ${cleanId} (action: ${reqData.action || 'request_qr'})`);
+            console.log(`[WhatsApp Gateway] ⚡ Cloud request received for user: ${cleanId} (action: ${reqData.action || 'request_qr'})`);
             const session = getOrCreateUserSession(cleanId);
             if (reqData.action === 'refresh' || reqData.action === 'restart') {
               await startWhatsAppSocketForUser(cleanId, true);
+            } else if (reqData.action === 'logout' || reqData.action === 'disconnect') {
+              await logoutWhatsAppForUser(cleanId);
             } else if (session.status === 'disconnected' || !session.sock) {
               await startWhatsAppSocketForUser(cleanId, true);
             } else if (session.status === 'qr_ready' && session.qr) {
@@ -475,16 +565,18 @@ server.listen(PORT, HOST, () => {
   }
 
   // Real-time Cloud Commands Listener for Remote Admin Actions (Refresh, Restart, Logout)
+  let lastProcessedCmdTime = 0;
   try {
     onSnapshot(doc(fbDb, 'systemSettings', 'whatsapp_commands'), async (snap) => {
       if (snap && snap.exists()) {
         const cmd = snap.data();
-        if (cmd && cmd.action && cmd.timestamp && (Date.now() - cmd.timestamp < 30000)) {
+        if (cmd && cmd.action && cmd.timestamp && (cmd.timestamp > lastProcessedCmdTime || Math.abs(Date.now() - cmd.timestamp) < 60000)) {
+          lastProcessedCmdTime = cmd.timestamp;
           const cleanId = sanitizeUserId(cmd.userId || 'u-osama');
           console.log(`[WhatsApp Gateway] ⚡ Received remote command: ${cmd.action} for ${cleanId}`);
           if (cmd.action === 'restart' || cmd.action === 'refresh') {
             await startWhatsAppSocketForUser(cleanId, true);
-          } else if (cmd.action === 'logout') {
+          } else if (cmd.action === 'logout' || cmd.action === 'disconnect') {
             await logoutWhatsAppForUser(cleanId);
           }
         }
