@@ -226,5 +226,23 @@ assert(translations.includes('metric_saudi_return: "إجمالي المسترد 
 assert(translations.includes('label_employee_payout: "المستلم الفعلي للموظف"'), 'Arabic label for employee payout');
 assert(translations.includes('label_company_return: "المسترد للشركة"'), 'Arabic label for company refund');
 
+// 6. Test Removal of Sign Up & Admin Provisioning Only
+console.log('\n--- 6. Testing Removal of Self Sign-Up & Admin Password Provisioning ---');
+assert(!html.includes('id="auth-tab-signup"'), 'Sign up tab completely removed from Auth Portal');
+assert(!html.includes('id="auth-tab-login"'), 'Auth tab switcher removed (sign-in only)');
+assert(html.includes('auth_admin_only_note'), 'Admin provisioning only note present in Auth Portal');
+assert(html.includes('id="worker-password"'), 'Worker login password field exists in Employee Modal');
+assert(html.includes('id="modal-worker-credentials"'), 'Provisioned credentials dialog exists');
+assert(html.includes('generateRandomWorkerPassword'), 'generateRandomWorkerPassword function exists');
+assert(html.includes('toggleWorkerPasswordVisibility'), 'toggleWorkerPasswordVisibility function exists');
+assert(html.includes('showProvisionedCredentialsModal'), 'showProvisionedCredentialsModal function exists');
+assert(html.includes('copyProvisionedCredentials'), 'copyProvisionedCredentials function exists');
+
+assert(translations.includes('auth_admin_only_note'), 'auth_admin_only_note exists in translation.js');
+assert(translations.includes('label_worker_password'), 'label_worker_password exists in translation.js');
+assert(translations.includes('btn_gen_password'), 'btn_gen_password exists in translation.js');
+assert(translations.includes('btn_copy_credentials'), 'btn_copy_credentials exists in translation.js');
+assert(translations.includes('modal_cred_title'), 'modal_cred_title exists in translation.js');
+
 console.log(`\n=== ALL TESTS COMPLETED: ${passed} passed, ${failed} failed ===`);
 process.exit(failed > 0 ? 1 : 0);

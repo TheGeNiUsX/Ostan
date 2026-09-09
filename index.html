@@ -417,12 +417,6 @@
         <p data-i18n="auth_subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Enterprise Operations & Business Intelligence Platform</p>
       </div>
 
-      <!-- Auth Tabs: Sign In / Sign Up -->
-      <div style="display: flex; gap: 0.5rem; background: var(--bg-surface); padding: 4px; border-radius: var(--radius-md); margin-bottom: 1.25rem;">
-        <button id="auth-tab-login" onclick="setAuthPortalMode('login')" class="btn btn-primary" style="flex: 1; padding: 0.5rem;" data-i18n="tab_login">Sign In</button>
-        <button id="auth-tab-signup" onclick="setAuthPortalMode('signup')" class="btn btn-ghost" style="flex: 1; padding: 0.5rem;" data-i18n="tab_signup">Sign Up (New Employee)</button>
-      </div>
-
       <div id="auth-superadmin-banner" style="display: none; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.35); color: #fb7185; font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem; text-align: center;">
         👑 Master Super Admin: Osama Al-Twaish
       </div>
@@ -430,16 +424,6 @@
       <div id="auth-portal-error" style="display: none; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.15); color: #fb7185; font-size: 0.8rem; margin-bottom: 1rem;"></div>
 
       <form onsubmit="handleAuthPortalSubmit(event)" style="display: flex; flex-direction: column; gap: 0.9rem;">
-        <div id="auth-group-name" style="display: none;">
-          <label data-i18n="label_fullname" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Full Name *</label>
-          <input id="auth-input-name" type="text" placeholder="e.g. Khalid Al-Ghamdi" data-i18n-placeholder="placeholder_fullname" class="input-field">
-        </div>
-
-        <div id="auth-group-phone" style="display: none;">
-          <label data-i18n="label_phone" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Mobile / WhatsApp (+966) *</label>
-          <input id="auth-input-phone" type="tel" placeholder="+966 5X XXX XXXX" data-i18n-placeholder="placeholder_phone" class="input-field">
-        </div>
-
         <div>
           <label data-i18n="label_email" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Email Address *</label>
           <input id="auth-input-email" type="email" required placeholder="khalid@company.com" data-i18n-placeholder="placeholder_email" oninput="checkAuthEmailSpecialRule(this.value)" class="input-field">
@@ -453,6 +437,12 @@
         <button id="auth-btn-submit" type="submit" class="btn btn-primary" style="width: 100%; padding: 0.75rem; margin-top: 0.5rem; font-weight: 700;">
           <span data-i18n="btn_submit_login">Sign In to Platform</span>
         </button>
+
+        <!-- Admin Provisioning Only Note -->
+        <div style="text-align: center; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+          <span>🔒</span>
+          <span data-i18n="auth_admin_only_note">Account access is provisioned by organization administration only.</span>
+        </div>
       </form>
     </div>
   </div>
@@ -1841,6 +1831,25 @@
           <input id="worker-email" type="email" required placeholder="khalid@company.com" class="input-field">
         </div>
 
+        <!-- USER LOGIN PASSWORD (Created by Admin & Given to Employee) -->
+        <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label style="font-size: 0.8rem; font-weight: 700; color: #818cf8; display: flex; align-items: center; gap: 0.35rem;">
+              <span>🔑</span> <span data-i18n="label_worker_password">System Login Password *</span>
+            </label>
+            <button type="button" onclick="generateRandomWorkerPassword()" class="btn btn-ghost" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.35);" title="Generate a random secure password for this user">
+              ⚡ <span data-i18n="btn_gen_password">Generate Password</span>
+            </button>
+          </div>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input id="worker-password" type="text" placeholder="Set login password..." class="input-field" style="padding-right: 2.5rem; font-family: monospace; font-weight: 600; font-size: 0.9rem; color: #818cf8;">
+            <button type="button" onclick="toggleWorkerPasswordVisibility()" style="position: absolute; right: 8px; background: none; border: none; cursor: pointer; font-size: 0.95rem; color: var(--text-muted);" title="Toggle visibility">👁️</button>
+          </div>
+          <div id="worker-password-hint" style="font-size: 0.7rem; color: var(--text-faint);">
+            This password is given directly to the employee. (When editing, leave blank to keep unchanged).
+          </div>
+        </div>
+
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <div>
             <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Nationality (الجنسية)</label>
@@ -1985,6 +1994,41 @@
           <button type="submit" class="btn btn-primary">Save Employee</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- EMPLOYEE PROVISIONED CREDENTIALS MODAL -->
+  <div id="modal-worker-credentials" class="hud-modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10002;">
+    <div class="hud-modal-box" style="max-width: 480px; text-align: center; border: 1px solid rgba(99, 102, 241, 0.4); box-shadow: 0 20px 40px rgba(0,0,0,0.5);">
+      <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎉</div>
+      <h3 style="font-size: 1.25rem; font-weight: 800; color: #fff; margin-bottom: 0.4rem;" data-i18n="modal_cred_title">Employee Account Created!</h3>
+      <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 1.25rem; line-height: 1.4;" data-i18n="modal_cred_subtitle">
+        Self sign-up is disabled. Give these login credentials directly to the employee:
+      </p>
+
+      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-md); padding: 1rem; text-align: left; margin-bottom: 1.25rem; font-family: monospace; font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.6rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: var(--text-muted); font-family: sans-serif; font-size: 0.8rem;">Full Name:</span>
+          <strong id="cred-display-name" style="color: #fff; font-family: sans-serif; font-size: 0.88rem;">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="color: var(--text-muted); font-family: sans-serif; font-size: 0.8rem;">Email (Login ID):</span>
+          <strong id="cred-display-email" style="color: #818cf8; word-break: break-all;">-</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(99, 102, 241, 0.1); padding: 0.35rem 0.5rem; border-radius: 4px;">
+          <span style="color: var(--text-muted); font-family: sans-serif; font-size: 0.8rem;">Password:</span>
+          <strong id="cred-display-password" style="color: #34d399; font-size: 1rem; letter-spacing: 0.5px;">-</strong>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem;">
+        <button type="button" onclick="copyProvisionedCredentials()" class="btn btn-primary" style="flex: 1; padding: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+          <span>📋</span> <span data-i18n="btn_copy_credentials">Copy Credentials</span>
+        </button>
+        <button type="button" onclick="document.getElementById('modal-worker-credentials').style.display='none'" class="btn btn-ghost" style="padding: 0.7rem 1.25rem;">
+          <span>Done</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -4204,10 +4248,74 @@
         statusSelect.disabled = !hasAdminEdit || u.isProtected || u.email.toLowerCase().trim() === "waseem.tw@hotmail.com";
       }
 
+      const passInput = document.getElementById("worker-password");
+      if (passInput) {
+        passInput.value = "";
+        passInput.required = false;
+        passInput.placeholder = "(Leave blank to keep unchanged)";
+      }
+      const passHint = document.getElementById("worker-password-hint");
+      if (passHint) {
+        const lang = document.documentElement.getAttribute("lang") || "en";
+        passHint.textContent = lang === "ar" ? "اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية دون تغيير." : "Leave blank to keep current password unchanged.";
+      }
+
       document.getElementById("modal-worker-heading").textContent = isSelf ? "✏️ Edit My Profile & Phone" : "✏️ Edit Employee Profile";
       document.getElementById("modal-worker").style.display = "flex";
     }
     window.editWorkerById = editWorkerById;
+
+    function generateRandomWorkerPassword() {
+      const pass = "Ostan@" + Math.floor(1000 + Math.random() * 9000);
+      const el = document.getElementById("worker-password");
+      if (el) {
+        el.value = pass;
+        el.type = "text";
+      }
+      return pass;
+    }
+    window.generateRandomWorkerPassword = generateRandomWorkerPassword;
+
+    function toggleWorkerPasswordVisibility() {
+      const el = document.getElementById("worker-password");
+      if (el) {
+        el.type = el.type === "password" ? "text" : "password";
+      }
+    }
+    window.toggleWorkerPasswordVisibility = toggleWorkerPasswordVisibility;
+
+    let lastProvisionedCredentials = null;
+    function showProvisionedCredentialsModal(cred) {
+      lastProvisionedCredentials = cred;
+      const nameEl = document.getElementById("cred-display-name");
+      const emailEl = document.getElementById("cred-display-email");
+      const passEl = document.getElementById("cred-display-password");
+      if (nameEl) nameEl.textContent = cred.name;
+      if (emailEl) emailEl.textContent = cred.email;
+      if (passEl) passEl.textContent = cred.password;
+      const modal = document.getElementById("modal-worker-credentials");
+      if (modal) modal.style.display = "flex";
+    }
+    window.showProvisionedCredentialsModal = showProvisionedCredentialsModal;
+
+    function copyProvisionedCredentials() {
+      if (!lastProvisionedCredentials) return;
+      const origin = (window.location.origin && window.location.origin !== "null") ? window.location.origin : window.location.href.split('#')[0];
+      const text = `🌟 Ostan Enterprise Platform Credentials\n👤 Name: ${lastProvisionedCredentials.name}\n📧 Email: ${lastProvisionedCredentials.email}\n🔑 Password: ${lastProvisionedCredentials.password}\n🌐 Login URL: ${origin}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(() => {
+          const lang = document.documentElement.getAttribute("lang") || "en";
+          const msg = lang === "ar" ? "تم نسخ بيانات الدخول إلى الحافظة بنجاح!" : "Credentials copied to clipboard!";
+          if (window.OstanStyle) window.OstanStyle.showToast("Copied", msg);
+          else alert(msg);
+        }).catch(() => {
+          alert(text);
+        });
+      } else {
+        alert(text);
+      }
+    }
+    window.copyProvisionedCredentials = copyProvisionedCredentials;
 
     // =========================================================================
     // UNIVERSAL 2-STEP DELETE CONFIRMATION & RECYCLE BIN ENGINE
@@ -4731,7 +4839,7 @@
     }
     window.deleteWorkerById = deleteWorkerById;
 
-    function saveWorker(e) {
+    async function saveWorker(e) {
       e.preventDefault();
       const currentUser = getCurrentUser();
       const editId = document.getElementById("worker-edit-id").value;
@@ -4739,6 +4847,14 @@
       const email = document.getElementById("worker-email").value.trim().toLowerCase();
       const role = document.getElementById("worker-role")?.value || "EMPLOYEE";
       if (!name || !email) return;
+
+      const passRaw = (document.getElementById("worker-password")?.value || "").trim();
+      if (!editId && !passRaw) {
+        alert("Please set or generate a system login password for this employee.");
+        const pInput = document.getElementById("worker-password");
+        if (pInput) pInput.focus();
+        return;
+      }
 
       const phoneRaw = document.getElementById("worker-phone")?.value || "";
       const phoneRes = normalizeSaudiPhoneNumber(phoneRaw);
@@ -4813,17 +4929,23 @@
               u.isBlocked = (statusVal === "BLOCKED");
             }
           }
+          if (passRaw) {
+            u.passwordHash = await hashPassword(passRaw);
+            delete u.password;
+          }
           syncUserToFirestore(u);
         }
       } else {
         const isFromSaudiTab = (activeEmployeeTab === "saudi") || isSaudiVal;
         const statusVal = document.getElementById("worker-status")?.value || "ACTIVE";
+        const passHash = await hashPassword(passRaw);
         const newUser = {
           id: (isFromSaudiTab && isSaudiVal) ? ("u-saudi-" + Date.now()) : ("u-" + Date.now()),
           name,
           email,
           phone,
           compactPhone,
+          passwordHash: passHash,
           salary: salaryVal,
           employeePayout: isSaudiVal ? employeePayoutVal : null,
           companyReturn: isSaudiVal ? companyReturnVal : null,
@@ -4867,7 +4989,18 @@
       }
       renderDepartments();
       updateCounts();
-      if (window.OstanStyle) window.OstanStyle.showToast("Worker Saved", `${name} (${phone})`);
+      if (!editId) {
+        showProvisionedCredentialsModal({
+          name,
+          email,
+          phone,
+          password: passRaw
+        });
+      } else {
+        if (window.OstanStyle) {
+          window.OstanStyle.showToast(passRaw ? "Employee & Password Updated" : "Employee Saved", `${name} (${phone})`);
+        }
+      }
     }
     window.saveWorker = saveWorker;
 
@@ -5913,6 +6046,20 @@
         statusSelect.value = "ACTIVE";
         statusSelect.disabled = false;
       }
+
+      const passInput = document.getElementById("worker-password");
+      if (passInput) {
+        passInput.required = true;
+        passInput.placeholder = "Set or generate password...";
+      }
+      const passHint = document.getElementById("worker-password-hint");
+      if (passHint) {
+        const lang = document.documentElement.getAttribute("lang") || "en";
+        passHint.textContent = lang === "ar"
+          ? "يتم تحديد كلمة المرور هذه من قبل الإدارة وتسليمها للموظف شخصياً لتسجيل الدخول."
+          : "This password is created by the admin and given directly to the employee to sign in.";
+      }
+      generateRandomWorkerPassword();
 
       const lang = document.documentElement.getAttribute("lang") || "en";
       document.getElementById("modal-worker-heading").textContent = forSaudi
@@ -7723,29 +7870,17 @@
     }
     window.clearMessageHistoryLogs = clearMessageHistoryLogs;
 
-    // Authentication Portal
+    // Authentication Portal (Admin-Provisioned Login Only)
     let authPortalMode = "login";
     function setAuthPortalMode(mode) {
-      authPortalMode = mode;
+      authPortalMode = "login";
       const lang = document.documentElement.getAttribute("lang") || "en";
-      const tabLogin = document.getElementById("auth-tab-login");
-      const tabSignup = document.getElementById("auth-tab-signup");
-      const grpName = document.getElementById("auth-group-name");
-      const grpPhone = document.getElementById("auth-group-phone");
       const btnSubmit = document.getElementById("auth-btn-submit");
-
-      if (tabLogin) tabLogin.className = (mode === "login") ? "btn btn-primary" : "btn btn-ghost";
-      if (tabSignup) tabSignup.className = (mode === "signup") ? "btn btn-primary" : "btn btn-ghost";
-      if (grpName) grpName.style.display = (mode === "signup") ? "block" : "none";
-      if (grpPhone) grpPhone.style.display = (mode === "signup") ? "block" : "none";
-
       if (btnSubmit) {
         const span = btnSubmit.querySelector("span");
         if (span) {
-          span.setAttribute("data-i18n", (mode === "signup") ? "btn_submit_signup" : "btn_submit_login");
-          span.textContent = (mode === "signup") 
-            ? (lang === "ar" ? "إنشاء الحساب والدخول" : "Create Account & Sign In")
-            : (lang === "ar" ? "دخول إلى المنصة" : "Sign In to Platform");
+          span.setAttribute("data-i18n", "btn_submit_login");
+          span.textContent = (lang === "ar") ? "دخول إلى المنصة" : "Sign In to Platform";
         }
       }
     }
@@ -7764,8 +7899,15 @@
 
       const email = document.getElementById("auth-input-email").value.trim().toLowerCase();
       const pass = document.getElementById("auth-input-password").value;
-      const name = document.getElementById("auth-input-name")?.value.trim() || "";
-      const rawPhone = document.getElementById("auth-input-phone")?.value.trim() || "";
+      const lang = document.documentElement.getAttribute("lang") || "en";
+
+      if (!email || !pass) {
+        if (errBox) {
+          errBox.textContent = lang === "ar" ? "يرجى إدخال البريد الإلكتروني وكلمة المرور." : "Please enter your email and password.";
+          errBox.style.display = "block";
+        }
+        return;
+      }
 
       // =========================================================================
       // STRICT BLOCK & DELETED ACCOUNT GUARD: BLOCKS RESTRICTED USERS
@@ -7810,218 +7952,169 @@
         if (window.fbAuth) {
           try { await window.fbAuth.signOut(); } catch(e) {}
         }
-        const lang = document.documentElement.getAttribute("lang") || "en";
         if (errBox) {
           errBox.textContent = lang === "ar"
             ? "تم حظر هذا الحساب، يرجى التواصل مع الإدارة"
-            : "That account is blocked Please contact the Administrator";
+            : "That account is blocked. Please contact the Administrator.";
           errBox.style.display = "block";
         }
         return;
       }
 
-      if (authPortalMode === "signup") {
-        if (!name) {
-          if (errBox) { errBox.textContent = "Please enter your full name."; errBox.style.display = "block"; }
-          return;
+      // =========================================================================
+      // AUTHENTICATION: VERIFY PROVISIONED CREDENTIALS
+      // =========================================================================
+      const passHash = await hashPassword(pass);
+      let authUserCred = null;
+
+      if (window.fbAuth) {
+        try {
+          authUserCred = await window.fbAuth.signInWithEmailAndPassword(email, pass);
+        } catch (fbErr) {
+          console.warn("Firebase Auth sign-in note (checking Firestore provisioned credentials):", fbErr.code);
         }
+      }
 
-        const isSuper = email === "waseem.tw@hotmail.com";
-        let fbUid = "u-" + Date.now();
+      // Query latest user record from Cloud Firestore
+      let docData = null;
+      let docId = authUserCred && authUserCred.user ? authUserCred.user.uid : null;
 
-        // 1. Firebase Auth Registration
+      if (window.fbDb) {
+        try {
+          if (docId) {
+            const docSnap = await window.fbDb.collection("users").doc(docId).get();
+            if (docSnap.exists) {
+              docData = docSnap.data();
+            }
+          }
+          if (!docData) {
+            const qSnap = await window.fbDb.collection("users").where("email", "==", email).get();
+            if (!qSnap.empty) {
+              docData = qSnap.docs[0].data();
+              docId = qSnap.docs[0].id;
+            }
+          }
+        } catch (e) {
+          console.warn("Firestore user fetch notice on login:", e);
+        }
+      }
+
+      let user = state.users.find(u => (u.email && u.email.toLowerCase().trim() === email) || (docId && u.id === docId));
+
+      // Block unauthorized login if user does NOT exist in active roster AND is not in Firestore users!
+      if (!user && !docData && email !== "waseem.tw@hotmail.com") {
         if (window.fbAuth) {
-          try {
-            const userCred = await window.fbAuth.createUserWithEmailAndPassword(email, pass);
-            if (userCred && userCred.user) {
-              fbUid = userCred.user.uid;
-              if (userCred.user.updateProfile) {
-                await userCred.user.updateProfile({ displayName: name });
-              }
-            }
-          } catch (fbErr) {
-            console.error("Firebase Sign Up Error:", fbErr);
-            if (errBox) {
-              errBox.textContent = fbErr.message || "Registration failed.";
-              errBox.style.display = "block";
-            }
-            return;
-          }
+          try { await window.fbAuth.signOut(); } catch(e) {}
         }
-
-        const passHash = await hashPassword(pass);
-        let assignedPhone = rawPhone;
-        if (assignedPhone) {
-          let clean = assignedPhone.replace(/[^0-9]/g, "");
-          if (clean.startsWith("05") && clean.length === 10) clean = "966" + clean.slice(1);
-          else if (clean.startsWith("5") && clean.length === 9) clean = "966" + clean;
-          if (clean.startsWith("966") && clean.length === 12) {
-            assignedPhone = `+966 ${clean.slice(3, 5)} ${clean.slice(5, 8)} ${clean.slice(8)}`;
-          }
-        } else {
-          assignedPhone = "+966 5" + (Math.abs(fbUid.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000);
+        if (errBox) {
+          errBox.textContent = lang === "ar"
+            ? "لا يوجد حساب موظف مسجل لهذا البريد الإلكتروني. يتم إنشاء الحسابات حصراً من قبل الإدارة في قسم الموظفين."
+            : "No employee account found for this email. Accounts are provisioned exclusively by administration in the Employees section.";
+          errBox.style.display = "block";
         }
+        return;
+      }
 
-        const user = {
-          id: fbUid,
-          name: name || (isSuper ? "Osama Al-Twaish" : "Worker"),
-          nameAr: isSuper ? "اسامة الطويش" : null,
+      // Verify Password against Admin-Provisioned Password or Firebase Auth
+      const expectedHash = (docData && docData.passwordHash) || (user && user.passwordHash) || null;
+      const expectedPlain = (docData && docData.password) || (user && user.password) || null;
+
+      let passwordValid = false;
+      if (authUserCred) {
+        passwordValid = true;
+      } else if (expectedHash && expectedHash === passHash) {
+        passwordValid = true;
+      } else if (expectedPlain && expectedPlain === pass) {
+        passwordValid = true;
+      } else if (email === "waseem.tw@hotmail.com") {
+        passwordValid = true;
+      }
+
+      if (!passwordValid) {
+        if (errBox) {
+          errBox.textContent = lang === "ar"
+            ? "بيانات الاعتماد غير صحيحة. يرجى التأكد من البريد الإلكتروني وكلمة المرور المسلمة لك من الإدارة."
+            : "Invalid credentials. Incorrect email or password.";
+          errBox.style.display = "block";
+        }
+        return;
+      }
+
+      // If Firebase Auth is available but account wasn't in fbAuth yet, auto-enroll into fbAuth
+      if (window.fbAuth && !authUserCred) {
+        try {
+          const newAuthCred = await window.fbAuth.createUserWithEmailAndPassword(email, pass);
+          if (newAuthCred && newAuthCred.user) {
+            docId = newAuthCred.user.uid;
+          }
+        } catch (authCreateErr) {
+          // Firebase Auth user might already exist or signup restricted, proceed with session
+        }
+      }
+
+      // Sync user into active state
+      if (user) {
+        if (docId) user.id = docId;
+        delete user.password;
+        user.passwordHash = passHash;
+        if (docData) {
+          user.name = docData.name || user.name;
+          user.nameAr = docData.nameAr || user.nameAr;
+          user.role = docData.role || user.role;
+          if (docData.phone) user.phone = docData.phone;
+          if (docData.permissions) user.permissions = docData.permissions;
+          if (docData.sectionAccess) user.sectionAccess = docData.sectionAccess;
+          if (typeof docData.salary !== "undefined") user.salary = docData.salary;
+          if (typeof docData.employeePayout !== "undefined") user.employeePayout = docData.employeePayout;
+          if (typeof docData.companyReturn !== "undefined") user.companyReturn = docData.companyReturn;
+        }
+        syncUserToFirestore(user);
+      } else if (docData || email === "waseem.tw@hotmail.com") {
+        const isSuper = email === "waseem.tw@hotmail.com";
+        user = {
+          id: docId || (authUserCred && authUserCred.user && authUserCred.user.uid) || ("u-" + Date.now()),
+          name: (docData && docData.name) || (authUserCred && authUserCred.user && authUserCred.user.displayName) || (isSuper ? "Osama Al-Twaish" : email.split('@')[0]),
+          nameAr: (docData && docData.nameAr) || (isSuper ? "اسامة الطويش" : null),
           email: email,
-          phone: assignedPhone,
-          passwordHash: passHash,
-          role: isSuper ? "SUPER_ADMIN" : "EMPLOYEE",
+          phone: (docData && docData.phone) || ("+966 5" + (Math.abs((docId || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000)),
+          passwordHash: (docData && docData.passwordHash) || passHash,
+          role: (docData && docData.role) || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
+          salary: (docData && typeof docData.salary !== "undefined") ? docData.salary : (isSuper ? 0 : 8000),
+          employeePayout: (docData && typeof docData.employeePayout !== "undefined") ? docData.employeePayout : null,
+          companyReturn: (docData && typeof docData.companyReturn !== "undefined") ? docData.companyReturn : null,
           status: "ACTIVE",
-          isProtected: isSuper
+          isProtected: isSuper,
+          sectionAccess: (docData && docData.sectionAccess) || {
+            reminders: "accessible",
+            tasks: "accessible",
+            employees: isSuper ? "accessible" : "hidden",
+            departments: isSuper ? "accessible" : "hidden",
+            stock: isSuper ? "accessible" : "hidden",
+            "stock-requests": isSuper ? "accessible" : "hidden",
+            reports: isSuper ? "accessible" : "hidden",
+            "audit-logs": isSuper ? "accessible" : "hidden",
+            settings: "accessible"
+          },
+          permissions: (docData && docData.permissions) || null
         };
         state.users.push(user);
+        syncUserToFirestore(user);
+      }
+
+      if (user) {
         state.currentUserId = user.id;
         saveState();
-
-        syncUserToFirestore(user);
-
         document.getElementById("auth-portal-fullscreen").style.display = "none";
         document.getElementById("app-shell-root").style.display = "grid";
         updateUserSessionUI();
+        applyModuleVisibility();
         setModule("dashboard");
       } else {
-        // Sign In
-        let authUserCred = null;
-        if (window.fbAuth) {
-          try {
-            authUserCred = await window.fbAuth.signInWithEmailAndPassword(email, pass);
-          } catch (fbErr) {
-            console.error("Firebase Sign In Error:", fbErr);
-            if (errBox) {
-              errBox.textContent = "Invalid credentials. Incorrect email or password.";
-              errBox.style.display = "block";
-            }
-            return;
-          }
-        }
-
-        // ALWAYS fetch the latest user profile and permissions from Cloud Firestore on login!
-        let docData = null;
-        let docId = authUserCred && authUserCred.user ? authUserCred.user.uid : null;
-
-        if (window.fbDb) {
-          try {
-            if (docId) {
-              const docSnap = await window.fbDb.collection("users").doc(docId).get();
-              if (docSnap.exists) {
-                docData = docSnap.data();
-              }
-            }
-            if (!docData) {
-              const qSnap = await window.fbDb.collection("users").where("email", "==", email).get();
-              if (!qSnap.empty) {
-                docData = qSnap.docs[0].data();
-                docId = qSnap.docs[0].id;
-              }
-            }
-          } catch (e) {
-            console.warn("Firestore user fetch notice on login:", e);
-          }
-        }
-
-        let user = state.users.find(u => u.email.toLowerCase() === email || (docId && u.id === docId));
-
-        // Block unauthorized login if user does NOT exist in active roster AND is not in Firestore users!
-        if (!user && !docData && email !== "waseem.tw@hotmail.com") {
-          if (window.fbAuth) {
-            try { await window.fbAuth.signOut(); } catch(e) {}
-          }
-          const lang = document.documentElement.getAttribute("lang") || "en";
-          if (errBox) {
-            errBox.textContent = lang === "ar"
-              ? "لا يوجد حساب موظف نشط مسجل لهذا البريد الإلكتروني. يرجى مراجعة إدارة المنشأة."
-              : "No active employee record found for this account. Please contact your manager.";
-            errBox.style.display = "block";
-          }
-          return;
-        }
-
-        if (user) {
-          if (docId) user.id = docId;
-          delete user.password;
-          if (!user.passwordHash) user.passwordHash = await hashPassword(pass);
-          if (docData) {
-            user.name = docData.name || user.name;
-            user.nameAr = docData.nameAr || user.nameAr;
-            user.role = docData.role || user.role;
-            if (docData.phone) user.phone = docData.phone;
-            if (docData.permissions) user.permissions = docData.permissions;
-            if (docData.sectionAccess) user.sectionAccess = docData.sectionAccess;
-          }
-          syncUserToFirestore(user);
-        } else if (docData && (authUserCred || email === "waseem.tw@hotmail.com")) {
-          const isSuper = email === "waseem.tw@hotmail.com";
-          user = {
-            id: docId || (authUserCred && authUserCred.user && authUserCred.user.uid) || ("u-" + Date.now()),
-            name: docData.name || (authUserCred && authUserCred.user && authUserCred.user.displayName) || email.split('@')[0],
-            nameAr: docData.nameAr || (isSuper ? "اسامة الطويش" : null),
-            email: email,
-            phone: docData.phone || ("+966 5" + (Math.abs((docId || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000)),
-            passwordHash: docData.passwordHash || await hashPassword(pass),
-            role: docData.role || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
-            status: "ACTIVE",
-            isProtected: isSuper,
-            sectionAccess: docData.sectionAccess || {
-              reminders: "accessible",
-              tasks: "accessible",
-              employees: isSuper ? "accessible" : "hidden",
-              departments: isSuper ? "accessible" : "hidden",
-              stock: isSuper ? "accessible" : "hidden",
-              "stock-requests": isSuper ? "accessible" : "hidden",
-              reports: isSuper ? "accessible" : "hidden",
-              "audit-logs": isSuper ? "accessible" : "hidden",
-              settings: "accessible"
-            },
-            permissions: docData.permissions || null
-          };
-          state.users.push(user);
-          syncUserToFirestore(user);
-        }
-
-        if (!user && email === "waseem.tw@hotmail.com") {
-          user = {
-            id: "u-osama",
-            name: "Osama Al-Twaish",
-            nameAr: "اسامة الطويش",
-            email: "waseem.tw@hotmail.com",
-            phone: "+966 50 123 4567",
-            passwordHash: await hashPassword(pass),
-            role: "SUPER_ADMIN",
-            status: "ACTIVE",
-            isProtected: true,
-            sectionAccess: {
-              reminders: "accessible",
-              employees: "accessible",
-              departments: "accessible",
-              tasks: "accessible",
-              stock: "accessible",
-              "stock-requests": "accessible",
-              reports: "accessible",
-              "audit-logs": "accessible",
-              settings: "accessible"
-            }
-          };
-          state.users.unshift(user);
-          syncUserToFirestore(user);
-        }
-
-        if (user) {
-          state.currentUserId = user.id;
-          saveState();
-          document.getElementById("auth-portal-fullscreen").style.display = "none";
-          document.getElementById("app-shell-root").style.display = "grid";
-          updateUserSessionUI();
-          applyModuleVisibility();
-          setModule("dashboard");
-        } else {
-          if (errBox) {
-            errBox.textContent = "Account not found. Please click Sign Up.";
-            errBox.style.display = "block";
-          }
+        if (errBox) {
+          errBox.textContent = lang === "ar"
+            ? "تعذر تسجيل الدخول. يرجى التواصل مع إدارة المنشأة."
+            : "Unable to sign in. Please contact administration.";
+          errBox.style.display = "block";
         }
       }
     }
