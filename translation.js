@@ -90,6 +90,13 @@
       registered_accounts_label: "Live Registered Accounts",
       protected_admin_badge: "Protected Super Admin",
       staff_member_badge: "Staff Member",
+      label_id_profession: "Occupation on ID (المهنة في الهوية)",
+      label_cr_number: "CR Number (رقم السجل)",
+      label_cr_name: "CR Name (اسم السجل)",
+      label_referred_by: "Referred By (من طرف)",
+      label_birth_date: "Date of Birth (تاريخ الميلاد)",
+      label_hire_date: "Work Start Date (تاريخ بدء العمل)",
+      saudi_details_heading: "Saudi Citizen Employment Record",
 
       // Departments & Console
       dept_section_title: "Departments & Worker Section Access Control",
@@ -409,6 +416,13 @@
       registered_accounts_label: "حسابات مسجلة (مباشر)",
       protected_admin_badge: "مسؤول متميز رئيسي",
       staff_member_badge: "عضو فريق العمل",
+      label_id_profession: "المهنة في الهوية",
+      label_cr_number: "رقم السجل",
+      label_cr_name: "اسم السجل",
+      label_referred_by: "من طرف",
+      label_birth_date: "تاريخ الميلاد",
+      label_hire_date: "تاريخ بدء العمل",
+      saudi_details_heading: "بيانات التوظيف والسجل للكادر السعودي",
 
       // Departments & Console
       dept_section_title: "الأقسام والتحكم في وصول العمال للأقسام",

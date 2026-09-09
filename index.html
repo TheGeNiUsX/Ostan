@@ -1841,7 +1841,7 @@
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <div>
             <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Nationality (الجنسية)</label>
-            <select id="worker-nationality" class="input-field">
+            <select id="worker-nationality" class="input-field" onchange="handleWorkerNationalityChange(this.value)">
               <option value="Non-Saudi">🌐 Non-Saudi (غير سعودي)</option>
               <option value="Saudi Arabian">🇸🇦 Saudi Arabian (سعودي)</option>
             </select>
@@ -1849,6 +1849,46 @@
           <div>
             <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">National ID / Iqama (الهوية)</label>
             <input id="worker-national-id" type="text" placeholder="10XXXXXXXX" class="input-field">
+          </div>
+        </div>
+
+        <!-- DEDICATED SAUDI NATIONAL RECORD FIELDS (Visible strictly for Saudi staff) -->
+        <div id="saudi-worker-fields" style="display: none; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; margin-top: 0.25rem;">
+          <div style="font-size: 0.78rem; font-weight: 700; color: #10b981; margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem;">
+            <span>🇸🇦</span> <span data-i18n="saudi_details_heading">Saudi Citizen Employment Record</span>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.65rem;">
+            <div>
+              <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;" data-i18n="label_id_profession">Occupation on ID (المهنة في الهوية)</label>
+              <input id="worker-id-profession" type="text" placeholder="e.g. محاسب عام / مهندس" class="input-field" style="font-size: 0.82rem;">
+            </div>
+            <div>
+              <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;" data-i18n="label_referred_by">Referred By (من طرف)</label>
+              <input id="worker-referred-by" type="text" placeholder="e.g. فلان / إدارة معينة" class="input-field" style="font-size: 0.82rem;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.65rem;">
+            <div>
+              <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;" data-i18n="label_cr_number">CR Number (رقم السجل)</label>
+              <input id="worker-cr-number" type="text" placeholder="10XXXXXXXX" class="input-field" style="font-size: 0.82rem;">
+            </div>
+            <div>
+              <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;" data-i18n="label_cr_name">CR Name (اسم السجل)</label>
+              <input id="worker-cr-name" type="text" placeholder="e.g. مؤسسة أستان" class="input-field" style="font-size: 0.82rem;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
+            <div>
+              <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;" data-i18n="label_birth_date">Date of Birth (تاريخ الميلاد)</label>
+              <input id="worker-birth-date" type="date" class="input-field" style="font-size: 0.82rem;">
+            </div>
+            <div>
+              <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;" data-i18n="label_hire_date">Work Start Date (تاريخ بدء العمل)</label>
+              <input id="worker-hire-date" type="date" class="input-field" style="font-size: 0.82rem;">
+            </div>
           </div>
         </div>
 
@@ -1940,12 +1980,17 @@
           <table class="matrix-table" style="font-size: 0.75rem;">
             <thead>
               <tr>
-                <th>Name</th>
-                <th>National ID</th>
-                <th>Phone</th>
-                <th>Role</th>
-                <th>Salary (SAR)</th>
-                <th>Status</th>
+                <th style="white-space: nowrap;">اسم الموظف</th>
+                <th style="white-space: nowrap;">المهنة في الهوية</th>
+                <th style="white-space: nowrap;">السجل التجاري</th>
+                <th style="white-space: nowrap;">من طرف</th>
+                <th style="white-space: nowrap;">رقم الهاتف</th>
+                <th style="white-space: nowrap;">رقم الهوية</th>
+                <th style="white-space: nowrap;">الإيميل</th>
+                <th style="white-space: nowrap;">تاريخ الميلاد</th>
+                <th style="white-space: nowrap;">الراتب</th>
+                <th style="white-space: nowrap;">بدء العمل</th>
+                <th style="white-space: nowrap;">الحالة</th>
               </tr>
             </thead>
             <tbody id="excel-preview-tbody"></tbody>
@@ -2770,6 +2815,12 @@
         nationalId: targetUser.nationalId || null,
         isSaudi: isSaudiVal,
         isExplicitSaudi: !!targetUser.isExplicitSaudi,
+        idProfession: targetUser.idProfession || null,
+        crNumber: targetUser.crNumber || null,
+        crName: targetUser.crName || null,
+        referredBy: targetUser.referredBy || null,
+        birthDate: targetUser.birthDate || null,
+        hireDate: targetUser.hireDate || null,
         isProtected: !!targetUser.isProtected,
         status: targetUser.status || "ACTIVE",
         sectionAccess: targetUser.sectionAccess || {},
@@ -3418,6 +3469,10 @@
                   <div style="font-size: 0.78rem; color: #10b981; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <span style="flex-shrink: 0;">📱</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.phone || '+966 50 123 4567'}</span>
                   </div>
+                  ${u.idProfession ? `<div style="font-size: 0.74rem; color: #a7f3d0; font-weight: 600; display: flex; align-items: center; gap: 0.35rem; margin-top: 3px;"><span>👔</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.idProfession}</span></div>` : ''}
+                  ${(u.crName || u.crNumber) ? `<div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;"><span>🏢</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.crName || ''}${u.crNumber ? ` (${u.crNumber})` : ''}</span></div>` : ''}
+                  ${u.referredBy ? `<div style="font-size: 0.72rem; color: #60a5fa; display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;"><span>🤝</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lang === 'ar' ? 'من طرف:' : 'Ref:'} ${u.referredBy}</span></div>` : ''}
+                  ${(u.birthDate || u.hireDate) ? `<div style="display: flex; gap: 0.6rem; flex-wrap: wrap; font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">${u.birthDate ? `<span>🎂 ${u.birthDate}</span>` : ''}${u.hireDate ? `<span>📅 ${lang === 'ar' ? 'بدء العمل:' : 'Start:'} ${u.hireDate}</span>` : ''}</div>` : ''}
                 </div>
               </div>
               <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.35rem; flex-shrink: 0;">
@@ -3468,54 +3523,69 @@
     function downloadSaudiExcelSample() {
       const sampleData = [
         {
-          "Name": "Mohammed Al-Otaibi",
-          "Name_Ar": "محمد العتيبي",
-          "National_ID": "1098765432",
-          "Phone": "+966 50 234 5678",
-          "Email": "mohammed.otaibi@company.sa",
-          "Role": "EMPLOYEE",
-          "Department": "Operations",
-          "Salary_SAR": 9500
+          "اسم الموظف": "فهد بن ناصر الحربي",
+          "المهنة في الهوية": "مدير شؤون الموظفين",
+          "رقم السجل": "1010654321",
+          "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
+          "من طرف": "أبو فهد",
+          "رقم الهاتف": "+966 56 345 6789",
+          "رقم الهوية": "1076543210",
+          "الإيميل": "fahad.harbi@company.sa",
+          "تاريخ الميلاد": "1990-04-15",
+          "الراتب": "12,500 SAR",
+          "تاريخ بدء العمل": "2022-03-01"
         },
         {
-          "Name": "Sarah Al-Dosari",
-          "Name_Ar": "سارة الدوسري",
-          "National_ID": "1087654321",
-          "Phone": "+966 55 876 5432",
-          "Email": "sarah.dosari@company.sa",
-          "Role": "MANAGER",
-          "Department": "Human Resources",
-          "Salary_SAR": 14000
+          "اسم الموظف": "محمد بن خالد العتيبي",
+          "المهنة في الهوية": "محاسب مالي",
+          "رقم السجل": "1010654321",
+          "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
+          "من طرف": "مكتب الشرق",
+          "رقم الهاتف": "+966 50 234 5678",
+          "رقم الهوية": "1098765432",
+          "الإيميل": "mohammed.otaibi@company.sa",
+          "تاريخ الميلاد": "1994-08-22",
+          "الراتب": "9,500 SAR",
+          "تاريخ بدء العمل": "2023-06-15"
         },
         {
-          "Name": "Fahad Al-Harbi",
-          "Name_Ar": "فهد الحربي",
-          "National_ID": "1076543210",
-          "Phone": "+966 56 345 6789",
-          "Email": "fahad.harbi@company.sa",
-          "Role": "STOCK_MANAGER",
-          "Department": "Warehouse",
-          "Salary_SAR": 10500
+          "اسم الموظف": "سارة بنت عبدالله الدوسري",
+          "المهنة في الهوية": "أخصائي موارد بشرية",
+          "رقم السجل": "1010654321",
+          "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
+          "من طرف": "الإدارة العامة",
+          "رقم الهاتف": "+966 55 876 5432",
+          "رقم الهوية": "1087654321",
+          "الإيميل": "sarah.dosari@company.sa",
+          "تاريخ الميلاد": "1992-11-05",
+          "الراتب": "14,000 SAR",
+          "تاريخ بدء العمل": "2021-10-01"
         },
         {
-          "Name": "Abdulaziz Al-Shehri",
-          "Name_Ar": "عبدالعزيز الشهري",
-          "National_ID": "1065432109",
-          "Phone": "+966 54 987 6543",
-          "Email": "abdulaziz.shehri@company.sa",
-          "Role": "EMPLOYEE",
-          "Department": "Maintenance",
-          "Salary_SAR": 8000
+          "اسم الموظف": "عبدالعزيز بن فهد الشهري",
+          "المهنة في الهوية": "أمين مستودع",
+          "رقم السجل": "1010654321",
+          "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
+          "من طرف": "الفرع الغربي",
+          "رقم الهاتف": "+966 54 987 6543",
+          "رقم الهوية": "1065432109",
+          "الإيميل": "abdulaziz.shehri@company.sa",
+          "تاريخ الميلاد": "1996-02-18",
+          "الراتب": "8,500 SAR",
+          "تاريخ بدء العمل": "2024-01-10"
         },
         {
-          "Name": "Reem Al-Qahtani",
-          "Name_Ar": "ريم القحطاني",
-          "National_ID": "1054321098",
-          "Phone": "+966 53 112 2334",
-          "Email": "reem.qahtani@company.sa",
-          "Role": "ADMIN",
-          "Department": "Finance",
-          "Salary_SAR": 17500
+          "اسم الموظف": "ريم بنت سلطان القحطاني",
+          "المهنة في الهوية": "مدير تنفيذي",
+          "رقم السجل": "1010654321",
+          "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
+          "من طرف": "مجلس الإدارة",
+          "رقم الهاتف": "+966 53 112 2334",
+          "رقم الهوية": "1054321098",
+          "الإيميل": "reem.qahtani@company.sa",
+          "تاريخ الميلاد": "1988-07-30",
+          "الراتب": "18,000 SAR",
+          "تاريخ بدء العمل": "2020-05-01"
         }
       ];
 
@@ -3523,17 +3593,21 @@
         try {
           const ws = XLSX.utils.json_to_sheet(sampleData);
           ws["!cols"] = [
-            { wch: 22 },
-            { wch: 18 },
-            { wch: 16 },
-            { wch: 20 },
-            { wch: 28 },
-            { wch: 16 },
-            { wch: 18 },
-            { wch: 14 }
+            { wch: 24 }, // اسم الموظف
+            { wch: 20 }, // المهنة في الهوية
+            { wch: 16 }, // رقم السجل
+            { wch: 30 }, // اسم السجل
+            { wch: 18 }, // من طرف
+            { wch: 18 }, // رقم الهاتف
+            { wch: 16 }, // رقم الهوية
+            { wch: 28 }, // الإيميل
+            { wch: 16 }, // تاريخ الميلاد
+            { wch: 16 }, // الراتب
+            { wch: 18 }  // تاريخ بدء العمل
           ];
           const wb = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(wb, ws, "Saudi Staff");
+          wb.Workbook = { Views: [{ RTL: true }] };
+          XLSX.utils.book_append_sheet(wb, ws, "الكادر السعودي");
           XLSX.writeFile(wb, "Saudi_Employees_Sample.xlsx");
           if (window.OstanStyle) window.OstanStyle.showToast("Excel Sample Ready", "Downloaded Saudi_Employees_Sample.xlsx");
           return;
@@ -3543,7 +3617,19 @@
       }
 
       // CSV Fallback
-      const headers = ["Name", "Name_Ar", "National_ID", "Phone", "Email", "Role", "Department", "Salary_SAR"];
+      const headers = [
+        "اسم الموظف",
+        "المهنة في الهوية",
+        "رقم السجل",
+        "اسم السجل",
+        "من طرف",
+        "رقم الهاتف",
+        "رقم الهوية",
+        "الإيميل",
+        "تاريخ الميلاد",
+        "الراتب",
+        "تاريخ بدء العمل"
+      ];
       const rows = sampleData.map(r => headers.map(h => `"${(r[h] || "").toString().replace(/"/g, '""')}"`).join(","));
       const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
@@ -3628,15 +3714,29 @@
               return "";
             };
 
-            const name = getVal("name", "full name", "الاسم", "اسم الموظف", "employee name");
-            const nameAr = getVal("name_ar", "name ar", "الاسم بالعربي", "الاسم العربي", "arabic name");
-            const nationalId = getVal("national_id", "national id", "nationalid", "الهوية", "الهوية الوطنية", "رقم الهوية", "iqama");
-            const phoneRaw = getVal("phone", "mobile", "whatsapp", "جوال", "الجوال", "رقم الجوال", "الهاتف");
-            const emailRaw = getVal("email", "e-mail", "البريد", "البريد الإلكتروني");
+            const name = getVal("اسم الموظف", "اسم_الموظف", "الاسم", "اسم", "name", "full name", "employee name");
+            const idProfession = getVal("المهنة في الهوية", "المهنة_في_الهوية", "مهنة الهوية", "المهنة", "مهنة", "id profession", "profession", "occupation");
+            const crNumber = getVal("رقم السجل", "رقم_السجل", "السجل التجاري", "رقم السجل التجاري", "cr number", "cr_number", "commercial registration");
+            const crName = getVal("اسم السجل", "اسم_السجل", "اسم المنشأة", "اسم الشركة", "اسم المؤسسة", "cr name", "cr_name", "company name");
+            const referredBy = getVal("من طرف", "من_طرف", "المرجع", "بواسطة", "المعرف", "referred by", "referred_by", "source");
+            const phoneRaw = getVal("رقم الهاتف", "رقم_الهاتف", "الهاتف", "رقم الجوال", "الجوال", "جوال", "phone", "mobile", "whatsapp");
+            const nationalId = getVal("رقم الهوية", "رقم_الهوية", "الهوية", "الهوية الوطنية", "national id", "national_id", "iqama");
+            const emailRaw = getVal("الإيميل", "الايميل", "البريد الإلكتروني", "البريد", "email", "e-mail");
+            const birthDateRaw = getVal("تاريخ الميلاد", "تاريخ_الميلاد", "الميلاد", "date of birth", "dob", "birth date");
+            const salaryRaw = getVal("الراتب", "راتب", "الراتب الشهري", "salary", "salary_sar", "monthly salary");
+            const hireDateRaw = getVal("تاريخ بدء العمل", "تاريخ_بدء_العمل", "بدء العمل", "تاريخ المباشرة", "تاريخ التعيين", "hire date", "start date", "commencement date");
             const roleRaw = getVal("role", "الرتبة", "الدور", "المسمى الوظيفي").toUpperCase();
-            const salaryRaw = getVal("salary_sar", "salary", "الراتب", "راتب", "الراتب الشهري", "monthly salary");
 
             if (!name && !phoneRaw) return;
+
+            const normalizeDateVal = (val) => {
+              if (!val) return "";
+              if (typeof val === "number") {
+                const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+                return !isNaN(d.getTime()) ? d.toISOString().split("T")[0] : String(val);
+              }
+              return String(val).trim();
+            };
 
             let cleanRole = "EMPLOYEE";
             if (roleRaw.includes("SUPER") || roleRaw.includes("رئيس")) cleanRole = "SUPER_ADMIN";
@@ -3660,15 +3760,21 @@
             pendingExcelParsedWorkers.push({
               id: "u-saudi-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
               name: name || "Saudi Employee",
-              nameAr: nameAr || null,
-              email: email.toLowerCase(),
+              nameAr: name,
+              idProfession: idProfession || "",
+              crNumber: crNumber || "",
+              crName: crName || "",
+              referredBy: referredBy || "",
               phone: validPhone,
               compactPhone: compactPhone,
               nationalId: nationalId || ("10" + Math.floor(Math.random() * 90000000 + 10000000)),
+              email: email.toLowerCase(),
+              birthDate: normalizeDateVal(birthDateRaw),
+              salary: parsedSalary,
+              hireDate: normalizeDateVal(hireDateRaw),
               nationality: "Saudi Arabian",
               isSaudi: true,
               isExplicitSaudi: true,
-              salary: parsedSalary,
               role: cleanRole,
               status: "ACTIVE",
               isBlocked: false,
@@ -3705,11 +3811,16 @@
           if (previewTbody) {
             previewTbody.innerHTML = pendingExcelParsedWorkers.slice(0, 50).map(w => `
               <tr>
-                <td style="font-weight: 700; color: var(--text-main);">${w.name} ${w.nameAr ? `<span style="font-size: 0.7rem; color: var(--text-muted);">(${w.nameAr})</span>` : ''}</td>
-                <td style="font-family: monospace;">${w.nationalId}</td>
-                <td style="color: #10b981; font-weight: 600;">${w.phone}</td>
-                <td><span class="badge badge-secondary">${w.role}</span></td>
-                <td style="font-weight: 700; color: #10b981;">${w.salary.toLocaleString()} SAR</td>
+                <td style="font-weight: 700; color: var(--text-main); white-space: nowrap;">${w.name}</td>
+                <td style="color: #a7f3d0; white-space: nowrap;">${w.idProfession || '-'}</td>
+                <td style="white-space: nowrap; font-family: monospace;">${w.crNumber ? `${w.crNumber} (${w.crName || ''})` : (w.crName || '-')}</td>
+                <td style="color: #60a5fa; white-space: nowrap;">${w.referredBy || '-'}</td>
+                <td style="color: #10b981; font-weight: 600; white-space: nowrap;">${w.phone}</td>
+                <td style="font-family: monospace; white-space: nowrap;">${w.nationalId}</td>
+                <td style="color: var(--text-muted); font-size: 0.72rem; white-space: nowrap;">${w.email}</td>
+                <td style="white-space: nowrap;">${w.birthDate || '-'}</td>
+                <td style="font-weight: 700; color: #10b981; white-space: nowrap;">${w.salary.toLocaleString()} SAR</td>
+                <td style="white-space: nowrap;">${w.hireDate || '-'}</td>
                 <td><span class="badge badge-emerald">Ready</span></td>
               </tr>
             `).join("");
@@ -3901,10 +4012,24 @@
       document.getElementById("worker-email").value = u.email;
       document.getElementById("worker-phone").value = u.phone || "+966 ";
 
+      const isSaudi = isSaudiEmployee(u);
       const nationalitySelect = document.getElementById("worker-nationality");
       if (nationalitySelect) {
-        nationalitySelect.value = isSaudiEmployee(u) ? "Saudi Arabian" : (u.nationality && !u.nationality.toLowerCase().includes("saudi") ? u.nationality : "Non-Saudi");
+        nationalitySelect.value = isSaudi ? "Saudi Arabian" : (u.nationality && !u.nationality.toLowerCase().includes("saudi") ? u.nationality : "Non-Saudi");
       }
+
+      // Populate Saudi-specific fields and toggle visibility
+      const saudiFields = document.getElementById("saudi-worker-fields");
+      if (saudiFields) {
+        saudiFields.style.display = isSaudi ? "block" : "none";
+      }
+      const setEl = (elemId, val) => { const el = document.getElementById(elemId); if (el) el.value = val || ""; };
+      setEl("worker-id-profession", u.idProfession);
+      setEl("worker-cr-number", u.crNumber);
+      setEl("worker-cr-name", u.crName);
+      setEl("worker-referred-by", u.referredBy);
+      setEl("worker-birth-date", u.birthDate);
+      setEl("worker-hire-date", u.hireDate);
 
       const nationalIdInput = document.getElementById("worker-national-id");
       if (nationalIdInput) {
@@ -4480,6 +4605,13 @@
       const nationalIdVal = (document.getElementById("worker-national-id")?.value || "").trim();
       const isSaudiVal = (nationalityVal === "Saudi Arabian");
 
+      const idProfession = (document.getElementById("worker-id-profession")?.value || "").trim();
+      const crNumber = (document.getElementById("worker-cr-number")?.value || "").trim();
+      const crName = (document.getElementById("worker-cr-name")?.value || "").trim();
+      const referredBy = (document.getElementById("worker-referred-by")?.value || "").trim();
+      const birthDate = (document.getElementById("worker-birth-date")?.value || "").trim();
+      const hireDate = (document.getElementById("worker-hire-date")?.value || "").trim();
+
       if (editId) {
         const u = state.users.find(x => x.id === editId);
         if (u) {
@@ -4498,6 +4630,22 @@
           u.nationalId = nationalIdVal;
           u.isSaudi = isSaudiVal;
           u.isExplicitSaudi = isSaudiVal;
+
+          if (isSaudiVal) {
+            u.idProfession = idProfession;
+            u.crNumber = crNumber;
+            u.crName = crName;
+            u.referredBy = referredBy;
+            u.birthDate = birthDate;
+            u.hireDate = hireDate;
+          } else {
+            delete u.idProfession;
+            delete u.crNumber;
+            delete u.crName;
+            delete u.referredBy;
+            delete u.birthDate;
+            delete u.hireDate;
+          }
 
           if (hasAdminEdit) {
             u.email = email;
@@ -4524,6 +4672,12 @@
           nationalId: nationalIdVal,
           isSaudi: isSaudiVal,
           isExplicitSaudi: isSaudiVal,
+          idProfession: isSaudiVal ? idProfession : "",
+          crNumber: isSaudiVal ? crNumber : "",
+          crName: isSaudiVal ? crName : "",
+          referredBy: isSaudiVal ? referredBy : "",
+          birthDate: isSaudiVal ? birthDate : "",
+          hireDate: isSaudiVal ? hireDate : "",
           role,
           status: statusVal,
           isBlocked: (statusVal === "BLOCKED"),
@@ -5524,6 +5678,14 @@
       }
       document.getElementById("modal-task").style.display = "flex";
     }
+    function handleWorkerNationalityChange(val) {
+      const saudiFields = document.getElementById("saudi-worker-fields");
+      if (saudiFields) {
+        saudiFields.style.display = (val === "Saudi Arabian") ? "block" : "none";
+      }
+    }
+    window.handleWorkerNationalityChange = handleWorkerNationalityChange;
+
     function openWorkerHUD(forSaudi = false) {
       if (!hasUserPermission("employees", "create")) {
         alert("Permission denied: You do not have permission to add employees.");
@@ -5548,6 +5710,19 @@
       if (salaryInput) {
         salaryInput.value = forSaudi ? "8500" : "8000";
       }
+
+      // Reset and toggle Saudi-specific fields
+      const saudiFields = document.getElementById("saudi-worker-fields");
+      if (saudiFields) {
+        saudiFields.style.display = forSaudi ? "block" : "none";
+      }
+      const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      setEl("worker-id-profession", "");
+      setEl("worker-cr-number", "");
+      setEl("worker-cr-name", "");
+      setEl("worker-referred-by", "");
+      setEl("worker-birth-date", "");
+      setEl("worker-hire-date", "");
 
       const statusSelect = document.getElementById("worker-status");
       if (statusSelect) {
@@ -7738,6 +7913,12 @@
                 targetUser.isSaudi = targetUser.isExplicitSaudi;
                 targetUser.nationality = targetUser.isExplicitSaudi ? "Saudi Arabian" : "Non-Saudi";
               }
+              if (docData.idProfession) targetUser.idProfession = docData.idProfession;
+              if (docData.crNumber) targetUser.crNumber = docData.crNumber;
+              if (docData.crName) targetUser.crName = docData.crName;
+              if (docData.referredBy) targetUser.referredBy = docData.referredBy;
+              if (docData.birthDate) targetUser.birthDate = docData.birthDate;
+              if (docData.hireDate) targetUser.hireDate = docData.hireDate;
               if (docId && targetUser.id !== docId) {
                 const oldId = targetUser.id;
                 targetUser.id = docId;
@@ -7764,6 +7945,12 @@
                 nationalId: isSaudiUser ? (docData.nationalId || null) : null,
                 isSaudi: isSaudiUser,
                 isExplicitSaudi: isExplicit,
+                idProfession: docData.idProfession || "",
+                crNumber: docData.crNumber || "",
+                crName: docData.crName || "",
+                referredBy: docData.referredBy || "",
+                birthDate: docData.birthDate || "",
+                hireDate: docData.hireDate || "",
                 sectionAccess: docData.sectionAccess || {
                   reminders: "accessible",
                   tasks: "accessible",
@@ -8037,6 +8224,12 @@
                 }
                 if (d.permissions) u.permissions = d.permissions;
                 if (d.sectionAccess) u.sectionAccess = d.sectionAccess;
+                if (d.idProfession) u.idProfession = d.idProfession;
+                if (d.crNumber) u.crNumber = d.crNumber;
+                if (d.crName) u.crName = d.crName;
+                if (d.referredBy) u.referredBy = d.referredBy;
+                if (d.birthDate) u.birthDate = d.birthDate;
+                if (d.hireDate) u.hireDate = d.hireDate;
                 delete u.password;
               } else if (dEmail) {
                 const isExplicit = (docSnap.id && docSnap.id.startsWith("u-saudi-")) || d.isExplicitSaudi === true;
@@ -8056,6 +8249,12 @@
                   nationalId: isSaudiUser ? (d.nationalId || null) : null,
                   isSaudi: isSaudiUser,
                   isExplicitSaudi: isExplicit,
+                  idProfession: d.idProfession || "",
+                  crNumber: d.crNumber || "",
+                  crName: d.crName || "",
+                  referredBy: d.referredBy || "",
+                  birthDate: d.birthDate || "",
+                  hireDate: d.hireDate || "",
                   sectionAccess: d.sectionAccess || {},
                   permissions: d.permissions || null
                 });

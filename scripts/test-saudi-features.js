@@ -1,6 +1,6 @@
 const fs = require('fs');
 
-console.log('=== RUNNING SUITE: SAUDI EMPLOYEES & SALARY WORKFLOW ===\n');
+console.log('=== RUNNING SUITE: SAUDI EMPLOYEES & SALARY WORKFLOW (11 COLUMNS) ===\n');
 
 const html = fs.readFileSync('index.html', 'utf8');
 const translations = fs.readFileSync('translation.js', 'utf8');
@@ -19,7 +19,7 @@ function assert(condition, message) {
 }
 
 // 1. Check HTML Elements
-console.log('--- 1. Testing HTML Structure ---');
+console.log('--- 1. Testing HTML Structure & Custom Saudi Inputs ---');
 assert(html.includes('id="emp-tab-saudi"'), 'Saudi Tab button exists');
 assert(html.includes('id="emp-subview-saudi"'), 'Saudi Subview container exists');
 assert(html.includes('id="saudi-stat-count"'), 'Saudi Nationals KPI exists');
@@ -30,6 +30,13 @@ assert(html.includes('id="saudi-workers-grid"'), 'Saudi Workers Grid container e
 assert(html.includes('id="worker-salary"'), 'Worker Salary Box input exists');
 assert(html.includes('id="worker-nationality"'), 'Worker Nationality selector exists');
 assert(html.includes('id="worker-national-id"'), 'Worker National ID input exists');
+assert(html.includes('id="saudi-worker-fields"'), 'Dedicated Saudi custom fields container exists in modal');
+assert(html.includes('id="worker-id-profession"'), 'Worker ID Profession input exists (المهنة في الهوية)');
+assert(html.includes('id="worker-cr-number"'), 'Worker CR Number input exists (رقم السجل)');
+assert(html.includes('id="worker-cr-name"'), 'Worker CR Name input exists (اسم السجل)');
+assert(html.includes('id="worker-referred-by"'), 'Worker Referred By input exists (من طرف)');
+assert(html.includes('id="worker-birth-date"'), 'Worker Birth Date input exists (تاريخ الميلاد)');
+assert(html.includes('id="worker-hire-date"'), 'Worker Work Start Date input exists (تاريخ بدء العمل)');
 assert(html.includes('id="modal-excel-import"'), 'Excel Batch Import Modal exists');
 assert(html.includes('id="excel-dropzone"'), 'Excel Dropzone exists');
 assert(html.includes('downloadSaudiExcelSample()'), 'Download Excel sample handler linked');
@@ -46,27 +53,47 @@ assert(translations.includes('metric_saudi_payroll: "إجمالي مسيرات �
 assert(translations.includes('token_salary: "{salary}"'), 'token_salary key present');
 assert(translations.includes('btn_filter_saudi_msg: "🇸🇦 Saudi Staff"'), 'btn_filter_saudi_msg in English');
 assert(translations.includes('btn_filter_saudi_msg: "🇸🇦 الكادر السعودي"'), 'btn_filter_saudi_msg in Arabic');
+assert(translations.includes('label_id_profession: "المهنة في الهوية"'), 'Arabic label for ID Profession');
+assert(translations.includes('label_cr_number: "رقم السجل"'), 'Arabic label for CR Number');
+assert(translations.includes('label_cr_name: "اسم السجل"'), 'Arabic label for CR Name');
+assert(translations.includes('label_referred_by: "من طرف"'), 'Arabic label for Referred By');
+assert(translations.includes('label_birth_date: "تاريخ الميلاد"'), 'Arabic label for Date of Birth');
+assert(translations.includes('label_hire_date: "تاريخ بدء العمل"'), 'Arabic label for Work Start Date');
 
-// 3. Test Sample CSV Generation Fallback & Data Validity
-console.log('\n--- 3. Testing Sample Generation Data Structure ---');
-const sampleData = [
-  { "Name": "Mohammed Al-Otaibi", "Name_Ar": "محمد العتيبي", "National_ID": "1098765432", "Phone": "+966 50 234 5678", "Email": "mohammed@company.sa", "Role": "EMPLOYEE", "Department": "Operations", "Salary_SAR": 9500 },
-  { "Name": "Sarah Al-Dosari", "Name_Ar": "سارة الدوسري", "National_ID": "1087654321", "Phone": "+966 55 876 5432", "Email": "sarah@company.sa", "Role": "MANAGER", "Department": "HR", "Salary_SAR": 14000 }
+// 3. Test 11-Column Sample Excel Generation Header Match
+console.log('\n--- 3. Testing 11-Column Sample Generation Structure ---');
+const expectedColumns = [
+  "اسم الموظف",
+  "المهنة في الهوية",
+  "رقم السجل",
+  "اسم السجل",
+  "من طرف",
+  "رقم الهاتف",
+  "رقم الهوية",
+  "الإيميل",
+  "تاريخ الميلاد",
+  "الراتب",
+  "تاريخ بدء العمل"
 ];
 
-const headers = ["Name", "Name_Ar", "National_ID", "Phone", "Email", "Role", "Department", "Salary_SAR"];
-const rows = sampleData.map(r => headers.map(h => `"${(r[h] || "").toString().replace(/"/g, '""')}"`).join(","));
-const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
-assert(csvContent.includes("Mohammed Al-Otaibi") && csvContent.includes("14000"), 'Sample template generates valid formatted rows');
+expectedColumns.forEach(col => {
+  assert(html.includes(`"${col}"`), `Sample generator includes exact header: "${col}"`);
+});
 
-// 4. Test Excel Parsing Logic (Key Lookup & Mapping)
-console.log('\n--- 4. Testing Column Mapping & Normalization Engine ---');
+// 4. Test Excel Parsing Logic (Exact 11 Columns Lookup & Mapping)
+console.log('\n--- 4. Testing 11-Column Mapping & Normalization Engine ---');
 const sampleRow = {
-  "الاسم": "فهد الحربي",
-  "National ID": "1076543210",
-  "الجوال": "0563456789",
-  "Role": "مدير المستودع",
-  "الراتب الشهري": "10,500 SAR"
+  "اسم الموظف": "فهد بن ناصر الحربي",
+  "المهنة في الهوية": "مدير شؤون الموظفين",
+  "رقم السجل": "1010654321",
+  "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
+  "من طرف": "أبو فهد",
+  "رقم الهاتف": "0563456789",
+  "رقم الهوية": "1076543210",
+  "الإيميل": "fahad.harbi@company.sa",
+  "تاريخ الميلاد": "1990-04-15",
+  "الراتب": "12,500 SAR",
+  "تاريخ بدء العمل": "2022-03-01"
 };
 
 const getVal = (row, ...keys) => {
@@ -80,16 +107,29 @@ const getVal = (row, ...keys) => {
   return "";
 };
 
-const name = getVal(sampleRow, "name", "الاسم");
-const nid = getVal(sampleRow, "national id", "national_id", "الهوية");
-const phoneRaw = getVal(sampleRow, "phone", "الجوال");
-const roleRaw = getVal(sampleRow, "role", "الرتبة");
-const salRaw = getVal(sampleRow, "salary", "الراتب", "الراتب الشهري");
+const name = getVal(sampleRow, "اسم الموظف", "الاسم", "name");
+const idProf = getVal(sampleRow, "المهنة في الهوية", "المهنة", "id profession");
+const crNum = getVal(sampleRow, "رقم السجل", "cr number");
+const crName = getVal(sampleRow, "اسم السجل", "cr name");
+const refBy = getVal(sampleRow, "من طرف", "referred by");
+const phone = getVal(sampleRow, "رقم الهاتف", "الجوال", "phone");
+const nid = getVal(sampleRow, "رقم الهوية", "national id");
+const email = getVal(sampleRow, "الإيميل", "email");
+const dob = getVal(sampleRow, "تاريخ الميلاد", "birth date");
+const sal = parseFloat(getVal(sampleRow, "الراتب", "salary").replace(/[^0-9.]/g, ""));
+const hire = getVal(sampleRow, "تاريخ بدء العمل", "hire date");
 
-assert(name === "فهد الحربي", `Mapped name: ${name}`);
-assert(nid === "1076543210", `Mapped national ID: ${nid}`);
-assert(phoneRaw === "0563456789", `Mapped phone: ${phoneRaw}`);
-assert(parseFloat(salRaw.replace(/[^0-9.]/g, "")) === 10500, `Parsed salary to 10500`);
+assert(name === "فهد بن ناصر الحربي", `Mapped name: ${name}`);
+assert(idProf === "مدير شؤون الموظفين", `Mapped ID profession: ${idProf}`);
+assert(crNum === "1010654321", `Mapped CR Number: ${crNum}`);
+assert(crName === "مؤسسة أستان للتجارة والمقاولات", `Mapped CR Name: ${crName}`);
+assert(refBy === "أبو فهد", `Mapped Referred By: ${refBy}`);
+assert(phone === "0563456789", `Mapped Phone: ${phone}`);
+assert(nid === "1076543210", `Mapped National ID: ${nid}`);
+assert(email === "fahad.harbi@company.sa", `Mapped Email: ${email}`);
+assert(dob === "1990-04-15", `Mapped DOB: ${dob}`);
+assert(sal === 12500, `Parsed Salary: ${sal}`);
+assert(hire === "2022-03-01", `Mapped Hire Date: ${hire}`);
 
 // 5. Test Personalized Message Builder with {salary}
 console.log('\n--- 5. Testing Personalized Message Builder ---');
@@ -115,8 +155,8 @@ function buildPersonalizedMessage(rawText, user = null) {
 const testUser = { name: "Osama", nameAr: "اسامة الطويش", role: "SUPER_ADMIN", salary: 25000 };
 const template = "مرحباً {name}، نود إعلامك بأن راتبك الشهري هو {salary} ورتبتك {role}.";
 const personalized = buildPersonalizedMessage(template, testUser);
-assert(personalized.includes("25,000 SAR"), `Message replaced {salary} with "25,000 SAR": "${personalized}"`);
-assert(personalized.includes("اسامة الطويش"), `Message replaced {name} with Arabic name: "${personalized}"`);
+assert(personalized.includes("25,000 SAR"), `Message replaced {salary} with "25,000 SAR"`);
+assert(personalized.includes("اسامة الطويش"), `Message replaced {name} with Arabic name`);
 
 // 6. Test Salary Range Filter Logic
 console.log('\n--- 6. Testing Salary Range Filtering ---');
