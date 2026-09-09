@@ -2321,13 +2321,13 @@
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Full Name *</label>
           <input id="worker-name" type="text" required placeholder="e.g. Khalid Al-Ghamdi" class="input-field">
         </div>
-        <div>
+        <div id="worker-email-group">
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Email Address *</label>
           <input id="worker-email" type="email" required placeholder="khalid@company.com" class="input-field">
         </div>
 
         <!-- USER LOGIN PASSWORD (Created by Admin & Given to Employee) -->
-        <div style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
+        <div id="worker-password-group" style="background: rgba(99, 102, 241, 0.05); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-sm); padding: 0.85rem; display: flex; flex-direction: column; gap: 0.4rem;">
           <div style="display: flex; justify-content: space-between; align-items: center;">
             <label style="font-size: 0.8rem; font-weight: 700; color: #818cf8; display: flex; align-items: center; gap: 0.35rem;">
               <span>🔑</span> <span data-i18n="label_worker_password">System Login Password *</span>
@@ -2343,6 +2343,12 @@
           <div id="worker-password-hint" style="font-size: 0.7rem; color: var(--text-faint);">
             This password is given directly to the employee. (When editing, leave blank to keep unchanged).
           </div>
+        </div>
+
+        <!-- SAUDI EMPLOYEE DATA-ONLY NOTICE -->
+        <div id="saudi-data-only-notice" style="display: none; background: rgba(16, 185, 129, 0.08); border: 1px dashed rgba(16, 185, 129, 0.35); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; font-size: 0.76rem; color: #10b981; display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.15rem; flex-shrink: 0;">ℹ️</span>
+          <span><strong>سجل بيانات فقط (Data-Only Record)</strong>: حفظ معلومات الموظف السعودي دون إنشاء حساب دخول للنظام أو طلب بريد إلكتروني وكلمة مرور.</span>
         </div>
 
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
@@ -3088,7 +3094,7 @@
 
     // Load sanitized users
     let rawStoredUsers = JSON.parse(localStorage.getItem("ostan_users") || "null") || DEFAULT_USERS;
-    let sanitizedUsers = rawStoredUsers.filter(u => !u.email.endsWith("@ostan.internal") && !u.email.endsWith("@company.local"));
+    let sanitizedUsers = rawStoredUsers.filter(u => !String(u.email || "").endsWith("@ostan.internal") && !String(u.email || "").endsWith("@company.local"));
     
     // Ensure Super Admin profile integrity & default valid phone, salary (NOT Saudi by default)
     sanitizedUsers = sanitizedUsers.map(u => {
@@ -3115,7 +3121,7 @@
         u.isExplicitSaudi = true;
       }
 
-      if (u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
+      if ((u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com") {
         return {
           ...u,
           name: "Osama",
@@ -3141,7 +3147,7 @@
 
     sanitizedUsers.forEach(u => delete u.password);
 
-    if (!sanitizedUsers.some(u => u.email.toLowerCase().trim() === "waseem.tw@hotmail.com")) {
+    if (!sanitizedUsers.some(u => (u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com")) {
       sanitizedUsers.unshift(DEFAULT_USERS[0]);
     }
 
@@ -3306,8 +3312,8 @@
     window.hashPassword = hashPassword;
 
     async function syncUserToFirestore(targetUser) {
-      if (!window.fbDb || !targetUser || !targetUser.email) return;
-      const cleanEmail = targetUser.email.toLowerCase().trim();
+      if (!window.fbDb || !targetUser) return;
+      const cleanEmail = (targetUser.email || "").toLowerCase().trim();
       const phone = targetUser.phone || "+966 50 123 4567";
       const compactPhone = targetUser.compactPhone || phone.replace(/[\s\-\(\)]/g, "");
 
@@ -3320,7 +3326,7 @@
 
       const isSaudiVal = (targetUser.nationality === "Saudi Arabian" && targetUser.isSaudi === true);
       const payload = {
-        email: cleanEmail,
+        email: cleanEmail || null,
         name: targetUser.name || "Employee",
         nameAr: targetUser.nameAr || null,
         role: targetUser.role || "EMPLOYEE",
@@ -3356,18 +3362,18 @@
       }
 
       try {
-        if (targetUser.id && !targetUser.id.startsWith("u-")) {
+        if (targetUser.id) {
           window.fbDb.collection("users").doc(targetUser.id).set(payload, { merge: true }).catch(() => {});
         }
-        window.fbDb.collection("users").where("email", "==", cleanEmail).get().then(snap => {
-          if (!snap.empty) {
-            snap.forEach(docSnap => {
-              docSnap.ref.set(payload, { merge: true });
-            });
-          } else if (targetUser.id) {
-            window.fbDb.collection("users").doc(targetUser.id).set(payload, { merge: true });
-          }
-        }).catch(err => console.warn("Firestore sync email notice:", err));
+        if (cleanEmail) {
+          window.fbDb.collection("users").where("email", "==", cleanEmail).get().then(snap => {
+            if (!snap.empty) {
+              snap.forEach(docSnap => {
+                docSnap.ref.set(payload, { merge: true });
+              });
+            }
+          }).catch(err => console.warn("Firestore sync email notice:", err));
+        }
       } catch (e) {
         console.error("Firestore syncUser error:", e);
       }
@@ -4204,7 +4210,7 @@
       }
 
       grid.innerHTML = displayedUsers.map(u => {
-        const isMaster = u.email.toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
+        const isMaster = (u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
         const roleBadgeClass = u.role === "SUPER_ADMIN" ? "badge-rose" : u.role === "ADMIN" ? "badge-primary" : u.role === "MANAGER" ? "badge-emerald" : u.role === "STOCK_MANAGER" ? "badge-amber" : "badge-cyan";
         const displayName = lang === "ar" && u.nameAr ? u.nameAr : u.name;
         const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
@@ -4226,7 +4232,7 @@
                     <span title="Saudi Citizen" style="font-size: 0.9rem;">🇸🇦</span>
                     ${isMaster ? '<span style="flex-shrink: 0;">👑</span>' : ''}
                   </div>
-                  <div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${u.email}">${u.email}</div>
+                  ${u.email ? `<div style="font-size: 0.76rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${u.email}">${u.email}</div>` : ''}
                   <div style="font-size: 0.78rem; color: #10b981; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <span style="flex-shrink: 0;">📱</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.phone || '+966 50 123 4567'}</span>
                   </div>
@@ -4649,7 +4655,7 @@
 
       const importCount = pendingExcelParsedWorkers.length;
       pendingExcelParsedWorkers.forEach(worker => {
-        const existingIdx = state.users.findIndex(u => u.email.toLowerCase().trim() === worker.email.toLowerCase().trim());
+        const existingIdx = state.users.findIndex(u => (u.email && worker.email && u.email.toLowerCase().trim() === worker.email.toLowerCase().trim()) || (u.name && worker.name && u.name.toLowerCase().trim() === worker.name.toLowerCase().trim()));
         if (existingIdx !== -1) {
           state.users[existingIdx] = { ...state.users[existingIdx], ...worker, id: state.users[existingIdx].id };
           syncUserToFirestore(state.users[existingIdx]);
@@ -4692,7 +4698,7 @@
       if (addEmpBtn) addEmpBtn.style.display = canCreate ? "inline-flex" : "none";
 
       grid.innerHTML = state.users.map(u => {
-        const isMaster = u.email.toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
+        const isMaster = (u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
         const roleBadgeClass = u.role === "SUPER_ADMIN" ? "badge-rose" : u.role === "ADMIN" ? "badge-primary" : u.role === "MANAGER" ? "badge-emerald" : u.role === "STOCK_MANAGER" ? "badge-amber" : "badge-cyan";
         const displayName = lang === "ar" && u.nameAr ? u.nameAr : u.name;
         const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
@@ -4713,7 +4719,7 @@
                     ${isSaudi ? '<span title="Saudi Citizen" style="font-size: 0.85rem;">🇸🇦</span>' : ''}
                     ${isMaster ? '<span style="flex-shrink: 0;">👑</span>' : ''}
                   </div>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${u.email}">${u.email}</div>
+                  ${u.email ? `<div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${u.email}">${u.email}</div>` : ''}
                   <div style="font-size: 0.78rem; color: #10b981; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <span style="flex-shrink: 0;">📱</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.phone || '+966 50 123 4567'}</span>
                   </div>
@@ -4765,7 +4771,7 @@
       }
       const u = state.users.find(x => x.id === id);
       if (!u) return;
-      if (u.isProtected || u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
+      if (u.isProtected || ((u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com")) {
         alert("The Master Super Admin account cannot be blocked.");
         return;
       }
@@ -4816,7 +4822,7 @@
 
       document.getElementById("worker-edit-id").value = u.id;
       document.getElementById("worker-name").value = u.name;
-      document.getElementById("worker-email").value = u.email;
+      document.getElementById("worker-email").value = u.email || "";
       document.getElementById("worker-phone").value = u.phone || "+966 ";
 
       const nationalitySelect = document.getElementById("worker-nationality");
@@ -4869,7 +4875,7 @@
       const statusSelect = document.getElementById("worker-status");
       if (statusSelect) {
         statusSelect.value = (u.status === "BLOCKED" || u.isBlocked) ? "BLOCKED" : "ACTIVE";
-        statusSelect.disabled = !hasAdminEdit || u.isProtected || u.email.toLowerCase().trim() === "waseem.tw@hotmail.com";
+        statusSelect.disabled = !hasAdminEdit || u.isProtected || (u.email && u.email.toLowerCase().trim() === "waseem.tw@hotmail.com");
       }
 
       const passInput = document.getElementById("worker-password");
@@ -4884,7 +4890,13 @@
         passHint.textContent = lang === "ar" ? "اترك الحقل فارغاً للإبقاء على كلمة المرور الحالية دون تغيير." : "Leave blank to keep current password unchanged.";
       }
 
-      document.getElementById("modal-worker-heading").textContent = isSelf ? "✏️ Edit My Profile & Phone" : "✏️ Edit Employee Profile";
+      // Toggle field visibility based on employee type (Saudi vs standard login account)
+      handleWorkerNationalityChange(isSaudi ? "Saudi Arabian" : (nationalitySelect?.value || "Non-Saudi"));
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      document.getElementById("modal-worker-heading").textContent = isSaudi
+        ? (lang === "ar" ? "🇸🇦 تعديل بيانات الموظف السعودي" : "🇸🇦 Edit Saudi Employee Record")
+        : (isSelf ? "✏️ Edit My Profile & Phone" : "✏️ Edit Employee Profile");
       document.getElementById("modal-worker").style.display = "flex";
     }
     window.editWorkerById = editWorkerById;
@@ -5413,7 +5425,7 @@
     function deleteWorkerById(id) {
       const u = state.users.find(x => x.id === id);
       if (!u) return;
-      if (u.isProtected || u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
+      if (u.isProtected || ((u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com")) {
         alert("The protected Super Admin account cannot be deleted.");
         return;
       }
@@ -5477,12 +5489,29 @@
       const currentUser = getCurrentUser();
       const editId = document.getElementById("worker-edit-id").value;
       const name = document.getElementById("worker-name").value.trim();
-      const email = document.getElementById("worker-email").value.trim().toLowerCase();
+      const nationalityVal = document.getElementById("worker-nationality")?.value || "Non-Saudi";
+      const isSaudiVal = (nationalityVal === "Saudi Arabian");
+      const emailRaw = (document.getElementById("worker-email")?.value || "").trim().toLowerCase();
       const role = document.getElementById("worker-role")?.value || "EMPLOYEE";
-      if (!name || !email) return;
+      
+      if (!name) {
+        alert("Please enter employee full name.");
+        return;
+      }
+
+      let email = "";
+      if (!isSaudiVal) {
+        if (!emailRaw) {
+          alert("Please enter a valid email address for employee login.");
+          const eInput = document.getElementById("worker-email");
+          if (eInput) eInput.focus();
+          return;
+        }
+        email = emailRaw;
+      }
 
       const passRaw = (document.getElementById("worker-password")?.value || "").trim();
-      if (!editId && !passRaw) {
+      if (!isSaudiVal && !editId && !passRaw) {
         alert("Please set or generate a system login password for this employee.");
         const pInput = document.getElementById("worker-password");
         if (pInput) pInput.focus();
@@ -5501,9 +5530,7 @@
       const compactPhone = phoneRes.compactPhone;
 
       const salaryVal = parseFloat(document.getElementById("worker-salary")?.value) || 0;
-      const nationalityVal = document.getElementById("worker-nationality")?.value || "Non-Saudi";
       const nationalIdVal = (document.getElementById("worker-national-id")?.value || "").trim();
-      const isSaudiVal = (nationalityVal === "Saudi Arabian");
       const employeePayoutVal = isSaudiVal ? (parseFloat(document.getElementById("worker-employee-payout")?.value) || 1000) : null;
       const companyReturnVal = isSaudiVal ? Math.max(0, salaryVal - employeePayoutVal) : null;
 
@@ -5544,6 +5571,9 @@
             u.hireDate = hireDate;
             u.employeePayout = employeePayoutVal;
             u.companyReturn = companyReturnVal;
+            u.email = "";
+            delete u.passwordHash;
+            delete u.password;
           } else {
             delete u.idProfession;
             delete u.crNumber;
@@ -5553,18 +5583,18 @@
             delete u.hireDate;
             delete u.employeePayout;
             delete u.companyReturn;
+            u.email = email;
           }
 
           if (hasAdminEdit) {
-            u.email = email;
             u.role = role;
-            if (!u.isProtected && u.email.toLowerCase().trim() !== "waseem.tw@hotmail.com") {
+            if (!u.isProtected && ((u.email || "").toLowerCase().trim() !== "waseem.tw@hotmail.com")) {
               const statusVal = document.getElementById("worker-status")?.value || "ACTIVE";
               u.status = statusVal;
               u.isBlocked = (statusVal === "BLOCKED");
             }
           }
-          if (passRaw) {
+          if (!isSaudiVal && passRaw) {
             u.passwordHash = await hashPassword(passRaw);
             delete u.password;
           }
@@ -5581,7 +5611,7 @@
         }
 
         const statusVal = document.getElementById("worker-status")?.value || "ACTIVE";
-        const passHash = await hashPassword(passRaw);
+        const passHash = (!isSaudiVal && passRaw) ? await hashPassword(passRaw) : null;
         const newUser = {
           id: (isFromSaudiTab && isSaudiVal) ? ("u-saudi-" + Date.now()) : ("u-" + Date.now()),
           name,
@@ -5634,15 +5664,23 @@
       renderDepartments();
       updateCounts();
       if (!editId) {
-        showProvisionedCredentialsModal({
-          name,
-          email,
-          phone,
-          password: passRaw
-        });
+        if (!isSaudiVal) {
+          showProvisionedCredentialsModal({
+            name,
+            email,
+            phone,
+            password: passRaw
+          });
+        } else {
+          if (window.OstanStyle) {
+            window.OstanStyle.showToast("🇸🇦 Saudi Employee Saved", `${name} - Saved as data-only record`);
+          } else {
+            alert(`Saudi Employee record for ${name} saved successfully.`);
+          }
+        }
       } else {
         if (window.OstanStyle) {
-          window.OstanStyle.showToast(passRaw ? "Employee & Password Updated" : "Employee Saved", `${name} (${phone})`);
+          window.OstanStyle.showToast(isSaudiVal ? "🇸🇦 Saudi Employee Updated" : (passRaw ? "Employee & Password Updated" : "Employee Saved"), `${name} (${phone})`);
         }
       }
     }
@@ -5671,7 +5709,7 @@
     function populatePermUserSelect() {
       const sel = document.getElementById("perm-user-select");
       if (!sel) return;
-      const nonMasterUsers = state.users.filter(u => u.email.toLowerCase().trim() !== "waseem.tw@hotmail.com" && !u.isProtected);
+      const nonMasterUsers = state.users.filter(u => ((u.email || "").toLowerCase().trim() !== "waseem.tw@hotmail.com") && !u.isProtected);
       const currentVal = sel.value;
       sel.innerHTML = nonMasterUsers.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join("");
       if (currentVal && nonMasterUsers.some(u => u.id === currentVal)) {
@@ -5913,7 +5951,7 @@
       ];
 
       const rows = state.users.map(u => {
-        const isMaster = u.email.toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
+        const isMaster = (u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com" || u.isProtected;
         return `
           <tr>
             <td style="font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
@@ -6696,7 +6734,7 @@
       const sel = document.getElementById("task-worker-select");
       if (sel) {
         sel.innerHTML = state.users
-          .filter(u => u.email.toLowerCase().trim() !== "waseem.tw@hotmail.com")
+          .filter(u => (u.email || "").toLowerCase().trim() !== "waseem.tw@hotmail.com")
           .map(u => `<option value="${u.name}">${u.name}</option>`)
           .join("");
       }
@@ -6712,6 +6750,39 @@
       if (saudiCalc) {
         saudiCalc.style.display = isSaudi ? "flex" : "none";
       }
+
+      // Hide or show Email & Password for Saudi data-only records
+      const emailGroup = document.getElementById("worker-email-group");
+      const emailInput = document.getElementById("worker-email");
+      const passGroup = document.getElementById("worker-password-group");
+      const passInput = document.getElementById("worker-password");
+      const notice = document.getElementById("saudi-data-only-notice");
+      const editId = document.getElementById("worker-edit-id")?.value;
+
+      if (isSaudi) {
+        if (emailGroup) emailGroup.style.display = "none";
+        if (emailInput) {
+          emailInput.required = false;
+          emailInput.value = "";
+        }
+        if (passGroup) passGroup.style.display = "none";
+        if (passInput) {
+          passInput.required = false;
+          passInput.value = "";
+        }
+        if (notice) notice.style.display = "flex";
+      } else {
+        if (emailGroup) emailGroup.style.display = "block";
+        if (emailInput) {
+          emailInput.required = true;
+        }
+        if (passGroup) passGroup.style.display = "flex";
+        if (passInput) {
+          passInput.required = !editId;
+        }
+        if (notice) notice.style.display = "none";
+      }
+
       if (isSaudi) {
         const currentSal = parseFloat(document.getElementById("worker-salary")?.value) || 0;
         if (!currentSal || currentSal === 8000 || currentSal === 8500) {
@@ -6741,6 +6812,9 @@
         nationalitySelect.value = forSaudi ? "Saudi Arabian" : "Non-Saudi";
       }
 
+      // Configure fields for Saudi (data-only, no login) vs non-Saudi (user login)
+      handleWorkerNationalityChange(forSaudi ? "Saudi Arabian" : "Non-Saudi");
+
       const nationalIdInput = document.getElementById("worker-national-id");
       if (nationalIdInput) {
         nationalIdInput.value = "";
@@ -6751,15 +6825,6 @@
         salaryInput.value = forSaudi ? "4000" : "8000";
       }
 
-      // Reset and toggle Saudi-specific fields
-      const saudiFields = document.getElementById("saudi-worker-fields");
-      if (saudiFields) {
-        saudiFields.style.display = forSaudi ? "block" : "none";
-      }
-      const saudiCalc = document.getElementById("saudi-salary-calculator");
-      if (saudiCalc) {
-        saudiCalc.style.display = forSaudi ? "flex" : "none";
-      }
       const payoutInput = document.getElementById("worker-employee-payout");
       if (payoutInput) {
         payoutInput.value = 1000;
@@ -6784,8 +6849,8 @@
 
       const passInput = document.getElementById("worker-password");
       if (passInput) {
-        passInput.required = true;
-        passInput.placeholder = "Set or generate password...";
+        passInput.required = !forSaudi;
+        passInput.placeholder = forSaudi ? "(No login account needed)" : "Set or generate password...";
       }
       const passHint = document.getElementById("worker-password-hint");
       if (passHint) {
@@ -6794,7 +6859,12 @@
           ? "يتم تحديد كلمة المرور هذه من قبل الإدارة وتسليمها للموظف شخصياً لتسجيل الدخول."
           : "This password is created by the admin and given directly to the employee to sign in.";
       }
-      generateRandomWorkerPassword();
+
+      if (!forSaudi) {
+        generateRandomWorkerPassword();
+      } else if (passInput) {
+        passInput.value = "";
+      }
 
       const lang = document.documentElement.getAttribute("lang") || "en";
       document.getElementById("modal-worker-heading").textContent = forSaudi
@@ -9448,7 +9518,7 @@
                   state.currentUserId = docId;
                 }
               }
-            } else if (docEmail) {
+            } else if (docEmail || docData.name || (docId && docId.startsWith("u-saudi-")) || docData.isSaudi) {
               const isSuper = docEmail === "waseem.tw@hotmail.com";
               const isExplicit = (docId && docId.startsWith("u-saudi-")) || docData.isExplicitSaudi === true;
               const isSaudiUser = isExplicit && (docData.nationality === "Saudi Arabian" || docData.isSaudi === true);
@@ -9456,7 +9526,7 @@
                 id: docId,
                 name: docData.name || "New Employee",
                 nameAr: docData.nameAr || null,
-                email: docEmail,
+                email: docEmail || "",
                 phone: docData.phone || ("+966 5" + (Math.abs(docId.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000)),
                 compactPhone: docData.compactPhone || null,
                 role: docData.role || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
@@ -9536,7 +9606,7 @@
 
           if (change.type === "removed") {
             stateChanged = true;
-            state.users = state.users.filter(u => u.id !== docId && (!docEmail || u.email.toLowerCase() !== docEmail));
+            state.users = state.users.filter(u => u.id !== docId && (!docEmail || (u.email && u.email.toLowerCase() !== docEmail)));
           }
         });
 
