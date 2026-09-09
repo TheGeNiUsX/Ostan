@@ -5278,6 +5278,10 @@
     };
 
     function startWhatsAppQueueDispatch() {
+      if (state.whatsappConnected) {
+        startWhatsAppCloudApiDispatch();
+        return;
+      }
       const rawText = document.getElementById("msg-composer-text")?.value.trim();
       if (!rawText) {
         alert("Please write a message or select a pre-written template before sending.");
@@ -5854,9 +5858,17 @@
       const btnMeta = document.getElementById("btn-dispatch-meta-api");
       const btnWeb = document.getElementById("btn-dispatch-whatsapp-web");
       const lang = document.documentElement.getAttribute("lang") || "en";
+      const isLiveConnected = Boolean(state.whatsappConnected);
 
       if (pill && dot && text) {
-        if (isApiMode) {
+        if (isLiveConnected) {
+          pill.className = "badge badge-emerald";
+          pill.style.background = "rgba(16, 185, 129, 0.15)";
+          pill.style.color = "#10b981";
+          pill.style.border = "1px solid rgba(16, 185, 129, 0.35)";
+          dot.style.background = "#10b981";
+          text.textContent = lang === "ar" ? `🟢 واتساب متصل برقمك (${state.whatsappPhone || "نشط"})` : `🟢 Direct WhatsApp Linked (${state.whatsappPhone || "Active"})`;
+        } else if (isApiMode) {
           pill.className = "badge badge-emerald";
           pill.style.background = "rgba(16, 185, 129, 0.15)";
           pill.style.color = "#10b981";
@@ -5881,9 +5893,12 @@
       }
 
       if (btnMeta && btnWeb) {
-        if (isApiMode) {
+        if (isLiveConnected || isApiMode) {
           btnMeta.style.display = "inline-flex";
-          btnMeta.innerHTML = `⚡ <span>${lang === 'ar' ? 'إرسال فوري عبر ' + providerName : 'Send Instantly via ' + providerName}</span>`;
+          const label = isLiveConnected
+            ? (lang === 'ar' ? `⚡ إرسال مباشر عبر واتساب (${state.whatsappPhone || 'هاتفك'})` : `⚡ Send Directly via ${state.whatsappPhone || 'Phone'}`)
+            : (lang === 'ar' ? `⚡ إرسال فوري عبر ${providerName}` : `⚡ Send Instantly via ${providerName}`);
+          btnMeta.innerHTML = `<span>${label}</span>`;
           btnWeb.style.display = "none";
         } else {
           btnMeta.style.display = "none";
@@ -5998,8 +6013,9 @@
       }
 
       const cfg = state.whatsappApiConfig || {};
-      if (!cfg.phoneNumberId || !cfg.accessToken) {
-        const proceed = confirm("Meta WhatsApp Cloud API credentials are not configured yet. Would you like to configure them now?");
+      const isLiveConnected = Boolean(state.whatsappConnected);
+      if (!isLiveConnected && (!cfg.phoneNumberId || !cfg.accessToken)) {
+        const proceed = confirm("WhatsApp credentials are not configured yet. Would you like to configure them now?");
         if (proceed) openWhatsAppApiModal();
         return;
       }
@@ -6031,7 +6047,9 @@
       if (modal) modal.style.display = "flex";
       document.getElementById("runner-content-active").style.display = "flex";
       document.getElementById("runner-content-completed").style.display = "none";
-      document.getElementById("runner-delay-badge").textContent = "⚡ Meta Cloud API";
+      document.getElementById("runner-delay-badge").textContent = isLiveConnected
+        ? `⚡ Direct WhatsApp (${state.whatsappPhone || "Linked"})`
+        : `⚡ ${cfg.provider || "API"}`;
 
       const openBtn = document.getElementById("runner-open-btn");
       if (openBtn) openBtn.style.display = "none";
@@ -6099,12 +6117,14 @@
       // Finish View
       document.getElementById("runner-content-active").style.display = "none";
       document.getElementById("runner-content-completed").style.display = "flex";
-      document.getElementById("runner-completed-summary").textContent = `Dispatched ${items.length} messages directly via Meta WhatsApp Cloud API (${successCount} Successful, ${failureCount} Failed).`;
+      document.getElementById("runner-completed-summary").textContent = isLiveConnected
+        ? `Dispatched ${items.length} messages directly from your linked phone ${state.whatsappPhone || ''} (${successCount} Successful, ${failureCount} Failed).`
+        : `Dispatched ${items.length} messages directly via WhatsApp API (${successCount} Successful, ${failureCount} Failed).`;
 
       if (openBtn) openBtn.style.display = "inline-flex";
 
       if (window.OstanStyle) {
-        window.OstanStyle.showToast("Meta API Complete", `${successCount} of ${items.length} messages delivered!`);
+        window.OstanStyle.showToast("WhatsApp Complete", `${successCount} of ${items.length} messages delivered!`);
       }
     }
     window.startWhatsAppCloudApiDispatch = startWhatsAppCloudApiDispatch;
