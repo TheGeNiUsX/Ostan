@@ -39,10 +39,9 @@ function getLanIPs() {
   return results;
 }
 
-/** Sync live session state directly to Cloud Firestore so remote computers anywhere see it in real-time */
+/** Sync live session state directly to Cloud Firestore so each user has their own separate number and QR */
 async function syncSessionStateToFirestore(cleanUserId, session) {
   try {
-    const liveRef = doc(fbDb, 'systemSettings', 'whatsapp_live');
     const data = {
       userId: cleanUserId,
       status: session.status,
@@ -54,10 +53,18 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
       gatewayPort: PORT,
       updatedAt: Date.now()
     };
-    await setDoc(liveRef, data, { merge: true });
-    console.log(`[WhatsApp Gateway] ☁️ Synced live state to Cloud Firestore (Status: ${session.status}, Phone: ${session.phone || 'none'})`);
+    // 1. Separate number and QR stored per user
+    const userDocRef = doc(fbDb, 'whatsappSessions', cleanUserId);
+    await setDoc(userDocRef, data, { merge: true });
+
+    // 2. Legacy global fallback for u-osama
+    if (cleanUserId === 'u-osama') {
+      const liveRef = doc(fbDb, 'systemSettings', 'whatsapp_live');
+      await setDoc(liveRef, data, { merge: true });
+    }
+    console.log(`[WhatsApp Gateway] ☁️ Synced live state for user '${cleanUserId}' to Cloud Firestore (Status: ${session.status}, Phone: ${session.phone || 'none'})`);
   } catch (err) {
-    console.warn('[WhatsApp Gateway] Firestore live state sync notice:', err?.message || err);
+    console.warn(`[WhatsApp Gateway] Firestore live state sync notice for '${cleanUserId}':`, err?.message || err);
   }
 }
 
@@ -87,10 +94,8 @@ function sanitizeUserId(id) {
   if (
     raw === 'u-osama' ||
     raw === 'gtc0y8aj1ne4uzdf4fjdcuowkpf1' ||
-    raw.includes('osama') ||
-    raw.includes('waseem') ||
-    raw.includes('super_admin') ||
-    raw.includes('admin')
+    raw === 'osama' ||
+    raw === 'waseem'
   ) {
     return 'u-osama';
   }

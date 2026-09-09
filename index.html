@@ -1870,7 +1870,10 @@
                     📱
                   </div>
                   <div>
-                    <div data-i18n="whatsapp_studio_title" style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">WhatsApp Studio</div>
+                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                      <span data-i18n="whatsapp_studio_title" style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">WhatsApp Studio</span>
+                      <span id="wa-active-user-badge" class="badge badge-secondary" style="font-size: 0.68rem; font-weight: 700; background: rgba(99, 102, 241, 0.15); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.3);">Personal Session</span>
+                    </div>
                     <div id="wa-gateway-indicator" style="font-size: 0.75rem; color: #10b981; font-weight: 700; display: flex; align-items: center; gap: 4px;">
                       <span class="status-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
                       <span id="wa-unified-status-text">Multi-Device Link Active</span>
@@ -7106,7 +7109,7 @@
       if (!u) {
         if (state.currentUserId) {
           const raw = String(state.currentUserId).toLowerCase().trim();
-          if (raw === "u-osama" || raw === "gtc0y8aj1ne4uzdf4fjdcuowkpf1" || raw.includes("osama") || raw.includes("waseem")) {
+          if (raw === "u-osama" || raw === "gtc0y8aj1ne4uzdf4fjdcuowkpf1" || raw === "osama" || raw === "waseem") {
             return "u-osama";
           }
           return raw.replace(/[^a-z0-9_-]/g, "_");
@@ -7116,8 +7119,9 @@
       if (isOsamaUser(u)) {
         return "u-osama";
       }
-      // For any other employee (e.g. soso):
-      if (u.email && !u.email.includes("hotmail")) {
+      // For any other employee (e.g. soso, ahmed, etc.): each user has their OWN unique ID
+      if (u.id) return String(u.id).toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+      if (u.email) {
         const prefix = u.email.split("@")[0].toLowerCase().replace(/[^a-z0-9_-]/g, "_");
         if (prefix) return prefix;
       }
@@ -7125,7 +7129,6 @@
         const nameSlug = u.name.toLowerCase().replace(/[^a-z0-9_-]/g, "_");
         if (nameSlug) return nameSlug;
       }
-      if (u.id) return String(u.id).replace(/[^a-z0-9_-]/g, "_");
       return "guest";
     }
     window.getActiveUserId = getActiveUserId;
@@ -7133,13 +7136,14 @@
     function getCurUserWaSession() {
       state.userWhatsAppSessions = state.userWhatsAppSessions || {};
       const uid = getActiveUserId();
-      const isOsama = (uid === "u-osama") || isOsamaUser(getCurrentUser());
+      const u = getCurrentUser();
+      const isOsama = (uid === "u-osama") || isOsamaUser(u);
 
       if (!state.userWhatsAppSessions[uid]) {
         state.userWhatsAppSessions[uid] = {
           connected: isOsama ? true : false,
           phone: isOsama ? "+966 58 053 9698" : "",
-          name: isOsama ? "Osama Al-Twaish" : ""
+          name: isOsama ? "Osama Al-Twaish" : (u?.name || "Employee")
         };
       }
       return state.userWhatsAppSessions[uid];
@@ -7147,7 +7151,8 @@
     window.getCurUserWaSession = getCurUserWaSession;
 
     function isCurrentWaConnected() {
-      return Boolean(getCurUserWaSession().connected);
+      const s = getCurUserWaSession();
+      return Boolean(s && s.connected && s.phone);
     }
     window.isCurrentWaConnected = isCurrentWaConnected;
 
@@ -7158,14 +7163,24 @@
 
     function updateWhatsAppConnectionUI() {
       const curSession = getCurUserWaSession();
-      const isConnected = curSession.connected;
+      const isConnected = Boolean(curSession && curSession.connected && curSession.phone);
+      const uid = getActiveUserId();
+      const curUser = getCurrentUser();
+      const userName = curUser?.name || curSession.name || uid;
+
       const statusPill = document.getElementById("wa-status-pill");
       const statusDot = document.getElementById("wa-status-dot");
       const statusText = document.getElementById("wa-status-text");
       const unpairedView = document.getElementById("wa-qr-unpaired-view");
       const pairedView = document.getElementById("wa-qr-paired-view");
       const phoneDisplay = document.getElementById("wa-connected-phone-display");
+      const unifiedStatusText = document.getElementById("wa-unified-status-text");
+      const userBadge = document.getElementById("wa-active-user-badge");
       const lang = document.documentElement.getAttribute("lang") || "en";
+
+      if (userBadge) {
+        userBadge.textContent = userName;
+      }
 
       if (isConnected) {
         if (statusPill) {
@@ -7173,19 +7188,21 @@
           statusPill.style.padding = "0.45rem 0.9rem";
         }
         if (statusDot) statusDot.style.background = "#10b981";
-        if (statusText) statusText.textContent = lang === "ar" ? "متصل ونشط" : "Connected & Active";
+        if (statusText) statusText.textContent = lang === "ar" ? `متصل (${curSession.phone})` : `Connected (${curSession.phone})`;
         if (unpairedView) unpairedView.style.display = "none";
         if (pairedView) pairedView.style.display = "flex";
-        if (phoneDisplay) phoneDisplay.textContent = curSession.phone || "+966 58 053 9698";
+        if (phoneDisplay) phoneDisplay.textContent = curSession.phone;
+        if (unifiedStatusText) unifiedStatusText.textContent = `${userName}: Linked (${curSession.phone})`;
       } else {
         if (statusPill) {
           statusPill.className = "badge badge-amber";
           statusPill.style.padding = "0.45rem 0.9rem";
         }
         if (statusDot) statusDot.style.background = "#f59e0b";
-        if (statusText) statusText.textContent = lang === "ar" ? "غير متصل / جاهز للمسح" : "Disconnected / Ready to Pair";
+        if (statusText) statusText.textContent = lang === "ar" ? "غير متصل / امسح الرمز للربط" : "Disconnected / Scan QR to Pair";
         if (unpairedView) unpairedView.style.display = "flex";
         if (pairedView) pairedView.style.display = "none";
+        if (unifiedStatusText) unifiedStatusText.textContent = `Pair Account for ${userName}`;
       }
     }
 
@@ -7271,8 +7288,16 @@
     /** Synchronize Live WhatsApp Baileys status (from Firestore or local gateway) to UI */
     function handleLiveWhatsAppSnapshot(liveData) {
       if (!liveData) return;
-      const curSession = getCurUserWaSession();
       const activeUid = getActiveUserId();
+      // Ensure this snapshot belongs to the active user (or is fallback for u-osama)
+      if (liveData.userId && liveData.userId !== activeUid && activeUid !== "u-osama") {
+        return;
+      }
+
+      state.userWhatsAppSessions = state.userWhatsAppSessions || {};
+      const curSession = getCurUserWaSession();
+      const u = getCurrentUser();
+      const userName = u?.name || activeUid;
 
       const qrImg = document.getElementById("wa-real-qr-img");
       const qrSvg = document.getElementById("wa-qr-svg");
@@ -7291,28 +7316,27 @@
         curSession.connected = true;
         if (liveData.phone) curSession.phone = "+" + String(liveData.phone).replace(/[^0-9]/g, "");
         if (liveData.name) curSession.name = liveData.name;
-        state.userWhatsAppSessions = state.userWhatsAppSessions || {};
         state.userWhatsAppSessions[activeUid] = curSession;
         saveState();
         updateWhatsAppConnectionUI();
 
         if (indicator) {
           indicator.style.color = "#10b981";
-          indicator.innerHTML = `<span class="status-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> <span>Linked: ${curSession.phone || "+966580539698"} (${curSession.name || "Active"})</span>`;
+          indicator.innerHTML = `<span class="status-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> <span>Linked: ${curSession.phone} (${curSession.name || "Active"})</span>`;
         }
         if (statusUnified) {
-          statusUnified.textContent = `Multi-Device Link Active (${curSession.phone || "+966580539698"})`;
+          statusUnified.textContent = `${userName}: Linked (${curSession.phone})`;
         }
         if (!wasConnected && window.OstanStyle) {
           const lang = document.documentElement.getAttribute("lang") || "en";
           window.OstanStyle.showToast(
             lang === "ar" ? "تم ربط واتساب بنجاح!" : "WhatsApp Connected!",
-            lang === "ar" ? `رقمك الآن متصل بالنظام: ${curSession.phone}` : `Your real phone ${curSession.phone} is now linked.`
+            lang === "ar" ? `رقمك الآن متصل بالنظام: ${curSession.phone}` : `Your phone ${curSession.phone} is now linked.`
           );
         }
       } else if (liveData.status === "qr_ready" && liveData.qr) {
         curSession.connected = false;
-        state.userWhatsAppSessions = state.userWhatsAppSessions || {};
+        curSession.phone = "";
         state.userWhatsAppSessions[activeUid] = curSession;
         updateWhatsAppConnectionUI();
 
@@ -7321,23 +7345,61 @@
         if (beam) beam.style.display = "none";
         if (indicator) {
           indicator.style.color = "#25D366";
-          indicator.textContent = "⚡ Real-time QR Ready • Cloud Synced";
+          indicator.textContent = `⚡ Scan QR to link ${userName}'s WhatsApp`;
         }
         if (statusUnified) {
-          statusUnified.textContent = "Scan QR Code to Pair Account";
+          statusUnified.textContent = `Scan QR Code to Link for ${userName}`;
         }
       } else if (liveData.status === "connecting") {
         if (qrImg) qrImg.style.display = "none";
         if (qrSvg) qrSvg.style.display = "block";
         if (beam) beam.style.display = "block";
-        if (statusUnified) statusUnified.textContent = "Connecting to WhatsApp...";
+        if (statusUnified) statusUnified.textContent = `Connecting ${userName}'s WhatsApp...`;
         if (indicator) {
           indicator.style.color = "#f59e0b";
           indicator.textContent = "⏳ Establishing WebSocket connection...";
         }
+      } else if (liveData.status === "disconnected") {
+        curSession.connected = false;
+        curSession.phone = "";
+        state.userWhatsAppSessions[activeUid] = curSession;
+        updateWhatsAppConnectionUI();
+        if (qrImg) qrImg.style.display = "none";
+        if (qrSvg) qrSvg.style.display = "block";
+        if (beam) beam.style.display = "none";
+        if (statusUnified) statusUnified.textContent = `Disconnected • Ready to Pair`;
+        if (indicator) {
+          indicator.style.color = "#94a3b8";
+          indicator.textContent = "⚪ Disconnected";
+        }
       }
     }
     window.handleLiveWhatsAppSnapshot = handleLiveWhatsAppSnapshot;
+
+    let currentWaFirestoreUnsub = null;
+    function subscribeToUserWhatsAppFirestore() {
+      if (!window.fbDb) return;
+      if (currentWaFirestoreUnsub) {
+        try { currentWaFirestoreUnsub(); } catch(e) {}
+        currentWaFirestoreUnsub = null;
+      }
+      const activeUid = getActiveUserId();
+
+      // Listen to this user's distinct session document in Firestore
+      currentWaFirestoreUnsub = window.fbDb.collection("whatsappSessions").doc(activeUid).onSnapshot((docSnap) => {
+        if (docSnap && docSnap.exists) {
+          const liveData = docSnap.data();
+          if (liveData) handleLiveWhatsAppSnapshot(liveData);
+        } else if (activeUid === "u-osama") {
+          window.fbDb.collection("systemSettings").doc("whatsapp_live").get().then((snap) => {
+            if (snap.exists) handleLiveWhatsAppSnapshot(snap.data());
+          }).catch(() => {});
+        }
+      }, (err) => {
+        console.warn(`Firestore whatsappSessions for '${activeUid}' notice:`, err);
+      });
+    }
+    window.subscribeToUserWhatsAppFirestore = subscribeToUserWhatsAppFirestore;
 
     async function checkLiveWhatsAppGatewayStatus() {
       const activeUid = getActiveUserId();
@@ -7367,17 +7429,22 @@
           return;
         }
 
-        // Fallback: check Firestore directly
+        // Fallback: check Firestore directly for this user
         if (window.fbDb) {
-          const docSnap = await window.fbDb.collection("systemSettings").doc("whatsapp_live").get();
+          const docSnap = await window.fbDb.collection("whatsappSessions").doc(activeUid).get();
           if (docSnap.exists) {
             handleLiveWhatsAppSnapshot(docSnap.data());
+          } else if (activeUid === "u-osama") {
+            const fallbackSnap = await window.fbDb.collection("systemSettings").doc("whatsapp_live").get();
+            if (fallbackSnap.exists) {
+              handleLiveWhatsAppSnapshot(fallbackSnap.data());
+            }
           }
         }
       } catch (e) {
         if (window.fbDb) {
           try {
-            const docSnap = await window.fbDb.collection("systemSettings").doc("whatsapp_live").get();
+            const docSnap = await window.fbDb.collection("whatsappSessions").doc(activeUid).get();
             if (docSnap.exists) {
               handleLiveWhatsAppSnapshot(docSnap.data());
             }
@@ -9174,12 +9241,19 @@
       applyModuleVisibility();
       updateWhatsAppConnectionUI();
       updateWhatsAppApiStatusUI();
+      if (typeof subscribeToUserWhatsAppFirestore === "function") {
+        subscribeToUserWhatsAppFirestore();
+      }
       if (typeof checkLiveWhatsAppGatewayStatus === "function") {
         checkLiveWhatsAppGatewayStatus();
       }
     }
 
     function userLogout() {
+      if (currentWaFirestoreUnsub) {
+        try { currentWaFirestoreUnsub(); } catch(e) {}
+        currentWaFirestoreUnsub = null;
+      }
       if (liveWaPollingInterval) {
         clearInterval(liveWaPollingInterval);
         liveWaPollingInterval = null;
@@ -9513,17 +9587,10 @@
         console.warn("Firestore whatsapp_api onSnapshot notice:", err);
       });
 
-      // Real-Time Live Cloud Firestore Sync for WhatsApp Studio / Baileys Live QR & Session
-      window.fbDb.collection("systemSettings").doc("whatsapp_live").onSnapshot((docSnap) => {
-        if (docSnap && docSnap.exists) {
-          const liveData = docSnap.data();
-          if (liveData) {
-            handleLiveWhatsAppSnapshot(liveData);
-          }
-        }
-      }, err => {
-        console.warn("Firestore whatsapp_live onSnapshot notice:", err);
-      });
+      // Real-Time Live Cloud Firestore Sync for WhatsApp Studio / Baileys Live QR & Session (Per-User)
+      if (typeof subscribeToUserWhatsAppFirestore === "function") {
+        subscribeToUserWhatsAppFirestore();
+      }
     }
 
     // App Boot Initialization
@@ -9543,6 +9610,7 @@
       // Initialize WhatsApp Studio Dispatch Mode and Cloud Link
       const savedWaMode = localStorage.getItem('ostan_wa_dispatch_mode') || 'direct';
       setWaDispatchMode(savedWaMode);
+      subscribeToUserWhatsAppFirestore();
       checkLiveWhatsAppGatewayStatus();
       startLiveWhatsAppPolling();
 
