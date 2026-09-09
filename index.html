@@ -1842,8 +1842,8 @@
           <div>
             <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Nationality (الجنسية)</label>
             <select id="worker-nationality" class="input-field">
-              <option value="Saudi Arabian">🇸🇦 Saudi Arabian (سعودي)</option>
               <option value="Non-Saudi">🌐 Non-Saudi (غير سعودي)</option>
+              <option value="Saudi Arabian">🇸🇦 Saudi Arabian (سعودي)</option>
             </select>
           </div>
           <div>
@@ -2529,6 +2529,9 @@
         role: "SUPER_ADMIN",
         status: "ACTIVE",
         isProtected: true,
+        nationality: "Non-Saudi",
+        isSaudi: false,
+        isExplicitSaudi: false,
         sectionAccess: {
           reminders: "accessible",
           employees: "accessible",
@@ -2548,7 +2551,7 @@
     let rawStoredUsers = JSON.parse(localStorage.getItem("ostan_users") || "null") || DEFAULT_USERS;
     let sanitizedUsers = rawStoredUsers.filter(u => !u.email.endsWith("@ostan.internal") && !u.email.endsWith("@company.local"));
     
-    // Ensure Super Admin profile integrity & default valid phone, salary, nationality
+    // Ensure Super Admin profile integrity & default valid phone, salary (NOT Saudi by default)
     sanitizedUsers = sanitizedUsers.map(u => {
       if (!u.phone) {
         u.phone = "+966 5" + (Math.abs((u.id || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000);
@@ -2560,30 +2563,42 @@
         else if (u.role === "STOCK_MANAGER") u.salary = 9500;
         else u.salary = 8000;
       }
-      if (!u.nationality) {
+      
+      // Default: Staff are NOT Saudi unless explicitly marked as Saudi or added via Saudi Staff
+      const isExplicitSaudi = (u.id && typeof u.id === "string" && u.id.startsWith("u-saudi-")) || (u.isExplicitSaudi === true && !["waseem.tw@hotmail.com", "adel.fadi789@gmail.com", "qzgamer.tw@hotmail.com", "hyoussef@gulfhorizons-sa.com"].includes((u.email || "").toLowerCase().trim()));
+      if (!isExplicitSaudi) {
+        u.nationality = (u.nationality && !u.nationality.toLowerCase().includes("saudi")) ? u.nationality : "Non-Saudi";
+        u.isSaudi = false;
+        u.isExplicitSaudi = false;
+      } else {
         u.nationality = "Saudi Arabian";
         u.isSaudi = true;
+        u.isExplicitSaudi = true;
       }
-      if (!u.nationalId) {
-        u.nationalId = "10" + (Math.abs((u.id || "u").split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000);
-      }
+
       if (u.email.toLowerCase().trim() === "waseem.tw@hotmail.com") {
         return {
           ...u,
-          name: "Osama Al-Twaish",
+          name: "Osama",
           nameAr: "اسامة الطويش",
           role: "SUPER_ADMIN",
           isProtected: true,
           phone: u.phone || "+966 58 053 9698",
           salary: u.salary || 25000,
-          nationality: "Saudi Arabian",
-          isSaudi: true,
-          nationalId: u.nationalId || "1012345678"
+          nationality: u.isExplicitSaudi ? "Saudi Arabian" : "Non-Saudi",
+          isSaudi: u.isExplicitSaudi === true,
+          isExplicitSaudi: u.isExplicitSaudi === true,
+          nationalId: u.isExplicitSaudi ? (u.nationalId || null) : null
         };
       }
       delete u.password;
       return u;
     });
+
+    // Save cleaned users to localStorage so existing sessions don't retain false Saudi defaults
+    try {
+      localStorage.setItem("ostan_users", JSON.stringify(sanitizedUsers));
+    } catch (e) {}
 
     sanitizedUsers.forEach(u => delete u.password);
 
@@ -2742,6 +2757,7 @@
         delete targetUser.password;
       }
 
+      const isSaudiVal = (targetUser.nationality === "Saudi Arabian" && targetUser.isSaudi === true);
       const payload = {
         email: cleanEmail,
         name: targetUser.name || "Employee",
@@ -2749,10 +2765,11 @@
         role: targetUser.role || "EMPLOYEE",
         phone: phone,
         compactPhone: compactPhone,
-        salary: targetUser.salary || 0,
-        nationality: targetUser.nationality || "Saudi Arabian",
+        salary: typeof targetUser.salary !== "undefined" ? Number(targetUser.salary) : 0,
+        nationality: targetUser.nationality || (isSaudiVal ? "Saudi Arabian" : "Non-Saudi"),
         nationalId: targetUser.nationalId || null,
-        isSaudi: (targetUser.nationality === "Saudi Arabian" || targetUser.isSaudi === true),
+        isSaudi: isSaudiVal,
+        isExplicitSaudi: !!targetUser.isExplicitSaudi,
         isProtected: !!targetUser.isProtected,
         status: targetUser.status || "ACTIVE",
         sectionAccess: targetUser.sectionAccess || {},
@@ -3246,11 +3263,15 @@
 
     function isSaudiEmployee(u) {
       if (!u) return false;
-      if (u.isSaudi === true) return true;
-      if (u.nationality && (u.nationality.toLowerCase().includes("saudi") || u.nationality.includes("سعودي"))) return true;
-      if (u.nationality && (u.nationality.toLowerCase().includes("non-saudi") || u.nationality.includes("غير"))) return false;
-      // Default: All default system workers are Saudi nationals
-      return true;
+      if (u.isSaudi === false) return false;
+      if (u.nationality) {
+        const nat = String(u.nationality).toLowerCase().trim();
+        if (nat.includes("non-saudi") || nat.includes("غير") || nat === "non saudi") return false;
+      }
+      if (u.isExplicitSaudi === true) return true;
+      if (u.id && typeof u.id === "string" && u.id.startsWith("u-saudi-")) return true;
+      if (u.isSaudi === true && u.nationality && (u.nationality === "Saudi Arabian" || u.nationality === "سعودي")) return true;
+      return false;
     }
     window.isSaudiEmployee = isSaudiEmployee;
 
@@ -3646,6 +3667,7 @@
               nationalId: nationalId || ("10" + Math.floor(Math.random() * 90000000 + 10000000)),
               nationality: "Saudi Arabian",
               isSaudi: true,
+              isExplicitSaudi: true,
               salary: parsedSalary,
               role: cleanRole,
               status: "ACTIVE",
@@ -3881,7 +3903,7 @@
 
       const nationalitySelect = document.getElementById("worker-nationality");
       if (nationalitySelect) {
-        nationalitySelect.value = u.nationality || (isSaudiEmployee(u) ? "Saudi Arabian" : "Non-Saudi");
+        nationalitySelect.value = isSaudiEmployee(u) ? "Saudi Arabian" : (u.nationality && !u.nationality.toLowerCase().includes("saudi") ? u.nationality : "Non-Saudi");
       }
 
       const nationalIdInput = document.getElementById("worker-national-id");
@@ -4454,7 +4476,7 @@
       const compactPhone = phoneRes.compactPhone;
 
       const salaryVal = parseFloat(document.getElementById("worker-salary")?.value) || 0;
-      const nationalityVal = document.getElementById("worker-nationality")?.value || "Saudi Arabian";
+      const nationalityVal = document.getElementById("worker-nationality")?.value || "Non-Saudi";
       const nationalIdVal = (document.getElementById("worker-national-id")?.value || "").trim();
       const isSaudiVal = (nationalityVal === "Saudi Arabian");
 
@@ -4475,6 +4497,7 @@
           u.nationality = nationalityVal;
           u.nationalId = nationalIdVal;
           u.isSaudi = isSaudiVal;
+          u.isExplicitSaudi = isSaudiVal;
 
           if (hasAdminEdit) {
             u.email = email;
@@ -4488,9 +4511,10 @@
           syncUserToFirestore(u);
         }
       } else {
+        const isFromSaudiTab = (activeEmployeeTab === "saudi") || isSaudiVal;
         const statusVal = document.getElementById("worker-status")?.value || "ACTIVE";
         const newUser = {
-          id: "u-" + Date.now(),
+          id: (isFromSaudiTab && isSaudiVal) ? ("u-saudi-" + Date.now()) : ("u-" + Date.now()),
           name,
           email,
           phone,
@@ -4499,6 +4523,7 @@
           nationality: nationalityVal,
           nationalId: nationalIdVal,
           isSaudi: isSaudiVal,
+          isExplicitSaudi: isSaudiVal,
           role,
           status: statusVal,
           isBlocked: (statusVal === "BLOCKED"),
@@ -5511,7 +5536,7 @@
 
       const nationalitySelect = document.getElementById("worker-nationality");
       if (nationalitySelect) {
-        nationalitySelect.value = forSaudi ? "Saudi Arabian" : "Saudi Arabian";
+        nationalitySelect.value = forSaudi ? "Saudi Arabian" : "Non-Saudi";
       }
 
       const nationalIdInput = document.getElementById("worker-national-id");
@@ -7705,6 +7730,14 @@
               if (docData.permissions) {
                 targetUser.permissions = { ...targetUser.permissions, ...docData.permissions };
               }
+              if (typeof docData.salary !== "undefined") {
+                targetUser.salary = Number(docData.salary);
+              }
+              if (typeof docData.isExplicitSaudi !== "undefined") {
+                targetUser.isExplicitSaudi = !!docData.isExplicitSaudi;
+                targetUser.isSaudi = targetUser.isExplicitSaudi;
+                targetUser.nationality = targetUser.isExplicitSaudi ? "Saudi Arabian" : "Non-Saudi";
+              }
               if (docId && targetUser.id !== docId) {
                 const oldId = targetUser.id;
                 targetUser.id = docId;
@@ -7714,6 +7747,8 @@
               }
             } else if (docEmail) {
               const isSuper = docEmail === "waseem.tw@hotmail.com";
+              const isExplicit = (docId && docId.startsWith("u-saudi-")) || docData.isExplicitSaudi === true;
+              const isSaudiUser = isExplicit && (docData.nationality === "Saudi Arabian" || docData.isSaudi === true);
               targetUser = {
                 id: docId,
                 name: docData.name || "New Employee",
@@ -7724,6 +7759,11 @@
                 role: docData.role || (isSuper ? "SUPER_ADMIN" : "EMPLOYEE"),
                 status: "ACTIVE",
                 isProtected: isSuper,
+                salary: typeof docData.salary !== "undefined" ? Number(docData.salary) : 8000,
+                nationality: isSaudiUser ? "Saudi Arabian" : "Non-Saudi",
+                nationalId: isSaudiUser ? (docData.nationalId || null) : null,
+                isSaudi: isSaudiUser,
+                isExplicitSaudi: isExplicit,
                 sectionAccess: docData.sectionAccess || {
                   reminders: "accessible",
                   tasks: "accessible",
@@ -7999,6 +8039,8 @@
                 if (d.sectionAccess) u.sectionAccess = d.sectionAccess;
                 delete u.password;
               } else if (dEmail) {
+                const isExplicit = (docSnap.id && docSnap.id.startsWith("u-saudi-")) || d.isExplicitSaudi === true;
+                const isSaudiUser = isExplicit && (d.nationality === "Saudi Arabian" || d.isSaudi === true);
                 state.users.push({
                   id: docSnap.id,
                   name: d.name || "Employee",
@@ -8009,6 +8051,11 @@
                   role: d.role || "EMPLOYEE",
                   status: "ACTIVE",
                   isProtected: dEmail === "waseem.tw@hotmail.com",
+                  salary: typeof d.salary !== "undefined" ? Number(d.salary) : 8000,
+                  nationality: isSaudiUser ? "Saudi Arabian" : "Non-Saudi",
+                  nationalId: isSaudiUser ? (d.nationalId || null) : null,
+                  isSaudi: isSaudiUser,
+                  isExplicitSaudi: isExplicit,
                   sectionAccess: d.sectionAccess || {},
                   permissions: d.permissions || null
                 });
