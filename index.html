@@ -2020,13 +2020,13 @@
 
               <!-- Quick Filter Buttons -->
               <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                <button type="button" onclick="selectRecipientGroup('all')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                <button id="msg-filter-all-btn" type="button" onclick="selectRecipientGroup('all')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
                   👥 <span data-i18n="msg_recipients_all">All Staff</span>
                 </button>
-                <button type="button" onclick="selectRecipientGroup('saudi')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
+                <button id="msg-filter-saudi-btn" type="button" onclick="selectRecipientGroup('saudi')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
                   🇸🇦 <span data-i18n="btn_filter_saudi_msg">Saudi Staff</span>
                 </button>
-                <button type="button" onclick="selectRecipientGroup('stock')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                <button id="msg-filter-stock-btn" type="button" onclick="selectRecipientGroup('stock')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
                   📦 <span data-i18n="msg_recipients_stock">Warehouse</span>
                 </button>
                 <button type="button" onclick="selectRecipientGroup('clear')" class="btn btn-ghost" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
@@ -2035,7 +2035,7 @@
               </div>
 
               <!-- Salary Filter for Saudi Staff -->
-              <div style="background: rgba(16, 185, 129, 0.06); border: 1px dashed rgba(16, 185, 129, 0.3); padding: 0.5rem 0.65rem; border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.35rem;">
+              <div id="msg-saudi-salary-filter-box" style="background: rgba(16, 185, 129, 0.06); border: 1px dashed rgba(16, 185, 129, 0.3); padding: 0.5rem 0.65rem; border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.35rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                   <span style="font-size: 0.72rem; font-weight: 700; color: #10b981;" data-i18n="msg_salary_filter_title">💰 Filter Saudis by Salary Range:</span>
                   <span id="msg-salary-match-count" style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;"></span>
@@ -2081,7 +2081,7 @@
                 <span data-i18n="msg_vars_title" style="font-size: 0.75rem; color: var(--text-muted); font-weight: 600;">Insert Tokens:</span>
                 <button type="button" onclick="insertMessageVariable('{name}')" class="badge badge-primary" style="cursor: pointer; border: none;" title="Inserts recipient worker name">{name}</button>
                 <button type="button" onclick="insertMessageVariable('{role}')" class="badge badge-cyan" style="cursor: pointer; border: none;" title="Inserts job title/role">{role}</button>
-                <button type="button" onclick="insertMessageVariable('{salary}')" class="badge badge-emerald" style="cursor: pointer; border: none; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);" title="Inserts recipient monthly salary">{salary}</button>
+                <button id="msg-token-salary-btn" type="button" onclick="insertMessageVariable('{salary}')" class="badge badge-emerald" style="cursor: pointer; border: none; font-weight: 800; background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4);" title="Inserts recipient monthly salary">{salary}</button>
                 <button type="button" onclick="insertMessageVariable('{date}')" class="badge badge-amber" style="cursor: pointer; border: none;" title="Inserts today's date">{date}</button>
                 <button type="button" onclick="insertMessageVariable('{time}')" class="badge badge-secondary" style="cursor: pointer; border: none;" title="Inserts current time">{time}</button>
                 <button type="button" onclick="insertMessageVariable('{company}')" class="badge badge-rose" style="cursor: pointer; border: none;" title="Inserts Ostan company name">{company}</button>
@@ -6956,7 +6956,52 @@
     let manualRecipients = [];
     let waQrTimerInterval = null;
 
+    function applyMessageSenderPermissions() {
+      const curUser = getCurrentUser();
+      const isMaster = isMasterSuperAdmin(curUser);
+      const canViewEmployees = isMaster || hasUserPermission("employees", "view", curUser);
+      const canViewSaudi = isMaster || hasUserPermission("saudi-staff", "view", curUser);
+
+      // 1. Saudi Staff filter button
+      const saudiBtn = document.getElementById("msg-filter-saudi-btn");
+      if (saudiBtn) {
+        saudiBtn.style.display = canViewSaudi ? "inline-flex" : "none";
+      }
+
+      // 2. Saudi Salary Range filter box
+      const saudiSalaryBox = document.getElementById("msg-saudi-salary-filter-box");
+      if (saudiSalaryBox) {
+        saudiSalaryBox.style.display = canViewSaudi ? "flex" : "none";
+      }
+
+      // 3. All Staff filter button
+      const allStaffBtn = document.getElementById("msg-filter-all-btn");
+      if (allStaffBtn) {
+        allStaffBtn.style.display = (canViewEmployees || canViewSaudi) ? "inline-flex" : "none";
+      }
+
+      // 4. Warehouse filter button
+      const stockBtn = document.getElementById("msg-filter-stock-btn");
+      if (stockBtn) {
+        stockBtn.style.display = (canViewEmployees || canViewSaudi) ? "inline-flex" : "none";
+      }
+
+      // 5. Search worker input
+      const searchInput = document.getElementById("msg-user-search");
+      if (searchInput) {
+        searchInput.style.display = (canViewEmployees || canViewSaudi) ? "block" : "none";
+      }
+
+      // 6. Token {salary} button in composer
+      const tokenSalaryBtn = document.getElementById("msg-token-salary-btn");
+      if (tokenSalaryBtn) {
+        tokenSalaryBtn.style.display = canViewSaudi ? "inline-block" : "none";
+      }
+    }
+    window.applyMessageSenderPermissions = applyMessageSenderPermissions;
+
     function renderMessagesSender() {
+      applyMessageSenderPermissions();
       updateWhatsAppConnectionUI();
       updateWhatsAppApiStatusUI();
       renderMessageRecipientsList();
@@ -7608,7 +7653,46 @@
       if (!container) return;
       const query = (document.getElementById("msg-user-search")?.value || "").toLowerCase().trim();
 
+      const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      const isMaster = curUser ? isMasterSuperAdmin(curUser) : false;
+      const canViewEmployees = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("employees", "view", curUser) : false);
+      const canViewSaudi = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("saudi-staff", "view", curUser) : false);
+
+      let html = "";
+
+      // If user has permission to view neither employees nor Saudi staff
+      if (!canViewEmployees && !canViewSaudi) {
+        html = `
+          <div style="padding: 1.25rem 1rem; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); margin-bottom: 0.5rem;">
+            <div style="font-size: 1.25rem; margin-bottom: 0.35rem;">🔒</div>
+            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Staff Directory Restricted</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; line-height: 1.4;">You do not have permission to view employee profiles or Saudi staff. You can still dispatch messages by entering phone numbers manually below.</div>
+          </div>
+        `;
+        if (manualRecipients.length > 0) {
+          manualRecipients.forEach((p, idx) => {
+            html += `
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; margin-bottom: 0.35rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span>📞</span>
+                  <span style="font-size: 0.8rem; font-weight: 700; color: #10b981;">${p}</span>
+                  <span class="badge badge-emerald" style="font-size: 0.65rem;">External Phone</span>
+                </div>
+                <button onclick="removeManualPhoneRecipient(${idx})" class="btn btn-ghost" style="padding: 0.15rem 0.35rem; font-size: 0.7rem; color: #fb7185;">✕</button>
+              </div>
+            `;
+          });
+        }
+        container.innerHTML = html;
+        updateRecipientCountBadge();
+        return;
+      }
+
       const filteredUsers = state.users.filter(u => {
+        const isSaudi = isSaudiEmployee(u);
+        if (isSaudi && !canViewSaudi) return false;
+        if (!isSaudi && !canViewEmployees) return false;
+
         if (!query) return true;
         const name = (u.name || "").toLowerCase();
         const nameAr = (u.nameAr || "").toLowerCase();
@@ -7617,7 +7701,6 @@
         return name.includes(query) || nameAr.includes(query) || role.includes(query) || email.includes(query);
       });
 
-      let html = "";
       if (filteredUsers.length === 0 && manualRecipients.length === 0) {
         html = `<div style="padding: 1rem; text-align: center; color: var(--text-faint); font-size: 0.8rem;">No matching staff found</div>`;
       } else {
@@ -7631,20 +7714,20 @@
             <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(99, 102, 241, 0.12)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? 'var(--primary)' : 'var(--border-subtle)'};">
               <div style="display: flex; align-items: center; gap: 0.6rem;">
                 <input type="checkbox" onchange="toggleRecipientSelect('${u.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer;">
-                <div style="width: 28px; height: 28px; border-radius: 50%; background: ${isSaudi ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #6366f1, #3b82f6)'}; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #ffffff;">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: ${isSaudi && canViewSaudi ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #6366f1, #3b82f6)'}; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #ffffff;">
                   ${(u.name || "U")[0]}
                 </div>
                 <div>
                   <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.35rem;">
                     <span>${u.name}</span>
-                    ${isSaudi ? '<span style="font-size: 0.75rem;" title="Saudi National">🇸🇦</span>' : ''}
+                    ${isSaudi && canViewSaudi ? '<span style="font-size: 0.75rem;" title="Saudi National">🇸🇦</span>' : ''}
                   </div>
                   <div style="font-size: 0.7rem; color: var(--text-muted);">${phone}</div>
                 </div>
               </div>
               <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
                 <span class="badge badge-secondary" style="font-size: 0.65rem;">${u.role}</span>
-                ${sal > 0 ? `<span style="font-size: 0.68rem; font-weight: 700; color: #10b981;">💰 ${sal.toLocaleString()} SAR</span>` : ''}
+                ${canViewSaudi && sal > 0 ? `<span style="font-size: 0.68rem; font-weight: 700; color: #10b981;">💰 ${sal.toLocaleString()} SAR</span>` : ''}
               </div>
             </label>
           `;
@@ -7680,9 +7763,24 @@
     window.toggleRecipientSelect = toggleRecipientSelect;
 
     function selectRecipientGroup(type) {
+      const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      const isMaster = curUser ? isMasterSuperAdmin(curUser) : false;
+      const canViewEmployees = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("employees", "view", curUser) : false);
+      const canViewSaudi = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("saudi-staff", "view", curUser) : false);
+
       if (type === "all") {
-        state.users.forEach(u => selectedRecipientIds.add(u.id));
+        selectedRecipientIds.clear();
+        state.users.forEach(u => {
+          const isSaudi = isSaudiEmployee(u);
+          if ((isSaudi && canViewSaudi) || (!isSaudi && canViewEmployees)) {
+            selectedRecipientIds.add(u.id);
+          }
+        });
       } else if (type === "saudi") {
+        if (!canViewSaudi) {
+          if (window.OstanStyle) window.OstanStyle.showToast("Access Denied", "You do not have permission to view Saudi staff");
+          return;
+        }
         selectedRecipientIds.clear();
         state.users.forEach(u => {
           if (isSaudiEmployee(u)) {
@@ -7692,7 +7790,9 @@
       } else if (type === "stock") {
         selectedRecipientIds.clear();
         state.users.forEach(u => {
-          if (u.role === "STOCK_MANAGER" || (u.permissions && u.permissions.stock && u.permissions.stock.view) || u.role === "EMPLOYEE") {
+          const isSaudi = isSaudiEmployee(u);
+          const allowed = (isSaudi && canViewSaudi) || (!isSaudi && canViewEmployees);
+          if (allowed && (u.role === "STOCK_MANAGER" || (u.permissions && u.permissions.stock && u.permissions.stock.view) || u.role === "EMPLOYEE")) {
             selectedRecipientIds.add(u.id);
           }
         });
@@ -7705,6 +7805,16 @@
     window.selectRecipientGroup = selectRecipientGroup;
 
     function filterSaudiBySalary(targetTier, btnEl) {
+      const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      const isMaster = curUser ? isMasterSuperAdmin(curUser) : false;
+      const canViewSaudi = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("saudi-staff", "view", curUser) : false);
+      if (!canViewSaudi) {
+        if (window.OstanStyle) {
+          window.OstanStyle.showToast("Access Denied", "You do not have permission to view Saudi staff salaries");
+        }
+        return;
+      }
+
       // Support (targetTier, btnEl) or legacy (minSalary, maxSalary, btnEl)
       let actualBtn = btnEl;
       let filter = targetTier;
@@ -8859,9 +8969,20 @@
       const name = user ? (user.nameAr || user.name) : "Staff";
       const role = user ? user.role : "EMPLOYEE";
       const company = "Ostan Enterprise";
-      const salary = (user && typeof user.salary !== "undefined" && user.salary !== null)
-        ? `${Number(user.salary).toLocaleString()} SAR`
-        : "N/A";
+
+      const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      const isMaster = curUser ? isMasterSuperAdmin(curUser) : false;
+      const canViewSaudi = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("saudi-staff", "view", curUser) : false);
+
+      let salary = "N/A";
+      if (user && typeof user.salary !== "undefined" && user.salary !== null) {
+        const isSaudi = typeof isSaudiEmployee === "function" ? isSaudiEmployee(user) : false;
+        if (isSaudi && !canViewSaudi) {
+          salary = "[Confidential]";
+        } else {
+          salary = `${Number(user.salary).toLocaleString()} SAR`;
+        }
+      }
 
       return rawText
         .replace(/{name}/g, name)
