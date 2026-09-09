@@ -144,14 +144,24 @@ export function TasksView({ currentUser, canAssignTasks = false }: TasksViewProp
   };
 
   const updateStatus = (id: string, newStatus: "TODO" | "PROGRESS" | "COMPLETED") => {
+    const t = tasks.find((x) => x.id === id);
+    if (t && (t.status === "COMPLETED" || (t as any).status === "DONE")) {
+      alert(locale === "ar" ? "المهمة مكتملة ومغلقة نهائياً ولا يمكن إعادة فتحها أو إلغاؤها" : "This task is completed and closed, it cannot be reopened or cancelled.");
+      return;
+    }
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
+      prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
     );
   };
 
   const deleteTask = (id: string) => {
     if (!canAssignTasks) return;
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+    const t = tasks.find((x) => x.id === id);
+    if (t && (t.status === "COMPLETED" || (t as any).status === "DONE")) {
+      alert(locale === "ar" ? "لا يمكن إلغاء أو حذف مهمة مكتملة" : "Completed tasks cannot be deleted or cancelled.");
+      return;
+    }
+    setTasks((prev) => prev.filter((item) => item.id !== id));
   };
 
   const filteredTasks = useMemo(() => {
@@ -170,9 +180,9 @@ export function TasksView({ currentUser, canAssignTasks = false }: TasksViewProp
     return tasks.filter((t) => t.workerId === selectedWorkerFilter);
   }, [tasks, selectedWorkerFilter, canAssignTasks, currentUser]);
 
-  const todoTasks = filteredTasks.filter((t) => t.status === "TODO");
+  const todoTasks = filteredTasks.filter((t) => t.status === "TODO" || (!t.status));
   const progressTasks = filteredTasks.filter((t) => t.status === "PROGRESS");
-  const completedTasks = filteredTasks.filter((t) => t.status === "COMPLETED");
+  const completedTasks = filteredTasks.filter((t) => t.status === "COMPLETED" || (t as any).status === "DONE");
 
   // Dynamic Header Content
   const pageTitle = canAssignTasks
@@ -407,12 +417,15 @@ function TaskCard({
   onUpdateStatus: (id: string, s: "TODO" | "PROGRESS" | "COMPLETED") => void;
   onDelete: (id: string) => void;
 }) {
+  const { locale } = useI18n();
   const priorityBadge =
     task.priority === "Urgent"
       ? "badge-rose"
       : task.priority === "High"
       ? "badge-amber"
       : "badge-primary";
+
+  const isDone = task.status === "COMPLETED" || (task as any).status === "DONE";
 
   return (
     <div
@@ -438,13 +451,15 @@ function TaskCard({
             >
               <Edit2 size={13} />
             </button>
-            <button
-              onClick={() => onDelete(task.id)}
-              style={{ background: "none", border: "none", color: "var(--text-faint)", cursor: "pointer", padding: "2px" }}
-              title="Delete"
-            >
-              <Trash2 size={13} />
-            </button>
+            {!isDone && (
+              <button
+                onClick={() => onDelete(task.id)}
+                style={{ background: "none", border: "none", color: "#fb7185", cursor: "pointer", padding: "2px" }}
+                title="Delete"
+              >
+                <Trash2 size={13} />
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -466,33 +481,39 @@ function TaskCard({
           <span className={`badge ${priorityBadge}`}>{task.priority}</span>
         </div>
 
-        <div style={{ display: "flex", gap: "4px" }}>
-          {task.status !== "TODO" && (
-            <button
-              onClick={() => onUpdateStatus(task.id, "TODO")}
-              className="btn btn-secondary"
-              style={{ padding: "2px 6px", fontSize: "0.7rem" }}
-            >
-              To Do
-            </button>
-          )}
-          {task.status !== "PROGRESS" && (
-            <button
-              onClick={() => onUpdateStatus(task.id, "PROGRESS")}
-              className="btn btn-secondary"
-              style={{ padding: "2px 6px", fontSize: "0.7rem" }}
-            >
-              Prog
-            </button>
-          )}
-          {task.status !== "COMPLETED" && (
-            <button
-              onClick={() => onUpdateStatus(task.id, "COMPLETED")}
-              className="btn btn-primary"
-              style={{ padding: "2px 6px", fontSize: "0.7rem" }}
-            >
-              Done ✓
-            </button>
+        <div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+          {isDone ? (
+            <span className="badge badge-emerald" style={{ fontSize: "0.72rem", padding: "2px 6px" }}>
+              ✓ {locale === "ar" ? "مكتملة وغير قابلة للإلغاء" : "Completed (Final)"}
+            </span>
+          ) : (
+            <>
+              {task.status !== "TODO" && (
+                <button
+                  onClick={() => onUpdateStatus(task.id, "TODO")}
+                  className="btn btn-secondary"
+                  style={{ padding: "2px 6px", fontSize: "0.7rem" }}
+                >
+                  To Do
+                </button>
+              )}
+              {task.status !== "PROGRESS" && (
+                <button
+                  onClick={() => onUpdateStatus(task.id, "PROGRESS")}
+                  className="btn btn-secondary"
+                  style={{ padding: "2px 6px", fontSize: "0.7rem" }}
+                >
+                  Prog
+                </button>
+              )}
+              <button
+                onClick={() => onUpdateStatus(task.id, "COMPLETED")}
+                className="btn btn-primary"
+                style={{ padding: "2px 6px", fontSize: "0.7rem" }}
+              >
+                Done ✓
+              </button>
+            </>
           )}
         </div>
       </div>

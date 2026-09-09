@@ -4,9 +4,26 @@ import pino from 'pino';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 
 const PORT = process.env.WHATSAPP_PORT || 5001;
+// Bind to 0.0.0.0 so the gateway is reachable from any device on the same network (LAN)
+const HOST = process.env.WHATSAPP_HOST || '0.0.0.0';
 const BASE_SESSIONS_DIR = path.join(process.cwd(), 'whatsapp_sessions');
+
+/** Get all non-loopback IPv4 addresses for this machine */
+function getLanIPs() {
+  const nets = os.networkInterfaces();
+  const results = [];
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        results.push(net.address);
+      }
+    }
+  }
+  return results;
+}
 
 // Ensure base sessions directory exists
 if (!fs.existsSync(BASE_SESSIONS_DIR)) {
@@ -303,10 +320,23 @@ const server = http.createServer(async (req, res) => {
   sendJSON(404, { success: false, error: 'Endpoint not found' });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
+  const lanIPs = getLanIPs();
   console.log(`\n======================================================`);
-  console.log(`⚡ Ostan Multi-User WhatsApp Gateway running on http://localhost:${PORT}`);
+  console.log(`⚡ Ostan Multi-User WhatsApp Gateway is RUNNING`);
+  console.log(`------------------------------------------------------`);
+  console.log(`🏠 Local access:  http://localhost:${PORT}`);
+  if (lanIPs.length > 0) {
+    lanIPs.forEach(ip => {
+      console.log(`🌐 Network access: http://${ip}:${PORT}  ← Use this URL in Ostan app settings for remote users`);
+    });
+  } else {
+    console.log(`🌐 Network access: (No LAN IP detected – check your network adapter)`);
+  }
   console.log(`======================================================\n`);
-  // Automatically start Osama's session
+  console.log(`💡 TIP: Copy the Network access URL above into the`);
+  console.log(`   "Messages Sender" → "⚙️ WhatsApp API Config" → "Gateway URL" field`);
+  console.log(`   so all remote users can reach the QR pairing engine.\n`);
+  // Automatically start the default session
   getOrCreateUserSession('u-osama');
 });

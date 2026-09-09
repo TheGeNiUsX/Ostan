@@ -33,6 +33,12 @@
       nav_group_sys: "SYSTEM",
       nav_messages: "Messages Sender",
       nav_settings: "System Settings",
+      nav_menu: "Menu",
+      nav_dashboard_short: "Home",
+      nav_employees_short: "Staff",
+      nav_tasks_short: "Tasks",
+      nav_stock_short: "Stock",
+      nav_more: "More",
 
       // Dashboard Greetings & Cards
       dash_greeting_morning: "Good morning",
@@ -161,6 +167,7 @@
       col_progress: "In Progress",
       col_done: "Done ✓",
       btn_cancel_task: "🚫 Cancel Task",
+      btn_delete_task: "Delete Task",
 
       // Reminders Section
       rem_section_title: "Reminders & Alerts",
@@ -380,6 +387,12 @@
       nav_group_sys: "النظام",
       nav_messages: "مرسل الرسائل",
       nav_settings: "إعدادات النظام",
+      nav_menu: "القائمة",
+      nav_dashboard_short: "الرئيسية",
+      nav_employees_short: "الموظفون",
+      nav_tasks_short: "المهام",
+      nav_stock_short: "المستودع",
+      nav_more: "المزيد",
 
       // Dashboard Greetings & Cards
       dash_greeting_morning: "صباح الخير",
@@ -508,6 +521,7 @@
       col_progress: "قيد التنفيذ",
       col_done: "مكتملة ✓",
       btn_cancel_task: "🚫 إلغاء المهمة",
+      btn_delete_task: "حذف المهمة",
 
       // Reminders Section
       rem_section_title: "التذكيرات والتنبيهات الموقوتة",

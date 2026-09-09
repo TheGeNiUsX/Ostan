@@ -36,6 +36,8 @@
       d.ar.perm_saudi_delete = "حذف موظف سعودي";
       d.en.perm_saudi_excel = "Excel Batch Import / Export (📥 استيراد وتصدير إكسل)";
       d.ar.perm_saudi_excel = "استيراد وتصدير إكسل";
+      d.en.nav_menu = "Menu";
+      d.ar.nav_menu = "القائمة";
     })();
   </script>
   
@@ -427,6 +429,78 @@
       opacity: 1;
     }
 
+    /* Mobile Bottom Navigation Bar */
+    .mobile-bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 58px;
+      height: calc(56px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      background: rgba(14, 19, 31, 0.96);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border-subtle);
+      display: none;
+      align-items: center;
+      justify-content: space-around;
+      z-index: 950;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    }
+    [data-theme="light"] .mobile-bottom-bar {
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+    }
+
+    .mobile-nav-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      flex: 1;
+      height: 100%;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.68rem;
+      font-weight: 600;
+      padding: 4px 2px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mobile-nav-btn:hover,
+    .mobile-nav-btn.active {
+      color: #818cf8;
+      font-weight: 700;
+    }
+    .mobile-nav-btn.active .bnav-icon {
+      transform: scale(1.15);
+    }
+    .mobile-nav-btn .bnav-icon {
+      font-size: 1.25rem;
+      line-height: 1;
+      transition: transform 0.15s ease;
+    }
+
+    /* Swipeable Filter Pills on Mobile */
+    .filter-pills-scroll {
+      display: flex;
+      gap: 0.4rem;
+      overflow-x: auto;
+      white-space: nowrap;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      width: 100%;
+    }
+    .filter-pills-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
     /* Tablet & Phone Breakpoint (< 900px) */
     @media screen and (max-width: 900px) {
       .mobile-only {
@@ -438,11 +512,21 @@
       .desktop-search-bar {
         display: none !important;
       }
+      .mobile-bottom-bar {
+        display: flex !important;
+      }
 
-      body {
+      html, body {
+        width: 100%;
+        max-width: 100vw;
         height: 100dvh;
         height: 100vh;
-        overflow: hidden;
+        overflow-x: hidden;
+      }
+
+      /* Prevent iOS auto-zoom */
+      input, select, textarea {
+        font-size: 16px !important;
       }
 
       .app-shell {
@@ -491,18 +575,19 @@
       }
 
       .top-header {
-        height: 56px !important;
-        min-height: 56px !important;
+        height: 54px !important;
+        min-height: 54px !important;
         padding-inline: 0.85rem !important;
         gap: 0.5rem !important;
       }
 
       .content-scroll-area {
-        padding: 0.85rem 0.65rem !important;
+        padding: 0.85rem 0.65rem calc(68px + env(safe-area-inset-bottom, 12px)) 0.65rem !important;
         -webkit-overflow-scrolling: touch !important;
+        overflow-x: hidden !important;
       }
 
-      /* Grids collapse gracefully */
+      /* Grids collapse gracefully & fit mobile screen */
       #dash-metrics-grid {
         grid-template-columns: 1fr !important;
         gap: 0.65rem !important;
@@ -513,15 +598,40 @@
         gap: 0.75rem !important;
       }
 
+      .hud-modal-overlay {
+        padding: 0.5rem !important;
+      }
       .hud-modal-box {
-        max-width: 95vw !important;
-        max-height: 90dvh !important;
-        max-height: 90vh !important;
+        width: 100% !important;
+        max-width: 96vw !important;
+        max-height: 92dvh !important;
+        max-height: 92vh !important;
         padding: 1.15rem 0.95rem !important;
+        border-radius: var(--radius-lg) !important;
       }
 
       .matrix-table {
-        min-width: 620px !important;
+        min-width: 600px !important;
+      }
+
+      /* Sticky first column on mobile tables for seamless swiping */
+      .matrix-table th:first-child,
+      .matrix-table td:first-child,
+      .data-table th:first-child,
+      .data-table td:first-child {
+        position: sticky !important;
+        left: 0 !important;
+        background: var(--bg-surface) !important;
+        z-index: 2 !important;
+        box-shadow: 2px 0 6px rgba(0, 0, 0, 0.35) !important;
+      }
+      [dir="rtl"] .matrix-table th:first-child,
+      [dir="rtl"] .matrix-table td:first-child,
+      [dir="rtl"] .data-table th:first-child,
+      [dir="rtl"] .data-table td:first-child {
+        left: auto !important;
+        right: 0 !important;
+        box-shadow: -2px 0 6px rgba(0, 0, 0, 0.35) !important;
       }
 
       /* Form inputs in modals and multi-column panels collapse to 1 col on mobile */
@@ -546,11 +656,11 @@
         font-size: 0.75rem !important;
       }
       .content-scroll-area {
-        padding: 0.75rem 0.5rem !important;
+        padding: 0.75rem 0.5rem calc(66px + env(safe-area-inset-bottom, 10px)) 0.5rem !important;
       }
       .glass-panel {
         border-radius: var(--radius-md) !important;
-        padding: 1rem !important;
+        padding: 1rem 0.85rem !important;
       }
       /* Toolbar buttons full width stack on narrow mobile */
       #emp-actions-all, #emp-actions-saudi {
@@ -565,7 +675,58 @@
       #saudi-search-input {
         width: 100% !important;
       }
+      #auth-portal-fullscreen .hud-modal-box {
+        width: calc(100vw - 1.5rem) !important;
+        padding: 1.35rem 1rem !important;
+      }
+
+      /* Dashboard metric cards: 2-column on small phones */
+      #dash-metrics-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 0.5rem !important;
+      }
+      #dash-metrics-grid .glass-panel {
+        padding: 0.9rem 0.75rem !important;
+      }
+      #dash-metrics-grid .glass-panel [style*="font-size: 2rem"] {
+        font-size: 1.5rem !important;
+      }
+
+      /* Make the top header right buttons smaller on tiny screens */
+      .top-header > div:last-child {
+        gap: 0.3rem !important;
+      }
+      .top-header > div:last-child .btn {
+        padding: 0.3rem 0.45rem !important;
+        font-size: 0.72rem !important;
+      }
+
+      /* Bottom nav text smaller */
+      .mobile-nav-btn {
+        font-size: 0.6rem !important;
+      }
+      .mobile-nav-btn .bnav-icon {
+        font-size: 1.1rem !important;
+      }
+
+      /* Modal full width on small phones */
+      .hud-modal-box {
+        width: calc(100vw - 1rem) !important;
+        max-width: 100% !important;
+        padding: 1rem 0.85rem !important;
+      }
     }
+
+    /* Very narrow screens */
+    @media screen and (max-width: 360px) {
+      .top-header > div:last-child .btn span {
+        display: none !important;
+      }
+      #dash-metrics-grid {
+        grid-template-columns: 1fr !important;
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -1699,7 +1860,207 @@
           <!-- Top Grid: QR Pairing Studio (Left) + Audience Selector (Right) -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
             
-            <!-- 1. WhatsApp QR Pairing Studio -->
+            <!-- 1. WhatsApp Connection Studio — Dual Mode -->
+            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border: 1px solid rgba(37, 211, 102, 0.25); background: linear-gradient(180deg, rgba(37, 211, 102, 0.03) 0%, var(--bg-surface-elevated) 100%);">
+
+              <!-- Studio Header -->
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                  <span style="font-size: 1.5rem;">📱</span>
+                  <div>
+                    <div style="font-weight: 800; font-size: 1rem; color: var(--text-main);">WhatsApp Connection Studio</div>
+                    <div id="wa-gateway-indicator" style="font-size: 0.72rem; color: #94a3b8; font-weight: 600;">⚪ Select a connection mode below</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ─── DUAL MODE SELECTOR TABS ─── -->
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem;">
+                <button id="wa-mode-tab-cloud" onclick="switchWaConnectionMode('cloud')"
+                  style="padding: 0.75rem 0.5rem; border-radius: var(--radius-md); border: 2px solid #25D366; background: rgba(37,211,102,0.12); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; transition: all 0.2s;">
+                  <span style="font-size: 1.4rem;">🌐</span>
+                  <span style="font-size: 0.78rem; font-weight: 800; color: #25D366;">Mode A — Cloud</span>
+                  <span style="font-size: 0.65rem; color: var(--text-muted); text-align: center; line-height: 1.3;">Works from any<br>device, anywhere</span>
+                </button>
+                <button id="wa-mode-tab-local" onclick="switchWaConnectionMode('local')"
+                  style="padding: 0.75rem 0.5rem; border-radius: var(--radius-md); border: 2px solid var(--border-subtle); background: var(--bg-surface); cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 0.3rem; transition: all 0.2s;">
+                  <span style="font-size: 1.4rem;">🖥️</span>
+                  <span style="font-size: 0.78rem; font-weight: 800; color: var(--text-main);">Mode B — Local</span>
+                  <span style="font-size: 0.65rem; color: var(--text-muted); text-align: center; line-height: 1.3;">Extension + Browser<br>runner (host PC only)</span>
+                </button>
+              </div>
+
+              <!-- ─── MODE A: CLOUD GATEWAY PANEL ─── -->
+              <div id="wa-panel-cloud" style="display: flex; flex-direction: column; gap: 0.85rem;">
+                <!-- Status Badge -->
+                <div style="padding: 0.6rem 0.85rem; border-radius: var(--radius-md); background: rgba(37,211,102,0.08); border: 1px solid rgba(37,211,102,0.25); display: flex; align-items: center; gap: 0.6rem;">
+                  <span style="font-size: 1.1rem;">☁️</span>
+                  <div>
+                    <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Independent Cloud WhatsApp</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted);">Scan QR once on their platform → works from any computer forever</div>
+                  </div>
+                </div>
+
+                <!-- Provider Cards -->
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <!-- UltraMsg Card -->
+                  <div style="padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0;">
+                      <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #25D366, #128C7E); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">📡</div>
+                      <div style="min-width: 0;">
+                        <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-main);">UltraMsg</div>
+                        <div style="font-size: 0.68rem; color: var(--text-muted);">20 free msgs/day • Recommended</div>
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
+                      <a href="https://ultramsg.com" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; text-decoration: none;">Sign Up Free ↗</a>
+                      <button onclick="handleWaProviderChange('ultramsg'); openWhatsAppApiModal();" class="btn btn-primary" style="font-size: 0.72rem; padding: 0.3rem 0.65rem; background: #25D366; border-color: #25D366;">Configure</button>
+                    </div>
+                  </div>
+
+                  <!-- Green-API Card -->
+                  <div style="padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0;">
+                      <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #22c55e, #16a34a); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">🟢</div>
+                      <div style="min-width: 0;">
+                        <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-main);">Green-API</div>
+                        <div style="font-size: 0.68rem; color: var(--text-muted);">100 free msgs/day • Highly reliable</div>
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
+                      <a href="https://green-api.com" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; text-decoration: none;">Sign Up Free ↗</a>
+                      <button onclick="handleWaProviderChange('greenapi'); openWhatsAppApiModal();" class="btn btn-primary" style="font-size: 0.72rem; padding: 0.3rem 0.65rem; background: #22c55e; border-color: #22c55e;">Configure</button>
+                    </div>
+                  </div>
+
+                  <!-- Meta Business API Card -->
+                  <div style="padding: 0.75rem 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); background: var(--bg-surface); display: flex; align-items: center; justify-content: space-between; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; flex: 1; min-width: 0;">
+                      <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #0084ff, #0066cc); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; flex-shrink: 0;">💼</div>
+                      <div style="min-width: 0;">
+                        <div style="font-size: 0.82rem; font-weight: 800; color: var(--text-main);">Meta Business API</div>
+                        <div style="font-size: 0.68rem; color: var(--text-muted);">1,000 free msgs/month • Official</div>
+                      </div>
+                    </div>
+                    <div style="display: flex; gap: 0.4rem; flex-shrink: 0;">
+                      <a href="https://business.facebook.com/wa/manage" target="_blank" rel="noopener" class="btn btn-secondary" style="font-size: 0.72rem; padding: 0.3rem 0.6rem; text-decoration: none;">Open Portal ↗</a>
+                      <button onclick="handleWaProviderChange('meta'); openWhatsAppApiModal();" class="btn btn-primary" style="font-size: 0.72rem; padding: 0.3rem 0.65rem;">Configure</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Active Cloud Config Status -->
+                <div id="wa-cloud-active-status" style="display: none; padding: 0.65rem 0.9rem; border-radius: var(--radius-md); background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3);">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🟢</span>
+                    <div>
+                      <div id="wa-cloud-active-label" style="font-size: 0.8rem; font-weight: 700; color: #10b981;">Cloud API Configured</div>
+                      <div id="wa-cloud-active-detail" style="font-size: 0.7rem; color: var(--text-muted);"></div>
+                    </div>
+                    <button onclick="openWhatsAppApiModal()" class="btn btn-ghost" style="margin-left: auto; padding: 0.25rem 0.55rem; font-size: 0.7rem;">Edit ✏️</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ─── MODE B: LOCAL QR PAIRING PANEL ─── -->
+              <div id="wa-panel-local" style="display: none; flex-direction: column; align-items: center; gap: 1rem; padding: 0.25rem 0;">
+
+                <!-- Warning if accessed from remote -->
+                <div id="wa-remote-warning" style="display: none; width: 100%; padding: 0.65rem 0.85rem; border-radius: var(--radius-md); background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.35); font-size: 0.75rem; color: #fb7185; line-height: 1.45;">
+                  ⚠️ <strong>Remote Access Detected.</strong> The gateway server is running on another machine. Set the <strong>Gateway URL</strong> below to your host machine's IP (e.g. <code>http://192.168.1.100:5001</code>) to connect.<br>
+                  <button onclick="openWhatsAppApiModal()" class="btn btn-secondary" style="margin-top: 0.5rem; font-size: 0.72rem; padding: 0.3rem 0.65rem; color: #fb7185; border-color: rgba(251,113,133,0.5);">⚙️ Set Gateway URL</button>
+                </div>
+
+                <!-- QR Code Frame -->
+                <div id="wa-qr-unpaired-view" style="display: flex; flex-direction: column; align-items: center; gap: 1rem; padding: 0.5rem 0; width: 100%;">
+                  <div style="position: relative; padding: 0.75rem; background: #ffffff; border-radius: var(--radius-md); box-shadow: 0 8px 24px rgba(0,0,0,0.35); border: 2px solid rgba(37, 211, 102, 0.5);">
+                    <div id="wa-qr-canvas-box" style="width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; border-radius: 6px;">
+                      <!-- Real Live Dynamic QR Image -->
+                      <img id="wa-real-qr-img" src="" alt="Real WhatsApp Web QR Code" style="display: none; width: 180px; height: 180px; object-fit: contain; border-radius: 4px; z-index: 2;" />
+
+                      <!-- Fallback SVG QR -->
+                      <svg id="wa-qr-svg" viewBox="0 0 200 200" width="180" height="180" style="display: block;">
+                        <rect x="0" y="0" width="60" height="60" rx="6" fill="#111827" />
+                        <rect x="10" y="10" width="40" height="40" rx="4" fill="#ffffff" />
+                        <rect x="20" y="20" width="20" height="20" rx="2" fill="#25D366" />
+                        <rect x="140" y="0" width="60" height="60" rx="6" fill="#111827" />
+                        <rect x="150" y="10" width="40" height="40" rx="4" fill="#ffffff" />
+                        <rect x="160" y="20" width="20" height="20" rx="2" fill="#25D366" />
+                        <rect x="0" y="140" width="60" height="60" rx="6" fill="#111827" />
+                        <rect x="10" y="150" width="40" height="40" rx="4" fill="#ffffff" />
+                        <rect x="20" y="160" width="20" height="20" rx="2" fill="#25D366" />
+                        <g fill="#111827">
+                          <rect x="70" y="10" width="10" height="10" /><rect x="90" y="10" width="10" height="10" /><rect x="110" y="10" width="10" height="10" />
+                          <rect x="80" y="30" width="10" height="10" /><rect x="100" y="30" width="10" height="10" /><rect x="120" y="30" width="10" height="10" />
+                          <rect x="70" y="50" width="10" height="10" /><rect x="90" y="50" width="10" height="10" /><rect x="110" y="50" width="10" height="10" />
+                          <rect x="10" y="70" width="10" height="10" /><rect x="30" y="70" width="10" height="10" /><rect x="50" y="70" width="10" height="10" />
+                          <rect x="20" y="90" width="10" height="10" /><rect x="40" y="90" width="10" height="10" />
+                          <rect x="10" y="110" width="10" height="10" /><rect x="30" y="110" width="10" height="10" /><rect x="50" y="110" width="10" height="10" />
+                          <rect x="140" y="70" width="10" height="10" /><rect x="160" y="70" width="10" height="10" /><rect x="180" y="70" width="10" height="10" />
+                          <rect x="150" y="90" width="10" height="10" /><rect x="170" y="90" width="10" height="10" />
+                          <rect x="140" y="110" width="10" height="10" /><rect x="160" y="110" width="10" height="10" /><rect x="180" y="110" width="10" height="10" />
+                          <rect x="70" y="140" width="10" height="10" /><rect x="90" y="140" width="10" height="10" /><rect x="110" y="140" width="10" height="10" />
+                          <rect x="80" y="160" width="10" height="10" /><rect x="100" y="160" width="10" height="10" /><rect x="120" y="160" width="10" height="10" />
+                          <rect x="70" y="180" width="10" height="10" /><rect x="90" y="180" width="10" height="10" /><rect x="110" y="180" width="10" height="10" />
+                          <rect x="140" y="140" width="10" height="10" /><rect x="160" y="140" width="10" height="10" /><rect x="180" y="140" width="10" height="10" />
+                          <rect x="150" y="160" width="10" height="10" /><rect x="170" y="160" width="10" height="10" /><rect x="190" y="160" width="10" height="10" />
+                          <rect x="140" y="180" width="10" height="10" /><rect x="160" y="180" width="10" height="10" /><rect x="180" y="180" width="10" height="10" />
+                        </g>
+                        <circle cx="100" cy="100" r="24" fill="#25D366" stroke="#ffffff" stroke-width="4" />
+                        <path d="M93 90 C91 90 89 92 89 94 C89 103 97 111 106 111 C108 111 110 109 110 107 L108 103 C107.5 102 106 101.5 105 102 L103 103 C100 101.5 98.5 100 97 97 L98 95 C98.5 94 98 92.5 97 92 Z" fill="#ffffff" />
+                      </svg>
+                      <!-- Scanning Beam -->
+                      <div id="wa-scan-beam" style="position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, transparent, #25D366, transparent); box-shadow: 0 0 10px #25D366; animation: scanBeam 2.4s ease-in-out infinite;"></div>
+                    </div>
+                  </div>
+
+                  <!-- Scan Instructions -->
+                  <div style="font-size: 0.78rem; color: var(--text-muted); display: flex; flex-direction: column; gap: 0.35rem; text-align: center; max-width: 320px;">
+                    <div data-i18n="whatsapp_scan_step1">1. Open WhatsApp on your mobile phone</div>
+                    <div data-i18n="whatsapp_scan_step2">2. Tap Linked Devices &amp; scan this QR code</div>
+                    <div style="margin-top: 4px; display: flex; flex-direction: column; align-items: center; gap: 2px;">
+                      <span style="font-size: 0.7rem; color: var(--text-faint);">Pairing token expires in: <strong id="wa-qr-timer" style="color: #10b981;">01:45</strong></span>
+                    </div>
+                  </div>
+
+                  <!-- Action Buttons -->
+                  <div style="display: flex; gap: 0.5rem; width: 100%;">
+                    <button type="button" onclick="refreshWhatsAppQR(true)" class="btn btn-primary" style="flex: 1; justify-content: center; background: #25D366; border-color: #25D366; font-size: 0.8rem;">
+                      🔄 <span data-i18n="whatsapp_refresh_qr">Refresh Live QR</span>
+                    </button>
+                    <button type="button" onclick="restartWhatsAppGatewaySession()" class="btn btn-secondary" style="font-size: 0.8rem;" title="Reset Session">
+                      ⚡ Reset
+                    </button>
+                    <button type="button" onclick="openWhatsAppApiModal()" class="btn btn-ghost" style="font-size: 0.8rem;" title="Configure Gateway URL">
+                      ⚙️
+                    </button>
+                  </div>
+
+                  <!-- Gateway URL hint -->
+                  <div id="wa-gateway-url-hint" style="font-size: 0.68rem; color: var(--text-faint); text-align: center;">
+                    Gateway: <span id="wa-gateway-url-display" style="font-family: monospace; color: var(--text-muted);">http://localhost:5001</span>
+                    <button onclick="openWhatsAppApiModal()" style="background: none; border: none; cursor: pointer; font-size: 0.65rem; color: #818cf8; padding: 0 2px;">✏️ edit</button>
+                  </div>
+                </div>
+
+                <!-- Paired / Connected View -->
+                <div id="wa-qr-paired-view" style="display: none; flex-direction: column; align-items: center; gap: 1rem; padding: 1.5rem 0; text-align: center; width: 100%;">
+                  <div style="width: 76px; height: 76px; border-radius: 50%; background: rgba(37, 211, 102, 0.15); border: 2px solid #25D366; display: flex; align-items: center; justify-content: center; font-size: 2.2rem;">
+                    📱
+                  </div>
+                  <div>
+                    <div style="font-weight: 800; font-size: 1.15rem; color: var(--text-main);">WhatsApp Linked &amp; Ready</div>
+                    <div id="wa-connected-phone-display" style="font-size: 0.95rem; font-weight: 700; color: #10b981; margin-top: 2px;">+966 50 123 4567</div>
+                    <div style="font-size: 0.75rem; color: var(--text-faint); margin-top: 4px;">Device: Ostan ERP Web Client • Active Real-Time Session</div>
+                  </div>
+                  <button onclick="disconnectWhatsApp()" class="btn btn-ghost" style="color: #fb7185; font-size: 0.8rem; margin-top: 0.5rem;">
+                    🔌 <span data-i18n="whatsapp_disconnect_btn">Disconnect Account</span>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+
             <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; border: 1px solid rgba(37, 211, 102, 0.25); background: linear-gradient(180deg, rgba(37, 211, 102, 0.03) 0%, var(--bg-surface-elevated) 100%);">
               <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
@@ -2001,6 +2362,32 @@
         </section>
 
       </main>
+
+      <!-- =====================================================================
+           MOBILE BOTTOM NAVIGATION BAR (visible only on screens < 900px)
+           ===================================================================== -->
+      <nav class="mobile-bottom-bar" id="mobile-bottom-nav" aria-label="Mobile Navigation">
+        <button class="mobile-nav-btn" id="bnav-dashboard" onclick="setModule('dashboard')" aria-label="Dashboard">
+          <span class="bnav-icon">📊</span>
+          <span data-i18n="nav_dashboard_short">Home</span>
+        </button>
+        <button class="mobile-nav-btn" id="bnav-employees" onclick="setModule('employees'); setEmployeeViewTab('all');" aria-label="Employees">
+          <span class="bnav-icon">👥</span>
+          <span data-i18n="nav_employees_short">Staff</span>
+        </button>
+        <button class="mobile-nav-btn" id="bnav-tasks" onclick="setModule('tasks')" aria-label="Tasks">
+          <span class="bnav-icon">☑️</span>
+          <span data-i18n="nav_tasks_short">Tasks</span>
+        </button>
+        <button class="mobile-nav-btn" id="bnav-stock" onclick="setModule('stock')" aria-label="Warehouse">
+          <span class="bnav-icon">📦</span>
+          <span data-i18n="nav_stock_short">Stock</span>
+        </button>
+        <button class="mobile-nav-btn" id="bnav-more" onclick="openMobileSidebar()" aria-label="More">
+          <span class="bnav-icon">☰</span>
+          <span data-i18n="nav_more">More</span>
+        </button>
+      </nav>
     </div>
   </div>
 
@@ -2070,7 +2457,10 @@
             <option value="DONE">Completed (مكتملة)</option>
           </select>
         </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem;">
+          <button type="button" id="btn-delete-task-modal" onclick="deleteCurrentModalTask()" class="btn btn-secondary" style="display: none; color: #fb7185; border-color: rgba(251, 113, 133, 0.35); margin-right: auto; padding: 0.45rem 0.85rem; font-size: 0.82rem;">
+            🗑️ <span data-i18n="btn_delete_task">Delete Task</span>
+          </button>
           <button type="button" onclick="closeModals()" class="btn btn-secondary">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Task</button>
         </div>
@@ -2830,18 +3220,32 @@
           </select>
         </div>
 
+        <!-- Dispatch Mode Toggle -->
+        <div>
+          <label data-i18n="label_sender_mode" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">Preferred Dispatch Mode</label>
+          <select id="wa-cfg-mode" class="input-field" style="font-size: 0.85rem; font-weight: 700;">
+            <option value="api">⚡ Direct Cloud API (Instant Background - No Tabs Opened)</option>
+            <option value="web">🌐 WhatsApp Web (Browser Tab & Extension Runner - 100% Free)</option>
+          </select>
+        </div>
+
+        <!-- Local Gateway URL (Mode B) -->
+        <div id="wa-group-gateway-url" style="border: 1px solid rgba(129,140,248,0.3); border-radius: var(--radius-md); padding: 0.75rem 1rem; background: rgba(129,140,248,0.05);">
+          <label style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">🖥️ Local Gateway URL <span style="font-size: 0.68rem; color: var(--text-muted); font-weight: 500;">(Mode B — Local QR pairing)</span></label>
+          <input id="wa-cfg-gateway-url" type="url" placeholder="http://localhost:5001" class="input-field" style="font-size: 0.85rem; font-family: monospace;" value="http://localhost:5001">
+          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; line-height: 1.45;">
+            Default: <code>http://localhost:5001</code> — if accessing from another computer on the same network, replace <code>localhost</code> with the host machine's IP (e.g. <code>http://192.168.1.100:5001</code>). Run <code>npm run whatsapp</code> on the host to see the exact URL.
+          </div>
+        </div>
+
+        <!-- Test Connection Live Status Box -->
+        <div id="wa-cfg-test-result" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.82rem; line-height: 1.45;"></div>
+
         <!-- Phone Number ID / Instance ID -->
         <div>
           <label id="wa-lbl-phone-id" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">UltraMsg Instance ID *</label>
           <input id="wa-cfg-phone-id" type="text" placeholder="e.g. instance105820" class="input-field" style="font-size: 0.88rem; font-family: monospace;">
           <div id="wa-desc-phone-id" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Your Instance ID from your UltraMsg dashboard (ultramsg.com).</div>
-        </div>
-
-        <!-- WhatsApp Business Account ID (WABA ID) - Meta Only -->
-        <div id="wa-group-waba-id" style="display: none;">
-          <label data-i18n="label_waba_id" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">WhatsApp Business Account ID (WABA ID)</label>
-          <input id="wa-cfg-waba-id" type="text" placeholder="e.g. 109283746591023" class="input-field" style="font-size: 0.88rem; font-family: monospace;">
-          <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Your Meta Business Manager Account ID.</div>
         </div>
 
         <!-- Token / Password -->
@@ -2853,18 +3257,6 @@
           <input id="wa-cfg-token" type="password" placeholder="e.g. 5x7ab... (Token)" class="input-field" style="font-size: 0.85rem; font-family: monospace;">
           <div id="wa-desc-token" style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">Your private API authentication token.</div>
         </div>
-
-        <!-- Dispatch Mode Toggle -->
-        <div>
-          <label data-i18n="label_sender_mode" style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); display: block; margin-bottom: 4px;">Preferred Dispatch Mode</label>
-          <select id="wa-cfg-mode" class="input-field" style="font-size: 0.85rem; font-weight: 700;">
-            <option value="api">⚡ Direct Cloud API (Instant Background - No Tabs Opened)</option>
-            <option value="web">🌐 WhatsApp Web (Browser Tab & Extension Runner - 100% Free)</option>
-          </select>
-        </div>
-
-        <!-- Test Connection Live Status Box -->
-        <div id="wa-cfg-test-result" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.82rem; line-height: 1.45;"></div>
 
         <!-- Quick Setup Guide Collapsible -->
         <div style="border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem 1rem; background: var(--bg-surface-elevated);">
@@ -3124,6 +3516,28 @@
     }
     window.purgeDeletedUsersFromActiveState = purgeDeletedUsersFromActiveState;
     purgeDeletedUsersFromActiveState();
+
+    function purgeDeletedTasksFromActiveState() {
+      if (!state.recycleBin || state.recycleBin.length === 0) return false;
+      const binTaskIds = new Set(
+        state.recycleBin
+          .filter(b => b.type === "TASK")
+          .map(b => String(b.originalId || b.id))
+          .filter(Boolean)
+      );
+      if (binTaskIds.size === 0) return false;
+
+      const beforeLen = state.tasks.length;
+      state.tasks = state.tasks.filter(t => !binTaskIds.has(String(t.id)));
+
+      if (state.tasks.length !== beforeLen) {
+        saveState();
+        return true;
+      }
+      return false;
+    }
+    window.purgeDeletedTasksFromActiveState = purgeDeletedTasksFromActiveState;
+    purgeDeletedTasksFromActiveState();
 
     function getCurrentUser() {
       if (!state.currentUserId) return null;
@@ -3452,6 +3866,20 @@
       const activeNav = document.getElementById("nav-" + mod);
       if (activeNav) activeNav.classList.add("active");
 
+      // Update mobile bottom nav active state
+      const bnavMap = {
+        "dashboard": "bnav-dashboard",
+        "employees": "bnav-employees",
+        "tasks": "bnav-tasks",
+        "reminders": "bnav-tasks",
+        "stock": "bnav-stock",
+        "stock-requests": "bnav-stock"
+      };
+      document.querySelectorAll(".mobile-nav-btn").forEach(el => el.classList.remove("active"));
+      const activeBnavId = bnavMap[mod] || "bnav-more";
+      const activeBnav = document.getElementById(activeBnavId);
+      if (activeBnav) activeBnav.classList.add("active");
+
       // Switch Main View Panels
       const views = ["dashboard", "employees", "departments", "tasks", "reminders", "stock", "stock-requests", "reports", "audit-logs", "messages", "settings"];
       views.forEach(v => {
@@ -3543,7 +3971,25 @@
         groupEl.style.display = hasVisibleChild ? "flex" : "none";
       });
 
+      // Sync mobile bottom nav button visibility with permissions
+      const bnavEmp = document.getElementById("bnav-employees");
+      const bnavStock = document.getElementById("bnav-stock");
+      const bnavTasks = document.getElementById("bnav-tasks");
+      if (bnavEmp) {
+        const empA = getSectionAccess("employees", user);
+        bnavEmp.style.display = (empA === "hidden") ? "none" : "flex";
+      }
+      if (bnavStock) {
+        const stA = getSectionAccess("stock", user);
+        bnavStock.style.display = (stA === "hidden") ? "none" : "flex";
+      }
+      if (bnavTasks) {
+        const tkA = getSectionAccess("tasks", user);
+        bnavTasks.style.display = (tkA === "hidden") ? "none" : "flex";
+      }
+
       // Feature Access Flags (ONLY 'accessible' means visible on the dashboard! If locked or hidden, hide from dashboard!)
+
       const stockAccess = getSectionAccess("stock", user);
       const tasksAccess = getSectionAccess("tasks", user);
       const remindersAccess = getSectionAccess("reminders", user);
@@ -3679,7 +4125,7 @@
       if (empCount) empCount.textContent = state.users.length;
       if (empSub) empSub.textContent = `${state.users.length} ${lang === "ar" ? "على رأس العمل" : "Active on Duty"}`;
 
-      const openTasks = state.tasks.filter(t => t.status !== "DONE");
+      const openTasks = state.tasks.filter(t => t.status !== "DONE" && t.status !== "COMPLETED");
       const taskCount = document.getElementById("stat-open-tasks");
       if (taskCount) taskCount.textContent = openTasks.length;
 
@@ -3696,7 +4142,7 @@
       // Render Active Assigned Tasks on Dashboard
       const activeTasksContainer = document.getElementById("dash-active-tasks-list");
       if (activeTasksContainer) {
-        let userTasks = state.tasks.filter(t => t.status !== "DONE");
+        let userTasks = state.tasks.filter(t => t.status !== "DONE" && t.status !== "COMPLETED");
         if (user.role === "EMPLOYEE") {
           userTasks = userTasks.filter(t => t.workerName === user.name || t.workerEmail === user.email);
         }
@@ -5878,37 +6324,35 @@
       let cTodo = 0, cProg = 0, cDone = 0;
 
       filtered.forEach(t => {
-        const isDone = t.status === "DONE";
+        const isDone = t.status === "DONE" || t.status === "COMPLETED";
         const isProgress = t.status === "PROGRESS";
-        const isTodo = t.status === "TODO" || !t.status;
-        const canCancel = canDeleteTask;
+        const isTodo = t.status === "TODO" || (!isDone && !isProgress);
+        const canCancel = canDeleteTask && !isDone;
 
         const item = `
           <div class="glass-panel card-hover" style="padding: 0.95rem; background: var(--bg-surface-elevated); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
               <div style="font-weight: 700; font-size: 0.9rem; color: var(--text-main);">${t.title}</div>
-              ${canEditTask ? `<button onclick="editTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="Edit Task">✏️</button>` : ''}
+              <div style="display: flex; gap: 4px; align-items: center;">
+                ${canEditTask ? `<button onclick="editTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem;" title="${lang === 'ar' ? 'تعديل المهمة' : 'Edit Task'}">✏️</button>` : ''}
+                ${canCancel ? `<button onclick="cancelTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem; color: #fb7185;" title="${lang === 'ar' ? 'حذف المهمة' : 'Delete Task'}">🗑️</button>` : ''}
+              </div>
             </div>
             <div style="font-size: 0.75rem; color: var(--text-muted);">👤 ${t.workerName || 'Staff'}</div>
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem;">
-              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
-                ${canChangeStatus ? (
-                  isDone ? `
-                    <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 700;" title="Revert to To Do">↶ ${lang === 'ar' ? 'إعادة للتفعيل' : 'Reopen to Active'}</button>
-                    <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; color: #fbbf24; border-color: rgba(251, 191, 36, 0.4);" title="Move to In Progress">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
-                  ` : isProgress ? `
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
+                ${isDone ? `
+                  <span style="font-size: 0.72rem; font-weight: 700; color: #34d399; background: rgba(52, 211, 153, 0.12); border: 1px solid rgba(52, 211, 153, 0.25); border-radius: 6px; padding: 2px 7px;">✓ ${lang === 'ar' ? 'مكتملة وغير قابلة للإلغاء' : 'Completed (Final)'}</span>
+                ` : canChangeStatus ? (
+                  isProgress ? `
                     <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">↶ ${lang === 'ar' ? 'انتظار' : 'To Do'}</button>
                     <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
                   ` : `
                     <button onclick="setTaskStatus('${t.id}', 'PROGRESS')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">→ ${lang === 'ar' ? 'تنفيذ' : 'Progress'}</button>
                     <button onclick="setTaskStatus('${t.id}', 'DONE')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">✓ ${lang === 'ar' ? 'اكتمال' : 'Done'}</button>
                   `
-                ) : (isDone ? `
-                  <button onclick="setTaskStatus('${t.id}', 'TODO')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; color: #38bdf8; font-weight: 700;" title="Reopen Task">
-                    ↶ ${lang === 'ar' ? 'إعادة للتفعيل' : 'Reopen to Active'}
-                  </button>
-                ` : '')}
+                ) : ''}
               </div>
               ${canCancel ? `
                 <button onclick="cancelTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; color: #fb7185; font-size: 0.7rem;">
@@ -5918,8 +6362,8 @@
             </div>
           </div>
         `;
-        if (t.status === "PROGRESS") { if (progress) progress.innerHTML += item; cProg++; }
-        else if (t.status === "DONE") { if (done) done.innerHTML += item; cDone++; }
+        if (isDone) { if (done) done.innerHTML += item; cDone++; }
+        else if (isProgress) { if (progress) progress.innerHTML += item; cProg++; }
         else { if (todo) todo.innerHTML += item; cTodo++; }
       });
 
@@ -5933,7 +6377,7 @@
         alert("Permission denied: You do not have permission to edit tasks.");
         return;
       }
-      const t = state.tasks.find(x => x.id === id);
+      const t = state.tasks.find(x => String(x.id) === String(id));
       if (!t) return;
       document.getElementById("task-edit-id").value = t.id;
       document.getElementById("task-title").value = t.title;
@@ -5942,45 +6386,79 @@
       document.getElementById("task-worker-select").value = t.workerName;
       const statusSelect = document.getElementById("task-status-select");
       if (statusSelect) statusSelect.value = t.status || "TODO";
+
+      const isDone = t.status === "DONE" || t.status === "COMPLETED";
+      const btnDel = document.getElementById("btn-delete-task-modal");
+      if (btnDel) {
+        btnDel.style.display = (!isDone && hasUserPermission("tasks", "delete")) ? "inline-flex" : "none";
+      }
     }
     window.editTaskById = editTaskById;
+
+    function deleteCurrentModalTask() {
+      const editId = document.getElementById("task-edit-id").value;
+      if (!editId) return;
+      closeModals();
+      cancelTaskById(editId);
+    }
+    window.deleteCurrentModalTask = deleteCurrentModalTask;
 
     function cancelTaskById(id) {
       if (!hasUserPermission("tasks", "delete")) {
         alert("Permission denied: You do not have permission to cancel or delete tasks.");
         return;
       }
-      const t = state.tasks.find(x => x.id === id);
+      const t = state.tasks.find(x => String(x.id) === String(id));
       if (!t) return;
 
       const lang = document.documentElement.getAttribute("lang") || "en";
+      const isDone = t.status === "DONE" || t.status === "COMPLETED";
+      if (isDone) {
+        const msg = lang === "ar" ? "لا يمكن إلغاء أو حذف مهمة مكتملة بالفعل." : "A completed task cannot be cancelled or deleted.";
+        if (window.OstanStyle) window.OstanStyle.showToast("Cannot Cancel", msg);
+        else alert(msg);
+        return;
+      }
+
       openConfirmDeleteModal({
         title: lang === "ar" ? "إلغاء وحذف المهمة" : "Cancel & Delete Task",
         targetName: `${t.title} (${t.workerName || 'Staff'})`,
         onConfirm: () => {
           moveToRecycleBin("TASK", t.id, t.title, { ...t });
-          state.tasks = state.tasks.filter(x => x.id !== id);
+          state.tasks = state.tasks.filter(x => String(x.id) !== String(id));
           deleteTaskFromFirestore(id);
           saveState();
           renderTasks();
+          renderDashboard();
           updateCounts();
-          if (window.OstanStyle) window.OstanStyle.showToast("Task Cancelled", `${t.title} moved to Recycle Bin`);
+          if (window.OstanStyle) window.OstanStyle.showToast("Task Deleted", `${t.title} moved to Recycle Bin`);
         }
       });
     }
     window.cancelTaskById = cancelTaskById;
+    window.deleteTaskById = cancelTaskById;
 
     function setTaskStatus(taskId, newStatus) {
       if (!hasUserPermission("tasks", "status_change")) {
         alert("Permission denied: You do not have permission to change task status.");
         return;
       }
-      const t = state.tasks.find(x => x.id === taskId);
+      const t = state.tasks.find(x => String(x.id) === String(taskId));
       if (t) {
+        const isCurrentlyDone = t.status === "DONE" || t.status === "COMPLETED";
+        if (isCurrentlyDone && newStatus !== "DONE" && newStatus !== "COMPLETED") {
+          const lang = document.documentElement.getAttribute("lang") || "en";
+          const msg = lang === "ar" ? "المهمة مكتملة ومغلقة نهائياً ولا يمكن إعادة فتحها أو إلغاؤها." : "This task is completed and closed, it cannot be reopened or cancelled.";
+          if (window.OstanStyle) window.OstanStyle.showToast("Task Closed", msg);
+          else alert(msg);
+          return;
+        }
         t.status = newStatus;
         syncTaskToFirestore(t);
         saveState();
         renderTasks();
+        renderDashboard();
+        updateCounts();
       }
     }
     window.setTaskStatus = setTaskStatus;
@@ -6747,9 +7225,17 @@
       renderMessageTemplates();
       renderMessageHistoryLogs();
       updateMessageComposerStats();
-      startLiveWhatsAppPolling();
+
+      // Restore saved connection mode (cloud or local), default to cloud
+      const savedMode = (() => {
+        try { return localStorage.getItem('ostan_wa_connection_mode') || 'cloud'; } catch(e) { return 'cloud'; }
+      })();
+      state.waConnectionMode = savedMode;
+      // Defer to let DOM render first
+      setTimeout(() => switchWaConnectionMode(savedMode), 100);
     }
     window.renderMessagesSender = renderMessagesSender;
+
 
     function isOsamaUser(u = getCurrentUser()) {
       if (!u) {
@@ -6861,25 +7347,88 @@
 
     let liveWaPollingInterval = null;
 
+    /** Returns the configured local gateway URL (falls back to localhost) */
+    function getWaGatewayUrl() {
+      const cfg = state.whatsappApiConfig || {};
+      return (cfg.gatewayUrl || 'http://localhost:5001').replace(/\/$/, '');
+    }
+
+    /** Switch between cloud (Mode A) and local (Mode B) in the Studio panel */
+    function switchWaConnectionMode(mode) {
+      const panelCloud = document.getElementById('wa-panel-cloud');
+      const panelLocal = document.getElementById('wa-panel-local');
+      const tabCloud = document.getElementById('wa-mode-tab-cloud');
+      const tabLocal = document.getElementById('wa-mode-tab-local');
+      if (!panelCloud || !panelLocal) return;
+
+      if (mode === 'cloud') {
+        panelCloud.style.display = 'flex';
+        panelLocal.style.display = 'none';
+        if (tabCloud) { tabCloud.style.borderColor = '#25D366'; tabCloud.style.background = 'rgba(37,211,102,0.12)'; }
+        if (tabLocal) { tabLocal.style.borderColor = 'var(--border-subtle)'; tabLocal.style.background = 'var(--bg-surface)'; }
+        // Stop local polling when on cloud tab
+        if (liveWaPollingInterval) { clearInterval(liveWaPollingInterval); liveWaPollingInterval = null; }
+        state.waConnectionMode = 'cloud';
+        updateWhatsAppApiStatusUI();
+      } else {
+        panelCloud.style.display = 'none';
+        panelLocal.style.display = 'flex';
+        panelLocal.style.flexDirection = 'column';
+        if (tabLocal) { tabLocal.style.borderColor = '#818cf8'; tabLocal.style.background = 'rgba(129,140,248,0.12)'; }
+        if (tabCloud) { tabCloud.style.borderColor = 'var(--border-subtle)'; tabCloud.style.background = 'var(--bg-surface)'; }
+        // Update gateway URL display
+        const urlDisplay = document.getElementById('wa-gateway-url-display');
+        if (urlDisplay) urlDisplay.textContent = getWaGatewayUrl();
+        state.waConnectionMode = 'local';
+        startLiveWhatsAppPolling();
+      }
+      // Save preference
+      try { localStorage.setItem('ostan_wa_connection_mode', mode); } catch(e) {}
+    }
+    window.switchWaConnectionMode = switchWaConnectionMode;
+
     async function checkLiveWhatsAppGatewayStatus() {
       const activeUid = getActiveUserId();
+      // Only poll in local mode
+      if (state.waConnectionMode === 'cloud') return;
+
+      const gatewayBase = getWaGatewayUrl();
+      const isLocalhost = gatewayBase.includes('localhost') || gatewayBase.includes('127.0.0.1');
+
+      // Show/hide remote warning
+      const remoteWarning = document.getElementById('wa-remote-warning');
+      if (remoteWarning) remoteWarning.style.display = (!isLocalhost) ? 'block' : 'none';
+
       try {
         let res = null;
         try {
-          res = await fetch(`http://localhost:5001/api/status?userId=${encodeURIComponent(activeUid)}`, {
+          res = await fetch(`${gatewayBase}/api/status?userId=${encodeURIComponent(activeUid)}`, {
             method: "GET",
-            headers: { "x-user-id": activeUid }
+            headers: { "x-user-id": activeUid },
+            signal: AbortSignal.timeout(5000)
           });
         } catch (err) {
-          res = await fetch(`/api/whatsapp/live-qr?userId=${encodeURIComponent(activeUid)}`, {
-            method: "GET",
-            headers: { "x-user-id": activeUid }
-          });
+          // Fallback: try Next.js proxy endpoint
+          try {
+            res = await fetch(`/api/whatsapp/live-qr?userId=${encodeURIComponent(activeUid)}`, {
+              method: "GET",
+              headers: { "x-user-id": activeUid },
+              signal: AbortSignal.timeout(4000)
+            });
+          } catch (e2) { res = null; }
         }
-        if (!res || !res.ok) return;
+        if (!res || !res.ok) {
+          const indicator = document.getElementById("wa-gateway-indicator");
+          if (indicator) {
+            indicator.style.color = "#f59e0b";
+            indicator.textContent = isLocalhost
+              ? "⚠️ Gateway offline — run: npm run whatsapp"
+              : `⚠️ Cannot reach ${gatewayBase} — check IP & firewall`;
+          }
+          return;
+        }
 
         const data = await res.json();
-        // Ignore response if active user switched during fetch
         if (getActiveUserId() !== activeUid) return;
 
         state.userWhatsAppSessions = state.userWhatsAppSessions || {};
@@ -6889,7 +7438,6 @@
         const qrSvg = document.getElementById("wa-qr-svg");
         const beam = document.getElementById("wa-scan-beam");
         const indicator = document.getElementById("wa-gateway-indicator");
-        const timerEl = document.getElementById("wa-qr-timer");
 
         if (data.status === "connected") {
           const wasConnected = curSession.connected;
@@ -6913,10 +7461,7 @@
             );
           }
         } else if (data.status === "qr_ready" && data.qr) {
-          if (qrImg) {
-            qrImg.src = data.qr;
-            qrImg.style.display = "block";
-          }
+          if (qrImg) { qrImg.src = data.qr; qrImg.style.display = "block"; }
           if (qrSvg) qrSvg.style.display = "none";
           if (beam) beam.style.display = "none";
           if (indicator) {
@@ -6944,7 +7489,10 @@
         const indicator = document.getElementById("wa-gateway-indicator");
         if (indicator) {
           indicator.style.color = "#94a3b8";
-          indicator.textContent = "⚠️ Engine offline. Start via 'npm run whatsapp'";
+          const gwUrl = getWaGatewayUrl();
+          indicator.textContent = gwUrl.includes('localhost')
+            ? "⚠️ Engine offline. Start via 'npm run whatsapp'"
+            : `⚠️ Cannot connect to ${gwUrl}`;
         }
       }
     }
@@ -6957,6 +7505,7 @@
       startWhatsAppQRTimer();
     }
     window.startLiveWhatsAppPolling = startLiveWhatsAppPolling;
+
 
     function startWhatsAppQRTimer() {
       if (waQrTimerInterval) clearInterval(waQrTimerInterval);
@@ -7729,20 +8278,17 @@
       const cfg = state.whatsappApiConfig || {};
       const providerInput = document.getElementById("wa-cfg-provider");
       const phoneInput = document.getElementById("wa-cfg-phone-id");
-      const wabaInput = document.getElementById("wa-cfg-waba-id");
       const tokenInput = document.getElementById("wa-cfg-token");
       const modeInput = document.getElementById("wa-cfg-mode");
+      const gatewayInput = document.getElementById("wa-cfg-gateway-url");
       const resBox = document.getElementById("wa-cfg-test-result");
 
       if (providerInput) providerInput.value = cfg.provider || "ultramsg";
       if (phoneInput) phoneInput.value = cfg.phoneNumberId || "";
-      if (wabaInput) wabaInput.value = cfg.wabaId || "";
       if (tokenInput) tokenInput.value = cfg.accessToken || "";
       if (modeInput) modeInput.value = cfg.mode || "api";
-      if (resBox) {
-        resBox.style.display = "none";
-        resBox.textContent = "";
-      }
+      if (gatewayInput) gatewayInput.value = cfg.gatewayUrl || "http://localhost:5001";
+      if (resBox) { resBox.style.display = "none"; resBox.textContent = ""; }
 
       handleWaProviderChange();
 
@@ -7876,19 +8422,21 @@
     function saveWhatsAppApiConfig() {
       const provider = document.getElementById("wa-cfg-provider")?.value || "ultramsg";
       const phoneId = document.getElementById("wa-cfg-phone-id")?.value.trim() || "";
-      const wabaId = document.getElementById("wa-cfg-waba-id")?.value.trim() || "";
       const token = document.getElementById("wa-cfg-token")?.value.trim() || "";
       const mode = document.getElementById("wa-cfg-mode")?.value || "api";
+      const gatewayUrl = (document.getElementById("wa-cfg-gateway-url")?.value.trim() || "http://localhost:5001").replace(/\/$/, '');
 
       state.whatsappApiConfig = {
+        ...(state.whatsappApiConfig || {}),
         provider: provider,
         phoneNumberId: phoneId,
-        wabaId: wabaId,
         accessToken: token,
-        mode: mode
+        mode: mode,
+        gatewayUrl: gatewayUrl
       };
 
       saveState();
+      try { localStorage.setItem("ostan_wa_api_config", JSON.stringify(state.whatsappApiConfig)); } catch(e) {}
 
       if (window.fbDb) {
         try {
@@ -7896,12 +8444,16 @@
         } catch (e) {}
       }
 
+      // Update the gateway URL display in the UI
+      const urlDisplay = document.getElementById("wa-gateway-url-display");
+      if (urlDisplay) urlDisplay.textContent = gatewayUrl;
+
       updateWhatsAppApiStatusUI();
       closeWhatsAppApiModal();
 
       const lang = document.documentElement.getAttribute("lang") || "en";
-      const msg = lang === "ar" ? "تم حفظ وتفعيل إعدادات WhatsApp API بنجاح" : "WhatsApp API Configuration Saved Successfully";
-      if (window.OstanStyle) window.OstanStyle.showToast("WhatsApp API", msg);
+      const msg = lang === "ar" ? "تم حفظ وتفعيل إعدادات WhatsApp بنجاح" : "WhatsApp Configuration Saved Successfully";
+      if (window.OstanStyle) window.OstanStyle.showToast("WhatsApp", msg);
       else alert(msg);
     }
     window.saveWhatsAppApiConfig = saveWhatsAppApiConfig;
@@ -7979,17 +8531,20 @@
       if (isCurrentWaConnected()) {
         try {
           let liveRes = null;
+          const gwBase = getWaGatewayUrl();
           try {
-            liveRes = await fetch("http://localhost:5001/api/send", {
+            liveRes = await fetch(`${gwBase}/api/send`, {
               method: "POST",
               headers: { "Content-Type": "application/json", "x-user-id": activeUid },
-              body: JSON.stringify({ userId: activeUid, phone: cleanPhone, message: messageText })
+              body: JSON.stringify({ userId: activeUid, phone: cleanPhone, message: messageText }),
+              signal: AbortSignal.timeout(8000)
             });
           } catch (e) {
             liveRes = await fetch("/api/whatsapp/live-qr", {
               method: "POST",
               headers: { "Content-Type": "application/json", "x-user-id": activeUid },
-              body: JSON.stringify({ action: "send", userId: activeUid, phone: cleanPhone, message: messageText })
+              body: JSON.stringify({ action: "send", userId: activeUid, phone: cleanPhone, message: messageText }),
+              signal: AbortSignal.timeout(6000)
             });
           }
           if (liveRes && liveRes.ok) {
@@ -8911,17 +9466,27 @@
       // Real-Time Live Cloud Firestore Sync for Tasks
       window.fbDb.collection("tasks").onSnapshot((snapshot) => {
         if (snapshot.empty) {
-          const curUser = getCurrentUser();
-          if (curUser && isMasterSuperAdmin(curUser) && state.tasks.length > 0) {
-            state.tasks.forEach(t => {
-              window.fbDb.collection("tasks").doc(t.id).set(t, { merge: true });
-            });
-          }
+          state.tasks = [];
+          localStorage.setItem("ostan_tasks", "[]");
+          renderTasks();
+          renderDashboard();
+          updateCounts();
           return;
         }
+        const binIds = new Set(
+          (state.recycleBin || [])
+            .filter(b => b.type === "TASK")
+            .map(b => String(b.originalId || b.id))
+            .filter(Boolean)
+        );
         const tasks = [];
         snapshot.forEach(doc => {
-          tasks.push(doc.data());
+          const d = doc.data() || {};
+          const tid = String(d.id || doc.id);
+          d.id = tid;
+          if (!binIds.has(tid)) {
+            tasks.push(d);
+          }
         });
         tasks.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
         state.tasks = tasks;

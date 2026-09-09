@@ -33,6 +33,7 @@
       nav_group_sys: "SYSTEM",
       nav_messages: "Messages Sender",
       nav_settings: "System Settings",
+      nav_menu: "Menu",
 
       // Dashboard Greetings & Cards
       dash_greeting_morning: "Good morning",
@@ -380,6 +381,7 @@
       nav_group_sys: "النظام",
       nav_messages: "مرسل الرسائل",
       nav_settings: "إعدادات النظام",
+      nav_menu: "القائمة",
 
       // Dashboard Greetings & Cards
       dash_greeting_morning: "صباح الخير",
