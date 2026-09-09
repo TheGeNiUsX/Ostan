@@ -6,44 +6,89 @@ import fs from 'fs';
 import path from 'path';
 
 const PORT = process.env.WHATSAPP_PORT || 5001;
-const AUTH_DIR = path.join(process.cwd(), 'whatsapp_session');
+const BASE_SESSIONS_DIR = path.join(process.cwd(), 'whatsapp_sessions');
 
-// Ensure session directory exists
-if (!fs.existsSync(AUTH_DIR)) {
-  fs.mkdirSync(AUTH_DIR, { recursive: true });
+// Ensure base sessions directory exists
+if (!fs.existsSync(BASE_SESSIONS_DIR)) {
+  fs.mkdirSync(BASE_SESSIONS_DIR, { recursive: true });
 }
 
-let currentStatus = 'disconnected'; // 'disconnected' | 'connecting' | 'qr_ready' | 'connected'
-let currentQR = null; // base64 Data URL (image/png)
-let currentPhone = null;
-let userName = null;
-let sock = null;
-let isStarting = false;
+// Preserve existing legacy single session for Osama if needed
+const LEGACY_DIR = path.join(process.cwd(), 'whatsapp_session');
+const OSAMA_DIR = path.join(BASE_SESSIONS_DIR, 'user_u-osama');
+if (fs.existsSync(LEGACY_DIR) && !fs.existsSync(OSAMA_DIR)) {
+  try {
+    fs.cpSync(LEGACY_DIR, OSAMA_DIR, { recursive: true });
+    console.log('[WhatsApp Gateway] Preserved active session for user u-osama');
+  } catch (e) {
+    console.warn('[WhatsApp Gateway] Migration note:', e);
+  }
+}
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-};
+// Multi-User Session Store: cleanUserId -> sessionObject
+const userSessions = new Map();
 
-async function startWhatsAppSocket() {
-  if (isStarting) return;
-  isStarting = true;
-  currentStatus = 'connecting';
+function sanitizeUserId(id) {
+  if (!id) return 'guest';
+  const raw = String(id).trim().toLowerCase();
+  if (raw === 'u-osama' || raw.includes('osama') || raw.includes('waseem')) {
+    return 'u-osama';
+  }
+  return raw.replace(/[^a-z0-9_-]/g, '_') || 'guest';
+}
+
+function getUserAuthDir(cleanId) {
+  const dir = path.join(BASE_SESSIONS_DIR, `user_${cleanId}`);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  return dir;
+}
+
+function getOrCreateUserSession(rawUserId) {
+  const cleanId = sanitizeUserId(rawUserId);
+  if (userSessions.has(cleanId)) {
+    return userSessions.get(cleanId);
+  }
+
+  const sessionObj = {
+    userId: cleanId,
+    status: 'disconnected', // 'disconnected' | 'connecting' | 'qr_ready' | 'connected'
+    qr: null,
+    phone: null,
+    name: null,
+    sock: null,
+    isStarting: false,
+    authDir: getUserAuthDir(cleanId)
+  };
+
+  userSessions.set(cleanId, sessionObj);
+  startWhatsAppSocketForUser(cleanId);
+  return sessionObj;
+}
+
+async function startWhatsAppSocketForUser(cleanUserId) {
+  const session = userSessions.get(cleanUserId);
+  if (!session || session.isStarting) return;
+
+  session.isStarting = true;
+  session.status = 'connecting';
 
   try {
-    const { state, saveCreds } = await useMultiFileAuthState(AUTH_DIR);
+    const { state, saveCreds } = await useMultiFileAuthState(session.authDir);
 
-    sock = makeWASocket({
+    const sock = makeWASocket({
       auth: state,
       logger: pino({ level: 'silent' }),
-      printQRInTerminal: true,
-      browser: ['Ostan System', 'Chrome', '124.0.0'],
+      printQRInTerminal: false,
+      browser: [`Ostan ERP (${cleanUserId})`, 'Chrome', '124.0.0'],
       syncFullHistory: false,
       connectTimeoutMs: 60000,
       defaultQueryTimeoutMs: 60000,
       keepAliveIntervalMs: 25000,
     });
+
+    session.sock = sock;
 
     sock.ev.on('creds.update', saveCreds);
 
@@ -51,71 +96,69 @@ async function startWhatsAppSocket() {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        currentStatus = 'qr_ready';
+        session.status = 'qr_ready';
         try {
-          currentQR = await QRCode.toDataURL(qr, {
+          session.qr = await QRCode.toDataURL(qr, {
             margin: 1,
             scale: 7,
-            color: {
-              dark: '#111827',
-              light: '#ffffff'
-            }
+            color: { dark: '#111827', light: '#ffffff' }
           });
-          console.log('\n[WhatsApp Gateway] 📱 New Live QR Code ready for scanning!');
+          console.log(`[WhatsApp Gateway] 📱 New Live QR Code ready for user: ${cleanUserId}`);
         } catch (err) {
-          console.error('[WhatsApp Gateway] Failed to convert QR to image:', err);
+          console.error(`[WhatsApp Gateway] Failed to convert QR for ${cleanUserId}:`, err);
         }
       }
 
       if (connection === 'close') {
         const statusCode = lastDisconnect?.error?.output?.statusCode;
         const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
-        currentStatus = 'disconnected';
-        currentQR = null;
-        isStarting = false;
+        session.status = 'disconnected';
+        session.qr = null;
+        session.isStarting = false;
 
-        console.log(`[WhatsApp Gateway] ⚠️ Connection closed (code: ${statusCode}). Reconnecting: ${shouldReconnect}`);
+        console.log(`[WhatsApp Gateway] User '${cleanUserId}' connection closed (code: ${statusCode}). Reconnecting: ${shouldReconnect}`);
 
         if (shouldReconnect) {
           setTimeout(() => {
-            startWhatsAppSocket();
+            startWhatsAppSocketForUser(cleanUserId);
           }, 4000);
         } else {
-          console.log('[WhatsApp Gateway] 🔒 Session logged out. Resetting session store...');
+          console.log(`[WhatsApp Gateway] User '${cleanUserId}' logged out. Cleaning session files...`);
           try {
-            fs.rmSync(AUTH_DIR, { recursive: true, force: true });
+            fs.rmSync(session.authDir, { recursive: true, force: true });
           } catch (e) {}
           setTimeout(() => {
-            startWhatsAppSocket();
+            startWhatsAppSocketForUser(cleanUserId);
           }, 1500);
         }
       } else if (connection === 'open') {
-        currentStatus = 'connected';
-        currentQR = null;
-        isStarting = false;
+        session.status = 'connected';
+        session.qr = null;
+        session.isStarting = false;
 
         const id = sock?.user?.id || '';
-        currentPhone = id.split(':')[0] || id.split('@')[0];
-        userName = sock?.user?.name || 'Ostan Administrator';
+        session.phone = id.split(':')[0] || id.split('@')[0];
+        session.name = sock?.user?.name || `User ${cleanUserId}`;
 
         console.log(`\n======================================================`);
-        console.log(`[WhatsApp Gateway] 🟢 CONNECTED TO WHATSAPP!`);
-        console.log(`Active Phone: +${currentPhone}`);
-        console.log(`Account Name: ${userName}`);
+        console.log(`[WhatsApp Gateway] 🟢 User '${cleanUserId}' CONNECTED!`);
+        console.log(`Active Phone: +${session.phone}`);
+        console.log(`Account Name: ${session.name}`);
         console.log(`======================================================\n`);
       }
     });
   } catch (err) {
-    console.error('[WhatsApp Gateway] Error initializing socket:', err);
-    isStarting = false;
-    currentStatus = 'disconnected';
-    setTimeout(() => startWhatsAppSocket(), 5000);
+    console.error(`[WhatsApp Gateway] Error starting socket for user '${cleanUserId}':`, err);
+    session.isStarting = false;
+    session.status = 'disconnected';
+    setTimeout(() => startWhatsAppSocketForUser(cleanUserId), 5000);
   }
 }
 
-async function sendWhatsAppMessage(targetPhone, messageText) {
-  if (currentStatus !== 'connected' || !sock) {
-    throw new Error('WhatsApp is not connected. Please scan the QR code first.');
+async function sendWhatsAppMessageForUser(userId, targetPhone, messageText) {
+  const session = getOrCreateUserSession(userId);
+  if (session.status !== 'connected' || !session.sock) {
+    throw new Error(`WhatsApp is not connected for user '${session.userId}'. Please scan the QR code first.`);
   }
 
   let cleanPhone = String(targetPhone).replace(/[^0-9]/g, '');
@@ -123,29 +166,40 @@ async function sendWhatsAppMessage(targetPhone, messageText) {
   else if (cleanPhone.startsWith('5') && cleanPhone.length === 9) cleanPhone = '966' + cleanPhone;
 
   const jid = `${cleanPhone}@s.whatsapp.net`;
-  const result = await sock.sendMessage(jid, { text: messageText });
-  return { success: true, messageId: result?.key?.id || `msg-${Date.now()}` };
+  const result = await session.sock.sendMessage(jid, { text: messageText });
+  return {
+    success: true,
+    senderPhone: session.phone,
+    userId: session.userId,
+    messageId: result?.key?.id || `msg-${Date.now()}`
+  };
 }
 
-async function logoutWhatsApp() {
-  try {
-    if (sock) {
-      await sock.logout();
-    }
-  } catch (e) {}
-  try {
-    fs.rmSync(AUTH_DIR, { recursive: true, force: true });
-  } catch (e) {}
-
-  currentStatus = 'disconnected';
-  currentQR = null;
-  currentPhone = null;
-  userName = null;
-  isStarting = false;
-
-  setTimeout(() => startWhatsAppSocket(), 1500);
-  return { success: true, message: 'Logged out successfully' };
+async function logoutWhatsAppForUser(userId) {
+  const cleanId = sanitizeUserId(userId);
+  const session = userSessions.get(cleanId);
+  if (session) {
+    try {
+      if (session.sock) await session.sock.logout();
+    } catch (e) {}
+    try {
+      fs.rmSync(session.authDir, { recursive: true, force: true });
+    } catch (e) {}
+    session.status = 'disconnected';
+    session.qr = null;
+    session.phone = null;
+    session.name = null;
+    session.isStarting = false;
+    setTimeout(() => startWhatsAppSocketForUser(cleanId), 1500);
+  }
+  return { success: true, message: `Logged out session for user ${cleanId}` };
 }
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-user-id',
+};
 
 // HTTP Server
 const server = http.createServer(async (req, res) => {
@@ -157,7 +211,6 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url, `http://${req.headers.host}`);
 
-  // Helper to respond with JSON
   const sendJSON = (statusCode, data) => {
     res.writeHead(statusCode, {
       'Content-Type': 'application/json',
@@ -166,15 +219,22 @@ const server = http.createServer(async (req, res) => {
     res.end(JSON.stringify(data));
   };
 
+  // Helper to extract userId from headers or query param
+  const getRequestedUserId = () => {
+    return req.headers['x-user-id'] || url.searchParams.get('userId') || 'u-osama';
+  };
+
   // 1. GET /api/status or /status
   if (req.method === 'GET' && (url.pathname === '/api/status' || url.pathname === '/status')) {
+    const userId = getRequestedUserId();
+    const session = getOrCreateUserSession(userId);
     return sendJSON(200, {
       success: true,
-      status: currentStatus,
-      qr: currentQR,
-      phone: currentPhone,
-      name: userName,
-      authDir: AUTH_DIR,
+      userId: session.userId,
+      status: session.status,
+      qr: session.qr,
+      phone: session.phone,
+      name: session.name,
       timestamp: Date.now()
     });
   }
@@ -186,13 +246,14 @@ const server = http.createServer(async (req, res) => {
     req.on('end', async () => {
       try {
         const body = JSON.parse(bodyStr || '{}');
+        const userId = body.userId || getRequestedUserId();
         const { phone, message } = body;
 
         if (!phone || !message) {
           return sendJSON(400, { success: false, error: 'Phone and message are required.' });
         }
 
-        const result = await sendWhatsAppMessage(phone, message);
+        const result = await sendWhatsAppMessageForUser(userId, phone, message);
         return sendJSON(200, { success: true, ...result });
       } catch (error) {
         console.error('[WhatsApp Gateway] Send error:', error);
@@ -204,15 +265,32 @@ const server = http.createServer(async (req, res) => {
 
   // 3. POST /api/logout or /logout
   if (req.method === 'POST' && (url.pathname === '/api/logout' || url.pathname === '/logout')) {
-    const result = await logoutWhatsApp();
-    return sendJSON(200, result);
+    let bodyStr = '';
+    req.on('data', chunk => { bodyStr += chunk; });
+    req.on('end', async () => {
+      const body = JSON.parse(bodyStr || '{}');
+      const userId = body.userId || getRequestedUserId();
+      const result = await logoutWhatsAppForUser(userId);
+      return sendJSON(200, result);
+    });
+    return;
   }
 
   // 4. POST /api/restart
   if (req.method === 'POST' && url.pathname === '/api/restart') {
-    isStarting = false;
-    startWhatsAppSocket();
-    return sendJSON(200, { success: true, message: 'Restart triggered' });
+    let bodyStr = '';
+    req.on('data', chunk => { bodyStr += chunk; });
+    req.on('end', async () => {
+      const body = JSON.parse(bodyStr || '{}');
+      const userId = sanitizeUserId(body.userId || getRequestedUserId());
+      const session = userSessions.get(userId);
+      if (session) {
+        session.isStarting = false;
+        startWhatsAppSocketForUser(userId);
+      }
+      return sendJSON(200, { success: true, message: `Restarted session for ${userId}` });
+    });
+    return;
   }
 
   sendJSON(404, { success: false, error: 'Endpoint not found' });
@@ -220,8 +298,8 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`\n======================================================`);
-  console.log(`⚡ Ostan WhatsApp Web Gateway running on http://localhost:${PORT}`);
-  console.log(`Endpoint: http://localhost:${PORT}/api/status`);
+  console.log(`⚡ Ostan Multi-User WhatsApp Gateway running on http://localhost:${PORT}`);
   console.log(`======================================================\n`);
-  startWhatsAppSocket();
+  // Automatically start Osama's session
+  getOrCreateUserSession('u-osama');
 });

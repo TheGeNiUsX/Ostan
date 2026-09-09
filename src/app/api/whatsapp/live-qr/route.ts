@@ -5,18 +5,24 @@ const GATEWAY_URL = process.env.WHATSAPP_GATEWAY_URL || "http://localhost:5001";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, x-user-id",
 };
 
 export async function OPTIONS() {
   return NextResponse.json({}, { headers: corsHeaders });
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const res = await fetch(`${GATEWAY_URL}/api/status`, {
+    const { searchParams } = new URL(req.url);
+    const userId = req.headers.get("x-user-id") || searchParams.get("userId") || "guest";
+
+    const res = await fetch(`${GATEWAY_URL}/api/status?userId=${encodeURIComponent(userId)}`, {
       method: "GET",
       cache: "no-store",
+      headers: {
+        "x-user-id": userId,
+      },
     });
     const data = await res.json();
     return NextResponse.json(data, { status: res.status, headers: corsHeaders });
@@ -37,6 +43,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}));
     const { action = "send", ...payload } = body;
+    const userId = req.headers.get("x-user-id") || payload.userId || "guest";
 
     let targetEndpoint = `${GATEWAY_URL}/api/send`;
     if (action === "logout") {
@@ -47,8 +54,11 @@ export async function POST(req: NextRequest) {
 
     const res = await fetch(targetEndpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      headers: {
+        "Content-Type": "application/json",
+        "x-user-id": userId,
+      },
+      body: JSON.stringify({ userId, ...payload }),
     });
 
     const data = await res.json();

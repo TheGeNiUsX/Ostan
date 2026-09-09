@@ -36,3 +36,4 @@ prisma/*.db-journal
 
 # WhatsApp Web session credentials
 whatsapp_session/
+whatsapp_sessions/

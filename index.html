@@ -2395,8 +2395,34 @@
       stockRequests: JSON.parse(localStorage.getItem("ostan_stock_requests") || "[]"),
       messageTemplates: JSON.parse(localStorage.getItem("ostan_message_templates") || JSON.stringify(defaultTemplates)),
       messageDispatchLogs: JSON.parse(localStorage.getItem("ostan_message_logs") || "[]"),
-      whatsappConnected: localStorage.getItem("ostan_wa_connected") === "true",
-      whatsappPhone: localStorage.getItem("ostan_wa_phone") || "+966 50 123 4567",
+      userWhatsAppSessions: (() => {
+        let s = {};
+        try { s = JSON.parse(localStorage.getItem("ostan_user_wa_sessions") || "{}") || {}; } catch(e) {}
+        if (!s["u-osama"]) {
+          s["u-osama"] = {
+            connected: true,
+            phone: "+966 58 053 9698",
+            name: "Osama Al-Twaish"
+          };
+        }
+        return s;
+      })(),
+      get whatsappConnected() {
+        return (typeof isCurrentWaConnected === "function") ? isCurrentWaConnected() : false;
+      },
+      set whatsappConnected(val) {
+        if (typeof getCurUserWaSession === "function") {
+          getCurUserWaSession().connected = Boolean(val);
+        }
+      },
+      get whatsappPhone() {
+        return (typeof getCurrentWaPhone === "function") ? getCurrentWaPhone() : "";
+      },
+      set whatsappPhone(val) {
+        if (typeof getCurUserWaSession === "function") {
+          getCurUserWaSession().phone = val;
+        }
+      },
       recycleBin: JSON.parse(localStorage.getItem("ostan_recycle_bin") || "[]"),
       whatsappApiConfig: JSON.parse(localStorage.getItem("ostan_wa_api_config") || JSON.stringify({
         phoneNumberId: "",
@@ -2420,8 +2446,9 @@
       localStorage.setItem("ostan_stock_requests", JSON.stringify(state.stockRequests));
       localStorage.setItem("ostan_message_templates", JSON.stringify(state.messageTemplates));
       localStorage.setItem("ostan_message_logs", JSON.stringify(state.messageDispatchLogs));
+      localStorage.setItem("ostan_user_wa_sessions", JSON.stringify(state.userWhatsAppSessions || {}));
       localStorage.setItem("ostan_wa_connected", state.whatsappConnected ? "true" : "false");
-      localStorage.setItem("ostan_wa_phone", state.whatsappPhone || "+966 50 123 4567");
+      localStorage.setItem("ostan_wa_phone", state.whatsappPhone || "");
       localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin || []));
       localStorage.setItem("ostan_wa_api_config", JSON.stringify(state.whatsappApiConfig || {}));
       updateCounts();
@@ -4880,8 +4907,44 @@
     }
     window.renderMessagesSender = renderMessagesSender;
 
+    function getActiveUserId() {
+      const u = getCurrentUser();
+      if (u && u.id) return String(u.id);
+      if (u && u.email) return String(u.email);
+      if (state.currentUserId) return String(state.currentUserId);
+      return "guest";
+    }
+    window.getActiveUserId = getActiveUserId;
+
+    function getCurUserWaSession() {
+      state.userWhatsAppSessions = state.userWhatsAppSessions || {};
+      const uid = getActiveUserId();
+      const isOsama = uid.toLowerCase().includes("osama") || uid.toLowerCase().includes("waseem") || uid === "u-osama";
+
+      if (!state.userWhatsAppSessions[uid]) {
+        state.userWhatsAppSessions[uid] = {
+          connected: isOsama ? true : false,
+          phone: isOsama ? "+966 58 053 9698" : "",
+          name: isOsama ? "Osama Al-Twaish" : ""
+        };
+      }
+      return state.userWhatsAppSessions[uid];
+    }
+    window.getCurUserWaSession = getCurUserWaSession;
+
+    function isCurrentWaConnected() {
+      return Boolean(getCurUserWaSession().connected);
+    }
+    window.isCurrentWaConnected = isCurrentWaConnected;
+
+    function getCurrentWaPhone() {
+      return getCurUserWaSession().phone || "";
+    }
+    window.getCurrentWaPhone = getCurrentWaPhone;
+
     function updateWhatsAppConnectionUI() {
-      const isConnected = state.whatsappConnected;
+      const curSession = getCurUserWaSession();
+      const isConnected = curSession.connected;
       const statusPill = document.getElementById("wa-status-pill");
       const statusDot = document.getElementById("wa-status-dot");
       const statusText = document.getElementById("wa-status-text");
@@ -4899,7 +4962,7 @@
         if (statusText) statusText.textContent = lang === "ar" ? "متصل ونشط" : "Connected & Active";
         if (unpairedView) unpairedView.style.display = "none";
         if (pairedView) pairedView.style.display = "flex";
-        if (phoneDisplay) phoneDisplay.textContent = state.whatsappPhone || "+966 50 123 4567";
+        if (phoneDisplay) phoneDisplay.textContent = curSession.phone || "+966 50 123 4567";
       } else {
         if (statusPill) {
           statusPill.className = "badge badge-amber";
@@ -4915,16 +4978,29 @@
     let liveWaPollingInterval = null;
 
     async function checkLiveWhatsAppGatewayStatus() {
+      const activeUid = getActiveUserId();
       try {
         let res = null;
         try {
-          res = await fetch("http://localhost:5001/api/status", { method: "GET" });
+          res = await fetch(`http://localhost:5001/api/status?userId=${encodeURIComponent(activeUid)}`, {
+            method: "GET",
+            headers: { "x-user-id": activeUid }
+          });
         } catch (err) {
-          res = await fetch("/api/whatsapp/live-qr", { method: "GET" });
+          res = await fetch(`/api/whatsapp/live-qr?userId=${encodeURIComponent(activeUid)}`, {
+            method: "GET",
+            headers: { "x-user-id": activeUid }
+          });
         }
         if (!res || !res.ok) return;
 
         const data = await res.json();
+        // Ignore response if active user switched during fetch
+        if (getActiveUserId() !== activeUid) return;
+
+        state.userWhatsAppSessions = state.userWhatsAppSessions || {};
+        const curSession = getCurUserWaSession();
+
         const qrImg = document.getElementById("wa-real-qr-img");
         const qrSvg = document.getElementById("wa-qr-svg");
         const beam = document.getElementById("wa-scan-beam");
@@ -4932,12 +5008,14 @@
         const timerEl = document.getElementById("wa-qr-timer");
 
         if (data.status === "connected") {
-          const wasConnected = state.whatsappConnected;
-          state.whatsappConnected = true;
-          if (data.phone) state.whatsappPhone = "+" + data.phone;
-          if (data.name) state.whatsappAccountName = data.name;
+          const wasConnected = curSession.connected;
+          curSession.connected = true;
+          if (data.phone) curSession.phone = "+" + data.phone;
+          if (data.name) curSession.name = data.name;
+          state.userWhatsAppSessions[activeUid] = curSession;
           saveState();
           updateWhatsAppConnectionUI();
+          updateWhatsAppApiStatusUI();
 
           if (indicator) {
             indicator.style.color = "#10b981";
@@ -4959,12 +5037,15 @@
           if (beam) beam.style.display = "none";
           if (indicator) {
             indicator.style.color = "#25D366";
-            indicator.textContent = "⚡ Real QR Code Ready • Scan with WhatsApp";
+            indicator.textContent = `⚡ Real QR Ready • Scan for ${getCurrentUser()?.name || activeUid}`;
           }
-          if (state.whatsappConnected) {
-            state.whatsappConnected = false;
+          if (curSession.connected) {
+            curSession.connected = false;
+            curSession.phone = "";
+            state.userWhatsAppSessions[activeUid] = curSession;
             saveState();
             updateWhatsAppConnectionUI();
+            updateWhatsAppApiStatusUI();
           }
         } else if (data.status === "connecting") {
           if (qrImg) qrImg.style.display = "none";
@@ -5027,19 +5108,23 @@
     window.refreshWhatsAppQR = refreshWhatsAppQR;
 
     async function restartWhatsAppGatewaySession() {
+      const activeUid = getActiveUserId();
       try {
-        let res = null;
         try {
-          res = await fetch("http://localhost:5001/api/restart", { method: "POST" });
-        } catch (err) {
-          res = await fetch("/api/whatsapp/live-qr", {
+          await fetch("http://localhost:5001/api/restart", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "restart" })
+            headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+            body: JSON.stringify({ userId: activeUid })
+          });
+        } catch (err) {
+          await fetch("/api/whatsapp/live-qr", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+            body: JSON.stringify({ action: "restart", userId: activeUid })
           });
         }
         if (window.OstanStyle) {
-          window.OstanStyle.showToast("WhatsApp Restarted", "Refreshing pairing socket...");
+          window.OstanStyle.showToast("WhatsApp Restarted", "Refreshing pairing socket for your account...");
         }
         setTimeout(checkLiveWhatsAppGatewayStatus, 1500);
       } catch (e) {
@@ -5049,30 +5134,36 @@
     window.restartWhatsAppGatewaySession = restartWhatsAppGatewaySession;
 
     async function disconnectWhatsApp() {
-      if (!confirm("Are you sure you want to disconnect this WhatsApp session?")) return;
+      if (!confirm("Are you sure you want to disconnect your WhatsApp session?")) return;
+      const activeUid = getActiveUserId();
 
       try {
         try {
-          await fetch("http://localhost:5001/api/logout", { method: "POST" });
+          await fetch("http://localhost:5001/api/logout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+            body: JSON.stringify({ userId: activeUid })
+          });
         } catch (e) {
           await fetch("/api/whatsapp/live-qr", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "logout" })
+            headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+            body: JSON.stringify({ action: "logout", userId: activeUid })
           });
         }
       } catch (err) {
         console.warn("Logout request:", err);
       }
 
-      state.whatsappConnected = false;
-      state.whatsappPhone = "";
+      state.userWhatsAppSessions = state.userWhatsAppSessions || {};
+      state.userWhatsAppSessions[activeUid] = { connected: false, phone: "", name: "" };
       saveState();
       updateWhatsAppConnectionUI();
+      updateWhatsAppApiStatusUI();
       checkLiveWhatsAppGatewayStatus();
 
       if (window.OstanStyle) {
-        window.OstanStyle.showToast("WhatsApp Disconnected", "Session unlinked. Generated fresh QR code.");
+        window.OstanStyle.showToast("WhatsApp Disconnected", "Session unlinked for your user. Generated fresh QR code.");
       }
     }
     window.disconnectWhatsApp = disconnectWhatsApp;
@@ -5278,7 +5369,7 @@
     };
 
     function startWhatsAppQueueDispatch() {
-      if (state.whatsappConnected) {
+      if (isCurrentWaConnected()) {
         startWhatsAppCloudApiDispatch();
         return;
       }
@@ -5858,7 +5949,8 @@
       const btnMeta = document.getElementById("btn-dispatch-meta-api");
       const btnWeb = document.getElementById("btn-dispatch-whatsapp-web");
       const lang = document.documentElement.getAttribute("lang") || "en";
-      const isLiveConnected = Boolean(state.whatsappConnected);
+      const isLiveConnected = isCurrentWaConnected();
+      const currentPhone = getCurrentWaPhone();
 
       if (pill && dot && text) {
         if (isLiveConnected) {
@@ -5867,7 +5959,7 @@
           pill.style.color = "#10b981";
           pill.style.border = "1px solid rgba(16, 185, 129, 0.35)";
           dot.style.background = "#10b981";
-          text.textContent = lang === "ar" ? `🟢 واتساب متصل برقمك (${state.whatsappPhone || "نشط"})` : `🟢 Direct WhatsApp Linked (${state.whatsappPhone || "Active"})`;
+          text.textContent = lang === "ar" ? `🟢 واتساب متصل برقمك (${currentPhone || "نشط"})` : `🟢 Direct WhatsApp Linked (${currentPhone || "Active"})`;
         } else if (isApiMode) {
           pill.className = "badge badge-emerald";
           pill.style.background = "rgba(16, 185, 129, 0.15)";
@@ -5896,7 +5988,7 @@
         if (isLiveConnected || isApiMode) {
           btnMeta.style.display = "inline-flex";
           const label = isLiveConnected
-            ? (lang === 'ar' ? `⚡ إرسال مباشر عبر واتساب (${state.whatsappPhone || 'هاتفك'})` : `⚡ Send Directly via ${state.whatsappPhone || 'Phone'}`)
+            ? (lang === 'ar' ? `⚡ إرسال مباشر عبر واتساب (${currentPhone || 'هاتفك'})` : `⚡ Send Directly via ${currentPhone || 'Phone'}`)
             : (lang === 'ar' ? `⚡ إرسال فوري عبر ${providerName}` : `⚡ Send Instantly via ${providerName}`);
           btnMeta.innerHTML = `<span>${label}</span>`;
           btnWeb.style.display = "none";
@@ -5913,21 +6005,22 @@
       if (cleanPhone.startsWith("05") && cleanPhone.length === 10) cleanPhone = "966" + cleanPhone.slice(1);
       else if (cleanPhone.startsWith("5") && cleanPhone.length === 9) cleanPhone = "966" + cleanPhone;
 
-      // 0. PRIORITY: If Live WhatsApp Web QR is linked, dispatch directly through real paired phone!
-      if (state.whatsappConnected) {
+      const activeUid = getActiveUserId();
+      // 0. PRIORITY: If Live WhatsApp Web QR is linked for active user, dispatch directly through real paired phone!
+      if (isCurrentWaConnected()) {
         try {
           let liveRes = null;
           try {
             liveRes = await fetch("http://localhost:5001/api/send", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ phone: cleanPhone, message: messageText })
+              headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+              body: JSON.stringify({ userId: activeUid, phone: cleanPhone, message: messageText })
             });
           } catch (e) {
             liveRes = await fetch("/api/whatsapp/live-qr", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ action: "send", phone: cleanPhone, message: messageText })
+              headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+              body: JSON.stringify({ action: "send", userId: activeUid, phone: cleanPhone, message: messageText })
             });
           }
           if (liveRes && liveRes.ok) {
@@ -6013,7 +6106,8 @@
       }
 
       const cfg = state.whatsappApiConfig || {};
-      const isLiveConnected = Boolean(state.whatsappConnected);
+      const isLiveConnected = isCurrentWaConnected();
+      const currentPhone = getCurrentWaPhone();
       if (!isLiveConnected && (!cfg.phoneNumberId || !cfg.accessToken)) {
         const proceed = confirm("WhatsApp credentials are not configured yet. Would you like to configure them now?");
         if (proceed) openWhatsAppApiModal();
@@ -6160,7 +6254,7 @@
       document.getElementById("runner-content-active").style.display = "none";
       document.getElementById("runner-content-completed").style.display = "flex";
       document.getElementById("runner-completed-summary").textContent = isLiveConnected
-        ? `Dispatched ${items.length} messages directly from your linked phone ${state.whatsappPhone || ''} (${successCount} Successful, ${failureCount} Failed).`
+        ? `Dispatched ${items.length} messages directly from your linked phone ${currentPhone || ''} (${successCount} Successful, ${failureCount} Failed).`
         : `Dispatched ${items.length} messages directly via WhatsApp API (${successCount} Successful, ${failureCount} Failed).`;
 
       if (openBtn) openBtn.style.display = "inline-flex";
@@ -6657,11 +6751,26 @@
       }
 
       applyModuleVisibility();
+      updateWhatsAppConnectionUI();
+      updateWhatsAppApiStatusUI();
+      if (typeof checkLiveWhatsAppGatewayStatus === "function") {
+        checkLiveWhatsAppGatewayStatus();
+      }
     }
 
     function userLogout() {
+      if (liveWaPollingInterval) {
+        clearInterval(liveWaPollingInterval);
+        liveWaPollingInterval = null;
+      }
+      if (waQrTimerInterval) {
+        clearInterval(waQrTimerInterval);
+        waQrTimerInterval = null;
+      }
       state.currentUserId = "";
       saveState();
+      updateWhatsAppConnectionUI();
+      updateWhatsAppApiStatusUI();
       document.getElementById("auth-portal-fullscreen").style.display = "flex";
       document.getElementById("app-shell-root").style.display = "none";
       setAuthPortalMode("login");
