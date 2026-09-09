@@ -224,28 +224,52 @@
       z-index: 20;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     .content-scroll-area {
       flex: 1;
       overflow-y: auto;
       padding: 1.75rem;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-y: contain;
+      transform: translateZ(0);
+      will-change: scroll-position;
     }
 
-    /* Glass Panels & Badges */
+    /* High-Performance Composite Panels & Cards (No scroll lag) */
     .glass-panel {
-      background: linear-gradient(180deg, rgba(26, 34, 52, 0.65) 0%, rgba(15, 22, 35, 0.85) 100%);
+      background: linear-gradient(180deg, rgba(26, 34, 52, 0.94) 0%, rgba(15, 22, 35, 0.98) 100%);
       border: 1px solid var(--border-subtle);
       border-radius: var(--radius-lg);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      contain: content;
+      transform: translateZ(0);
+    }
+    [data-theme="light"] .glass-panel {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.96) 100%);
+      border: 1px solid rgba(226, 232, 240, 0.85);
     }
 
     .card-hover {
-      transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      will-change: transform, box-shadow;
+      transform: translateZ(0);
+      transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease, box-shadow 0.24s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .card-hover:hover {
-      transform: translateY(-2px);
-      border-color: rgba(255, 255, 255, 0.18);
-      box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.5);
+      transform: translateY(-2px) translateZ(0);
+      border-color: rgba(255, 255, 255, 0.22);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
+    }
+
+    /* Fluid View Transitions */
+    .hud-view {
+      animation: viewSlideFade 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+    @keyframes viewSlideFade {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .btn {
@@ -2260,10 +2284,35 @@
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Reminder Title *</label>
           <input id="rem-title" type="text" required placeholder="e.g. Inspect fuel tanks..." class="input-field">
         </div>
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Date & Target Time *</label>
-          <input id="rem-time" type="datetime-local" class="input-field" required>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Target Time (وقت التذكير) *</label>
+            <input id="rem-time" type="datetime-local" class="input-field" required>
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Alert Timing (توقيت التنبيه)</label>
+            <select id="rem-warning-time" class="input-field">
+              <option value="0" selected>At Due Time (في الوقت المحدد تماماً)</option>
+              <option value="5">5 Minutes Before (قبل 5 دقائق)</option>
+              <option value="15">15 Minutes Before (قبل 15 دقيقة)</option>
+              <option value="30">30 Minutes Before (قبل 30 دقيقة)</option>
+              <option value="60">1 Hour Before (قبل ساعة واحدة)</option>
+              <option value="1440">1 Day Before (قبل يوم كامل)</option>
+            </select>
+          </div>
         </div>
+
+        <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.1rem;">📱</span>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">WhatsApp Notification / تنبيه عبر واتساب</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">Send an automated WhatsApp reminder when due time is approaching</div>
+            </div>
+          </div>
+          <input type="checkbox" id="rem-send-wa" checked style="width: 18px; height: 18px; cursor: pointer;">
+        </div>
+
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
           <button type="button" onclick="closeModals()" class="btn btn-secondary">Cancel</button>
           <button type="submit" class="btn btn-primary">Save Reminder</button>
@@ -2289,6 +2338,36 @@
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Assign to Worker *</label>
           <select id="task-worker-select" class="input-field"></select>
         </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Task Deadline (الموعد النهائي)</label>
+            <input id="task-deadline" type="datetime-local" class="input-field">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Warning Alert Time (وقت التحذير)</label>
+            <select id="task-warning-time" class="input-field">
+              <option value="15">15 Minutes Before (قبل 15 دقيقة)</option>
+              <option value="30" selected>30 Minutes Before (قبل 30 دقيقة)</option>
+              <option value="60">1 Hour Before (قبل ساعة واحدة)</option>
+              <option value="120">2 Hours Before (قبل ساعتين)</option>
+              <option value="1440">1 Day Before (قبل يوم كامل)</option>
+              <option value="0">At Deadline (عند الموعد تماماً)</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: var(--radius-sm); padding: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-size: 1.1rem;">💬</span>
+            <div>
+              <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">Send WhatsApp Warning / إرسال تحذير واتساب</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted);">Alert assigned worker on WhatsApp when task is nearing its deadline</div>
+            </div>
+          </div>
+          <input type="checkbox" id="task-send-wa" checked style="width: 18px; height: 18px; cursor: pointer;">
+        </div>
+
         <div>
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Task Status / الحالة</label>
           <select id="task-status-select" class="input-field">
@@ -6064,6 +6143,7 @@
       const user = getCurrentUser();
       const isEmp = user && user.role === "EMPLOYEE";
       const lang = document.documentElement.getAttribute("lang") || "en";
+      const now = Date.now();
 
       // Dynamically update section title and description for employees vs managers
       const taskTitleEl = document.getElementById("tasks-header-title");
@@ -6105,6 +6185,51 @@
         const isTodo = t.status === "TODO" || (!isDone && !isProgress);
         const canCancel = canDeleteTask && !isDone;
 
+        // Deadline & Countdown calculation
+        let deadlineHtml = "";
+        if (t.deadline) {
+          const target = new Date(t.deadline).getTime();
+          const diffMs = target - now;
+          const warnMinutes = typeof t.warningMinutes !== "undefined" ? t.warningMinutes : 30;
+          const warnMs = warnMinutes * 60 * 1000;
+
+          if (isDone) {
+            deadlineHtml = `<div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem;"><span>📅 ${lang === 'ar' ? 'الموعد النهائي:' : 'Deadline:'}</span> <span>${t.deadline.replace('T', ' ')}</span></div>`;
+          } else if (diffMs < 0) {
+            const pastMs = Math.abs(diffMs);
+            const h = Math.floor(pastMs / (1000 * 60 * 60));
+            const m = Math.floor((pastMs % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((pastMs % (1000 * 60)) / 1000);
+            deadlineHtml = `
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); padding: 0.3rem 0.55rem; border-radius: var(--radius-sm);">
+                <span class="badge badge-rose" style="font-size: 0.68rem; font-family: monospace; animation: pulse 1.2s infinite;">🚨 ${lang === 'ar' ? 'فات الموعد منذ:' : 'Overdue:'} ${h > 0 ? h + 'h ' : ''}${m}m : ${s}s</span>
+                <span style="font-size: 0.68rem; color: #fb7185;">${t.deadline.replace('T', ' ')}</span>
+              </div>
+            `;
+          } else if (diffMs <= warnMs) {
+            const h = Math.floor(diffMs / (1000 * 60 * 60));
+            const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+            deadlineHtml = `
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.35); padding: 0.3rem 0.55rem; border-radius: var(--radius-sm);">
+                <span class="badge badge-amber" style="font-size: 0.68rem; font-family: monospace; font-weight: 800;">⚠️ ${lang === 'ar' ? 'تحذير الموعد:' : 'Warning:'} ${h > 0 ? h + 'h ' : ''}${m}m : ${s}s</span>
+                <span style="font-size: 0.68rem; color: #fbbf24;">${t.deadline.replace('T', ' ')} ${t.sendWhatsApp !== false ? '📱' : ''}</span>
+              </div>
+            `;
+          } else {
+            const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const remStr = days > 0 ? `${days}d ${hours}h` : (hours > 0 ? `${hours}h ${mins}m` : `${mins}m`);
+            deadlineHtml = `
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.2); padding: 0.3rem 0.55rem; border-radius: var(--radius-sm);">
+                <span class="badge badge-primary" style="font-size: 0.68rem; font-family: monospace;">⏳ ${lang === 'ar' ? 'متبقي:' : 'Due in:'} ${remStr}</span>
+                <span style="font-size: 0.68rem; color: var(--text-muted);">${t.deadline.replace('T', ' ')}</span>
+              </div>
+            `;
+          }
+        }
+
         const item = `
           <div class="glass-panel card-hover" style="padding: 0.95rem; background: var(--bg-surface-elevated); display: flex; flex-direction: column; gap: 0.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start;">
@@ -6114,7 +6239,12 @@
                 ${canCancel ? `<button onclick="cancelTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem; color: #fb7185;" title="${lang === 'ar' ? 'حذف المهمة' : 'Delete Task'}">🗑️</button>` : ''}
               </div>
             </div>
-            <div style="font-size: 0.75rem; color: var(--text-muted);">👤 ${t.workerName || 'Staff'}</div>
+            <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
+              <span>👤 ${t.workerName || 'Staff'}</span>
+              ${t.sendWhatsApp !== false && t.deadline ? `<span style="font-size: 0.7rem; color: #10b981; display: inline-flex; align-items: center; gap: 2px;" title="WhatsApp Warning Enabled">💬 WA Alert</span>` : ''}
+            </div>
+
+            ${deadlineHtml}
             
             <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.35rem; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem;">
               <div style="display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
@@ -6155,11 +6285,16 @@
       }
       const t = state.tasks.find(x => String(x.id) === String(id));
       if (!t) return;
+      openTaskHUD();
       document.getElementById("task-edit-id").value = t.id;
       document.getElementById("task-title").value = t.title;
-      openTaskHUD();
       document.getElementById("modal-task-heading").textContent = "✏️ Edit Task";
       document.getElementById("task-worker-select").value = t.workerName;
+      document.getElementById("task-deadline").value = t.deadline || "";
+      const warnSelect = document.getElementById("task-warning-time");
+      if (warnSelect) warnSelect.value = String(typeof t.warningMinutes !== "undefined" ? t.warningMinutes : 30);
+      const waCheck = document.getElementById("task-send-wa");
+      if (waCheck) waCheck.checked = (t.sendWhatsApp !== false);
       const statusSelect = document.getElementById("task-status-select");
       if (statusSelect) statusSelect.value = t.status || "TODO";
 
@@ -6278,18 +6413,41 @@
         if (r.reminderTime && !r.completed) {
           const target = new Date(r.reminderTime).getTime();
           const diffMs = target - now;
+          const warnMinutes = typeof r.warningMinutes !== "undefined" ? r.warningMinutes : 0;
+          const warnMs = warnMinutes * 60 * 1000;
 
-          if (diffMs > 0) {
+          if (diffMs <= 0) {
+            isOverdue = true;
+            const pastMs = Math.abs(diffMs);
+            const h = Math.floor(pastMs / (1000 * 60 * 60));
+            const m = Math.floor((pastMs % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((pastMs % (1000 * 60)) / 1000);
+            badgeHtml = `
+              <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                <span class="badge badge-rose" style="font-family: monospace; animation: pulse 1s infinite;">🚨 ${lang === 'ar' ? 'حان الموعد / متأخر:' : 'Due / Overdue:'} ${h > 0 ? h + 'h ' : ''}${m}m : ${s}s</span>
+                <span style="font-size: 0.68rem; color: #fb7185;">(${r.reminderTime.replace('T', ' ')})</span>
+              </div>
+            `;
+          } else if (warnMs > 0 && diffMs <= warnMs) {
             const h = Math.floor(diffMs / (1000 * 60 * 60));
             const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
             const s = Math.floor((diffMs % (1000 * 60)) / 1000);
-            badgeHtml = `<span class="badge badge-amber" style="font-family: monospace;">⏳ ${h}h : ${m}m : ${s}s</span>`;
+            badgeHtml = `
+              <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                <span class="badge badge-amber" style="font-family: monospace; font-weight: 800;">⚠️ ${lang === 'ar' ? 'يقترب الموعد (تنبيه):' : 'Imminent (Alert):'} ${h > 0 ? h + 'h ' : ''}${m}m : ${s}s</span>
+                <span style="font-size: 0.68rem; color: #fbbf24;">(${r.reminderTime.replace('T', ' ')} ${r.sendWhatsApp !== false ? '📱' : ''})</span>
+              </div>
+            `;
           } else {
-            isOverdue = true;
-            const pastMs = Math.abs(diffMs);
-            const m = Math.floor(pastMs / (1000 * 60));
-            const s = Math.floor((pastMs % (1000 * 60)) / 1000);
-            badgeHtml = `<span class="badge badge-rose" style="font-family: monospace; animation: pulse 1s infinite;">🚨 Overdue: ${m}m : ${s}s</span>`;
+            const h = Math.floor(diffMs / (1000 * 60 * 60));
+            const m = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+            const s = Math.floor((diffMs % (1000 * 60)) / 1000);
+            badgeHtml = `
+              <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                <span class="badge badge-primary" style="font-family: monospace;">⏳ ${lang === 'ar' ? 'المتبقي:' : 'Due in:'} ${h > 0 ? h + 'h ' : ''}${m}m : ${s}s</span>
+                <span style="font-size: 0.68rem; color: var(--text-muted);">(${r.reminderTime.replace('T', ' ')})</span>
+              </div>
+            `;
           }
         }
 
@@ -6331,10 +6489,15 @@
       });
     }
 
-    // Live 1-Second Countdown Engine
+    // Live 1-Second Countdown Engine & Dynamic View Synchronizer
     setInterval(() => {
-      if (state.activeModule === "reminders" || state.activeModule === "dashboard") {
+      if (state.activeModule === "reminders") {
         renderReminders();
+      } else if (state.activeModule === "tasks") {
+        renderTasks();
+      } else if (state.activeModule === "dashboard") {
+        renderReminders();
+        renderTasks();
       }
     }, 1000);
 
@@ -6344,6 +6507,10 @@
       document.getElementById("rem-edit-id").value = r.id;
       document.getElementById("rem-title").value = r.title;
       document.getElementById("rem-time").value = r.reminderTime || "";
+      const warnSelect = document.getElementById("rem-warning-time");
+      if (warnSelect) warnSelect.value = String(typeof r.warningMinutes !== "undefined" ? r.warningMinutes : 0);
+      const waCheck = document.getElementById("rem-send-wa");
+      if (waCheck) waCheck.checked = (r.sendWhatsApp !== false);
       document.getElementById("modal-rem-heading").textContent = "✏️ Edit Reminder";
       document.getElementById("modal-reminder").style.display = "flex";
     }
@@ -6723,6 +6890,10 @@
       document.getElementById("rem-edit-id").value = "";
       document.getElementById("rem-title").value = "";
       document.getElementById("rem-time").value = "";
+      const warnSelect = document.getElementById("rem-warning-time");
+      if (warnSelect) warnSelect.value = "0";
+      const waCheck = document.getElementById("rem-send-wa");
+      if (waCheck) waCheck.checked = true;
       document.getElementById("modal-rem-heading").textContent = "⏰ Set Scheduled Reminder";
       document.getElementById("modal-reminder").style.display = "flex";
     }
@@ -6731,6 +6902,19 @@
         alert("Permission denied: You do not have permission to assign tasks.");
         return;
       }
+      document.getElementById("task-edit-id").value = "";
+      document.getElementById("task-title").value = "";
+      document.getElementById("task-deadline").value = "";
+      const warnSelect = document.getElementById("task-warning-time");
+      if (warnSelect) warnSelect.value = "30";
+      const waCheck = document.getElementById("task-send-wa");
+      if (waCheck) waCheck.checked = true;
+      const statusSelect = document.getElementById("task-status-select");
+      if (statusSelect) statusSelect.value = "TODO";
+      document.getElementById("modal-task-heading").textContent = "📋 Assign Task";
+      const btnDel = document.getElementById("btn-delete-task-modal");
+      if (btnDel) btnDel.style.display = "none";
+
       const sel = document.getElementById("task-worker-select");
       if (sel) {
         sel.innerHTML = state.users
@@ -6902,6 +7086,8 @@
       const editId = document.getElementById("rem-edit-id").value;
       const title = document.getElementById("rem-title").value.trim();
       const time = document.getElementById("rem-time").value;
+      const warningMinutes = parseInt(document.getElementById("rem-warning-time")?.value, 10) || 0;
+      const sendWhatsApp = document.getElementById("rem-send-wa") ? document.getElementById("rem-send-wa").checked : true;
 
       if (editId) {
         if (!hasUserPermission("reminders", "edit")) {
@@ -6912,6 +7098,9 @@
         if (r) {
           r.title = title;
           r.reminderTime = time;
+          r.warningMinutes = warningMinutes;
+          r.sendWhatsApp = sendWhatsApp;
+          r.warningNotified = false; // Reset warning trigger for updated schedule
         }
       } else {
         if (!hasUserPermission("reminders", "create")) {
@@ -6922,6 +7111,9 @@
           id: "rem-" + Date.now(),
           title,
           reminderTime: time,
+          warningMinutes,
+          sendWhatsApp,
+          warningNotified: false,
           completed: false,
           createdByEmail: user ? user.email : "",
           createdById: user ? user.id : "",
@@ -6933,6 +7125,7 @@
       closeModals();
       renderReminders();
       if (window.OstanStyle) window.OstanStyle.showToast("Reminder Saved", title);
+      setTimeout(checkTaskAndReminderWarnings, 1000);
     }
     window.saveReminder = saveReminder;
 
@@ -6941,6 +7134,9 @@
       const editId = document.getElementById("task-edit-id").value;
       const title = document.getElementById("task-title").value.trim();
       const workerName = document.getElementById("task-worker-select").value;
+      const deadline = document.getElementById("task-deadline")?.value || "";
+      const warningMinutes = parseInt(document.getElementById("task-warning-time")?.value, 10) || 30;
+      const sendWhatsApp = document.getElementById("task-send-wa") ? document.getElementById("task-send-wa").checked : true;
 
       if (editId) {
         if (!hasUserPermission("tasks", "edit")) {
@@ -6951,6 +7147,10 @@
         if (t) {
           t.title = title;
           t.workerName = workerName;
+          t.deadline = deadline;
+          t.warningMinutes = warningMinutes;
+          t.sendWhatsApp = sendWhatsApp;
+          t.warningNotified = false; // Reset warning trigger for updated deadline
           const statusSelect = document.getElementById("task-status-select");
           if (statusSelect && statusSelect.value) {
             t.status = statusSelect.value;
@@ -6964,7 +7164,17 @@
         }
         const statusSelect = document.getElementById("task-status-select");
         const status = (statusSelect && statusSelect.value) ? statusSelect.value : "TODO";
-        const newTask = { id: "task-" + Date.now(), title, workerName, status, createdAt: new Date().toISOString() };
+        const newTask = {
+          id: "task-" + Date.now(),
+          title,
+          workerName,
+          status,
+          deadline,
+          warningMinutes,
+          sendWhatsApp,
+          warningNotified: false,
+          createdAt: new Date().toISOString()
+        };
         state.tasks.unshift(newTask);
         syncTaskToFirestore(newTask);
       }
@@ -6973,8 +7183,131 @@
       closeModals();
       renderTasks();
       if (window.OstanStyle) window.OstanStyle.showToast("Task Saved", `${title} -> ${workerName}`);
+      setTimeout(checkTaskAndReminderWarnings, 1000);
     }
     window.saveTask = saveTask;
+
+    // Automated Task Deadline & Reminder Warning Dispatcher Engine
+    async function checkTaskAndReminderWarnings() {
+      if (!state) return;
+      const now = Date.now();
+      const lang = document.documentElement.getAttribute("lang") || "en";
+
+      // 1. Evaluate Tasks approaching Deadline
+      if (Array.isArray(state.tasks)) {
+        for (const task of state.tasks) {
+          if (!task.deadline) continue;
+          if (task.status === "DONE" || task.status === "COMPLETED") continue;
+
+          const target = new Date(task.deadline).getTime();
+          const warnMinutes = typeof task.warningMinutes !== "undefined" ? task.warningMinutes : 30;
+          const warnTime = target - (warnMinutes * 60 * 1000);
+
+          if (now >= warnTime && !task.warningNotified) {
+            task.warningNotified = true;
+            saveState();
+
+            const isOverdue = (now >= target);
+            const diffMs = Math.abs(target - now);
+            const m = Math.floor(diffMs / 60000);
+            const h = Math.floor(m / 60);
+            const remStr = isOverdue
+              ? (lang === "ar" ? `فات الموعد منذ ${h > 0 ? h + ' ساعة و' : ''}${m % 60} دقيقة` : `Overdue by ${h > 0 ? h + 'h ' : ''}${m % 60}m`)
+              : (lang === "ar" ? `متبقي ${h > 0 ? h + ' ساعة و' : ''}${m % 60} دقيقة` : `Due in ${h > 0 ? h + 'h ' : ''}${m % 60}m`);
+
+            if (window.OstanStyle) {
+              window.OstanStyle.showToast(
+                isOverdue ? (lang === "ar" ? "🚨 تنبيه فوات موعد المهمة!" : "🚨 Task Overdue Alert!") : (lang === "ar" ? "⚠️ اقتراب الموعد النهائي للمهمة!" : "⚠️ Task Deadline Approaching!"),
+                `${task.title} (👤 ${task.workerName || 'Staff'}) - ${remStr}`
+              );
+            }
+
+            // WhatsApp Warning Notification
+            if (task.sendWhatsApp !== false && task.workerName) {
+              const workerUser = (state.users || []).find(u =>
+                (u.name && u.name.trim().toLowerCase() === task.workerName.trim().toLowerCase()) ||
+                (u.nameAr && u.nameAr.trim().toLowerCase() === task.workerName.trim().toLowerCase()) ||
+                (u.email && task.workerEmail && u.email.toLowerCase().trim() === task.workerEmail.toLowerCase().trim())
+              );
+
+              if (workerUser && workerUser.phone) {
+                const waMsg = isOverdue
+                  ? `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\nعزيزي/تي: *${workerUser.name}*\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\n📌 *${task.title}*\n⏱️ الموعد كان: ${task.deadline.replace('T', ' ')}\nيرجى العمل على إكمال المهمة وتحديث حالتها في النظام فوراً.`
+                  : `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\nعزيزي/تي: *${workerUser.name}*\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك في نظام أوسطن:\n📌 *${task.title}*\n⏱️ الموعد النهائي: ${task.deadline.replace('T', ' ')}\n⏳ الوقت المتبقي: *${remStr}*\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`;
+
+                try {
+                  sendSingleMetaWhatsAppMessage(workerUser.phone, waMsg).then(res => {
+                    if (res && res.success) {
+                      console.log(`[Task Warning WA Dispatched] to ${workerUser.phone} for task "${task.title}"`);
+                    }
+                  }).catch(e => console.warn("Task WhatsApp warning error:", e));
+                } catch (err) {
+                  console.warn("Task WhatsApp send failed:", err);
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // 2. Evaluate Reminders approaching Alert Time
+      if (Array.isArray(state.reminders)) {
+        for (const rem of state.reminders) {
+          if (!rem.reminderTime || rem.completed) continue;
+
+          const target = new Date(rem.reminderTime).getTime();
+          const warnMinutes = typeof rem.warningMinutes !== "undefined" ? rem.warningMinutes : 0;
+          const warnTime = target - (warnMinutes * 60 * 1000);
+
+          if (now >= warnTime && !rem.warningNotified) {
+            rem.warningNotified = true;
+            saveState();
+
+            const isOverdue = (now >= target);
+            const diffMs = Math.abs(target - now);
+            const m = Math.floor(diffMs / 60000);
+            const h = Math.floor(m / 60);
+            const remStr = isOverdue
+              ? (lang === "ar" ? "حان موعد التذكير الآن" : "Reminder Due Now")
+              : (lang === "ar" ? `متبقي ${h > 0 ? h + ' ساعة و' : ''}${m % 60} دقيقة` : `Due in ${h > 0 ? h + 'h ' : ''}${m % 60}m`);
+
+            if (window.OstanStyle) {
+              window.OstanStyle.showToast(
+                lang === "ar" ? "⏰ تنبيه تذكير مجدول!" : "⏰ Scheduled Reminder Due!",
+                `"${rem.title}" - ${remStr}`
+              );
+            }
+
+            // WhatsApp Reminder Notification
+            if (rem.sendWhatsApp !== false) {
+              const curSession = typeof getCurUserWaSession === "function" ? getCurUserWaSession() : null;
+              let targetPhone = (curSession && curSession.phone) ? curSession.phone : "+966580539698";
+
+              if (rem.createdByEmail) {
+                const creator = (state.users || []).find(u => (u.email || "").toLowerCase().trim() === rem.createdByEmail.toLowerCase().trim());
+                if (creator && creator.phone) targetPhone = creator.phone;
+              }
+
+              const waMsg = `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنظام أوسطن يذكركم بالموعد التالي:\n📌 *${rem.title}*\n⏱️ الموعد: ${rem.reminderTime.replace('T', ' ')}\n⏳ الحالة: *${remStr}*`;
+              try {
+                sendSingleMetaWhatsAppMessage(targetPhone, waMsg).then(res => {
+                  if (res && res.success) {
+                    console.log(`[Reminder WA Dispatched] to ${targetPhone} for "${rem.title}"`);
+                  }
+                }).catch(e => console.warn("Reminder WhatsApp error:", e));
+              } catch (err) {
+                console.warn("Reminder WhatsApp send failed:", err);
+              }
+            }
+          }
+        }
+      }
+    }
+    window.checkTaskAndReminderWarnings = checkTaskAndReminderWarnings;
+
+    // Periodic Check every 20 seconds
+    setInterval(checkTaskAndReminderWarnings, 20000);
+    setTimeout(checkTaskAndReminderWarnings, 3000);
 
     function saveStockItem(e) {
       e.preventDefault();
