@@ -1449,8 +1449,12 @@
                     <span style="font-size: 0.82rem; font-weight: 700; color: #818cf8;">View / Seeing (رؤية واستعراض قسم الأقسام)</span>
                   </label>
                   <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
-                    <input type="checkbox" id="chk-perm-dept-manage">
-                    <span style="font-size: 0.82rem; font-weight: 700; color: #fbbf24;">Grant / Modify Permissions (إعطاء وتعديل الصلاحيات لنفسه أو للآخرين)</span>
+                    <input type="checkbox" id="chk-perm-dept-manage-others">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: #fbbf24;">Give Others (إعطاء وتعديل الصلاحيات للآخرين)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-dept-manage-self">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: #38bdf8;">Give Himself (إعطاء وتعديل الصلاحيات لنفسه)</span>
                   </label>
                 </div>
               </div>
@@ -6178,11 +6182,19 @@
     window.saveWorker = saveWorker;
 
     let currentDeptTab = "matrix";
-    function canCurrentUserManagePermissions() {
+    function canCurrentUserManagePermissions(targetUserId = null) {
       const u = getCurrentUser();
       if (!u) return false;
       if (isMasterSuperAdmin(u)) return true;
-      return !!(u.permissions?.departments?.manage_permissions);
+      const deptPerms = u.permissions?.departments || {};
+      const canManageOthers = !!(deptPerms.manage_permissions_others || deptPerms.manage_permissions);
+      const canManageSelf = !!(deptPerms.manage_permissions_self);
+
+      if (targetUserId) {
+        const isSelf = (u.id === targetUserId || (u.email && targetUserId && u.email.toLowerCase().trim() === targetUserId.toLowerCase().trim()));
+        return isSelf ? canManageSelf : canManageOthers;
+      }
+      return canManageOthers || canManageSelf;
     }
     window.canCurrentUserManagePermissions = canCurrentUserManagePermissions;
 
@@ -6216,7 +6228,20 @@
     function populatePermUserSelect() {
       const sel = document.getElementById("perm-user-select");
       if (!sel) return;
-      const nonMasterUsers = state.users.filter(u => ((u.email || "").toLowerCase().trim() !== "waseem.tw@hotmail.com") && !u.isProtected);
+      const curUser = getCurrentUser();
+      const isMaster = isMasterSuperAdmin(curUser);
+      const deptPerms = curUser?.permissions?.departments || {};
+      const canOthers = isMaster || !!(deptPerms.manage_permissions_others || deptPerms.manage_permissions);
+      const canSelf = isMaster || !!(deptPerms.manage_permissions_self);
+
+      const nonMasterUsers = state.users.filter(u => {
+        if (((u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com") || u.isProtected) return false;
+        const isSelf = curUser && (curUser.id === u.id || (curUser.email && u.email && curUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
+        if (isSelf && !canSelf) return false;
+        if (!isSelf && !canOthers) return false;
+        return true;
+      });
+
       const currentVal = sel.value;
       sel.innerHTML = nonMasterUsers.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join("");
       if (currentVal && nonMasterUsers.some(u => u.id === currentVal)) {
@@ -6243,8 +6268,15 @@
       };
       const deptP = p.departments || {
         view: getSectionAccess("departments", user) === "accessible",
-        manage_permissions: user.role === "SUPER_ADMIN" || user.role === "ADMIN"
+        manage_permissions_others: user.role === "SUPER_ADMIN" || user.role === "ADMIN",
+        manage_permissions_self: user.role === "SUPER_ADMIN"
       };
+      if (typeof deptP.manage_permissions_others === "undefined" && typeof deptP.manage_permissions !== "undefined") {
+        deptP.manage_permissions_others = !!deptP.manage_permissions;
+      }
+      if (typeof deptP.manage_permissions_self === "undefined") {
+        deptP.manage_permissions_self = (user.role === "SUPER_ADMIN");
+      }
       const saudiP = p["saudi-staff"] || p.saudi_staff || {
         view: getSectionAccess("saudi-staff", user) === "accessible",
         create: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
@@ -6300,7 +6332,8 @@
       setChecked("chk-perm-emp-delete", empP.delete);
 
       setChecked("chk-perm-dept-view", deptP.view);
-      setChecked("chk-perm-dept-manage", deptP.manage_permissions);
+      setChecked("chk-perm-dept-manage-others", deptP.manage_permissions_others);
+      setChecked("chk-perm-dept-manage-self", deptP.manage_permissions_self);
 
       setChecked("chk-perm-saudi-view", saudiP.view);
       setChecked("chk-perm-saudi-create", saudiP.create);
@@ -6337,16 +6370,22 @@
 
     function saveUserGranularPermissions() {
       const currentUser = getCurrentUser();
-      if (!canCurrentUserManagePermissions()) {
-        alert("Permission denied: You do not have permission to manage user permissions.");
-        return;
-      }
       const sel = document.getElementById("perm-user-select");
       if (!sel || !sel.value) return;
       const user = state.users.find(u => u.id === sel.value);
       if (!user) return;
 
       const isSelf = currentUser && (currentUser.id === user.id || (currentUser.email && user.email && currentUser.email.toLowerCase().trim() === user.email.toLowerCase().trim()));
+      const isMaster = isMasterSuperAdmin(currentUser);
+
+      if (isSelf && !isMaster && !canCurrentUserManagePermissions(user.id)) {
+        alert("Permission denied: You do not have permission to modify your own permissions (Give Himself is disabled).");
+        return;
+      }
+      if (!isSelf && !isMaster && !canCurrentUserManagePermissions(user.id)) {
+        alert("Permission denied: You do not have permission to modify permissions for other users (Give Others is disabled).");
+        return;
+      }
 
       const getChecked = (id) => {
         const el = document.getElementById(id);
@@ -6355,9 +6394,24 @@
 
       const empView = getChecked("chk-perm-emp-view");
       const deptView = getChecked("chk-perm-dept-view");
-      const deptManage = isMasterSuperAdmin(currentUser) 
-        ? getChecked("chk-perm-dept-manage") 
-        : (isSelf ? (user.permissions?.departments?.manage_permissions || false) : getChecked("chk-perm-dept-manage"));
+
+      let deptManageOthers = getChecked("chk-perm-dept-manage-others");
+      let deptManageSelf = getChecked("chk-perm-dept-manage-self");
+
+      // Non-master users cannot escalate permission-granting powers beyond what they have
+      if (!isMaster) {
+        const myDeptPerms = currentUser?.permissions?.departments || {};
+        const myCanOthers = !!(myDeptPerms.manage_permissions_others || myDeptPerms.manage_permissions);
+        const myCanSelf = !!(myDeptPerms.manage_permissions_self);
+
+        if (!isSelf) {
+          if (!myCanOthers && deptManageOthers) deptManageOthers = false;
+          if (!myCanSelf && deptManageSelf) deptManageSelf = false;
+        } else {
+          if (!myCanOthers && deptManageOthers) deptManageOthers = user.permissions?.departments?.manage_permissions_others || false;
+          if (!myCanSelf && deptManageSelf) deptManageSelf = user.permissions?.departments?.manage_permissions_self || false;
+        }
+      }
 
       const saudiView = getChecked("chk-perm-saudi-view");
       const stockView = getChecked("chk-perm-stock-view");
@@ -6381,7 +6435,9 @@
         },
         departments: {
           view: deptView,
-          manage_permissions: deptManage
+          manage_permissions: deptManageOthers || deptManageSelf,
+          manage_permissions_others: deptManageOthers,
+          manage_permissions_self: deptManageSelf
         },
         "saudi-staff": {
           view: saudiView,
@@ -6532,8 +6588,13 @@
     }
 
     function cycleWorkerAccess(workerId, sectionKey) {
-      if (!canCurrentUserManagePermissions()) {
-        alert("Permission denied: You do not have permission to modify department access policies.");
+      if (!canCurrentUserManagePermissions(workerId)) {
+        const currentUser = getCurrentUser();
+        const target = state.users.find(x => x.id === workerId);
+        const isSelf = currentUser && target && (currentUser.id === target.id || (currentUser.email && target.email && currentUser.email.toLowerCase().trim() === target.email.toLowerCase().trim()));
+        alert(isSelf 
+          ? "Permission denied: You do not have permission to modify your own access policies (Give Himself is disabled)." 
+          : "Permission denied: You do not have permission to modify access policies for other workers (Give Others is disabled).");
         return;
       }
       const u = state.users.find(x => x.id === workerId);
@@ -6571,11 +6632,17 @@
     window.cycleWorkerAccess = cycleWorkerAccess;
 
     function applyDeptPolicyFromForm() {
-      if (!canCurrentUserManagePermissions()) {
-        alert("Permission denied: You do not have permission to apply department policies.");
+      const workerId = document.getElementById("dept-ctrl-worker")?.value;
+      if (!workerId) return;
+      if (!canCurrentUserManagePermissions(workerId)) {
+        const currentUser = getCurrentUser();
+        const target = state.users.find(x => x.id === workerId);
+        const isSelf = currentUser && target && (currentUser.id === target.id || (currentUser.email && target.email && currentUser.email.toLowerCase().trim() === target.email.toLowerCase().trim()));
+        alert(isSelf 
+          ? "Permission denied: You do not have permission to modify your own access policies (Give Himself is disabled)." 
+          : "Permission denied: You do not have permission to modify access policies for other workers (Give Others is disabled).");
         return;
       }
-      const workerId = document.getElementById("dept-ctrl-worker")?.value;
       const sectionKey = document.getElementById("dept-ctrl-section")?.value;
       const action = document.getElementById("dept-ctrl-action")?.value;
       if (!workerId || !sectionKey || !action) return;
