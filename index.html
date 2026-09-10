@@ -5226,6 +5226,19 @@
     }
     window.renderSaudiWorkers = renderSaudiWorkers;
 
+    function cleanNationalId(raw) {
+      if (raw === null || raw === undefined) return "";
+      let str = String(raw).trim();
+      const arabicNumerals = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+      arabicNumerals.forEach((ar, idx) => {
+        str = str.replaceAll(ar, String(idx));
+      });
+      str = str.replace(/\.0+$/, "");
+      str = str.replace(/[^0-9]/g, "");
+      return str;
+    }
+    window.cleanNationalId = cleanNationalId;
+
     function downloadSaudiExcelSample() {
       const canExcel = hasUserPermission("saudi-staff", "excel") || hasUserPermission("saudi-staff", "create") || hasUserPermission("employees", "create") || hasUserPermission("saudi-staff", "view");
       if (!canExcel) {
@@ -5438,19 +5451,22 @@
             };
 
             const name = getVal("اسم الموظف", "اسم_الموظف", "الاسم", "اسم", "name", "full name", "employee name");
+            const companyName = getVal("الشركة", "اسم الشركة", "اسم_الشركة", "company", "company name", "company_name");
             const idProfession = getVal("المهنة في الهوية", "المهنة_في_الهوية", "مهنة الهوية", "المهنة", "مهنة", "id profession", "profession", "occupation");
             const crNumber = getVal("رقم السجل", "رقم_السجل", "السجل التجاري", "رقم السجل التجاري", "cr number", "cr_number", "commercial registration");
-            const crName = getVal("اسم السجل", "اسم_السجل", "اسم المنشأة", "اسم المؤسسة", "الشركة", "اسم الشركة", "اسم_الشركة", "company", "company name", "company_name", "cr name", "cr_name");
+            const crName = getVal("اسم السجل", "اسم_السجل", "اسم المنشأة", "اسم المؤسسة", "cr name", "cr_name") || companyName;
             const referredBy = getVal("من طرف", "من_طرف", "المرجع", "بواسطة", "المعرف", "referred by", "referred_by", "source");
             const phoneRaw = getVal("رقم الهاتف", "رقم_الهاتف", "الهاتف", "رقم الجوال", "الجوال", "جوال", "phone", "mobile", "whatsapp");
-            const nationalId = getVal("رقم الهوية", "رقم_الهوية", "الهوية", "الهوية الوطنية", "national id", "national_id", "iqama");
+            const nationalIdRaw = getVal("رقم الهوية", "رقم_الهوية", "الهوية", "الهوية الوطنية", "national id", "national_id", "iqama", "id number", "id");
             const emailRaw = getVal("الإيميل", "الايميل", "البريد الإلكتروني", "البريد", "email", "e-mail");
             const birthDateRaw = getVal("تاريخ الميلاد", "تاريخ_الميلاد", "الميلاد", "date of birth", "dob", "birth date");
             const salaryRaw = getVal("الراتب", "راتب", "الراتب الشهري", "salary", "salary_sar", "monthly salary");
             const hireDateRaw = getVal("تاريخ بدء العمل", "تاريخ_بدء_العمل", "بدء العمل", "تاريخ المباشرة", "تاريخ التعيين", "hire date", "start date", "commencement date");
             const roleRaw = getVal("role", "الرتبة", "الدور", "المسمى الوظيفي").toUpperCase();
 
-            if (!name && !phoneRaw) return;
+            if (!name && !phoneRaw && !nationalIdRaw) return;
+
+            const cleanNatId = cleanNationalId(nationalIdRaw);
 
             const normalizeDateVal = (val) => {
               if (!val) return "";
@@ -5470,9 +5486,6 @@
             let parsedSalary = parseFloat(salaryRaw.replace(/[^0-9.]/g, "")) || 4000;
             let employeePayout = 1000;
             let companyReturn = Math.max(0, parsedSalary - employeePayout);
-            totalSalary += parsedSalary;
-            totalPayout += employeePayout;
-            totalRefund += companyReturn;
 
             let phoneNorm = normalizeSaudiPhoneNumber(phoneRaw);
             let validPhone = phoneNorm.valid ? phoneNorm.phone : (phoneRaw.startsWith("+") ? phoneRaw : `+966 ${phoneRaw}`);
@@ -5484,31 +5497,65 @@
               email = `${slug || "employee" + Math.floor(Math.random()*1000)}@ostan.sa`;
             }
 
+            // Check if this employee National ID already exists in the system database
+            const existingInState = cleanNatId ? state.users.find(u => u.nationalId && cleanNationalId(u.nationalId) === cleanNatId) : null;
+            const isExistingUpdate = Boolean(existingInState);
+
+            // If the same National ID appeared in an earlier row within this exact uploaded Excel, update that pending record
+            if (cleanNatId) {
+              const prevIdx = pendingExcelParsedWorkers.findIndex(p => p.nationalId && cleanNationalId(p.nationalId) === cleanNatId);
+              if (prevIdx !== -1) {
+                const prev = pendingExcelParsedWorkers[prevIdx];
+                if (name) { prev.name = name; prev.nameAr = name; }
+                if (companyName) prev.companyName = companyName;
+                if (idProfession) prev.idProfession = idProfession;
+                if (crNumber) prev.crNumber = crNumber;
+                if (crName) prev.crName = crName;
+                if (referredBy) prev.referredBy = referredBy;
+                if (phoneRaw) { prev.phone = validPhone; prev.compactPhone = compactPhone; }
+                if (salaryRaw) {
+                  prev.salary = parsedSalary;
+                  prev.employeePayout = employeePayout;
+                  prev.companyReturn = companyReturn;
+                }
+                if (birthDateRaw) prev.birthDate = normalizeDateVal(birthDateRaw);
+                if (hireDateRaw) prev.hireDate = normalizeDateVal(hireDateRaw);
+                return; // Merged with previous row in same file
+              }
+            }
+
+            totalSalary += parsedSalary;
+            totalPayout += employeePayout;
+            totalRefund += companyReturn;
+
             pendingExcelParsedWorkers.push({
-              id: "u-saudi-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
-              name: name || "Saudi Employee",
-              nameAr: name,
-              idProfession: idProfession || "",
-              crNumber: crNumber || "",
-              crName: crName || "",
-              referredBy: referredBy || "",
-              phone: validPhone,
-              compactPhone: compactPhone,
-              nationalId: nationalId || ("10" + Math.floor(Math.random() * 90000000 + 10000000)),
-              email: email.toLowerCase(),
-              birthDate: normalizeDateVal(birthDateRaw),
+              id: existingInState ? existingInState.id : ("u-saudi-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5)),
+              isExistingUpdate,
+              existingUserId: existingInState ? existingInState.id : null,
+              name: name || (existingInState ? existingInState.name : "Saudi Employee"),
+              nameAr: name || (existingInState ? existingInState.nameAr : "Saudi Employee"),
+              companyName: companyName || (existingInState ? (existingInState.companyName || existingInState.crName) : ""),
+              idProfession: idProfession || (existingInState ? existingInState.idProfession : ""),
+              crNumber: crNumber || (existingInState ? existingInState.crNumber : ""),
+              crName: crName || (existingInState ? existingInState.crName : (companyName || "")),
+              referredBy: referredBy || (existingInState ? existingInState.referredBy : ""),
+              phone: validPhone || (existingInState ? existingInState.phone : ""),
+              compactPhone: compactPhone || (existingInState ? existingInState.compactPhone : ""),
+              nationalId: cleanNatId || (existingInState ? existingInState.nationalId : ("10" + Math.floor(Math.random() * 90000000 + 10000000))),
+              email: (email && email.includes("@") && !email.endsWith("@ostan.sa")) ? email.toLowerCase() : (existingInState ? (existingInState.email || email.toLowerCase()) : email.toLowerCase()),
+              birthDate: normalizeDateVal(birthDateRaw) || (existingInState ? existingInState.birthDate : ""),
               salary: parsedSalary,
               employeePayout: employeePayout,
               companyReturn: companyReturn,
-              hireDate: normalizeDateVal(hireDateRaw),
+              hireDate: normalizeDateVal(hireDateRaw) || (existingInState ? existingInState.hireDate : ""),
               nationality: "Saudi Arabian",
               isSaudi: true,
               isExplicitSaudi: true,
               role: cleanRole,
-              status: "ACTIVE",
-              isBlocked: false,
-              isProtected: false,
-              sectionAccess: {
+              status: existingInState ? existingInState.status : "ACTIVE",
+              isBlocked: existingInState ? (existingInState.isBlocked || false) : false,
+              isProtected: existingInState ? (existingInState.isProtected || false) : false,
+              sectionAccess: existingInState?.sectionAccess || {
                 reminders: "accessible",
                 employees: cleanRole !== "EMPLOYEE" ? "accessible" : "hidden",
                 departments: cleanRole !== "EMPLOYEE" ? "accessible" : "hidden",
@@ -5546,17 +5593,21 @@
               <tr>
                 <td style="font-weight: 700; color: var(--text-main); white-space: nowrap;">${w.name}</td>
                 <td style="color: #a7f3d0; white-space: nowrap;">${w.idProfession || '-'}</td>
-                <td style="white-space: nowrap; font-family: monospace;">${w.crNumber ? `${w.crNumber} (${w.crName || ''})` : (w.crName || '-')}</td>
+                <td style="white-space: nowrap; font-family: monospace;">${w.crNumber ? `${w.crNumber} (${w.crName || w.companyName || ''})` : (w.companyName || w.crName || '-')}</td>
                 <td style="color: #60a5fa; white-space: nowrap;">${w.referredBy || '-'}</td>
                 <td style="color: #10b981; font-weight: 600; white-space: nowrap;">${w.phone}</td>
-                <td style="font-family: monospace; white-space: nowrap;">${w.nationalId}</td>
+                <td style="font-family: monospace; white-space: nowrap; font-weight: 700;">${w.nationalId}</td>
                 <td style="color: var(--text-muted); font-size: 0.72rem; white-space: nowrap;">${w.email}</td>
                 <td style="white-space: nowrap;">${w.birthDate || '-'}</td>
                 <td style="font-weight: 700; color: #3b82f6; white-space: nowrap;">${w.salary.toLocaleString()} SAR</td>
                 <td style="font-weight: 700; color: #10b981; white-space: nowrap;">${(w.employeePayout || 1000).toLocaleString()} SAR</td>
                 <td style="font-weight: 700; color: #fbbf24; white-space: nowrap;">${(w.companyReturn || 0).toLocaleString()} SAR</td>
                 <td style="white-space: nowrap;">${w.hireDate || '-'}</td>
-                <td><span class="badge badge-emerald">Ready</span></td>
+                <td>
+                  ${w.isExistingUpdate
+                    ? '<span class="badge badge-amber" style="font-size: 0.68rem; font-weight: 700;" title="National ID already exists. Existing profile will be updated in-place (no duplicate).">🔄 Update Active</span>'
+                    : '<span class="badge badge-emerald" style="font-size: 0.68rem; font-weight: 700;">✨ New Staff</span>'}
+                </td>
               </tr>
             `).join("");
           }
@@ -5578,15 +5629,72 @@
     function confirmExcelImport() {
       if (!pendingExcelParsedWorkers || pendingExcelParsedWorkers.length === 0) return;
 
-      const importCount = pendingExcelParsedWorkers.length;
+      let addedCount = 0;
+      let updatedCount = 0;
+
       pendingExcelParsedWorkers.forEach(worker => {
-        const existingIdx = state.users.findIndex(u => (u.email && worker.email && u.email.toLowerCase().trim() === worker.email.toLowerCase().trim()) || (u.name && worker.name && u.name.toLowerCase().trim() === worker.name.toLowerCase().trim()));
+        const cleanNatId = cleanNationalId(worker.nationalId);
+
+        // Deduplication match priority:
+        // 1. Primary: match by National ID
+        // 2. Secondary: match by flagged existing user ID
+        // 3. Tertiary: match by email (if not generic placeholder)
+        let existingIdx = -1;
+        if (cleanNatId) {
+          existingIdx = state.users.findIndex(u => u.nationalId && cleanNationalId(u.nationalId) === cleanNatId);
+        }
+        if (existingIdx === -1 && worker.existingUserId) {
+          existingIdx = state.users.findIndex(u => u.id === worker.existingUserId);
+        }
+        if (existingIdx === -1 && worker.email && worker.email.includes("@") && !worker.email.endsWith("@ostan.sa")) {
+          existingIdx = state.users.findIndex(u => u.email && u.email.toLowerCase().trim() === worker.email.toLowerCase().trim());
+        }
+
         if (existingIdx !== -1) {
-          state.users[existingIdx] = { ...state.users[existingIdx], ...worker, id: state.users[existingIdx].id };
-          syncUserToFirestore(state.users[existingIdx]);
+          // UPDATE EXISTING ACTIVE EMPLOYEE - NEVER ADD ANOTHER USER WITH THE SAME ID NUMBER
+          const existing = state.users[existingIdx];
+          const updated = {
+            ...existing,
+            name: worker.name || existing.name,
+            nameAr: worker.nameAr || existing.nameAr || worker.name,
+            nationalId: cleanNatId || existing.nationalId,
+            companyName: worker.companyName || existing.companyName || worker.crName || existing.crName || "",
+            idProfession: worker.idProfession || existing.idProfession || "",
+            crNumber: worker.crNumber || existing.crNumber || "",
+            crName: worker.crName || existing.crName || worker.companyName || "",
+            referredBy: worker.referredBy || existing.referredBy || "",
+            phone: worker.phone || existing.phone,
+            compactPhone: worker.compactPhone || existing.compactPhone,
+            birthDate: worker.birthDate || existing.birthDate || "",
+            hireDate: worker.hireDate || existing.hireDate || "",
+            salary: typeof worker.salary === "number" ? worker.salary : existing.salary,
+            employeePayout: typeof worker.employeePayout === "number" ? worker.employeePayout : (existing.employeePayout || 1000),
+            companyReturn: typeof worker.companyReturn === "number" ? worker.companyReturn : (existing.companyReturn || 0),
+            nationality: "Saudi Arabian",
+            isSaudi: true,
+            isExplicitSaudi: true,
+            // Preserve account identity and security
+            id: existing.id,
+            isProtected: existing.isProtected || false,
+            status: existing.status || "ACTIVE",
+            isBlocked: existing.isBlocked || false
+          };
+
+          if (worker.role && worker.role !== "EMPLOYEE") {
+            updated.role = worker.role;
+          }
+
+          state.users[existingIdx] = updated;
+          syncUserToFirestore(updated);
+          updatedCount++;
         } else {
+          // Add new worker
+          worker.nationalId = cleanNatId || worker.nationalId;
+          delete worker.isExistingUpdate;
+          delete worker.existingUserId;
           state.users.push(worker);
           syncUserToFirestore(worker);
+          addedCount++;
         }
       });
 
@@ -5601,8 +5709,10 @@
       const lang = document.documentElement.getAttribute("lang") || "en";
       if (window.OstanStyle) {
         window.OstanStyle.showToast(
-          lang === "ar" ? "تم استيراد الكادر بنجاح" : "Batch Import Complete",
-          lang === "ar" ? `تم استيراد ${importCount} موظف سعودي وتحديث المسيرات.` : `Successfully imported ${importCount} Saudi staff members.`
+          lang === "ar" ? "تم استيراد الكادر وتحديث البيانات" : "Import & Sync Complete",
+          lang === "ar"
+            ? `تم تحديث ${updatedCount} موظف حالي وإضافة ${addedCount} موظف جديد بدون أي تكرار بالهوية.`
+            : `Updated ${updatedCount} active staff and added ${addedCount} new staff (zero duplicate IDs).`
         );
       }
     }
@@ -6490,6 +6600,15 @@
             return;
           }
 
+          if (nationalIdVal) {
+            const cleanNatId = cleanNationalId(nationalIdVal);
+            const dup = state.users.find(x => x.id !== editId && x.nationalId && cleanNationalId(x.nationalId) === cleanNatId);
+            if (dup) {
+              alert(`Cannot update: National ID (${cleanNatId}) is already assigned to "${dup.name}".`);
+              return;
+            }
+          }
+
           u.name = name;
           u.phone = phone;
           u.compactPhone = compactPhone;
@@ -6549,6 +6668,15 @@
         if (!canCreate) {
           alert(isFromSaudiTab ? "Permission denied: You do not have permission to add Saudi employees." : "Permission denied: You do not have permission to add employees.");
           return;
+        }
+
+        if (nationalIdVal) {
+          const cleanNatId = cleanNationalId(nationalIdVal);
+          const dup = state.users.find(x => x.nationalId && cleanNationalId(x.nationalId) === cleanNatId);
+          if (dup) {
+            alert(`A Saudi employee with National ID (${cleanNatId}) already exists: "${dup.name}". Please edit their existing profile instead of creating a duplicate.`);
+            return;
+          }
         }
 
         const statusVal = document.getElementById("worker-status")?.value || "ACTIVE";
