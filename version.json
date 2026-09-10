@@ -1,7 +1,7 @@
 {
-  "version": "1.0.7",
-  "commit": "9915ddf",
-  "buildTime": 1789080109613,
-  "releaseDate": "2026-09-10T22:41:49.613Z",
-  "message": "fix(auth): prevent boot crashes, protect active admin sessions from false logout kicks, and preserve edited worker in permissions dropdown"
+  "version": "1.0.9",
+  "commit": "879fcdc",
+  "buildTime": 1789080770770,
+  "releaseDate": "2026-09-10T22:52:50.770Z",
+  "message": "fix(permissions): lock and preserve selected employee across saves, re-renders, and Firestore sync"
 }

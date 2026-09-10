@@ -1373,7 +1373,7 @@
                 <label data-i18n="perm_select_worker_label" style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); white-space: nowrap;">
                   Select User to Configure:
                 </label>
-                <select id="perm-user-select" class="input-field" onchange="state.selectedPermUserId = this.value; loadUserGranularPermissions(this.value);" style="max-width: 320px;"></select>
+                <select id="perm-user-select" class="input-field" onchange="handlePermUserChange(this.value);" style="max-width: 320px;"></select>
               </div>
               <button onclick="saveUserGranularPermissions()" class="btn btn-primary" style="padding: 0.6rem 1.4rem;">
                 <span data-i18n="perm_save_btn">💾 Save User Permissions</span>
@@ -3496,11 +3496,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.7",
-  "commit": "9915ddf",
-  "buildTime": 1789080109613,
-  "releaseDate": "2026-09-10T22:41:49.613Z",
-  "message": "fix(auth): prevent boot crashes, protect active admin sessions from false logout kicks, and preserve edited worker in permissions dropdown"
+  "version": "1.0.9",
+  "commit": "879fcdc",
+  "buildTime": 1789080770770,
+  "releaseDate": "2026-09-10T22:52:50.770Z",
+  "message": "fix(permissions): lock and preserve selected employee across saves, re-renders, and Firestore sync"
 };
 
     let _ostanUpdateTriggered = false;
@@ -6986,33 +6986,79 @@
     }
     window.setDeptViewTab = setDeptViewTab;
 
+    function handlePermUserChange(newUserId) {
+      const u = state.users.find(x => String(x.id).trim() === String(newUserId).trim());
+      if (u) {
+        state.selectedPermUserId = u.id;
+        state.selectedPermUserEmail = (u.email || '').toLowerCase().trim();
+        state.selectedPermUserName = (u.name || '').trim();
+        try { localStorage.setItem('ostan_selected_perm_user_id', u.id); } catch(e) {}
+      } else {
+        state.selectedPermUserId = newUserId;
+      }
+      loadUserGranularPermissions(newUserId);
+    }
+    window.handlePermUserChange = handlePermUserChange;
+
     function populatePermUserSelect(explicitUserId) {
-      const sel = document.getElementById("perm-user-select");
+      const sel = document.getElementById('perm-user-select');
       if (!sel) return;
       const curUser = getCurrentUser();
       const isMaster = isMasterSuperAdmin(curUser);
       const deptPerms = curUser?.permissions?.departments || {};
-      const canOthers = isMaster || (curUser?.role === "ADMIN" && deptPerms.manage_permissions_others !== false) || !!(deptPerms.manage_permissions_others || deptPerms.manage_permissions);
-      const canSelf = isMaster || (curUser?.role === "ADMIN" && deptPerms.manage_permissions_self !== false) || !!(deptPerms.manage_permissions_self);
+      const canOthers = isMaster || (curUser?.role === 'ADMIN' && deptPerms.manage_permissions_others !== false) || !!(deptPerms.manage_permissions_others || deptPerms.manage_permissions);
+      const canSelf = isMaster || (curUser?.role === 'ADMIN' && deptPerms.manage_permissions_self !== false) || !!(deptPerms.manage_permissions_self);
 
       const nonMasterUsers = state.users.filter(u => {
-        if (((u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com") || u.isProtected) return false;
+        if (((u.email || '').toLowerCase().trim() === 'waseem.tw@hotmail.com') || u.isProtected) return false;
         const isSelf = curUser && (curUser.id === u.id || (curUser.email && u.email && curUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
         if (isSelf && !canSelf) return false;
         if (!isSelf && !canOthers) return false;
         return true;
       });
 
-      const currentVal = explicitUserId || state.selectedPermUserId || sel.value;
-      sel.innerHTML = nonMasterUsers.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join("");
-      if (currentVal && nonMasterUsers.some(u => u.id === currentVal)) {
-        sel.value = currentVal;
-      } else if (nonMasterUsers.length > 0) {
-        sel.value = nonMasterUsers[0].id;
+      let targetId = explicitUserId || state.selectedPermUserId || (sel.value ? sel.value : '');
+      if (!targetId) {
+        try { targetId = localStorage.getItem('ostan_selected_perm_user_id') || ''; } catch(e) {}
       }
-      state.selectedPermUserId = sel.value;
-      if (sel.value) {
-        loadUserGranularPermissions(sel.value);
+
+      let targetEmail = state.selectedPermUserEmail || '';
+      let targetName = state.selectedPermUserName || '';
+
+      if (targetId) {
+        const found = state.users.find(u => String(u.id).trim() === String(targetId).trim());
+        if (found) {
+          if (found.email) targetEmail = (found.email || '').toLowerCase().trim();
+          if (found.name) targetName = (found.name || '').trim();
+        }
+      }
+
+      let matchedUser = null;
+      if (targetId) {
+        matchedUser = nonMasterUsers.find(u => String(u.id).trim() === String(targetId).trim());
+      }
+      if (!matchedUser && targetEmail) {
+        matchedUser = nonMasterUsers.find(u => u.email && u.email.toLowerCase().trim() === targetEmail);
+      }
+      if (!matchedUser && targetName) {
+        matchedUser = nonMasterUsers.find(u => u.name && u.name.trim() === targetName);
+      }
+      if (!matchedUser && nonMasterUsers.length > 0) {
+        matchedUser = nonMasterUsers[0];
+      }
+
+      sel.innerHTML = nonMasterUsers.map(u => {
+        const isSelected = matchedUser && (String(u.id).trim() === String(matchedUser.id).trim());
+        return '<option value="' + u.id + '" ' + (isSelected ? 'selected' : '') + '>' + u.name + ' (' + u.role + ')</option>';
+      }).join('');
+
+      if (matchedUser) {
+        sel.value = matchedUser.id;
+        state.selectedPermUserId = matchedUser.id;
+        state.selectedPermUserEmail = (matchedUser.email || '').toLowerCase().trim();
+        state.selectedPermUserName = (matchedUser.name || '').trim();
+        try { localStorage.setItem('ostan_selected_perm_user_id', matchedUser.id); } catch(e) {}
+        loadUserGranularPermissions(matchedUser.id);
       }
     }
     window.populatePermUserSelect = populatePermUserSelect;
@@ -7135,8 +7181,12 @@
       const sel = document.getElementById("perm-user-select");
       if (!sel || !sel.value) return;
       const editingUserId = sel.value;
-      state.selectedPermUserId = editingUserId;
-      const user = state.users.find(u => u.id === editingUserId);
+      const user = state.users.find(u => String(u.id).trim() === String(editingUserId).trim());
+      if (!user) return;
+      state.selectedPermUserId = user.id;
+      state.selectedPermUserEmail = (user.email || "").toLowerCase().trim();
+      state.selectedPermUserName = (user.name || "").trim();
+      try { localStorage.setItem("ostan_selected_perm_user_id", user.id); } catch(e) {}
       if (!user) return;
 
       const isSelf = currentUser && (currentUser.id === user.id || (currentUser.email && user.email && currentUser.email.toLowerCase().trim() === user.email.toLowerCase().trim()));
@@ -7290,7 +7340,7 @@
 
       // If in permissions tab, populate user dropdown
       if (currentDeptTab === "permissions") {
-        populatePermUserSelect();
+        populatePermUserSelect(state.selectedPermUserId);
       }
 
       // Render Interactive Department Permissions Matrix
