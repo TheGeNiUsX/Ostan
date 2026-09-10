@@ -1373,7 +1373,7 @@
                 <label data-i18n="perm_select_worker_label" style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); white-space: nowrap;">
                   Select User to Configure:
                 </label>
-                <select id="perm-user-select" class="input-field" onchange="loadUserGranularPermissions(this.value)" style="max-width: 320px;"></select>
+                <select id="perm-user-select" class="input-field" onchange="state.selectedPermUserId = this.value; loadUserGranularPermissions(this.value);" style="max-width: 320px;"></select>
               </div>
               <button onclick="saveUserGranularPermissions()" class="btn btn-primary" style="padding: 0.6rem 1.4rem;">
                 <span data-i18n="perm_save_btn">💾 Save User Permissions</span>
@@ -3496,11 +3496,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.5",
-  "commit": "595fd26",
-  "buildTime": 1789079049315,
-  "releaseDate": "2026-09-10T22:24:09.315Z",
-  "message": "feat(system): add zero-downtime live auto-update engine with automated build detection and client auto-refresh"
+  "version": "1.0.7",
+  "commit": "9915ddf",
+  "buildTime": 1789080109613,
+  "releaseDate": "2026-09-10T22:41:49.613Z",
+  "message": "fix(auth): prevent boot crashes, protect active admin sessions from false logout kicks, and preserve edited worker in permissions dropdown"
 };
 
     let _ostanUpdateTriggered = false;
@@ -4028,7 +4028,7 @@
     window.deleteTaskFromFirestore = deleteTaskFromFirestore;
 
     function isMasterSuperAdmin(user = getCurrentUser()) {
-      return user && (user.role === "SUPER_ADMIN" || user.email.toLowerCase().trim() === "waseem.tw@hotmail.com");
+      return !!(user && (user.role === "SUPER_ADMIN" || (user.email && user.email.toLowerCase().trim() === "waseem.tw@hotmail.com")));
     }
 
     function hasUserPermission(sectionKey, action, user = getCurrentUser()) {
@@ -6945,8 +6945,8 @@
       if (!u) return false;
       if (isMasterSuperAdmin(u)) return true;
       const deptPerms = u.permissions?.departments || {};
-      const canManageOthers = !!(deptPerms.manage_permissions_others || deptPerms.manage_permissions);
-      const canManageSelf = !!(deptPerms.manage_permissions_self);
+      const canManageOthers = (u.role === "ADMIN" || u.role === "SUPER_ADMIN") ? (deptPerms.manage_permissions_others !== false) : !!(deptPerms.manage_permissions_others || deptPerms.manage_permissions);
+      const canManageSelf = (u.role === "SUPER_ADMIN") ? true : !!(deptPerms.manage_permissions_self);
 
       if (targetUserId) {
         const isSelf = (u.id === targetUserId || (u.email && targetUserId && u.email.toLowerCase().trim() === targetUserId.toLowerCase().trim()));
@@ -6986,14 +6986,14 @@
     }
     window.setDeptViewTab = setDeptViewTab;
 
-    function populatePermUserSelect() {
+    function populatePermUserSelect(explicitUserId) {
       const sel = document.getElementById("perm-user-select");
       if (!sel) return;
       const curUser = getCurrentUser();
       const isMaster = isMasterSuperAdmin(curUser);
       const deptPerms = curUser?.permissions?.departments || {};
-      const canOthers = isMaster || !!(deptPerms.manage_permissions_others || deptPerms.manage_permissions);
-      const canSelf = isMaster || !!(deptPerms.manage_permissions_self);
+      const canOthers = isMaster || (curUser?.role === "ADMIN" && deptPerms.manage_permissions_others !== false) || !!(deptPerms.manage_permissions_others || deptPerms.manage_permissions);
+      const canSelf = isMaster || (curUser?.role === "ADMIN" && deptPerms.manage_permissions_self !== false) || !!(deptPerms.manage_permissions_self);
 
       const nonMasterUsers = state.users.filter(u => {
         if (((u.email || "").toLowerCase().trim() === "waseem.tw@hotmail.com") || u.isProtected) return false;
@@ -7003,13 +7003,14 @@
         return true;
       });
 
-      const currentVal = sel.value;
+      const currentVal = explicitUserId || state.selectedPermUserId || sel.value;
       sel.innerHTML = nonMasterUsers.map(u => `<option value="${u.id}">${u.name} (${u.role})</option>`).join("");
       if (currentVal && nonMasterUsers.some(u => u.id === currentVal)) {
         sel.value = currentVal;
       } else if (nonMasterUsers.length > 0) {
         sel.value = nonMasterUsers[0].id;
       }
+      state.selectedPermUserId = sel.value;
       if (sel.value) {
         loadUserGranularPermissions(sel.value);
       }
@@ -7133,7 +7134,9 @@
       const currentUser = getCurrentUser();
       const sel = document.getElementById("perm-user-select");
       if (!sel || !sel.value) return;
-      const user = state.users.find(u => u.id === sel.value);
+      const editingUserId = sel.value;
+      state.selectedPermUserId = editingUserId;
+      const user = state.users.find(u => u.id === editingUserId);
       if (!user) return;
 
       const isSelf = currentUser && (currentUser.id === user.id || (currentUser.email && user.email && currentUser.email.toLowerCase().trim() === user.email.toLowerCase().trim()));
@@ -7253,6 +7256,7 @@
 
       saveState();
       renderDepartments();
+      populatePermUserSelect(editingUserId);
       applyModuleVisibility();
       renderSaudiWorkers();
       renderWarehouse();
@@ -11565,7 +11569,7 @@
             // Live sync session if current logged in user was modified
             const curUser = getCurrentUser();
             if (curUser && docEmail && curUser.email && curUser.email.toLowerCase().trim() === docEmail) {
-              if ((docData.status === "BLOCKED" || docData.isBlocked === true) && !isMasterSuperAdmin(curUser)) {
+              if ((docData.status === "BLOCKED" || docData.isBlocked === true) && !isMasterSuperAdmin(curUser) && curUser.role !== "ADMIN" && !curUser.isProtected) {
                 userLogout();
                 const lang = document.documentElement.getAttribute("lang") || "en";
                 alert(lang === "ar" ? "تم حظر هذا الحساب، يرجى التواصل مع الإدارة" : "That account is blocked Please contact the Administrator");
@@ -11734,12 +11738,12 @@
           updateCounts();
         }
 
-        // Live session kick: If the currently logged-in user was deleted, immediately sign them out
+        // Live session kick: If the currently logged-in worker was explicitly deleted, sign them out
         const curUser = getCurrentUser();
-        if (curUser && !isMasterSuperAdmin(curUser)) {
+        if (curUser && !isMasterSuperAdmin(curUser) && curUser.role !== "ADMIN" && !curUser.isProtected) {
           const isCurrDeleted = state.recycleBin.some(b => b.type === "USER" && (
-            b.originalId === curUser.id ||
-            (b.data && b.data.email && b.data.email.toLowerCase().trim() === curUser.email.toLowerCase().trim())
+            (b.originalId && b.originalId === curUser.id) ||
+            (b.data && b.data.email && curUser.email && b.data.email.toLowerCase().trim() === curUser.email.toLowerCase().trim())
           ));
           if (isCurrDeleted) {
             userLogout();
