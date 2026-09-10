@@ -6636,13 +6636,10 @@
       const listSched = document.getElementById("list-reminders-scheduled");
       const listComp = document.getElementById("list-reminders-completed");
 
-      if (listAct) listAct.innerHTML = "";
-      if (listSched) listSched.innerHTML = "";
-      if (listComp) listComp.innerHTML = "";
-
-      const now = new Date().getTime();
       const user = getCurrentUser();
       if (!user) return;
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const now = new Date().getTime();
 
       const canCreateRem = hasUserPermission("reminders", "create", user);
       const canEditRem = hasUserPermission("reminders", "edit", user);
@@ -6664,6 +6661,7 @@
       });
 
       let actCount = 0, schedCount = 0, compCount = 0;
+      let htmlAct = "", htmlSched = "", htmlComp = "";
 
       filteredReminders.forEach(r => {
         let badgeHtml = "";
@@ -6708,6 +6706,8 @@
               </div>
             `;
           }
+        } else if (r.completed && r.reminderTime) {
+          badgeHtml = `<span style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">📅 ${r.reminderTime.replace('T', ' ')}</span>`;
         }
 
         const item = `
@@ -6725,13 +6725,13 @@
               <div>${badgeHtml}</div>
               ${!r.completed ? `
                 <button onclick="markReminderDone('${r.id}')" class="btn btn-primary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem;">
-                  ✓ Mark Done
+                  ✓ ${lang === 'ar' ? 'اكتمل' : 'Mark Done'}
                 </button>
               ` : `
                 <div style="display: flex; align-items: center; gap: 0.4rem;">
                   <span class="badge badge-emerald" style="font-size: 0.68rem;">COMPLETED</span>
-                  <button onclick="toggleReminderCompleted('${r.id}')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 700;" title="Reopen Reminder to Active">
-                    ↶ Reopen to Active
+                  <button onclick="toggleReminderCompleted('${r.id}')" class="btn btn-secondary" style="padding: 0.2rem 0.55rem; font-size: 0.7rem; color: #38bdf8; border-color: rgba(56, 189, 248, 0.4); font-weight: 700;" title="${lang === 'ar' ? 'إعادة التفعيل' : 'Reopen to Active'}">
+                    ↶ ${lang === 'ar' ? 'إعادة التفعيل' : 'Reopen to Active'}
                   </button>
                 </div>
               `}
@@ -6741,13 +6741,13 @@
 
         if (r.completed) {
           compCount++;
-          if (listComp) listComp.innerHTML += item;
+          htmlComp += item;
         } else if (isOverdue || !r.reminderTime) {
           actCount++;
-          if (listAct) listAct.innerHTML += item;
+          htmlAct += item;
         } else {
           schedCount++;
-          if (listSched) listSched.innerHTML += item;
+          htmlSched += item;
         }
       });
 
@@ -6758,14 +6758,14 @@
       if (badgeSched) badgeSched.textContent = schedCount;
       if (badgeComp) badgeComp.textContent = compCount;
 
-      if (actCount === 0 && listAct) {
-        listAct.innerHTML = `<div style="text-align: center; padding: 1.5rem 0.5rem; color: var(--text-faint); font-size: 0.8rem;">${lang === 'ar' ? 'لا توجد تذكيرات تتطلب إجراء' : 'No action needed'}</div>`;
+      if (listAct) {
+        listAct.innerHTML = htmlAct || `<div style="text-align: center; padding: 1.5rem 0.5rem; color: var(--text-faint); font-size: 0.8rem;">${lang === 'ar' ? 'لا توجد تذكيرات تتطلب إجراء' : 'No action needed'}</div>`;
       }
-      if (schedCount === 0 && listSched) {
-        listSched.innerHTML = `<div style="text-align: center; padding: 1.5rem 0.5rem; color: var(--text-faint); font-size: 0.8rem;">${lang === 'ar' ? 'لا توجد تذكيرات مجدولة قادمة' : 'No upcoming reminders'}</div>`;
+      if (listSched) {
+        listSched.innerHTML = htmlSched || `<div style="text-align: center; padding: 1.5rem 0.5rem; color: var(--text-faint); font-size: 0.8rem;">${lang === 'ar' ? 'لا توجد تذكيرات مجدولة قادمة' : 'No upcoming reminders'}</div>`;
       }
-      if (compCount === 0 && listComp) {
-        listComp.innerHTML = `<div style="text-align: center; padding: 1.5rem 0.5rem; color: var(--text-faint); font-size: 0.8rem;">${lang === 'ar' ? 'لا توجد تذكيرات مكتملة' : 'No completed reminders'}</div>`;
+      if (listComp) {
+        listComp.innerHTML = htmlComp || `<div style="text-align: center; padding: 1.5rem 0.5rem; color: var(--text-faint); font-size: 0.8rem;">${lang === 'ar' ? 'لا توجد تذكيرات مكتملة' : 'No completed reminders'}</div>`;
       }
     }
 
