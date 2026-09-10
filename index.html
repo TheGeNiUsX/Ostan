@@ -1627,15 +1627,24 @@
 
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
             <div class="glass-panel" style="padding: 1.25rem;">
-              <div style="font-weight: 700; margin-bottom: 0.75rem;" data-i18n="col_action">Action Needed</div>
+              <div style="font-weight: 700; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                <span data-i18n="col_action">Action Needed</span>
+                <span id="badge-rem-count-action" class="badge badge-rose" style="font-size: 0.72rem;">0</span>
+              </div>
               <div id="list-reminders-action" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
             <div class="glass-panel" style="padding: 1.25rem;">
-              <div style="font-weight: 700; margin-bottom: 0.75rem;" data-i18n="col_scheduled">Scheduled Ahead</div>
+              <div style="font-weight: 700; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                <span data-i18n="col_scheduled">Scheduled Ahead</span>
+                <span id="badge-rem-count-scheduled" class="badge badge-cyan" style="font-size: 0.72rem;">0</span>
+              </div>
               <div id="list-reminders-scheduled" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
             <div class="glass-panel" style="padding: 1.25rem;">
-              <div style="font-weight: 700; margin-bottom: 0.75rem;" data-i18n="col_completed">Completed</div>
+              <div style="font-weight: 700; margin-bottom: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                <span data-i18n="col_completed">Completed</span>
+                <span id="badge-rem-count-completed" class="badge badge-emerald" style="font-size: 0.72rem;">0</span>
+              </div>
               <div id="list-reminders-completed" style="display: flex; flex-direction: column; gap: 0.5rem;"></div>
             </div>
           </div>
@@ -2201,12 +2210,13 @@
         <!-- =====================================================================
              VIEW 10: SETTINGS
              ===================================================================== -->
-        <section id="view-settings" style="display: none; flex-direction: column; gap: 1.5rem; max-width: 600px;">
+        <section id="view-settings" style="display: none; flex-direction: column; gap: 1.5rem; max-width: 720px;">
           <div class="glass-panel" style="padding: 1.25rem 1.5rem;">
             <h2 data-i18n="settings_section_title" style="font-size: 1.3rem; font-weight: 800;">System Settings</h2>
-            <p data-i18n="settings_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Customize interface appearance themes and test audio alarm diagnostics.</p>
+            <p data-i18n="settings_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Customize interface appearance themes, automated warning notification templates, and test audio alarm diagnostics.</p>
           </div>
 
+          <!-- THEME & AUDIO DIAGNOSTICS -->
           <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
             <div>
               <label data-i18n="settings_theme_label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Theme Mode</label>
@@ -2220,6 +2230,92 @@
               <label data-i18n="settings_audio_label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Audio Alarm Diagnostics</label>
               <button class="btn btn-secondary" onclick="window.OstanStyle.playChime(880, 880)" style="width: 100%; justify-content: center;">
                 <span data-i18n="btn_test_audio">Test Audio Alarm Chime (880Hz)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- WARNING MESSAGES & REMINDERS TEMPLATES CHART & EDITOR -->
+          <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
+              <div>
+                <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                  <span>⚠️</span> <span>Warning & Reminder Messages (رسائل التنبيهات والتذكيرات)</span>
+                </h3>
+                <p style="font-size: 0.76rem; color: var(--text-muted); margin-top: 3px;">تخصيص نصوص رسائل التحذير الآلية للمهام واقتراب المواعيد والتذكيرات المجدولة</p>
+              </div>
+            </div>
+
+            <!-- Sub-Tabs / Chart Switcher for Tasks vs Reminders -->
+            <div style="display: flex; gap: 0.5rem; background: var(--bg-surface); padding: 4px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <button type="button" id="tab-btn-warn-tasks" onclick="switchWarningTemplateTab('tasks')" class="btn btn-primary" style="flex: 1; font-size: 0.82rem; justify-content: center; padding: 0.45rem;">
+                📋 Tasks (تنبيهات المهام)
+              </button>
+              <button type="button" id="tab-btn-warn-reminders" onclick="switchWarningTemplateTab('reminders')" class="btn btn-secondary" style="flex: 1; font-size: 0.82rem; justify-content: center; padding: 0.45rem;">
+                ⏰ Reminders (رسائل التذكيرات)
+              </button>
+            </div>
+
+            <!-- Tasks Warning Templates Editor -->
+            <div id="warn-section-tasks" style="display: flex; flex-direction: column; gap: 1.1rem;">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 700; color: #f59e0b; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span>⚠️ Task Deadline Warning (قالب اقتراب الموعد النهائي للمهمة)</span>
+                  <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">يُرسل قبل الموعد المحدد</span>
+                </label>
+                <textarea id="tpl-task-approaching" rows="6" class="input-field" style="font-family: monospace; font-size: 0.82rem; resize: vertical; line-height: 1.45;"></textarea>
+                <div style="font-size: 0.72rem; color: var(--text-faint); margin-top: 4px; display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
+                  <span>المتغيرات:</span>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{greeting}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{name}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{title}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{description}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{deadline}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{remaining}</code>
+                </div>
+              </div>
+
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 700; color: #f43f5e; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span>🚨 Task Overdue Alert (قالب فوات الموعد النهائي للمهمة)</span>
+                  <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">يُرسل عند انتهاء الوقت</span>
+                </label>
+                <textarea id="tpl-task-overdue" rows="5" class="input-field" style="font-family: monospace; font-size: 0.82rem; resize: vertical; line-height: 1.45;"></textarea>
+                <div style="font-size: 0.72rem; color: var(--text-faint); margin-top: 4px; display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
+                  <span>المتغيرات:</span>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{greeting}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{name}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{title}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{description}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{deadline}</code>
+                </div>
+              </div>
+            </div>
+
+            <!-- Reminders Warning Templates Editor -->
+            <div id="warn-section-reminders" style="display: none; flex-direction: column; gap: 1.1rem;">
+              <div>
+                <label style="font-size: 0.8rem; font-weight: 700; color: #10b981; display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+                  <span>⏰ Scheduled Reminder Alert (قالب إشعار التذكير المجدول)</span>
+                  <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">يُرسل في وقت التذكير</span>
+                </label>
+                <textarea id="tpl-reminder-due" rows="6" class="input-field" style="font-family: monospace; font-size: 0.82rem; resize: vertical; line-height: 1.45;"></textarea>
+                <div style="font-size: 0.72rem; color: var(--text-faint); margin-top: 4px; display: flex; gap: 0.35rem; flex-wrap: wrap; align-items: center;">
+                  <span>المتغيرات:</span>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{title}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{description}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{time}</code>
+                  <code style="background: rgba(255,255,255,0.06); padding: 1px 4px; border-radius: 3px;">{status}</code>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons for Warning Templates -->
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--border-subtle); padding-top: 0.85rem; margin-top: 0.25rem;">
+              <button type="button" onclick="resetWarningTemplatesToDefault()" class="btn btn-secondary" style="font-size: 0.8rem;">
+                ↺ Reset Defaults (استعادة الافتراضي)
+              </button>
+              <button type="button" onclick="saveWarningTemplatesSettings()" class="btn btn-primary" style="font-size: 0.8rem;">
+                💾 Save Warning Templates (حفظ القوالب)
               </button>
             </div>
           </div>
@@ -2284,6 +2380,10 @@
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Reminder Title *</label>
           <input id="rem-title" type="text" required placeholder="e.g. Inspect fuel tanks..." class="input-field">
         </div>
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Reminder Description / وصف وتفاصيل التذكير</label>
+          <textarea id="rem-desc" rows="2" placeholder="e.g. Detailed notes or instructions for this reminder..." class="input-field" style="resize: vertical;"></textarea>
+        </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <div>
             <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Target Time (وقت التذكير) *</label>
@@ -2333,6 +2433,10 @@
         <div>
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Task Title *</label>
           <input id="task-title" type="text" required placeholder="e.g. Complete quarterly safety review..." class="input-field">
+        </div>
+        <div>
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Task Description / وصف وتفاصيل المهمة</label>
+          <textarea id="task-desc" rows="2" placeholder="e.g. Detailed task requirements and instructions..." class="input-field" style="resize: vertical;"></textarea>
         </div>
         <div>
           <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Assign to Worker *</label>
@@ -2442,6 +2546,16 @@
             <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">National ID / Iqama (الهوية)</label>
             <input id="worker-national-id" type="text" placeholder="10XXXXXXXX" class="input-field">
           </div>
+        </div>
+
+        <!-- GENDER (Visible strictly for Non-Saudi staff) -->
+        <div id="worker-gender-group">
+          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Gender / الجنس</label>
+          <select id="worker-gender" class="input-field">
+            <option value="">Not Specified (غير محدد)</option>
+            <option value="male">👨 Male (ذكر)</option>
+            <option value="female">👩 Female (أنثى)</option>
+          </select>
         </div>
 
         <!-- DEDICATED SAUDI NATIONAL RECORD FIELDS (Visible strictly for Saudi staff) -->
@@ -3289,7 +3403,20 @@
         wabaId: "",
         accessToken: "",
         mode: "web"
-      }))
+      })),
+      warningTemplates: (() => {
+        const defaultW = {
+          taskApproaching: `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\n{greeting} *{name}*\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد النهائي: {deadline}\n⏳ الوقت المتبقي: *{remaining}*\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`,
+          taskOverdue: `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\n{greeting} *{name}*\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد كان: {deadline}\nيرجى العمل على إكمال المهمة وتحديث حالتها فوراً.`,
+          reminderDue: `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنود تذكيركم بالموعد التالي:\n📌 التذكير: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد: {time}\n⏳ الحالة: *{status}*`
+        };
+        try {
+          const saved = JSON.parse(localStorage.getItem("ostan_warning_templates") || "null");
+          return saved ? { ...defaultW, ...saved } : defaultW;
+        } catch(e) {
+          return defaultW;
+        }
+      })()
     };
     window.state = state;
 
@@ -3311,6 +3438,7 @@
       localStorage.setItem("ostan_wa_phone", state.whatsappPhone || "");
       localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin || []));
       localStorage.setItem("ostan_wa_api_config", JSON.stringify(state.whatsappApiConfig || {}));
+      localStorage.setItem("ostan_warning_templates", JSON.stringify(state.warningTemplates || {}));
       updateCounts();
     }
 
@@ -3737,8 +3865,124 @@
         if (searchInput) searchInput.value = "";
         renderAuditLogsView(true);
       }
+      if (mod === "settings") {
+        renderSettingsWarningTemplates();
+      }
     }
     window.setModule = setModule;
+
+    function renderSettingsWarningTemplates() {
+      const wt = state.warningTemplates || {};
+      const tplAppEl = document.getElementById("tpl-task-approaching");
+      const tplOverEl = document.getElementById("tpl-task-overdue");
+      const tplRemEl = document.getElementById("tpl-reminder-due");
+
+      if (tplAppEl && typeof wt.taskApproaching !== "undefined") {
+        tplAppEl.value = wt.taskApproaching;
+      }
+      if (tplOverEl && typeof wt.taskOverdue !== "undefined") {
+        tplOverEl.value = wt.taskOverdue;
+      }
+      if (tplRemEl && typeof wt.reminderDue !== "undefined") {
+        tplRemEl.value = wt.reminderDue;
+      }
+    }
+    window.renderSettingsWarningTemplates = renderSettingsWarningTemplates;
+
+    function switchWarningTemplateTab(tab) {
+      const btnTasks = document.getElementById("tab-btn-warn-tasks");
+      const btnReminders = document.getElementById("tab-btn-warn-reminders");
+      const secTasks = document.getElementById("warn-section-tasks");
+      const secReminders = document.getElementById("warn-section-reminders");
+
+      if (tab === "tasks") {
+        if (btnTasks) { btnTasks.className = "btn btn-primary"; }
+        if (btnReminders) { btnReminders.className = "btn btn-secondary"; }
+        if (secTasks) secTasks.style.display = "flex";
+        if (secReminders) secReminders.style.display = "none";
+      } else {
+        if (btnTasks) { btnTasks.className = "btn btn-secondary"; }
+        if (btnReminders) { btnReminders.className = "btn btn-primary"; }
+        if (secTasks) secTasks.style.display = "none";
+        if (secReminders) secReminders.style.display = "flex";
+      }
+    }
+    window.switchWarningTemplateTab = switchWarningTemplateTab;
+
+    function saveWarningTemplatesSettings() {
+      const tplApp = document.getElementById("tpl-task-approaching")?.value || "";
+      const tplOver = document.getElementById("tpl-task-overdue")?.value || "";
+      const tplRem = document.getElementById("tpl-reminder-due")?.value || "";
+
+      state.warningTemplates = {
+        taskApproaching: tplApp,
+        taskOverdue: tplOver,
+        reminderDue: tplRem
+      };
+
+      saveState();
+
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("systemSettings").doc("warning_templates").set(state.warningTemplates, { merge: true });
+        } catch(e) {}
+      }
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast(
+          lang === "ar" ? "تم حفظ القوالب" : "Templates Saved",
+          lang === "ar" ? "تم حفظ قوالب رسائل التنبيه والتذكير بنجاح" : "Warning & reminder message templates updated."
+        );
+      }
+    }
+    window.saveWarningTemplatesSettings = saveWarningTemplatesSettings;
+
+    function resetWarningTemplatesToDefault() {
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      if (!confirm(lang === "ar" ? "هل ترغب في استعادة القوالب الافتراضية؟" : "Reset templates to defaults?")) return;
+
+      state.warningTemplates = {
+        taskApproaching: `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\n{greeting} *{name}*\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد النهائي: {deadline}\n⏳ الوقت المتبقي: *${"{remaining}"}*\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`,
+        taskOverdue: `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\n{greeting} *{name}*\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد كان: {deadline}\nيرجى العمل على إكمال المهمة وتحديث حالتها فوراً.`,
+        reminderDue: `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنود تذكيركم بالموعد التالي:\n📌 التذكير: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد: {time}\n⏳ الحالة: *{status}*`
+      };
+      saveState();
+      renderSettingsWarningTemplates();
+
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("systemSettings").doc("warning_templates").set(state.warningTemplates, { merge: true });
+        } catch(e) {}
+      }
+
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("Defaults Restored", "Warning templates reset to default");
+      }
+    }
+    window.resetWarningTemplatesToDefault = resetWarningTemplatesToDefault;
+
+    function resolveGreetingAndSpeech(user) {
+      const g = user && user.gender ? String(user.gender).toLowerCase().trim() : "";
+      if (g === "female" || g === "أنثى") {
+        return {
+          greeting: "عزيزتي:",
+          assignedText: "المسندة إليكِ"
+        };
+      } else if (g === "male" || g === "ذكر") {
+        return {
+          greeting: "عزيزي:",
+          assignedText: "المسندة إليك"
+        };
+      } else {
+        // Single unified direct form when gender is unknown / not specified
+        return {
+          greeting: "مرحباً:",
+          assignedText: "المسندة إليك"
+        };
+      }
+    }
+    window.resolveGreetingAndSpeech = resolveGreetingAndSpeech;
     window.renderCurrentModuleView = function() {
       if (state.activeModule) setModule(state.activeModule);
     };
@@ -4813,6 +5057,7 @@
                 ${u.status === 'BLOCKED' || u.isBlocked ? `<span class="badge" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.35); font-weight: 700; font-size: 0.68rem; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.25rem; line-height: 1;">🚫 ${lang === 'ar' ? 'محظور' : 'BLOCKED'}</span>` : ''}
                 <span class="badge ${roleBadgeClass}" style="white-space: nowrap; line-height: 1;">${u.role}</span>
                 ${isSaudi ? `<span class="badge" style="background: rgba(16, 185, 129, 0.12); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.25); font-size: 0.62rem; font-weight: 700;">🇸🇦 Saudi</span>` : ''}
+                ${(!isSaudi && u.gender) ? `<span class="badge" style="background: rgba(148, 163, 184, 0.12); color: var(--text-muted); border: 1px solid var(--border-subtle); font-size: 0.62rem; font-weight: 700;">${u.gender === 'female' ? '👩 Female' : '👨 Male'}</span>` : ''}
               </div>
             </div>
 
@@ -4908,6 +5153,11 @@
       if (nationalitySelect) {
         nationalitySelect.value = isSaudi ? "Saudi Arabian" : (u.nationality && !u.nationality.toLowerCase().includes("saudi") ? u.nationality : "Non-Saudi");
       }
+
+      const genderGroup = document.getElementById("worker-gender-group");
+      const genderSelect = document.getElementById("worker-gender");
+      if (genderGroup) genderGroup.style.display = isSaudi ? "none" : "block";
+      if (genderSelect) genderSelect.value = (!isSaudi && u.gender) ? u.gender : "";
 
       // Populate Saudi-specific fields and toggle visibility
       const saudiFields = document.getElementById("saudi-worker-fields");
@@ -5619,6 +5869,7 @@
       const referredBy = (document.getElementById("worker-referred-by")?.value || "").trim();
       const birthDate = (document.getElementById("worker-birth-date")?.value || "").trim();
       const hireDate = (document.getElementById("worker-hire-date")?.value || "").trim();
+      const genderVal = (!isSaudiVal) ? (document.getElementById("worker-gender")?.value || "") : "";
 
       if (editId) {
         const u = state.users.find(x => x.id === editId);
@@ -5651,6 +5902,7 @@
             u.employeePayout = employeePayoutVal;
             u.companyReturn = companyReturnVal;
             u.email = "";
+            delete u.gender;
             delete u.passwordHash;
             delete u.password;
           } else {
@@ -5663,6 +5915,7 @@
             delete u.employeePayout;
             delete u.companyReturn;
             u.email = email;
+            u.gender = genderVal;
           }
 
           if (hasAdminEdit) {
@@ -5695,6 +5948,7 @@
           id: (isFromSaudiTab && isSaudiVal) ? ("u-saudi-" + Date.now()) : ("u-" + Date.now()),
           name,
           email,
+          gender: (!isSaudiVal) ? genderVal : null,
           phone,
           compactPhone,
           passwordHash: passHash,
@@ -6239,6 +6493,7 @@
                 ${canCancel ? `<button onclick="cancelTaskById('${t.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; font-size: 0.75rem; color: #fb7185;" title="${lang === 'ar' ? 'حذف المهمة' : 'Delete Task'}">🗑️</button>` : ''}
               </div>
             </div>
+            ${t.description ? `<div style="font-size: 0.76rem; color: var(--text-muted); background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); white-space: pre-wrap; line-height: 1.4; max-height: 80px; overflow-y: auto;">📝 ${t.description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
             <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted);">
               <span>👤 ${t.workerName || 'Staff'}</span>
               ${t.sendWhatsApp !== false && t.deadline ? `<span style="font-size: 0.7rem; color: #10b981; display: inline-flex; align-items: center; gap: 2px;" title="WhatsApp Warning Enabled">💬 WA Alert</span>` : ''}
@@ -6288,6 +6543,8 @@
       openTaskHUD();
       document.getElementById("task-edit-id").value = t.id;
       document.getElementById("task-title").value = t.title;
+      const descEl = document.getElementById("task-desc");
+      if (descEl) descEl.value = t.description || "";
       document.getElementById("modal-task-heading").textContent = "✏️ Edit Task";
       document.getElementById("task-worker-select").value = t.workerName;
       document.getElementById("task-deadline").value = t.deadline || "";
@@ -6396,15 +6653,17 @@
       if (btnNewRem) btnNewRem.style.display = canCreateRem ? "inline-flex" : "none";
 
       const isSuper = isMasterSuperAdmin(user);
+      const isAdmin = (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || isSuper);
 
-      // Reminders are STRICTLY visible only to the person who created them
       let filteredReminders = state.reminders.filter(r => {
-        if (isSuper) {
-          return r.createdByEmail === user.email || r.createdById === user.id || !r.createdByEmail;
-        }
-        return (r.createdByEmail && r.createdByEmail.toLowerCase().trim() === user.email.toLowerCase().trim()) ||
-               (r.createdById && r.createdById === user.id);
+        if (isAdmin) return true;
+        const matchEmail = r.createdByEmail && user.email && (r.createdByEmail.toLowerCase().trim() === user.email.toLowerCase().trim());
+        const matchId = r.createdById && user.id && (r.createdById === user.id);
+        const unassigned = !r.createdByEmail && !r.createdById;
+        return matchEmail || matchId || unassigned;
       });
+
+      let actCount = 0, schedCount = 0, compCount = 0;
 
       filteredReminders.forEach(r => {
         let badgeHtml = "";
@@ -6460,6 +6719,7 @@
                 ${canDeleteRem ? `<button onclick="deleteReminderById('${r.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.4rem; color: #fb7185; font-size: 0.75rem;" title="Delete">🗑️</button>` : ''}
               </div>
             </div>
+            ${r.description ? `<div style="font-size: 0.76rem; color: var(--text-muted); background: var(--bg-surface); border: 1px solid var(--border-subtle); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); white-space: pre-wrap; line-height: 1.4; max-height: 80px; overflow-y: auto;">📝 ${r.description.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>` : ''}
 
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.5rem; margin-top: 0.25rem;">
               <div>${badgeHtml}</div>
@@ -6480,13 +6740,33 @@
         `;
 
         if (r.completed) {
+          compCount++;
           if (listComp) listComp.innerHTML += item;
         } else if (isOverdue || !r.reminderTime) {
+          actCount++;
           if (listAct) listAct.innerHTML += item;
         } else {
+          schedCount++;
           if (listSched) listSched.innerHTML += item;
         }
       });
+
+      const badgeAct = document.getElementById("badge-rem-count-action");
+      const badgeSched = document.getElementById("badge-rem-count-scheduled");
+      const badgeComp = document.getElementById("badge-rem-count-completed");
+      if (badgeAct) badgeAct.textContent = actCount;
+      if (badgeSched) badgeSched.textContent = schedCount;
+      if (badgeComp) badgeComp.textContent = compCount;
+
+      if (actCount === 0 && listAct) {
+        listAct.innerHTML = `<div style="text-align: center; padding: 1.5rem 0.5rem; color: var(--text-faint); font-size: 0.8rem;">${lang === 'ar' ? 'لا توجد تذكيرات تتطلب إجراء' : 'No action needed'}</div>`;
+      }
+      if (schedCount === 0 && listSched) {
+        listSched.innerHTML = `<div style="text-align: center; padding: 1.5rem 0.5rem; color: var(--text-faint); font-size: 0.8rem;">${lang === 'ar' ? 'لا توجد تذكيرات مجدولة قادمة' : 'No upcoming reminders'}</div>`;
+      }
+      if (compCount === 0 && listComp) {
+        listComp.innerHTML = `<div style="text-align: center; padding: 1.5rem 0.5rem; color: var(--text-faint); font-size: 0.8rem;">${lang === 'ar' ? 'لا توجد تذكيرات مكتملة' : 'No completed reminders'}</div>`;
+      }
     }
 
     // Live 1-Second Countdown Engine & Dynamic View Synchronizer
@@ -6506,6 +6786,8 @@
       if (!r) return;
       document.getElementById("rem-edit-id").value = r.id;
       document.getElementById("rem-title").value = r.title;
+      const descEl = document.getElementById("rem-desc");
+      if (descEl) descEl.value = r.description || "";
       document.getElementById("rem-time").value = r.reminderTime || "";
       const warnSelect = document.getElementById("rem-warning-time");
       if (warnSelect) warnSelect.value = String(typeof r.warningMinutes !== "undefined" ? r.warningMinutes : 0);
@@ -6889,6 +7171,8 @@
       }
       document.getElementById("rem-edit-id").value = "";
       document.getElementById("rem-title").value = "";
+      const remDescEl = document.getElementById("rem-desc");
+      if (remDescEl) remDescEl.value = "";
       document.getElementById("rem-time").value = "";
       const warnSelect = document.getElementById("rem-warning-time");
       if (warnSelect) warnSelect.value = "0";
@@ -6904,6 +7188,8 @@
       }
       document.getElementById("task-edit-id").value = "";
       document.getElementById("task-title").value = "";
+      const taskDescEl = document.getElementById("task-desc");
+      if (taskDescEl) taskDescEl.value = "";
       document.getElementById("task-deadline").value = "";
       const warnSelect = document.getElementById("task-warning-time");
       if (warnSelect) warnSelect.value = "30";
@@ -6935,11 +7221,13 @@
         saudiCalc.style.display = isSaudi ? "flex" : "none";
       }
 
-      // Hide or show Email & Password for Saudi data-only records
+      // Hide or show Email, Password & Gender for Saudi data-only records
       const emailGroup = document.getElementById("worker-email-group");
       const emailInput = document.getElementById("worker-email");
       const passGroup = document.getElementById("worker-password-group");
       const passInput = document.getElementById("worker-password");
+      const genderGroup = document.getElementById("worker-gender-group");
+      const genderInput = document.getElementById("worker-gender");
       const notice = document.getElementById("saudi-data-only-notice");
       const editId = document.getElementById("worker-edit-id")?.value;
 
@@ -6954,6 +7242,8 @@
           passInput.required = false;
           passInput.value = "";
         }
+        if (genderGroup) genderGroup.style.display = "none";
+        if (genderInput) genderInput.value = "";
         if (notice) notice.style.display = "flex";
       } else {
         if (emailGroup) emailGroup.style.display = "block";
@@ -6964,6 +7254,7 @@
         if (passInput) {
           passInput.required = !editId;
         }
+        if (genderGroup) genderGroup.style.display = "block";
         if (notice) notice.style.display = "none";
       }
 
@@ -6990,6 +7281,10 @@
       document.getElementById("worker-name").value = "";
       document.getElementById("worker-email").value = "";
       document.getElementById("worker-phone").value = "+966 ";
+      const genderGroup = document.getElementById("worker-gender-group");
+      const genderInput = document.getElementById("worker-gender");
+      if (genderGroup) genderGroup.style.display = forSaudi ? "none" : "block";
+      if (genderInput) genderInput.value = "";
 
       const nationalitySelect = document.getElementById("worker-nationality");
       if (nationalitySelect) {
@@ -7085,6 +7380,7 @@
       const user = getCurrentUser();
       const editId = document.getElementById("rem-edit-id").value;
       const title = document.getElementById("rem-title").value.trim();
+      const description = document.getElementById("rem-desc")?.value.trim() || "";
       const time = document.getElementById("rem-time").value;
       const warningMinutes = parseInt(document.getElementById("rem-warning-time")?.value, 10) || 0;
       const sendWhatsApp = document.getElementById("rem-send-wa") ? document.getElementById("rem-send-wa").checked : true;
@@ -7097,19 +7393,24 @@
         const r = state.reminders.find(x => x.id === editId);
         if (r) {
           r.title = title;
+          r.description = description;
           r.reminderTime = time;
           r.warningMinutes = warningMinutes;
           r.sendWhatsApp = sendWhatsApp;
           r.warningNotified = false; // Reset warning trigger for updated schedule
+          if (window.fbDb) {
+            try { window.fbDb.collection("reminders").doc(r.id).set(r, { merge: true }); } catch(e) {}
+          }
         }
       } else {
         if (!hasUserPermission("reminders", "create")) {
           alert("Permission denied: You do not have permission to create reminders.");
           return;
         }
-        state.reminders.unshift({
+        const newRem = {
           id: "rem-" + Date.now(),
           title,
+          description,
           reminderTime: time,
           warningMinutes,
           sendWhatsApp,
@@ -7118,7 +7419,11 @@
           createdByEmail: user ? user.email : "",
           createdById: user ? user.id : "",
           createdByName: user ? user.name : ""
-        });
+        };
+        state.reminders.unshift(newRem);
+        if (window.fbDb) {
+          try { window.fbDb.collection("reminders").doc(newRem.id).set(newRem); } catch(e) {}
+        }
       }
 
       saveState();
@@ -7133,6 +7438,7 @@
       e.preventDefault();
       const editId = document.getElementById("task-edit-id").value;
       const title = document.getElementById("task-title").value.trim();
+      const description = document.getElementById("task-desc")?.value.trim() || "";
       const workerName = document.getElementById("task-worker-select").value;
       const deadline = document.getElementById("task-deadline")?.value || "";
       const warningMinutes = parseInt(document.getElementById("task-warning-time")?.value, 10) || 30;
@@ -7146,6 +7452,7 @@
         const t = state.tasks.find(x => x.id === editId);
         if (t) {
           t.title = title;
+          t.description = description;
           t.workerName = workerName;
           t.deadline = deadline;
           t.warningMinutes = warningMinutes;
@@ -7167,6 +7474,7 @@
         const newTask = {
           id: "task-" + Date.now(),
           title,
+          description,
           workerName,
           status,
           deadline,
@@ -7231,9 +7539,26 @@
               );
 
               if (workerUser && workerUser.phone) {
-                const waMsg = isOverdue
-                  ? `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\nعزيزي/تي: *${workerUser.name}*\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\n📌 *${task.title}*\n⏱️ الموعد كان: ${task.deadline.replace('T', ' ')}\nيرجى العمل على إكمال المهمة وتحديث حالتها في النظام فوراً.`
-                  : `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\nعزيزي/تي: *${workerUser.name}*\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك في نظام أوسطن:\n📌 *${task.title}*\n⏱️ الموعد النهائي: ${task.deadline.replace('T', ' ')}\n⏳ الوقت المتبقي: *${remStr}*\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`;
+                const { greeting, assignedText } = resolveGreetingAndSpeech(workerUser);
+                const workerDisplayName = workerUser.name || task.workerName || "Staff";
+                const descText = task.description ? task.description : "—";
+                const deadlineStr = task.deadline ? task.deadline.replace('T', ' ') : "";
+
+                const defaultAppr = `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\n{greeting} *{name}*\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد النهائي: {deadline}\n⏳ الوقت المتبقي: *{remaining}*\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`;
+                const defaultOver = `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\n{greeting} *{name}*\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد كان: {deadline}\nيرجى العمل على إكمال المهمة وتحديث حالتها فوراً.`;
+
+                let rawTemplate = isOverdue
+                  ? (state.warningTemplates?.taskOverdue || defaultOver)
+                  : (state.warningTemplates?.taskApproaching || defaultAppr);
+
+                let waMsg = rawTemplate
+                  .replace(/\{greeting\}/g, greeting)
+                  .replace(/\{assignedText\}/g, assignedText)
+                  .replace(/\{name\}/g, workerDisplayName)
+                  .replace(/\{title\}/g, task.title)
+                  .replace(/\{description\}/g, descText)
+                  .replace(/\{deadline\}/g, deadlineStr)
+                  .replace(/\{remaining\}/g, remStr);
 
                 try {
                   sendSingleMetaWhatsAppMessage(workerUser.phone, waMsg).then(res => {
@@ -7288,7 +7613,17 @@
                 if (creator && creator.phone) targetPhone = creator.phone;
               }
 
-              const waMsg = `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنظام أوسطن يذكركم بالموعد التالي:\n📌 *${rem.title}*\n⏱️ الموعد: ${rem.reminderTime.replace('T', ' ')}\n⏳ الحالة: *${remStr}*`;
+              const descText = rem.description ? rem.description : "—";
+              const timeStr = rem.reminderTime ? rem.reminderTime.replace('T', ' ') : "";
+              const defaultRem = `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنود تذكيركم بالموعد التالي:\n📌 التذكير: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد: {time}\n⏳ الحالة: *{status}*`;
+
+              let rawTemplate = state.warningTemplates?.reminderDue || defaultRem;
+              let waMsg = rawTemplate
+                .replace(/\{title\}/g, rem.title)
+                .replace(/\{description\}/g, descText)
+                .replace(/\{time\}/g, timeStr)
+                .replace(/\{status\}/g, remStr);
+
               try {
                 sendSingleMetaWhatsAppMessage(targetPhone, waMsg).then(res => {
                   if (res && res.success) {
@@ -10112,6 +10447,47 @@
         }
       }, err => {
         console.warn("Firestore whatsapp_api onSnapshot notice:", err);
+      });
+
+      // Real-Time Live Cloud Firestore Sync for Reminders
+      window.fbDb.collection("reminders").onSnapshot((querySnap) => {
+        if (!querySnap) return;
+        const fireReminders = [];
+        querySnap.forEach((doc) => {
+          const d = doc.data();
+          if (d) {
+            fireReminders.push({ ...d, id: doc.id });
+          }
+        });
+        if (fireReminders.length > 0 || state.reminders.length > 0) {
+          const remMap = new Map();
+          state.reminders.forEach(r => remMap.set(r.id, r));
+          fireReminders.forEach(r => remMap.set(r.id, { ...remMap.get(r.id), ...r }));
+          state.reminders = Array.from(remMap.values());
+          localStorage.setItem("ostan_reminders", JSON.stringify(state.reminders));
+          if (state.activeModule === "reminders" || state.activeModule === "dashboard") {
+            renderReminders();
+          }
+          updateCounts();
+        }
+      }, err => {
+        console.warn("Firestore reminders onSnapshot notice:", err);
+      });
+
+      // Real-Time Live Cloud Firestore Sync for Warning & Reminder Templates
+      window.fbDb.collection("systemSettings").doc("warning_templates").onSnapshot((docSnap) => {
+        if (docSnap && docSnap.exists) {
+          const tpls = docSnap.data();
+          if (tpls) {
+            state.warningTemplates = { ...state.warningTemplates, ...tpls };
+            localStorage.setItem("ostan_warning_templates", JSON.stringify(state.warningTemplates));
+            if (state.activeModule === "settings") {
+              renderSettingsWarningTemplates();
+            }
+          }
+        }
+      }, err => {
+        console.warn("Firestore warning_templates onSnapshot notice:", err);
       });
 
       // Real-Time Live Cloud Firestore Sync for WhatsApp Studio / Baileys Live QR & Session (Per-User)
