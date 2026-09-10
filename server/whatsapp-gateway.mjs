@@ -43,6 +43,23 @@ function getLanIPs() {
 async function syncSessionStateToFirestore(cleanUserId, session) {
   try {
     const isConnected = (session.status === 'connected' || Boolean(session.phone)) && session.status !== 'disconnected';
+    const now = Date.now();
+
+    // Prevent burning Firestore write quotas with identical status/QR writes
+    if (
+      session._lastStatus === session.status &&
+      session._lastQr === session.qr &&
+      session._lastPhone === session.phone &&
+      (now - (session._lastSyncTime || 0)) < 20000
+    ) {
+      return;
+    }
+
+    session._lastStatus = session.status;
+    session._lastQr = session.qr;
+    session._lastPhone = session.phone;
+    session._lastSyncTime = now;
+
     const data = {
       userId: cleanUserId,
       status: session.status,
@@ -52,7 +69,7 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
       connected: isConnected,
       lanIPs: getLanIPs(),
       gatewayPort: PORT,
-      updatedAt: Date.now()
+      updatedAt: now
     };
     // 1. Separate number and QR stored per user
     const userDocRef = doc(fbDb, 'whatsappSessions', cleanUserId);
@@ -125,28 +142,24 @@ function getOrCreateUserSession(rawUserId) {
     name: null,
     sock: null,
     isStarting: false,
+    qrRetries: 0,
+    lastRequestTime: Date.now(),
     authDir: getUserAuthDir(cleanId)
   };
 
   userSessions.set(cleanId, sessionObj);
-  startWhatsAppSocketForUser(cleanId);
   return sessionObj;
 }
 
 async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
   let session = userSessions.get(cleanUserId);
   if (!session) {
-    session = {
-      userId: cleanUserId,
-      status: 'disconnected',
-      qr: null,
-      phone: null,
-      name: null,
-      sock: null,
-      isStarting: false,
-      authDir: getUserAuthDir(cleanUserId)
-    };
-    userSessions.set(cleanUserId, session);
+    session = getOrCreateUserSession(cleanUserId);
+  }
+
+  session.lastRequestTime = Date.now();
+  if (forceRestart) {
+    session.qrRetries = 0;
   }
 
   if (session.isStarting && !forceRestart) return;
@@ -223,16 +236,50 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
 
         console.log(`[WhatsApp Gateway] User '${cleanUserId}' connection closed (code: ${statusCode}). Reconnecting: ${shouldReconnect}`);
 
-        if (shouldReconnect) {
-          // Socket closed transiently (e.g. code 408, 440, 515, keepalive). Keep phone and paired status intact!
-          session.status = session.phone ? 'connected' : (session.qr ? 'qr_ready' : 'connecting');
-          // Preserve session.qr so it doesn't flicker/vanish on remote screens while awaiting new QR
+        if (session.phone && !isLoggedOut) {
+          // Paired user: handle stream reconnect
+          if (statusCode === 440) {
+            // Stream conflict (active in another WhatsApp Web tab or app): back off 30s to prevent thrashing
+            console.log(`[WhatsApp Gateway] ⚠️ Stream conflict (440) for paired user '${cleanUserId}'. Waiting 30s before reconnect...`);
+            session.status = 'connecting';
+            session.isStarting = false;
+            syncSessionStateToFirestore(cleanUserId, session);
+            setTimeout(() => {
+              startWhatsAppSocketForUser(cleanUserId);
+            }, 30000);
+            return;
+          }
+
+          session.status = 'connecting';
           session.isStarting = false;
           syncSessionStateToFirestore(cleanUserId, session);
 
           setTimeout(() => {
             startWhatsAppSocketForUser(cleanUserId);
-          }, 2000);
+          }, 4000);
+        } else if (!session.phone && shouldReconnect) {
+          // Unpaired user awaiting QR scan: bound retries to prevent memory leaks and quota exhaustion
+          session.qrRetries = (session.qrRetries || 0) + 1;
+          const isExpired = session.qrRetries >= 3 || (Date.now() - (session.lastRequestTime || 0) > 180000);
+
+          if (isExpired) {
+            console.log(`[WhatsApp Gateway] ⏹️ User '${cleanUserId}' QR pairing timed out after ${session.qrRetries} cycles without scan. Releasing socket.`);
+            session.status = 'disconnected';
+            session.qr = null;
+            session.isStarting = false;
+            try { session.sock?.end(); } catch (e) {}
+            session.sock = null;
+            syncSessionStateToFirestore(cleanUserId, session);
+            return; // DO NOT RECONNECT! Wait for user to press Request QR again
+          }
+
+          session.status = session.qr ? 'qr_ready' : 'connecting';
+          session.isStarting = false;
+          syncSessionStateToFirestore(cleanUserId, session);
+
+          setTimeout(() => {
+            startWhatsAppSocketForUser(cleanUserId);
+          }, 3000);
         } else {
           console.log(`[WhatsApp Gateway] ⚠️ User '${cleanUserId}' was unpaired / logged out from mobile. Cleaning session files...`);
           session.status = 'disconnected';
@@ -247,15 +294,12 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
             try { fs.rmSync(LEGACY_DIR, { recursive: true, force: true }); } catch (e) {}
           }
           syncSessionStateToFirestore(cleanUserId, session);
-
-          setTimeout(() => {
-            startWhatsAppSocketForUser(cleanUserId, true);
-          }, 1500);
         }
       } else if (connection === 'open') {
         session.status = 'connected';
         session.qr = null;
         session.isStarting = false;
+        session.qrRetries = 0;
 
         const id = sock?.user?.id || '';
         session.phone = id.split(':')[0] || id.split('@')[0];
@@ -274,7 +318,9 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
     console.error(`[WhatsApp Gateway] Error starting socket for user '${cleanUserId}':`, err);
     session.isStarting = false;
     session.status = session.phone ? 'connected' : 'disconnected';
-    setTimeout(() => startWhatsAppSocketForUser(cleanUserId), 5000);
+    if (session.phone) {
+      setTimeout(() => startWhatsAppSocketForUser(cleanUserId), 8000);
+    }
   }
 }
 
@@ -542,9 +588,17 @@ server.listen(PORT, HOST, () => {
         if (change.type === 'added' || change.type === 'modified') {
           const reqData = change.doc.data();
           if (reqData && reqData.userId) {
+            const reqTimestamp = Number(reqData.timestamp || 0);
+            // Ignore stale historical documents older than 2 minutes
+            if (reqTimestamp > 0 && (Date.now() - reqTimestamp > 120000)) {
+              return;
+            }
+
             const cleanId = sanitizeUserId(reqData.userId);
             console.log(`[WhatsApp Gateway] ⚡ Cloud request received for user: ${cleanId} (action: ${reqData.action || 'request_qr'})`);
             const session = getOrCreateUserSession(cleanId);
+            session.lastRequestTime = Date.now();
+            session.qrRetries = 0; // reset retry counter on active request
             if (reqData.action === 'refresh' || reqData.action === 'restart') {
               await startWhatsAppSocketForUser(cleanId, true);
             } else if (reqData.action === 'logout' || reqData.action === 'disconnect') {
