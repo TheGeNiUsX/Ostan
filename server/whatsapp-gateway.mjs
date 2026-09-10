@@ -521,14 +521,22 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  // 5. GET / or /health (for cloud hosting health checks & uptime monitors)
-  if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) {
-    return sendJSON(200, {
+  // 5. GET or HEAD / or /health (for UptimeRobot and cloud health monitors)
+  if ((req.method === 'GET' || req.method === 'HEAD') && (url.pathname === '/' || url.pathname === '/health' || url.pathname === '/api/status' || url.pathname === '/status')) {
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      ...corsHeaders
+    });
+    if (req.method === 'HEAD') {
+      res.end();
+      return;
+    }
+    return res.end(JSON.stringify({
       status: 'ok',
       service: 'ostan-whatsapp-gateway',
       activeSessions: userSessions.size,
       timestamp: Date.now()
-    });
+    }));
   }
 
   sendJSON(404, { success: false, error: 'Endpoint not found' });
