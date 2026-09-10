@@ -1040,20 +1040,26 @@
 
         <div style="display: flex; align-items: center; gap: 0.5rem; position: relative;">
           <!-- Notification Bell & Center -->
-          <div style="position: relative;">
-            <button id="notif-bell-btn" class="btn btn-secondary" onclick="toggleNotificationCenter()" style="padding: 0.4rem 0.65rem; font-size: 0.78rem; position: relative;" title="System Notifications">
+          <div style="position: relative;" id="notif-center-wrapper">
+            <button id="notif-bell-btn" class="btn btn-secondary" onclick="toggleNotificationCenter(event)" style="padding: 0.4rem 0.65rem; font-size: 0.78rem; position: relative;" title="System Notifications">
               <span>🔔</span>
               <span id="notif-bell-badge" style="display: none; position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; border-radius: 999px; font-size: 0.62rem; font-weight: 800; padding: 1px 5px; line-height: 1;">0</span>
             </button>
-            <div id="notif-bell-dropdown" class="glass-panel" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 330px; max-height: 420px; z-index: 10001; border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.55); border: 1px solid var(--border-light); overflow: hidden; flex-direction: column; background: var(--bg-surface-elevated, #161f30);">
+            <div id="notif-bell-dropdown" class="glass-panel" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 340px; max-height: 460px; z-index: 10001; border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.55); border: 1px solid var(--border-light); overflow: hidden; flex-direction: column; background: var(--bg-surface-elevated, #161f30);">
               <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.15);">
                 <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 800; font-size: 0.85rem; color: var(--text-main);">
                   <span>🔔</span> <span data-i18n="notif_center_title">Notifications (الإشعارات)</span>
+                  <span id="notif-unread-count-badge" class="badge badge-emerald" style="font-size: 0.65rem; display: none;">0</span>
                 </div>
-                <button onclick="clearNotificationCenter(event)" class="btn btn-ghost" style="font-size: 0.7rem; color: #38bdf8; padding: 2px 6px;">Clear All</button>
+                <button onclick="clearNotificationCenter(event)" class="btn btn-ghost" style="font-size: 0.7rem; color: #38bdf8; padding: 2px 6px;">Clear</button>
               </div>
-              <div id="notif-bell-list" style="overflow-y: auto; max-height: 340px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem;">
+              <div id="notif-bell-list" style="overflow-y: auto; max-height: 300px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem;">
                 <div style="text-align: center; color: var(--text-faint); font-size: 0.78rem; padding: 1.5rem;">No recent notifications</div>
+              </div>
+              <div style="padding: 0.6rem 0.85rem; border-top: 1px solid var(--border-subtle); background: rgba(0,0,0,0.25); text-align: center;">
+                <button type="button" onclick="openFullNotificationLogsView()" class="btn btn-secondary" style="width: 100%; font-size: 0.78rem; font-weight: 700; color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); display: flex; align-items: center; justify-content: center; gap: 0.4rem;">
+                  <span>📋 Go to Full Notification Log (السجل الشامل)</span> <span>➜</span>
+                </button>
               </div>
             </div>
           </div>
@@ -2348,6 +2354,121 @@
               <button type="button" onclick="saveWarningTemplatesSettings()" class="btn btn-primary" style="font-size: 0.8rem;">
                 💾 Save Warning Templates (حفظ القوالب)
               </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- =====================================================================
+             VIEW 11: HIDDEN FULL NOTIFICATION LOG (Accessible ONLY via Notification Bell)
+             ===================================================================== -->
+        <section id="view-notification-logs" style="display: none; flex-direction: column; gap: 1.5rem;">
+          <!-- Top Navigation & Actions Bar -->
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 0.85rem;">
+              <button type="button" onclick="returnFromNotificationLogs()" class="btn btn-secondary" style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.85rem; font-size: 0.8rem; font-weight: 700;">
+                <span>⬅️</span> <span data-i18n="btn_back">Back</span>
+              </button>
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <span style="font-size: 1.4rem;">📜</span>
+                  <h1 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em; margin: 0;">
+                    System Notification History & Audit Log (سجل الإشعارات الشامل)
+                  </h1>
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin: 3px 0 0 0;">
+                  Private system notification archive. Accessible exclusively through the top notification center.
+                </p>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <button type="button" onclick="markAllNotificationsRead()" class="btn btn-secondary" style="font-size: 0.78rem; font-weight: 600;">
+                ✓ Mark All Read
+              </button>
+              <button type="button" onclick="clearAllNotificationHistory()" class="btn btn-ghost" style="font-size: 0.78rem; font-weight: 600; color: #f43f5e; border-color: rgba(244, 63, 94, 0.3);">
+                🗑️ Clear All Logs
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Metrics Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem;">
+            <div class="glass-panel" style="padding: 1rem 1.25rem; display: flex; align-items: center; gap: 0.85rem;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                🔔
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Total Logged</div>
+                <div id="stat-notif-total" style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">0</div>
+              </div>
+            </div>
+
+            <div class="glass-panel" style="padding: 1rem 1.25rem; display: flex; align-items: center; gap: 0.85rem;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(239, 68, 68, 0.15); color: #ef4444; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                🔴
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Unread Alerts</div>
+                <div id="stat-notif-unread" style="font-size: 1.35rem; font-weight: 800; color: #ef4444;">0</div>
+              </div>
+            </div>
+
+            <div class="glass-panel" style="padding: 1rem 1.25rem; display: flex; align-items: center; gap: 0.85rem;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                ⚠️
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">Warnings</div>
+                <div id="stat-notif-warnings" style="font-size: 1.35rem; font-weight: 800; color: #f59e0b;">0</div>
+              </div>
+            </div>
+
+            <div class="glass-panel" style="padding: 1rem 1.25rem; display: flex; align-items: center; gap: 0.85rem;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); color: #10b981; display: flex; align-items: center; justify-content: center; font-size: 1.25rem;">
+                📱
+              </div>
+              <div>
+                <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">WhatsApp & Reminders</div>
+                <div id="stat-notif-wa" style="font-size: 1.35rem; font-weight: 800; color: #10b981;">0</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls: Search & Category Filters -->
+          <div class="glass-panel" style="padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; max-width: 400px; min-width: 240px;">
+              <input id="notif-log-search" type="text" placeholder="🔍 Search notifications by title, details, date..." oninput="renderFullNotificationLogs()" class="input-field" style="width: 100%; font-size: 0.82rem; padding: 0.4rem 0.75rem;">
+            </div>
+
+            <!-- Filter Pills -->
+            <div id="notif-log-filters" style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;">
+              <button type="button" onclick="setNotificationLogFilter('all', this)" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; background: rgba(56, 189, 248, 0.2); color: #38bdf8; border-color: #38bdf8; font-weight: 700;">
+                All (الكل)
+              </button>
+              <button type="button" onclick="setNotificationLogFilter('whatsapp', this)" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; font-weight: 600;">
+                📱 WhatsApp
+              </button>
+              <button type="button" onclick="setNotificationLogFilter('reminder', this)" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; font-weight: 600;">
+                ⏰ Reminders
+              </button>
+              <button type="button" onclick="setNotificationLogFilter('task', this)" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; font-weight: 600;">
+                ☑️ Tasks
+              </button>
+              <button type="button" onclick="setNotificationLogFilter('warning', this)" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; font-weight: 600;">
+                ⚠️ Warnings
+              </button>
+              <button type="button" onclick="setNotificationLogFilter('error', this)" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.3rem 0.7rem; font-weight: 600;">
+                ❌ Errors
+              </button>
+            </div>
+          </div>
+
+          <!-- Notification Log Cards List -->
+          <div class="glass-panel" style="padding: 1.25rem 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div id="notif-full-log-list" style="display: flex; flex-direction: column; gap: 0.65rem;">
+              <div style="text-align: center; color: var(--text-faint); font-size: 0.85rem; padding: 3rem 1rem;">
+                Loading notification history...
+              </div>
             </div>
           </div>
         </section>
@@ -3954,7 +4075,7 @@
       if (activeBnav) activeBnav.classList.add("active");
 
       // Switch Main View Panels
-      const views = ["dashboard", "employees", "departments", "tasks", "reminders", "stock", "stock-requests", "reports", "audit-logs", "messages", "settings"];
+      const views = ["dashboard", "employees", "departments", "tasks", "reminders", "stock", "stock-requests", "reports", "audit-logs", "messages", "settings", "notification-logs"];
       views.forEach(v => {
         const el = document.getElementById("view-" + v);
         if (el) el.style.display = (v === mod) ? "flex" : "none";
@@ -3990,8 +4111,349 @@
       if (mod === "settings") {
         renderSettingsWarningTemplates();
       }
+      if (mod === "notification-logs") {
+        renderFullNotificationLogs();
+      }
     }
     window.setModule = setModule;
+
+    // =========================================================================
+    // NOTIFICATION CENTER & HIDDEN AUDIT LOG MODULE
+    // =========================================================================
+
+    let currentNotifFilter = "all";
+
+    function getSystemNotifications() {
+      if (!window.systemNotificationHistory || !window.systemNotificationHistory.length) {
+        try {
+          const saved = localStorage.getItem("ostan_notifications_log");
+          if (saved) window.systemNotificationHistory = JSON.parse(saved);
+        } catch(e) {}
+      }
+      return window.systemNotificationHistory || [];
+    }
+
+    function saveSystemNotifications(list) {
+      window.systemNotificationHistory = list;
+      try {
+        localStorage.setItem("ostan_notifications_log", JSON.stringify(list));
+      } catch(e) {}
+      updateNotificationBellUI();
+    }
+
+    function updateNotificationBellUI() {
+      const list = getSystemNotifications();
+      const unreadCount = list.filter(n => n.unread).length;
+
+      const bellBadge = document.getElementById("notif-bell-badge");
+      if (bellBadge) {
+        if (unreadCount > 0) {
+          bellBadge.style.display = "inline-block";
+          bellBadge.textContent = unreadCount > 9 ? "9+" : String(unreadCount);
+        } else {
+          bellBadge.style.display = "none";
+        }
+      }
+
+      const unreadBadge = document.getElementById("notif-unread-count-badge");
+      if (unreadBadge) {
+        if (unreadCount > 0) {
+          unreadBadge.style.display = "inline-block";
+          unreadBadge.textContent = `${unreadCount} New`;
+        } else {
+          unreadBadge.style.display = "none";
+        }
+      }
+    }
+    window.updateNotificationBellUI = updateNotificationBellUI;
+
+    function toggleNotificationCenter(e) {
+      if (e) {
+        e.stopPropagation();
+        e.preventDefault();
+      }
+      const dropdown = document.getElementById("notif-bell-dropdown");
+      if (!dropdown) return;
+
+      const isVisible = dropdown.style.display === "flex" || dropdown.style.display === "block";
+      if (isVisible) {
+        dropdown.style.display = "none";
+      } else {
+        dropdown.style.display = "flex";
+        renderNotificationDropdown();
+      }
+    }
+    window.toggleNotificationCenter = toggleNotificationCenter;
+
+    // Close notification dropdown when clicking outside
+    document.addEventListener("click", function (e) {
+      const wrapper = document.getElementById("notif-center-wrapper");
+      const dropdown = document.getElementById("notif-bell-dropdown");
+      if (dropdown && (dropdown.style.display === "flex" || dropdown.style.display === "block")) {
+        if (wrapper && !wrapper.contains(e.target)) {
+          dropdown.style.display = "none";
+        }
+      }
+    });
+
+    function formatRelativeTime(timestamp) {
+      if (!timestamp) return "";
+      const diff = Math.floor((Date.now() - timestamp) / 1000);
+      if (diff < 60) return "Just now";
+      if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+      if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+      if (diff < 604800) return `${Math.floor(diff / 86400)}d ago`;
+      return new Date(timestamp).toLocaleDateString();
+    }
+
+    function renderNotificationDropdown() {
+      const container = document.getElementById("notif-bell-list");
+      if (!container) return;
+
+      const list = getSystemNotifications();
+      if (!list.length) {
+        container.innerHTML = `
+          <div style="text-align: center; color: var(--text-faint); font-size: 0.8rem; padding: 2rem 1rem;">
+            <div style="font-size: 1.6rem; margin-bottom: 0.3rem;">📭</div>
+            <div style="font-weight: 700; color: var(--text-main);">No notifications yet</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 3px;">System alerts and dispatches will appear here.</div>
+          </div>
+        `;
+        return;
+      }
+
+      const recent = list.slice(0, 8);
+      container.innerHTML = recent.map(n => {
+        const isUnread = Boolean(n.unread);
+        const icon = n.icon || "⚡";
+        const relTime = formatRelativeTime(n.timestamp) || n.time || "";
+
+        return `
+          <div onclick="markSingleNotificationRead('${n.id}')" style="display: flex; gap: 0.65rem; padding: 0.6rem 0.75rem; border-radius: 8px; background: ${isUnread ? 'rgba(56, 189, 248, 0.08)' : 'rgba(255, 255, 255, 0.02)'}; border: 1px solid ${isUnread ? 'rgba(56, 189, 248, 0.25)' : 'var(--border-subtle)'}; cursor: pointer; transition: all 0.15s ease;">
+            <div style="width: 28px; height: 28px; border-radius: 6px; background: rgba(255, 255, 255, 0.06); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; flex-shrink: 0;">
+              ${icon}
+            </div>
+            <div style="flex: 1; min-width: 0;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.3rem;">
+                <div style="font-weight: ${isUnread ? '800' : '600'}; font-size: 0.8rem; color: ${isUnread ? 'var(--text-main)' : 'var(--text-muted)'}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${n.title}
+                </div>
+                <span style="font-size: 0.65rem; color: var(--text-faint); white-space: nowrap; flex-shrink: 0;">${relTime}</span>
+              </div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                ${n.body || ''}
+              </div>
+            </div>
+            ${isUnread ? '<span style="width: 6px; height: 6px; border-radius: 50%; background: #38bdf8; align-self: center; flex-shrink: 0;"></span>' : ''}
+          </div>
+        `;
+      }).join("");
+    }
+
+    function markSingleNotificationRead(id) {
+      const list = getSystemNotifications();
+      const item = list.find(n => String(n.id) === String(id));
+      if (item) {
+        item.unread = false;
+        saveSystemNotifications(list);
+        renderNotificationDropdown();
+        if (state.activeModule === "notification-logs") {
+          renderFullNotificationLogs();
+        }
+      }
+    }
+    window.markSingleNotificationRead = markSingleNotificationRead;
+
+    function clearNotificationCenter(e) {
+      if (e) e.stopPropagation();
+      const list = getSystemNotifications();
+      list.forEach(n => { n.unread = false; });
+      saveSystemNotifications(list);
+      renderNotificationDropdown();
+      if (state.activeModule === "notification-logs") {
+        renderFullNotificationLogs();
+      }
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("Notifications Cleared", "All notifications have been marked as read.");
+      }
+    }
+    window.clearNotificationCenter = clearNotificationCenter;
+
+    function openFullNotificationLogsView() {
+      const dropdown = document.getElementById("notif-bell-dropdown");
+      if (dropdown) dropdown.style.display = "none";
+
+      if (state.activeModule !== "notification-logs") {
+        state.previousModuleBeforeNotifs = state.activeModule || "dashboard";
+      }
+      setModule("notification-logs");
+    }
+    window.openFullNotificationLogsView = openFullNotificationLogsView;
+
+    function returnFromNotificationLogs() {
+      const target = state.previousModuleBeforeNotifs || "dashboard";
+      setModule(target);
+    }
+    window.returnFromNotificationLogs = returnFromNotificationLogs;
+
+    function setNotificationLogFilter(filter, btnEl) {
+      currentNotifFilter = filter;
+      const container = document.getElementById("notif-log-filters");
+      if (container) {
+        container.querySelectorAll("button").forEach(b => {
+          b.style.background = "";
+          b.style.color = "";
+          b.style.borderColor = "var(--border-subtle)";
+          b.style.fontWeight = "600";
+        });
+      }
+      if (btnEl) {
+        btnEl.style.background = "rgba(56, 189, 248, 0.2)";
+        btnEl.style.color = "#38bdf8";
+        btnEl.style.borderColor = "#38bdf8";
+        btnEl.style.fontWeight = "700";
+      }
+      renderFullNotificationLogs();
+    }
+    window.setNotificationLogFilter = setNotificationLogFilter;
+
+    function renderFullNotificationLogs() {
+      const list = getSystemNotifications();
+      const searchVal = (document.getElementById("notif-log-search")?.value || "").toLowerCase().trim();
+
+      // Update quick metrics
+      const totalEl = document.getElementById("stat-notif-total");
+      if (totalEl) totalEl.textContent = String(list.length);
+
+      const unreadCount = list.filter(n => n.unread).length;
+      const unreadEl = document.getElementById("stat-notif-unread");
+      if (unreadEl) unreadEl.textContent = String(unreadCount);
+
+      const warningCount = list.filter(n => n.type === "warning" || n.type === "error").length;
+      const warnEl = document.getElementById("stat-notif-warnings");
+      if (warnEl) warnEl.textContent = String(warningCount);
+
+      const waCount = list.filter(n => n.type === "whatsapp" || n.type === "reminder").length;
+      const waEl = document.getElementById("stat-notif-wa");
+      if (waEl) waEl.textContent = String(waCount);
+
+      const filtered = list.filter(n => {
+        // Category Filter
+        if (currentNotifFilter !== "all") {
+          if (currentNotifFilter === "whatsapp" && n.type !== "whatsapp") return false;
+          if (currentNotifFilter === "reminder" && n.type !== "reminder") return false;
+          if (currentNotifFilter === "task" && n.type !== "task") return false;
+          if (currentNotifFilter === "warning" && n.type !== "warning") return false;
+          if (currentNotifFilter === "error" && n.type !== "error") return false;
+        }
+        // Search Filter
+        if (searchVal) {
+          const t = (n.title || "").toLowerCase();
+          const b = (n.body || "").toLowerCase();
+          const d = (n.date || "").toLowerCase();
+          return t.includes(searchVal) || b.includes(searchVal) || d.includes(searchVal);
+        }
+        return true;
+      });
+
+      const container = document.getElementById("notif-full-log-list");
+      if (!container) return;
+
+      if (!filtered.length) {
+        container.innerHTML = `
+          <div style="padding: 3.5rem 1rem; text-align: center; color: var(--text-faint); background: var(--bg-surface); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
+            <div style="font-size: 2.2rem; margin-bottom: 0.4rem;">📭</div>
+            <div style="font-weight: 700; color: var(--text-main); font-size: 1rem;">No notifications match current criteria</div>
+            <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">Try selecting another filter or searching for another term.</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(n => {
+        const isUnread = Boolean(n.unread);
+        const icon = n.icon || "⚡";
+        const typeColorMap = {
+          whatsapp: "#10b981",
+          reminder: "#f59e0b",
+          task: "#6366f1",
+          warning: "#f59e0b",
+          error: "#ef4444",
+          success: "#10b981",
+          info: "#38bdf8"
+        };
+        const color = typeColorMap[n.type] || "#38bdf8";
+        const relTime = formatRelativeTime(n.timestamp);
+
+        return `
+          <div style="padding: 1rem 1.25rem; border-radius: var(--radius-md); background: ${isUnread ? 'rgba(56, 189, 248, 0.05)' : 'var(--bg-surface)'}; border: 1px solid ${isUnread ? 'rgba(56, 189, 248, 0.3)' : 'var(--border-subtle)'}; display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; transition: all 0.2s ease;">
+            <div style="display: flex; align-items: flex-start; gap: 0.85rem; flex: 1;">
+              <div style="width: 38px; height: 38px; border-radius: 10px; background: ${color}22; border: 1px solid ${color}44; color: ${color}; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; margin-top: 2px;">
+                ${icon}
+              </div>
+              <div style="flex: 1;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                  <span style="font-weight: 800; font-size: 0.95rem; color: var(--text-main);">${n.title}</span>
+                  <span class="badge" style="font-size: 0.65rem; background: ${color}20; color: ${color}; border: 1px solid ${color}40; text-transform: uppercase; font-weight: 700;">
+                    ${n.type || 'SYSTEM'}
+                  </span>
+                  ${isUnread ? '<span class="badge badge-emerald" style="font-size: 0.65rem; font-weight: 800;">NEW</span>' : ''}
+                </div>
+                <div style="font-size: 0.84rem; color: var(--text-muted); margin-top: 5px; line-height: 1.5; white-space: pre-wrap;">
+                  ${n.body || ''}
+                </div>
+                <div style="display: flex; gap: 0.85rem; align-items: center; flex-wrap: wrap; margin-top: 8px; font-size: 0.72rem; color: var(--text-faint);">
+                  <span>📅 ${n.date || ''}</span>
+                  <span>🕒 ${n.time || ''}</span>
+                  ${relTime ? `<span>• ${relTime}</span>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 0.4rem; align-items: center; flex-shrink: 0;">
+              ${isUnread ? `
+                <button type="button" onclick="markSingleNotificationRead('${n.id}')" class="btn btn-ghost" style="padding: 0.3rem 0.6rem; font-size: 0.72rem; color: #38bdf8;" title="Mark as Read">
+                  ✓ Read
+                </button>
+              ` : ''}
+              <button type="button" onclick="deleteNotificationLogItem('${n.id}')" class="btn btn-ghost" style="padding: 0.3rem 0.5rem; font-size: 0.75rem; color: var(--text-faint);" title="Delete Record">
+                🗑️
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+    window.renderFullNotificationLogs = renderFullNotificationLogs;
+
+    function markAllNotificationsRead() {
+      const list = getSystemNotifications();
+      list.forEach(n => { n.unread = false; });
+      saveSystemNotifications(list);
+      renderFullNotificationLogs();
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("All Read", "Marked all notifications as read.");
+      }
+    }
+    window.markAllNotificationsRead = markAllNotificationsRead;
+
+    function deleteNotificationLogItem(id) {
+      let list = getSystemNotifications();
+      list = list.filter(n => String(n.id) !== String(id));
+      saveSystemNotifications(list);
+      renderFullNotificationLogs();
+    }
+    window.deleteNotificationLogItem = deleteNotificationLogItem;
+
+    function clearAllNotificationHistory() {
+      if (!confirm("Are you sure you want to permanently clear the notification history?")) return;
+      saveSystemNotifications([]);
+      renderFullNotificationLogs();
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("History Cleared", "Notification log has been reset.");
+      }
+    }
+    window.clearAllNotificationHistory = clearAllNotificationHistory;
 
     function renderSettingsWarningTemplates() {
       const wt = state.warningTemplates || {};
@@ -11167,6 +11629,11 @@
             });
           }
         }).catch(err => console.warn("Boot inventory seed notice:", err));
+      }
+
+      // Initialize notification bell badge and history count
+      if (typeof updateNotificationBellUI === "function") {
+        updateNotificationBellUI();
       }
     }
   </script>

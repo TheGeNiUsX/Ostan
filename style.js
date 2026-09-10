@@ -57,16 +57,58 @@
 
       // Track notification history for the notification center bell
       window.systemNotificationHistory = window.systemNotificationHistory || [];
-      window.systemNotificationHistory.unshift({
-        id: Date.now() + Math.random(),
-        title: title || "Notification",
+      try {
+        if (!window.systemNotificationHistory.length) {
+          const saved = localStorage.getItem("ostan_notifications_log");
+          if (saved) window.systemNotificationHistory = JSON.parse(saved);
+        }
+      } catch(e) {}
+
+      const lowerTitle = (title || "").toLowerCase();
+      const lowerBody = (body || "").toLowerCase();
+      let notifType = "info";
+      let notifIcon = "⚡";
+
+      if (lowerTitle.includes("whatsapp") || lowerBody.includes("whatsapp")) {
+        notifType = "whatsapp";
+        notifIcon = "📱";
+      } else if (lowerTitle.includes("reminder") || lowerBody.includes("reminder")) {
+        notifType = "reminder";
+        notifIcon = "⏰";
+      } else if (lowerTitle.includes("task") || lowerBody.includes("task")) {
+        notifType = "task";
+        notifIcon = "☑️";
+      } else if (lowerTitle.includes("error") || lowerTitle.includes("denied") || lowerTitle.includes("failed") || lowerBody.includes("failed")) {
+        notifType = "error";
+        notifIcon = "❌";
+      } else if (lowerTitle.includes("warn") || lowerTitle.includes("alert") || lowerBody.includes("warn")) {
+        notifType = "warning";
+        notifIcon = "⚠️";
+      } else if (lowerTitle.includes("success") || lowerTitle.includes("saved") || lowerTitle.includes("done") || lowerTitle.includes("restarted") || lowerTitle.includes("complete")) {
+        notifType = "success";
+        notifIcon = "✅";
+      }
+
+      const notifItem = {
+        id: "notif-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
+        title: title || "System Notification",
         body: body || "",
+        type: notifType,
+        icon: notifIcon,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        timestamp: Date.now()
-      });
-      if (window.systemNotificationHistory.length > 50) {
+        date: new Date().toLocaleDateString(),
+        timestamp: Date.now(),
+        unread: true
+      };
+
+      window.systemNotificationHistory.unshift(notifItem);
+      if (window.systemNotificationHistory.length > 200) {
         window.systemNotificationHistory.pop();
       }
+      try {
+        localStorage.setItem("ostan_notifications_log", JSON.stringify(window.systemNotificationHistory));
+      } catch(e) {}
+
       if (typeof window.updateNotificationBellUI === "function") {
         try { window.updateNotificationBellUI(); } catch (e) { console.error(e); }
       }
@@ -106,6 +148,13 @@
     init: function () {
       const savedTheme = localStorage.getItem("ostan_theme") || "dark";
       this.setTheme(savedTheme);
+      try {
+        const saved = localStorage.getItem("ostan_notifications_log");
+        if (saved) window.systemNotificationHistory = JSON.parse(saved);
+        else window.systemNotificationHistory = [];
+      } catch(e) {
+        window.systemNotificationHistory = [];
+      }
     },
   };
 
