@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const GATEWAY_URL = process.env.WHATSAPP_GATEWAY_URL || "http://localhost:5001";
+const GATEWAY_URL = process.env.WHATSAPP_GATEWAY_URL || "https://ostan-whatsapp-gateway.onrender.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

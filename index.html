@@ -8204,10 +8204,10 @@
 
     let liveWaPollingInterval = null;
 
-    /** Returns the configured local gateway URL (falls back to localhost) */
+    /** Returns the configured gateway URL (falls back to Render cloud gateway) */
     function getWaGatewayUrl() {
       const cfg = state.whatsappApiConfig || {};
-      return (cfg.gatewayUrl || 'http://localhost:5001').replace(/\/$/, '');
+      return (cfg.gatewayUrl || 'https://ostan-whatsapp-gateway.onrender.com').replace(/\/$/, '');
     }
 
     /** Switch dispatch method: Choice 1 ('direct') or Choice 2 ('extension') */
@@ -8584,7 +8584,8 @@
       sendWhatsAppRemoteCommand("restart");
       try {
         try {
-          await fetch("http://localhost:5001/api/restart", {
+          const gwBase = getWaGatewayUrl();
+          await fetch(`${gwBase}/api/restart`, {
             method: "POST",
             headers: { "Content-Type": "application/json", "x-user-id": activeUid },
             body: JSON.stringify({ userId: activeUid })
@@ -9773,7 +9774,7 @@
       const phoneId = document.getElementById("wa-cfg-phone-id")?.value.trim() || "";
       const token = document.getElementById("wa-cfg-token")?.value.trim() || "";
       const mode = document.getElementById("wa-cfg-mode")?.value || "api";
-      const gatewayUrl = (document.getElementById("wa-cfg-gateway-url")?.value.trim() || "http://localhost:5001").replace(/\/$/, '');
+      const gatewayUrl = (document.getElementById("wa-cfg-gateway-url")?.value.trim() || "https://ostan-whatsapp-gateway.onrender.com").replace(/\/$/, '');
 
       state.whatsappApiConfig = {
         ...(state.whatsappApiConfig || {}),
