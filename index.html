@@ -7412,13 +7412,18 @@
       renderMessageHistoryLogs();
       updateMessageComposerStats();
 
-      // Restore saved connection mode (cloud or local), default to cloud
-      const savedMode = (() => {
-        try { return localStorage.getItem('ostan_wa_connection_mode') || 'cloud'; } catch(e) { return 'cloud'; }
+      // Subscribe to real-time Firestore session updates for active user
+      if (typeof subscribeToUserWhatsAppFirestore === "function") {
+        subscribeToUserWhatsAppFirestore();
+      }
+
+      // Restore saved dispatch mode ('direct' or 'extension'), default to 'direct'
+      const savedDispatchMode = (() => {
+        try { return localStorage.getItem('ostan_wa_dispatch_mode') || 'direct'; } catch(e) { return 'direct'; }
       })();
-      state.waConnectionMode = savedMode;
+      state.waDispatchMode = savedDispatchMode;
       // Defer to let DOM render first
-      setTimeout(() => switchWaConnectionMode(savedMode), 100);
+      setTimeout(() => setWaDispatchMode(savedDispatchMode), 100);
     }
     window.renderMessagesSender = renderMessagesSender;
 
@@ -7717,8 +7722,8 @@
         return;
       }
 
-      // 3. QR Code Ready (for unpaired state)
-      if (liveData.status === "qr_ready" && liveData.qr) {
+      // 3. QR Code Ready or Available (for unpaired state)
+      if (liveData.qr) {
         curSession.connected = false;
         curSession.phone = "";
         state.userWhatsAppSessions[activeUid] = curSession;

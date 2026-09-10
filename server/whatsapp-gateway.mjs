@@ -157,8 +157,11 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
   }
 
   session.isStarting = true;
-  session.status = session.phone ? 'connected' : 'connecting';
-  session.qr = null;
+  if (forceRestart) {
+    session.qr = null;
+    session.phone = null;
+  }
+  session.status = session.phone ? 'connected' : (session.qr ? 'qr_ready' : 'connecting');
   syncSessionStateToFirestore(cleanUserId, session);
 
   try {
@@ -222,14 +225,14 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
 
         if (shouldReconnect) {
           // Socket closed transiently (e.g. code 408, 440, 515, keepalive). Keep phone and paired status intact!
-          session.status = session.phone ? 'connected' : 'connecting';
-          session.qr = null;
+          session.status = session.phone ? 'connected' : (session.qr ? 'qr_ready' : 'connecting');
+          // Preserve session.qr so it doesn't flicker/vanish on remote screens while awaiting new QR
           session.isStarting = false;
           syncSessionStateToFirestore(cleanUserId, session);
 
           setTimeout(() => {
             startWhatsAppSocketForUser(cleanUserId);
-          }, 3000);
+          }, 2000);
         } else {
           console.log(`[WhatsApp Gateway] ⚠️ User '${cleanUserId}' was unpaired / logged out from mobile. Cleaning session files...`);
           session.status = 'disconnected';
@@ -546,11 +549,14 @@ server.listen(PORT, HOST, () => {
               await startWhatsAppSocketForUser(cleanId, true);
             } else if (reqData.action === 'logout' || reqData.action === 'disconnect') {
               await logoutWhatsAppForUser(cleanId);
-            } else if (session.status === 'disconnected' || !session.sock) {
-              await startWhatsAppSocketForUser(cleanId, true);
+            } else if (session.status === 'connected') {
+              syncSessionStateToFirestore(cleanId, session);
             } else if (session.status === 'qr_ready' && session.qr) {
               syncSessionStateToFirestore(cleanId, session);
-            } else if (session.status === 'connected') {
+            } else if (session.status === 'disconnected' || !session.sock) {
+              await startWhatsAppSocketForUser(cleanId, false);
+            } else {
+              // Socket already connecting: sync latest status to Firestore
               syncSessionStateToFirestore(cleanId, session);
             }
           }
