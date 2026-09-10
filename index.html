@@ -1038,7 +1038,26 @@
           </div>
         </div>
 
-        <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem; position: relative;">
+          <!-- Notification Bell & Center -->
+          <div style="position: relative;">
+            <button id="notif-bell-btn" class="btn btn-secondary" onclick="toggleNotificationCenter()" style="padding: 0.4rem 0.65rem; font-size: 0.78rem; position: relative;" title="System Notifications">
+              <span>🔔</span>
+              <span id="notif-bell-badge" style="display: none; position: absolute; top: -4px; right: -4px; background: #ef4444; color: #fff; border-radius: 999px; font-size: 0.62rem; font-weight: 800; padding: 1px 5px; line-height: 1;">0</span>
+            </button>
+            <div id="notif-bell-dropdown" class="glass-panel" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 330px; max-height: 420px; z-index: 10001; border-radius: 12px; box-shadow: 0 16px 36px rgba(0,0,0,0.55); border: 1px solid var(--border-light); overflow: hidden; flex-direction: column; background: var(--bg-surface-elevated, #161f30);">
+              <div style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.15);">
+                <div style="display: flex; align-items: center; gap: 0.4rem; font-weight: 800; font-size: 0.85rem; color: var(--text-main);">
+                  <span>🔔</span> <span data-i18n="notif_center_title">Notifications (الإشعارات)</span>
+                </div>
+                <button onclick="clearNotificationCenter(event)" class="btn btn-ghost" style="font-size: 0.7rem; color: #38bdf8; padding: 2px 6px;">Clear All</button>
+              </div>
+              <div id="notif-bell-list" style="overflow-y: auto; max-height: 340px; padding: 0.5rem; display: flex; flex-direction: column; gap: 0.45rem;">
+                <div style="text-align: center; color: var(--text-faint); font-size: 0.78rem; padding: 1.5rem;">No recent notifications</div>
+              </div>
+            </div>
+          </div>
+
           <!-- Language Toggle (English ↔ Arabic) -->
           <button class="btn btn-secondary" onclick="window.OstanI18n.toggle()" style="padding: 0.4rem 0.65rem; font-size: 0.78rem;">
             <span data-i18n="lang_toggle">🌐 العربية</span>
@@ -1248,14 +1267,23 @@
 
             <!-- Saudi Staff Filter & Search Toolbar -->
             <div class="glass-panel" style="padding: 0.9rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-              <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">💰 Solid Salary Filter:</span>
-                <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
-                  <button id="saudi-sal-filter-all" type="button" onclick="setSaudiSalaryFilter('all', this)" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.72rem;">All Salaries</button>
-                  <button id="saudi-sal-filter-1500" type="button" onclick="setSaudiSalaryFilter('1500', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">1,500 SAR (Ret: 500)</button>
-                  <button id="saudi-sal-filter-4000" type="button" onclick="setSaudiSalaryFilter('4000', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">4,000 SAR (Ret: 3,000)</button>
-                  <button id="saudi-sal-filter-5500" type="button" onclick="setSaudiSalaryFilter('5500', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">5,500 SAR (Ret: 4,500)</button>
-                  <button id="saudi-sal-filter-other" type="button" onclick="setSaudiSalaryFilter('other', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">Other</button>
+              <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.4rem;">
+                  <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">🏢 Company:</span>
+                  <select id="saudi-company-filter" onchange="renderSaudiWorkers()" class="input-field" style="font-size: 0.75rem; padding: 0.25rem 0.55rem; height: 32px; min-width: 160px; font-weight: 600;">
+                    <option value="all">🏢 All Companies (جميع الشركات)</option>
+                  </select>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                  <span style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted);">💰 Solid Salary Filter:</span>
+                  <div style="display: flex; gap: 0.3rem; flex-wrap: wrap;">
+                    <button id="saudi-sal-filter-all" type="button" onclick="setSaudiSalaryFilter('all', this)" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.72rem;">All Salaries</button>
+                    <button id="saudi-sal-filter-1500" type="button" onclick="setSaudiSalaryFilter('1500', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">1,500 SAR (Ret: 500)</button>
+                    <button id="saudi-sal-filter-4000" type="button" onclick="setSaudiSalaryFilter('4000', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">4,000 SAR (Ret: 3,000)</button>
+                    <button id="saudi-sal-filter-5500" type="button" onclick="setSaudiSalaryFilter('5500', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">5,500 SAR (Ret: 4,500)</button>
+                    <button id="saudi-sal-filter-other" type="button" onclick="setSaudiSalaryFilter('other', this)" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; border: 1px solid var(--border-subtle);">Other</button>
+                  </div>
                 </div>
               </div>
 
@@ -1304,6 +1332,7 @@
                 <div>
                   <label data-i18n="dept_step_2" style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 4px;">2. Select Section:</label>
                   <select id="dept-ctrl-section" class="input-field">
+                    <option value="departments">🏢 Departments & Access Control (الأقسام والصلاحيات)</option>
                     <option value="reminders">⏰ Reminders</option>
                     <option value="employees">👥 Employees</option>
                     <option value="saudi-staff">🇸🇦 Saudi Staff (الكادر السعودي)</option>
@@ -1404,6 +1433,24 @@
                   <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
                     <input type="checkbox" id="chk-perm-saudi-excel">
                     <span data-i18n="perm_saudi_excel" style="font-size: 0.82rem; color: #34d399;">Excel Batch Import / Export (📥 استيراد وتصدير إكسل)</span>
+                  </label>
+                </div>
+              </div>
+
+              <!-- 1.2 Departments & Access Control Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; border: 1px solid rgba(129, 140, 248, 0.35); background: linear-gradient(180deg, rgba(129, 140, 248, 0.04) 0%, var(--bg-surface) 100%);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(129, 140, 248, 0.25); padding-bottom: 0.5rem;">
+                  <span style="font-weight: 700; font-size: 0.95rem; color: #818cf8;">🏢 Departments & Access Control</span>
+                  <span class="badge badge-primary">Security</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-dept-view">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: #818cf8;">View / Seeing (رؤية واستعراض قسم الأقسام)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-dept-manage">
+                    <span style="font-size: 0.82rem; font-weight: 700; color: #fbbf24;">Grant / Modify Permissions (إعطاء وتعديل الصلاحيات لنفسه أو للآخرين)</span>
                   </label>
                 </div>
               </div>
@@ -1854,31 +1901,11 @@
                 <span id="wa-status-dot" style="width: 8px; height: 8px; border-radius: 50%; background: #f59e0b;"></span>
                 <span id="wa-status-text" data-i18n="whatsapp_status_disconnected">Disconnected / Ready to Pair</span>
               </span>
-            </div>
-          </div>
-
-          <!-- 100% FULLY AUTOMATED SENDER BANNER -->
-          <div class="glass-panel" style="padding: 1.25rem 1.5rem; background: linear-gradient(135deg, rgba(37, 211, 102, 0.12) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(37, 211, 102, 0.35); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-radius: var(--radius-md);">
-            <div style="display: flex; align-items: center; gap: 0.9rem;">
-              <div style="width: 46px; height: 46px; border-radius: 12px; background: linear-gradient(135deg, #25D366, #128C7E); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #fff; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.35); flex-shrink: 0;">
-                ⚡
-              </div>
-              <div>
-                <div style="font-weight: 800; font-size: 1.05rem; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                  <span data-i18n="auto_mode_banner_title">⚡ 100% Hands-Free Automated Sender Mode</span>
-                  <span class="badge badge-emerald" style="font-size: 0.68rem;">Auto-Clicks Send</span>
-                </div>
-                <div data-i18n="auto_mode_banner_desc" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
-                  Enables hands-free dispatching: automatically clicks the Send button and closes tabs for all selected contacts.
-                </div>
-              </div>
-            </div>
-            <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-              <a href="whatsapp-autosend-extension.zip" download="ostan-whatsapp-autosender.zip" class="btn btn-primary" style="background: #25D366; border-color: #25D366; font-size: 0.82rem; font-weight: 700; padding: 0.5rem 1rem; text-decoration: none; display: flex; align-items: center; gap: 0.4rem;">
-                <span data-i18n="btn_download_extension">📥 Download Auto-Sender Extension (.ZIP)</span>
+              <a href="whatsapp-autosend-extension.zip" download="ostan-whatsapp-autosender.zip" class="btn btn-primary" style="background: #25D366; border-color: #25D366; font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.4rem; border-radius: 9999px;" title="Download Auto-Sender Extension">
+                <span>📥</span> <span data-i18n="btn_download_extension">Auto-Sender Extension (.ZIP)</span>
               </a>
-              <button type="button" onclick="openExtensionGuideModal()" class="btn btn-secondary" style="font-size: 0.82rem; font-weight: 700; padding: 0.5rem 0.9rem;">
-                <span data-i18n="btn_setup_guide">📖 Setup Guide (3 Steps)</span>
+              <button type="button" onclick="openExtensionGuideModal()" class="btn btn-secondary" style="font-size: 0.78rem; font-weight: 700; padding: 0.35rem 0.75rem; border-radius: 9999px;">
+                <span>📖</span> <span data-i18n="btn_setup_guide">Guide</span>
               </button>
             </div>
           </div>
@@ -2056,7 +2083,7 @@
                 <button id="msg-filter-all-btn" type="button" onclick="selectRecipientGroup('all')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
                   👥 <span data-i18n="msg_recipients_all">All Staff</span>
                 </button>
-                <button id="msg-filter-saudi-btn" type="button" onclick="selectRecipientGroup('saudi')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
+                <button id="msg-filter-saudi-btn" type="button" onclick="openSaudiRecipientPickerModal()" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
                   🇸🇦 <span data-i18n="btn_filter_saudi_msg">Saudi Staff</span>
                 </button>
                 <button id="msg-filter-stock-btn" type="button" onclick="selectRecipientGroup('stock')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
@@ -2402,15 +2429,21 @@
           </div>
         </div>
 
-        <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
-          <div style="display: flex; align-items: center; gap: 0.5rem;">
-            <span style="font-size: 1.1rem;">📱</span>
-            <div>
-              <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">WhatsApp Notification / تنبيه عبر واتساب</div>
-              <div style="font-size: 0.7rem; color: var(--text-muted);">Send an automated WhatsApp reminder when due time is approaching</div>
+        <div style="display: flex; flex-direction: column; gap: 0.4rem;">
+          <div style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: var(--radius-sm); padding: 0.75rem; display: flex; align-items: center; justify-content: space-between;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1.1rem;">📱</span>
+              <div>
+                <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main);">WhatsApp Notification / تنبيه عبر واتساب</div>
+                <div style="font-size: 0.7rem; color: var(--text-muted);">Send an automated WhatsApp reminder when due time is approaching</div>
+              </div>
             </div>
+            <input type="checkbox" id="rem-send-wa" checked style="width: 18px; height: 18px; cursor: pointer;">
           </div>
-          <input type="checkbox" id="rem-send-wa" checked style="width: 18px; height: 18px; cursor: pointer;">
+          <!-- WhatsApp Warning when user has no linked active phone -->
+          <div id="rem-no-wa-warning" style="display: none; background: rgba(245, 158, 11, 0.1); border: 1px dashed rgba(245, 158, 11, 0.4); border-radius: var(--radius-sm); padding: 0.65rem 0.85rem; font-size: 0.74rem; color: #fbbf24; line-height: 1.45;">
+            ⚠️ <strong>لا يوجد رقم واتساب مقترن ونشط (No Linked WhatsApp)</strong>: لتلقي تنبيهات واتساب، يجب ربط حساب واتساب نشط في قسم "Messages Sender". بدون رقم مرتبط، لن يتمكن النظام من إرسال التنبيهات لرقمك.
+          </div>
         </div>
 
         <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
@@ -2577,13 +2610,18 @@
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; margin-bottom: 0.65rem;">
             <div>
-              <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;" data-i18n="label_cr_number">CR Number (رقم السجل)</label>
-              <input id="worker-cr-number" type="text" placeholder="10XXXXXXXX" class="input-field" style="font-size: 0.82rem;">
+              <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;">Company Name (اسم الشركة)</label>
+              <input id="worker-company-name" type="text" placeholder="e.g. شركة أستان الدولية" class="input-field" style="font-size: 0.82rem;">
             </div>
             <div>
               <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;" data-i18n="label_cr_name">CR Name (اسم السجل)</label>
               <input id="worker-cr-name" type="text" placeholder="e.g. مؤسسة أستان" class="input-field" style="font-size: 0.82rem;">
             </div>
+          </div>
+
+          <div style="margin-bottom: 0.65rem;">
+            <label style="font-size: 0.76rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 3px;" data-i18n="label_cr_number">CR Number (رقم السجل التجاري)</label>
+            <input id="worker-cr-number" type="text" placeholder="10XXXXXXXX" class="input-field" style="font-size: 0.82rem;">
           </div>
 
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem;">
@@ -3230,6 +3268,89 @@
 
 
   <!-- =========================================================================
+       MODAL: SAUDI RECIPIENT PICKER (MESSAGES SENDER)
+       ========================================================================= -->
+  <div id="modal-saudi-recipient-picker" class="hud-modal-overlay" style="display: none; align-items: center; justify-content: center; z-index: 10050;">
+    <div class="hud-modal-box" style="max-width: 680px; max-height: 90vh; display: flex; flex-direction: column; overflow: hidden; padding: 1.5rem;">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+          <span style="font-size: 1.35rem;">🇸🇦</span>
+          <div>
+            <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0;">Select Saudi Staff Recipients / اختيار موظفي الدفعة السعودية</h2>
+            <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Choose specific Saudi employees to receive WhatsApp messages</p>
+          </div>
+        </div>
+        <button type="button" onclick="closeSaudiRecipientPickerModal()" style="background: none; border: none; font-size: 1.25rem; color: var(--text-muted); cursor: pointer;">✕</button>
+      </div>
+
+      <!-- Filters Row -->
+      <div style="display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 0.85rem; background: var(--bg-surface-elevated); padding: 0.85rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+        <!-- Search Bar -->
+        <div>
+          <input id="saudi-picker-search" type="text" placeholder="🔍 Search by employee name, phone, national ID..." class="input-field" oninput="renderSaudiPickerList()" style="font-size: 0.82rem; width: 100%; box-sizing: border-box;">
+        </div>
+
+        <!-- Filter Controls: Company & Salary -->
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+          <!-- Company filter dropdown -->
+          <div style="display: flex; align-items: center; gap: 0.35rem;">
+            <span style="font-size: 0.74rem; font-weight: 700; color: var(--text-muted);">🏢 Company:</span>
+            <select id="saudi-picker-company-filter" onchange="renderSaudiPickerList()" class="input-field" style="font-size: 0.75rem; padding: 0.2rem 0.5rem; height: 30px; min-width: 150px; font-weight: 600;">
+              <option value="all">🏢 All Companies (جميع الشركات)</option>
+            </select>
+          </div>
+
+          <!-- Salary Filter Tiers -->
+          <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+            <span style="font-size: 0.74rem; font-weight: 700; color: var(--text-muted);">💰 Salary:</span>
+            <div id="saudi-picker-salary-tiers" style="display: flex; gap: 0.25rem;">
+              <button type="button" class="btn btn-secondary active-picker-sal" onclick="setSaudiPickerSalaryFilter('all', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem; background: rgba(16, 185, 129, 0.2); color: #10b981; border-color: #10b981;">All</button>
+              <button type="button" class="btn btn-secondary" onclick="setSaudiPickerSalaryFilter('1500', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem;">1,500</button>
+              <button type="button" class="btn btn-secondary" onclick="setSaudiPickerSalaryFilter('4000', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem;">4,000</button>
+              <button type="button" class="btn btn-secondary" onclick="setSaudiPickerSalaryFilter('5500', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem;">5,500</button>
+              <button type="button" class="btn btn-secondary" onclick="setSaudiPickerSalaryFilter('other', this)" style="padding: 0.2rem 0.45rem; font-size: 0.7rem;">Other</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Select / Deselect -->
+        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px dashed var(--border-subtle); padding-top: 0.45rem;">
+          <div id="saudi-picker-stats" style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">
+            Showing 0 Saudi employees
+          </div>
+          <div style="display: flex; gap: 0.5rem;">
+            <button type="button" onclick="selectAllSaudiPickerFiltered(true)" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #10b981; font-weight: 700;">
+              ✓ Select All Filtered
+            </button>
+            <button type="button" onclick="selectAllSaudiPickerFiltered(false)" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #fb7185; font-weight: 700;">
+              ✕ Deselect Filtered
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Scrollable Employees List -->
+      <div id="saudi-picker-list" style="overflow-y: auto; max-height: 340px; display: flex; flex-direction: column; gap: 0.45rem; padding-right: 4px; margin-bottom: 0.85rem;">
+        <!-- Dynamically rendered -->
+      </div>
+
+      <!-- Action Footer -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.85rem;">
+        <span id="saudi-picker-selected-badge" class="badge badge-emerald" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">0 Selected</span>
+        <div style="display: flex; gap: 0.6rem;">
+          <button type="button" onclick="closeSaudiRecipientPickerModal()" class="btn btn-secondary" style="padding: 0.45rem 1rem; font-size: 0.82rem;">Cancel</button>
+          <button type="button" onclick="applySaudiPickerSelection()" class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); border-color: #10b981; padding: 0.45rem 1.25rem; font-size: 0.82rem; font-weight: 700;">
+            ✓ Apply Selection (تأكيد الاختيار)
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- =========================================================================
        4. CLIENT APPLICATION CORE ENGINE
        ========================================================================= -->
   <script>
@@ -3680,12 +3801,12 @@
 
       const normMod = (mod === "saudi-staff" || mod === "saudi_staff") ? "saudi-staff" : mod;
 
-      // Explicit lock policy takes precedence
-      if (user.sectionAccess && user.sectionAccess[normMod] === "locked") {
-        return "locked";
+      // 1. Explicit sectionAccess configured via matrix or policies takes top priority
+      if (user.sectionAccess && typeof user.sectionAccess[normMod] !== "undefined") {
+        return user.sectionAccess[normMod];
       }
 
-      // 1. If user has granular permissions configured, view/action flags govern visibility
+      // 2. If user has granular permissions configured, view/action flags govern visibility
       if (user.permissions) {
         if (normMod === "stock-requests" && user.permissions.stock) {
           return (user.permissions.stock.request || user.permissions.stock.approve_requests) ? "accessible" : "hidden";
@@ -3693,8 +3814,11 @@
         if (normMod === "stock" && user.permissions.stock) {
           return user.permissions.stock.view ? "accessible" : "hidden";
         }
-        if (normMod === "departments" && user.permissions.employees) {
-          return user.permissions.employees.view ? "accessible" : "hidden";
+        if (normMod === "departments") {
+          if (user.permissions.departments && typeof user.permissions.departments.view !== "undefined") {
+            return user.permissions.departments.view ? "accessible" : "hidden";
+          }
+          return (user.role === "SUPER_ADMIN" || user.role === "ADMIN") ? "accessible" : "hidden";
         }
         if (normMod === "saudi-staff") {
           const sP = user.permissions["saudi-staff"] || user.permissions.saudi_staff;
@@ -4498,11 +4622,26 @@
       if (statPayoutEl) statPayoutEl.textContent = `${totalPayout.toLocaleString()} SAR`;
       if (statRefundEl) statRefundEl.textContent = `${totalRefund.toLocaleString()} SAR`;
 
+      // Populate Company Filter Dropdown
+      const companyFilter = document.getElementById("saudi-company-filter");
+      if (companyFilter) {
+        const uniqueCompanies = [...new Set(saudiUsers.map(u => (u.companyName || "").trim()).filter(Boolean))].sort();
+        const curSelectedCompany = companyFilter.value || "all";
+        companyFilter.innerHTML = `<option value="all">${lang === 'ar' ? '🏢 جميع الشركات (All Companies)' : '🏢 All Companies'}</option>` +
+          uniqueCompanies.map(c => `<option value="${c}" ${c === curSelectedCompany ? 'selected' : ''}>🏢 ${c}</option>`).join("");
+      }
+
       if (!grid) return;
 
-      // 2. Filter Saudi workers by precise salary tier & search
+      // 2. Filter Saudi workers by company, precise salary tier & search
       const searchQuery = (document.getElementById("saudi-search-input")?.value || "").toLowerCase().trim();
+      const selCompany = document.getElementById("saudi-company-filter")?.value || "all";
       let displayedUsers = saudiUsers.filter(u => {
+        if (selCompany !== "all") {
+          const comp = (u.companyName || "").trim().toLowerCase();
+          if (comp !== selCompany.toLowerCase()) return false;
+        }
+
         const sal = parseFloat(u.salary) || 0;
         if (currentSaudiSalaryFilter === "1500" && Math.round(sal) !== 1500) return false;
         if (currentSaudiSalaryFilter === "4000" && Math.round(sal) !== 4000) return false;
@@ -4516,7 +4655,8 @@
           const email = (u.email || "").toLowerCase();
           const nationalId = (u.nationalId || "").toLowerCase();
           const phone = (u.phone || "").toLowerCase();
-          return name.includes(searchQuery) || nameAr.includes(searchQuery) || role.includes(searchQuery) || email.includes(searchQuery) || nationalId.includes(searchQuery) || phone.includes(searchQuery);
+          const company = (u.companyName || "").toLowerCase();
+          return name.includes(searchQuery) || nameAr.includes(searchQuery) || role.includes(searchQuery) || email.includes(searchQuery) || nationalId.includes(searchQuery) || phone.includes(searchQuery) || company.includes(searchQuery);
         }
         return true;
       });
@@ -4559,8 +4699,9 @@
                   <div style="font-size: 0.78rem; color: #10b981; font-weight: 600; margin-top: 3px; display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     <span style="flex-shrink: 0;">📱</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.phone || '+966 50 123 4567'}</span>
                   </div>
-                  ${u.idProfession ? `<div style="font-size: 0.74rem; color: #a7f3d0; font-weight: 600; display: flex; align-items: center; gap: 0.35rem; margin-top: 3px;"><span>👔</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.idProfession}</span></div>` : ''}
-                  ${(u.crName || u.crNumber) ? `<div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;"><span>🏢</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.crName || ''}${u.crNumber ? ` (${u.crNumber})` : ''}</span></div>` : ''}
+                  ${u.companyName ? `<div style="font-size: 0.74rem; color: #38bdf8; font-weight: 700; display: flex; align-items: center; gap: 0.35rem; margin-top: 3px;"><span>🏢</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.companyName}</span></div>` : ''}
+                  ${u.idProfession ? `<div style="font-size: 0.74rem; color: #a7f3d0; font-weight: 600; display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;"><span>👔</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.idProfession}</span></div>` : ''}
+                  ${(u.crName || u.crNumber) ? `<div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;"><span>📜</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${u.crName || ''}${u.crNumber ? ` (${u.crNumber})` : ''}</span></div>` : ''}
                   ${u.referredBy ? `<div style="font-size: 0.72rem; color: #60a5fa; display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;"><span>🤝</span> <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${lang === 'ar' ? 'من طرف:' : 'Ref:'} ${u.referredBy}</span></div>` : ''}
                   ${(u.birthDate || u.hireDate) ? `<div style="display: flex; gap: 0.6rem; flex-wrap: wrap; font-size: 0.7rem; color: var(--text-muted); margin-top: 3px;">${u.birthDate ? `<span>🎂 ${u.birthDate}</span>` : ''}${u.hireDate ? `<span>📅 ${lang === 'ar' ? 'بدء العمل:' : 'Start:'} ${u.hireDate}</span>` : ''}</div>` : ''}
                 </div>
@@ -4606,7 +4747,7 @@
                 ${lang === 'ar' ? '🇸🇦 مواطن سعودي' : '🇸🇦 Saudi National'}
               </span>
               <div style="display: flex; gap: 0.35rem;">
-                ${(!isMaster && (currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'ADMIN' || canEdit))) ? `
+                ${(!isMaster && !isSelf && (currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'ADMIN' || canEdit))) ? `
                   <button onclick="toggleBlockWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem; color: ${u.status === 'BLOCKED' || u.isBlocked ? '#34d399' : '#f59e0b'};" title="${u.status === 'BLOCKED' || u.isBlocked ? 'Unblock' : 'Block'}">
                     ${u.status === 'BLOCKED' || u.isBlocked ? '✅' : '🚫'}
                   </button>
@@ -4638,6 +4779,7 @@
       const sampleData = [
         {
           "اسم الموظف": "فهد بن ناصر الحربي",
+          "الشركة": "شركة أستان الدولية",
           "المهنة في الهوية": "مدير شؤون الموظفين",
           "رقم السجل": "1010654321",
           "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
@@ -4651,6 +4793,7 @@
         },
         {
           "اسم الموظف": "محمد بن خالد العتيبي",
+          "الشركة": "شركة أستان للمقاولات",
           "المهنة في الهوية": "محاسب مالي",
           "رقم السجل": "1010654321",
           "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
@@ -4664,6 +4807,7 @@
         },
         {
           "اسم الموظف": "سارة بنت عبدالله الدوسري",
+          "الشركة": "شركة الشرقية للتجارة",
           "المهنة في الهوية": "أخصائي موارد بشرية",
           "رقم السجل": "1010654321",
           "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
@@ -4677,6 +4821,7 @@
         },
         {
           "اسم الموظف": "عبدالعزيز بن فهد الشهري",
+          "الشركة": "شركة أستان الدولية",
           "المهنة في الهوية": "أمين مستودع",
           "رقم السجل": "1010654321",
           "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
@@ -4690,6 +4835,7 @@
         },
         {
           "اسم الموظف": "ريم بنت سلطان القحطاني",
+          "الشركة": "شركة الجزيرة للصناعة",
           "المهنة في الهوية": "مدير تنفيذي",
           "رقم السجل": "1010654321",
           "اسم السجل": "مؤسسة أستان للتجارة والمقاولات",
@@ -4836,9 +4982,10 @@
             };
 
             const name = getVal("اسم الموظف", "اسم_الموظف", "الاسم", "اسم", "name", "full name", "employee name");
+            const companyName = getVal("الشركة", "اسم الشركة", "اسم_الشركة", "company", "company name", "company_name");
             const idProfession = getVal("المهنة في الهوية", "المهنة_في_الهوية", "مهنة الهوية", "المهنة", "مهنة", "id profession", "profession", "occupation");
             const crNumber = getVal("رقم السجل", "رقم_السجل", "السجل التجاري", "رقم السجل التجاري", "cr number", "cr_number", "commercial registration");
-            const crName = getVal("اسم السجل", "اسم_السجل", "اسم المنشأة", "اسم الشركة", "اسم المؤسسة", "cr name", "cr_name", "company name");
+            const crName = getVal("اسم السجل", "اسم_السجل", "اسم المنشأة", "اسم المؤسسة", "cr name", "cr_name");
             const referredBy = getVal("من طرف", "من_طرف", "المرجع", "بواسطة", "المعرف", "referred by", "referred_by", "source");
             const phoneRaw = getVal("رقم الهاتف", "رقم_الهاتف", "الهاتف", "رقم الجوال", "الجوال", "جوال", "phone", "mobile", "whatsapp");
             const nationalId = getVal("رقم الهوية", "رقم_الهوية", "الهوية", "الهوية الوطنية", "national id", "national_id", "iqama");
@@ -4886,6 +5033,7 @@
               id: "u-saudi-" + Date.now() + "-" + Math.random().toString(36).substr(2, 5),
               name: name || "Saudi Employee",
               nameAr: name,
+              companyName: companyName || crName || "",
               idProfession: idProfession || "",
               crNumber: crNumber || "",
               crName: crName || "",
@@ -5064,7 +5212,7 @@
             <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
               <span class="badge badge-secondary" style="font-size: 0.68rem;">${isMaster ? (lang === 'ar' ? 'مسؤول متميز رئيسي' : 'Protected Master Admin') : (lang === 'ar' ? 'عضو فريق العمل' : 'Staff Member')}</span>
               <div style="display: flex; gap: 0.35rem;">
-                ${(!isMaster && (currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'ADMIN' || canEdit))) ? `
+                ${(!isMaster && !isSelf && (currentUser && (currentUser.role === 'SUPER_ADMIN' || currentUser.role === 'ADMIN' || canEdit))) ? `
                   <button onclick="toggleBlockWorkerById('${u.id}')" class="btn btn-ghost" style="padding: 0.35rem 0.55rem; font-size: 0.75rem; color: ${u.status === 'BLOCKED' || u.isBlocked ? '#34d399' : '#f59e0b'};" title="${u.status === 'BLOCKED' || u.isBlocked ? (lang === 'ar' ? 'إلغاء حظر الموظف' : 'Unblock Employee') : (lang === 'ar' ? 'حظر الموظف' : 'Block Employee')}">
                     ${u.status === 'BLOCKED' || u.isBlocked ? '✅' : '🚫'}
                   </button>
@@ -5089,6 +5237,7 @@
 
     function toggleBlockWorkerById(id) {
       const currentUser = getCurrentUser();
+      const lang = document.documentElement.getAttribute("lang") || "en";
       if (!currentUser || (currentUser.role !== "SUPER_ADMIN" && currentUser.role !== "ADMIN" && !hasUserPermission("employees", "edit", currentUser))) {
         alert("Permission denied: Only administrators can block or unblock employees.");
         return;
@@ -5099,8 +5248,12 @@
         alert("The Master Super Admin account cannot be blocked.");
         return;
       }
+      const isSelf = currentUser && (currentUser.id === u.id || (currentUser.email && u.email && currentUser.email.toLowerCase().trim() === u.email.toLowerCase().trim()));
+      if (isSelf) {
+        alert(lang === "ar" ? "لا يمكنك حظر حسابك الخاص!" : "You cannot block your own account!");
+        return;
+      }
 
-      const lang = document.documentElement.getAttribute("lang") || "en";
       const willBlock = u.status !== "BLOCKED" && !u.isBlocked;
       u.status = willBlock ? "BLOCKED" : "ACTIVE";
       u.isBlocked = willBlock;
@@ -5165,6 +5318,7 @@
         saudiFields.style.display = isSaudi ? "block" : "none";
       }
       const setEl = (elemId, val) => { const el = document.getElementById(elemId); if (el) el.value = val || ""; };
+      setEl("worker-company-name", u.companyName);
       setEl("worker-id-profession", u.idProfession);
       setEl("worker-cr-number", u.crNumber);
       setEl("worker-cr-name", u.crName);
@@ -5863,6 +6017,7 @@
       const employeePayoutVal = isSaudiVal ? (parseFloat(document.getElementById("worker-employee-payout")?.value) || 1000) : null;
       const companyReturnVal = isSaudiVal ? Math.max(0, salaryVal - employeePayoutVal) : null;
 
+      const companyName = (document.getElementById("worker-company-name")?.value || "").trim();
       const idProfession = (document.getElementById("worker-id-profession")?.value || "").trim();
       const crNumber = (document.getElementById("worker-cr-number")?.value || "").trim();
       const crName = (document.getElementById("worker-cr-name")?.value || "").trim();
@@ -5893,6 +6048,7 @@
           u.isExplicitSaudi = isSaudiVal;
 
           if (isSaudiVal) {
+            u.companyName = companyName;
             u.idProfession = idProfession;
             u.crNumber = crNumber;
             u.crName = crName;
@@ -5906,6 +6062,7 @@
             delete u.passwordHash;
             delete u.password;
           } else {
+            delete u.companyName;
             delete u.idProfession;
             delete u.crNumber;
             delete u.crName;
@@ -5959,6 +6116,7 @@
           nationalId: nationalIdVal,
           isSaudi: isSaudiVal,
           isExplicitSaudi: isSaudiVal,
+          companyName: isSaudiVal ? companyName : "",
           idProfession: isSaudiVal ? idProfession : "",
           crNumber: isSaudiVal ? crNumber : "",
           crName: isSaudiVal ? crName : "",
@@ -6020,12 +6178,28 @@
     window.saveWorker = saveWorker;
 
     let currentDeptTab = "matrix";
+    function canCurrentUserManagePermissions() {
+      const u = getCurrentUser();
+      if (!u) return false;
+      if (isMasterSuperAdmin(u)) return true;
+      return !!(u.permissions?.departments?.manage_permissions);
+    }
+    window.canCurrentUserManagePermissions = canCurrentUserManagePermissions;
+
     function setDeptViewTab(tab) {
+      if (tab === "permissions" && !canCurrentUserManagePermissions()) {
+        alert("Permission Denied: Only authorized administrators can configure user permissions.");
+        tab = "matrix";
+      }
       currentDeptTab = tab;
       const tabMatrix = document.getElementById("dept-tab-matrix");
       const tabPerms = document.getElementById("dept-tab-permissions");
       const containerMatrix = document.getElementById("dept-container-matrix");
       const containerPerms = document.getElementById("dept-container-permissions");
+
+      if (tabPerms) {
+        tabPerms.style.display = canCurrentUserManagePermissions() ? "inline-flex" : "none";
+      }
 
       if (tabMatrix) tabMatrix.className = (tab === "matrix") ? "btn btn-primary" : "btn btn-ghost";
       if (tabPerms) tabPerms.className = (tab === "permissions") ? "btn btn-primary" : "btn btn-ghost";
@@ -6066,6 +6240,10 @@
         create: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
         edit: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
         delete: user.role === "SUPER_ADMIN" || user.role === "ADMIN"
+      };
+      const deptP = p.departments || {
+        view: getSectionAccess("departments", user) === "accessible",
+        manage_permissions: user.role === "SUPER_ADMIN" || user.role === "ADMIN"
       };
       const saudiP = p["saudi-staff"] || p.saudi_staff || {
         view: getSectionAccess("saudi-staff", user) === "accessible",
@@ -6121,6 +6299,9 @@
       setChecked("chk-perm-emp-edit", empP.edit);
       setChecked("chk-perm-emp-delete", empP.delete);
 
+      setChecked("chk-perm-dept-view", deptP.view);
+      setChecked("chk-perm-dept-manage", deptP.manage_permissions);
+
       setChecked("chk-perm-saudi-view", saudiP.view);
       setChecked("chk-perm-saudi-create", saudiP.create);
       setChecked("chk-perm-saudi-edit", saudiP.edit);
@@ -6155,10 +6336,17 @@
     window.loadUserGranularPermissions = loadUserGranularPermissions;
 
     function saveUserGranularPermissions() {
+      const currentUser = getCurrentUser();
+      if (!canCurrentUserManagePermissions()) {
+        alert("Permission denied: You do not have permission to manage user permissions.");
+        return;
+      }
       const sel = document.getElementById("perm-user-select");
       if (!sel || !sel.value) return;
       const user = state.users.find(u => u.id === sel.value);
       if (!user) return;
+
+      const isSelf = currentUser && (currentUser.id === user.id || (currentUser.email && user.email && currentUser.email.toLowerCase().trim() === user.email.toLowerCase().trim()));
 
       const getChecked = (id) => {
         const el = document.getElementById(id);
@@ -6166,6 +6354,11 @@
       };
 
       const empView = getChecked("chk-perm-emp-view");
+      const deptView = getChecked("chk-perm-dept-view");
+      const deptManage = isMasterSuperAdmin(currentUser) 
+        ? getChecked("chk-perm-dept-manage") 
+        : (isSelf ? (user.permissions?.departments?.manage_permissions || false) : getChecked("chk-perm-dept-manage"));
+
       const saudiView = getChecked("chk-perm-saudi-view");
       const stockView = getChecked("chk-perm-stock-view");
       const stockReqPerm = getChecked("chk-perm-stock-request");
@@ -6185,6 +6378,10 @@
           create: getChecked("chk-perm-emp-create"),
           edit: getChecked("chk-perm-emp-edit"),
           delete: getChecked("chk-perm-emp-delete")
+        },
+        departments: {
+          view: deptView,
+          manage_permissions: deptManage
         },
         "saudi-staff": {
           view: saudiView,
@@ -6224,9 +6421,10 @@
         settings: { view: settingsView }
       };
 
+      if (!user.sectionAccess) user.sectionAccess = {};
       user.sectionAccess.employees = (empView || saudiView) ? "accessible" : "hidden";
+      user.sectionAccess.departments = deptView ? "accessible" : "hidden";
       user.sectionAccess["saudi-staff"] = saudiView ? "accessible" : "hidden";
-      user.sectionAccess.departments = empView ? "accessible" : "hidden";
       user.sectionAccess.stock = stockView ? "accessible" : "hidden";
       user.sectionAccess["stock-requests"] = (stockReqPerm || stockApprovePerm) ? "accessible" : "hidden";
       user.sectionAccess.tasks = tasksView ? "accessible" : "hidden";
@@ -6263,6 +6461,12 @@
         `).join("");
       }
 
+      // Toggle permissions tab button visibility
+      const tabPerms = document.getElementById("dept-tab-permissions");
+      if (tabPerms) {
+        tabPerms.style.display = canCurrentUserManagePermissions() ? "inline-flex" : "none";
+      }
+
       // If in permissions tab, populate user dropdown
       if (currentDeptTab === "permissions") {
         populatePermUserSelect();
@@ -6274,6 +6478,7 @@
       const lang = document.documentElement.getAttribute("lang") || "en";
 
       const sections = [
+        { key: "departments", label: "🏢 Departments" },
         { key: "reminders", label: "⏰ Reminders" },
         { key: "employees", label: "👥 Employees" },
         { key: "saudi-staff", label: "🇸🇦 Saudi Staff" },
@@ -6327,6 +6532,10 @@
     }
 
     function cycleWorkerAccess(workerId, sectionKey) {
+      if (!canCurrentUserManagePermissions()) {
+        alert("Permission denied: You do not have permission to modify department access policies.");
+        return;
+      }
       const u = state.users.find(x => x.id === workerId);
       if (!u || u.isProtected) return;
       if (!u.sectionAccess) u.sectionAccess = {};
@@ -6336,16 +6545,19 @@
       u.sectionAccess[sectionKey] = next;
 
       // Keep granular permissions in sync if defined
-      if (u.permissions) {
-        if (sectionKey === "saudi-staff") {
-          if (!u.permissions["saudi-staff"]) u.permissions["saudi-staff"] = {};
-          u.permissions["saudi-staff"].view = (next === "accessible");
-        } else if (sectionKey === "employees") {
-          if (!u.permissions.employees) u.permissions.employees = {};
-          u.permissions.employees.view = (next === "accessible");
-        } else if (u.permissions[sectionKey]) {
-          u.permissions[sectionKey].view = (next === "accessible");
-        }
+      if (!u.permissions) u.permissions = {};
+      if (sectionKey === "saudi-staff") {
+        if (!u.permissions["saudi-staff"]) u.permissions["saudi-staff"] = {};
+        u.permissions["saudi-staff"].view = (next === "accessible");
+      } else if (sectionKey === "employees") {
+        if (!u.permissions.employees) u.permissions.employees = {};
+        u.permissions.employees.view = (next === "accessible");
+      } else if (sectionKey === "departments") {
+        if (!u.permissions.departments) u.permissions.departments = {};
+        u.permissions.departments.view = (next === "accessible");
+      } else {
+        if (!u.permissions[sectionKey]) u.permissions[sectionKey] = {};
+        u.permissions[sectionKey].view = (next === "accessible");
       }
 
       saveState();
@@ -6359,6 +6571,10 @@
     window.cycleWorkerAccess = cycleWorkerAccess;
 
     function applyDeptPolicyFromForm() {
+      if (!canCurrentUserManagePermissions()) {
+        alert("Permission denied: You do not have permission to apply department policies.");
+        return;
+      }
       const workerId = document.getElementById("dept-ctrl-worker")?.value;
       const sectionKey = document.getElementById("dept-ctrl-section")?.value;
       const action = document.getElementById("dept-ctrl-action")?.value;
@@ -6370,16 +6586,19 @@
         worker.sectionAccess[sectionKey] = action;
 
         // Keep granular permissions in sync if defined
-        if (worker.permissions) {
-          if (sectionKey === "saudi-staff") {
-            if (!worker.permissions["saudi-staff"]) worker.permissions["saudi-staff"] = {};
-            worker.permissions["saudi-staff"].view = (action === "accessible");
-          } else if (sectionKey === "employees") {
-            if (!worker.permissions.employees) worker.permissions.employees = {};
-            worker.permissions.employees.view = (action === "accessible");
-          } else if (worker.permissions[sectionKey]) {
-            worker.permissions[sectionKey].view = (action === "accessible");
-          }
+        if (!worker.permissions) worker.permissions = {};
+        if (sectionKey === "saudi-staff") {
+          if (!worker.permissions["saudi-staff"]) worker.permissions["saudi-staff"] = {};
+          worker.permissions["saudi-staff"].view = (action === "accessible");
+        } else if (sectionKey === "employees") {
+          if (!worker.permissions.employees) worker.permissions.employees = {};
+          worker.permissions.employees.view = (action === "accessible");
+        } else if (sectionKey === "departments") {
+          if (!worker.permissions.departments) worker.permissions.departments = {};
+          worker.permissions.departments.view = (action === "accessible");
+        } else {
+          if (!worker.permissions[sectionKey]) worker.permissions[sectionKey] = {};
+          worker.permissions[sectionKey].view = (action === "accessible");
         }
 
         saveState();
@@ -6650,14 +6869,12 @@
       if (btnNewRem) btnNewRem.style.display = canCreateRem ? "inline-flex" : "none";
 
       const isSuper = isMasterSuperAdmin(user);
-      const isAdmin = (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || isSuper);
-
+      // Strictly visible only to creator; only Super Admin (Osama) can view all reminders
       let filteredReminders = state.reminders.filter(r => {
-        if (isAdmin) return true;
+        if (isSuper) return true;
         const matchEmail = r.createdByEmail && user.email && (r.createdByEmail.toLowerCase().trim() === user.email.toLowerCase().trim());
         const matchId = r.createdById && user.id && (r.createdById === user.id);
-        const unassigned = !r.createdByEmail && !r.createdById;
-        return matchEmail || matchId || unassigned;
+        return matchEmail || matchId;
       });
 
       let actCount = 0, schedCount = 0, compCount = 0;
@@ -6736,6 +6953,11 @@
                 </div>
               `}
             </div>
+            ${r.createdByEmail ? `
+              <div style="font-size: 0.68rem; color: var(--text-faint); margin-top: 2px; display: flex; align-items: center; gap: 4px; opacity: 0.75;">
+                <span>👤 ${r.createdByEmail}</span>
+              </div>
+            ` : ''}
           </div>
         `;
 
@@ -6793,6 +7015,20 @@
       if (warnSelect) warnSelect.value = String(typeof r.warningMinutes !== "undefined" ? r.warningMinutes : 0);
       const waCheck = document.getElementById("rem-send-wa");
       if (waCheck) waCheck.checked = (r.sendWhatsApp !== false);
+      
+      const warnNoWa = document.getElementById("rem-no-wa-warning");
+      if (warnNoWa) {
+        const curSession = typeof getCurUserWaSession === "function" ? getCurUserWaSession() : null;
+        const curUser = getCurrentUser();
+        const hasLinkedWa = !!(curSession && curSession.phone) || !!(curUser && curUser.phone);
+        warnNoWa.style.display = (!hasLinkedWa && waCheck && waCheck.checked) ? "block" : "none";
+        if (waCheck) {
+          waCheck.onchange = () => {
+            warnNoWa.style.display = (!hasLinkedWa && waCheck.checked) ? "block" : "none";
+          };
+        }
+      }
+
       document.getElementById("modal-rem-heading").textContent = "✏️ Edit Reminder";
       document.getElementById("modal-reminder").style.display = "flex";
     }
@@ -7178,6 +7414,20 @@
       if (warnSelect) warnSelect.value = "0";
       const waCheck = document.getElementById("rem-send-wa");
       if (waCheck) waCheck.checked = true;
+
+      const warnNoWa = document.getElementById("rem-no-wa-warning");
+      if (warnNoWa) {
+        const curSession = typeof getCurUserWaSession === "function" ? getCurUserWaSession() : null;
+        const curUser = getCurrentUser();
+        const hasLinkedWa = !!(curSession && curSession.phone) || !!(curUser && curUser.phone);
+        warnNoWa.style.display = (!hasLinkedWa && waCheck && waCheck.checked) ? "block" : "none";
+        if (waCheck) {
+          waCheck.onchange = () => {
+            warnNoWa.style.display = (!hasLinkedWa && waCheck.checked) ? "block" : "none";
+          };
+        }
+      }
+
       document.getElementById("modal-rem-heading").textContent = "⏰ Set Scheduled Reminder";
       document.getElementById("modal-reminder").style.display = "flex";
     }
@@ -7313,6 +7563,7 @@
       }
 
       const setEl = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      setEl("worker-company-name", "");
       setEl("worker-id-profession", "");
       setEl("worker-cr-number", "");
       setEl("worker-cr-name", "");
@@ -7606,32 +7857,36 @@
             // WhatsApp Reminder Notification
             if (rem.sendWhatsApp !== false) {
               const curSession = typeof getCurUserWaSession === "function" ? getCurUserWaSession() : null;
-              let targetPhone = (curSession && curSession.phone) ? curSession.phone : "+966580539698";
+              let targetPhone = (curSession && curSession.phone) ? curSession.phone : null;
 
               if (rem.createdByEmail) {
                 const creator = (state.users || []).find(u => (u.email || "").toLowerCase().trim() === rem.createdByEmail.toLowerCase().trim());
                 if (creator && creator.phone) targetPhone = creator.phone;
               }
 
-              const descText = rem.description ? rem.description : "—";
-              const timeStr = rem.reminderTime ? rem.reminderTime.replace('T', ' ') : "";
-              const defaultRem = `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنود تذكيركم بالموعد التالي:\n📌 التذكير: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد: {time}\n⏳ الحالة: *{status}*`;
+              if (!targetPhone) {
+                console.warn(`[Reminder WA Skipped] No linked active phone for reminder creator "${rem.createdByEmail || rem.title}"`);
+              } else {
+                const descText = rem.description ? rem.description : "—";
+                const timeStr = rem.reminderTime ? rem.reminderTime.replace('T', ' ') : "";
+                const defaultRem = `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنود تذكيركم بالموعد التالي:\n📌 التذكير: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد: {time}\n⏳ الحالة: *{status}*`;
 
-              let rawTemplate = state.warningTemplates?.reminderDue || defaultRem;
-              let waMsg = rawTemplate
-                .replace(/\{title\}/g, rem.title)
-                .replace(/\{description\}/g, descText)
-                .replace(/\{time\}/g, timeStr)
-                .replace(/\{status\}/g, remStr);
+                let rawTemplate = state.warningTemplates?.reminderDue || defaultRem;
+                let waMsg = rawTemplate
+                  .replace(/\{title\}/g, rem.title)
+                  .replace(/\{description\}/g, descText)
+                  .replace(/\{time\}/g, timeStr)
+                  .replace(/\{status\}/g, remStr);
 
-              try {
-                sendSingleMetaWhatsAppMessage(targetPhone, waMsg).then(res => {
-                  if (res && res.success) {
-                    console.log(`[Reminder WA Dispatched] to ${targetPhone} for "${rem.title}"`);
-                  }
-                }).catch(e => console.warn("Reminder WhatsApp error:", e));
-              } catch (err) {
-                console.warn("Reminder WhatsApp send failed:", err);
+                try {
+                  sendSingleMetaWhatsAppMessage(targetPhone, waMsg).then(res => {
+                    if (res && res.success) {
+                      console.log(`[Reminder WA Dispatched] to ${targetPhone} for "${rem.title}"`);
+                    }
+                  }).catch(e => console.warn("Reminder WhatsApp error:", e));
+                } catch (err) {
+                  console.warn("Reminder WhatsApp send failed:", err);
+                }
               }
             }
           }
@@ -8646,6 +8901,216 @@
       renderMessageRecipientsList();
     }
     window.removeManualPhoneRecipient = removeManualPhoneRecipient;
+
+    // =========================================================================
+    // MODAL: SAUDI RECIPIENT PICKER (MESSAGES SENDER)
+    // =========================================================================
+    let saudiPickerSelectedIds = new Set();
+    let saudiPickerCurrentSalaryTier = "all";
+
+    function openSaudiRecipientPickerModal() {
+      const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      const isMaster = curUser ? isMasterSuperAdmin(curUser) : false;
+      const canViewSaudi = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("saudi-staff", "view", curUser) : false);
+      if (!canViewSaudi) {
+        if (window.OstanStyle) window.OstanStyle.showToast("Access Denied", "You do not have permission to view Saudi staff");
+        return;
+      }
+
+      // Initialize selection with existing selected Saudi staff
+      saudiPickerSelectedIds = new Set();
+      const saudiUsers = (state.users || []).filter(isSaudiEmployee);
+      saudiUsers.forEach(u => {
+        if (selectedRecipientIds.has(u.id)) {
+          saudiPickerSelectedIds.add(u.id);
+        }
+      });
+
+      // Populate company dropdown
+      const compSelect = document.getElementById("saudi-picker-company-filter");
+      if (compSelect) {
+        const uniqueCompanies = [...new Set(saudiUsers.map(u => (u.companyName || "").trim()).filter(Boolean))].sort();
+        compSelect.innerHTML = `<option value="all">🏢 All Companies (جميع الشركات)</option>` +
+          uniqueCompanies.map(c => `<option value="${c}">🏢 ${c}</option>`).join("");
+        compSelect.value = "all";
+      }
+
+      // Reset search & salary filter
+      const searchInput = document.getElementById("saudi-picker-search");
+      if (searchInput) searchInput.value = "";
+      saudiPickerCurrentSalaryTier = "all";
+
+      const salaryContainer = document.getElementById("saudi-picker-salary-tiers");
+      if (salaryContainer) {
+        salaryContainer.querySelectorAll("button").forEach(b => {
+          b.style.background = "";
+          b.style.color = "";
+          b.style.borderColor = "var(--border-subtle)";
+        });
+        const allBtn = salaryContainer.querySelector("button:first-child");
+        if (allBtn) {
+          allBtn.style.background = "rgba(16, 185, 129, 0.2)";
+          allBtn.style.color = "#10b981";
+          allBtn.style.borderColor = "#10b981";
+        }
+      }
+
+      renderSaudiPickerList();
+      const modal = document.getElementById("modal-saudi-recipient-picker");
+      if (modal) modal.style.display = "flex";
+    }
+    window.openSaudiRecipientPickerModal = openSaudiRecipientPickerModal;
+
+    function closeSaudiRecipientPickerModal() {
+      const modal = document.getElementById("modal-saudi-recipient-picker");
+      if (modal) modal.style.display = "none";
+    }
+    window.closeSaudiRecipientPickerModal = closeSaudiRecipientPickerModal;
+
+    function setSaudiPickerSalaryFilter(tier, btnEl) {
+      saudiPickerCurrentSalaryTier = tier;
+      if (btnEl && btnEl.parentElement) {
+        btnEl.parentElement.querySelectorAll("button").forEach(b => {
+          b.style.background = "";
+          b.style.color = "";
+          b.style.borderColor = "var(--border-subtle)";
+        });
+        btnEl.style.background = "rgba(16, 185, 129, 0.2)";
+        btnEl.style.color = "#10b981";
+        btnEl.style.borderColor = "#10b981";
+      }
+      renderSaudiPickerList();
+    }
+    window.setSaudiPickerSalaryFilter = setSaudiPickerSalaryFilter;
+
+    function getFilteredSaudiPickerUsers() {
+      const saudiUsers = (state.users || []).filter(isSaudiEmployee);
+      const query = (document.getElementById("saudi-picker-search")?.value || "").toLowerCase().trim();
+      const compFilter = document.getElementById("saudi-picker-company-filter")?.value || "all";
+
+      return saudiUsers.filter(u => {
+        if (compFilter !== "all") {
+          const comp = (u.companyName || "").toLowerCase().trim();
+          if (comp !== compFilter.toLowerCase().trim()) return false;
+        }
+
+        const sal = parseFloat(u.salary) || 0;
+        if (saudiPickerCurrentSalaryTier === "1500" && Math.round(sal) !== 1500) return false;
+        if (saudiPickerCurrentSalaryTier === "4000" && Math.round(sal) !== 4000) return false;
+        if (saudiPickerCurrentSalaryTier === "5500" && Math.round(sal) !== 5500) return false;
+        if (saudiPickerCurrentSalaryTier === "other" && (Math.round(sal) === 1500 || Math.round(sal) === 4000 || Math.round(sal) === 5500)) return false;
+
+        if (query) {
+          const name = (u.name || "").toLowerCase();
+          const nameAr = (u.nameAr || "").toLowerCase();
+          const phone = (u.phone || "").toLowerCase();
+          const natId = (u.nationalId || "").toLowerCase();
+          const comp = (u.companyName || "").toLowerCase();
+          return name.includes(query) || nameAr.includes(query) || phone.includes(query) || natId.includes(query) || comp.includes(query);
+        }
+        return true;
+      });
+    }
+
+    function renderSaudiPickerList() {
+      const container = document.getElementById("saudi-picker-list");
+      if (!container) return;
+
+      const filtered = getFilteredSaudiPickerUsers();
+      const statsEl = document.getElementById("saudi-picker-stats");
+      if (statsEl) {
+        statsEl.textContent = `Showing ${filtered.length} of ${(state.users || []).filter(isSaudiEmployee).length} Saudi staff`;
+      }
+
+      const badgeEl = document.getElementById("saudi-picker-selected-badge");
+      if (badgeEl) {
+        badgeEl.textContent = `${saudiPickerSelectedIds.size} Selected`;
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 2.5rem; text-align: center; color: var(--text-faint); background: var(--bg-surface); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
+            <div style="font-size: 1.8rem; margin-bottom: 0.3rem;">🔍</div>
+            <div style="font-weight: 700; color: var(--text-main); font-size: 0.9rem;">No Saudi employees match current filter</div>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(u => {
+        const isChecked = saudiPickerSelectedIds.has(u.id);
+        const sal = parseFloat(u.salary) || 0;
+        return `
+          <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0.85rem; border-radius: var(--radius-md); background: ${isChecked ? 'rgba(16, 185, 129, 0.1)' : 'var(--bg-surface)'}; cursor: pointer; border: 1px solid ${isChecked ? '#10b981' : 'var(--border-subtle)'}; transition: all 0.15s ease;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <input type="checkbox" onchange="toggleSaudiPickerItem('${u.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 16px; height: 16px; accent-color: #10b981;">
+              <div style="width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #059669); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.85rem; flex-shrink: 0;">
+                ${(u.name || "S")[0]}
+              </div>
+              <div>
+                <div style="font-size: 0.86rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem;">
+                  <span>${u.name}</span>
+                  <span style="font-size: 0.8rem;">🇸🇦</span>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 2px;">
+                  <span style="font-size: 0.74rem; color: var(--text-muted); font-family: monospace;">📱 ${u.phone || 'N/A'}</span>
+                  ${u.companyName ? `<span style="font-size: 0.7rem; color: #38bdf8; font-weight: 600;">🏢 ${u.companyName}</span>` : ''}
+                  ${u.nationalId ? `<span style="font-size: 0.7rem; color: var(--text-faint);">🆔 ${u.nationalId}</span>` : ''}
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
+              <span class="badge badge-emerald" style="font-size: 0.72rem; font-weight: 700;">💰 ${sal.toLocaleString()} SAR</span>
+              <span style="font-size: 0.65rem; color: var(--text-faint);">${u.idProfession || 'Employee'}</span>
+            </div>
+          </label>
+        `;
+      }).join("");
+    }
+    window.renderSaudiPickerList = renderSaudiPickerList;
+
+    function toggleSaudiPickerItem(userId) {
+      if (saudiPickerSelectedIds.has(userId)) {
+        saudiPickerSelectedIds.delete(userId);
+      } else {
+        saudiPickerSelectedIds.add(userId);
+      }
+      const badgeEl = document.getElementById("saudi-picker-selected-badge");
+      if (badgeEl) badgeEl.textContent = `${saudiPickerSelectedIds.size} Selected`;
+      renderSaudiPickerList();
+    }
+    window.toggleSaudiPickerItem = toggleSaudiPickerItem;
+
+    function selectAllSaudiPickerFiltered(doSelect) {
+      const filtered = getFilteredSaudiPickerUsers();
+      filtered.forEach(u => {
+        if (doSelect) {
+          saudiPickerSelectedIds.add(u.id);
+        } else {
+          saudiPickerSelectedIds.delete(u.id);
+        }
+      });
+      renderSaudiPickerList();
+    }
+    window.selectAllSaudiPickerFiltered = selectAllSaudiPickerFiltered;
+
+    function applySaudiPickerSelection() {
+      const saudiUsers = (state.users || []).filter(isSaudiEmployee);
+      saudiUsers.forEach(u => selectedRecipientIds.delete(u.id));
+      saudiPickerSelectedIds.forEach(id => selectedRecipientIds.add(id));
+
+      renderMessageRecipientsList();
+      closeSaudiRecipientPickerModal();
+
+      if (window.OstanStyle) {
+        const lang = document.documentElement.getAttribute("lang") || "en";
+        window.OstanStyle.showToast(
+          lang === "ar" ? "تم تحديد موظفي السعودية" : "Saudi Recipients Selected",
+          lang === "ar" ? `تم تحديث المستلمين بنجاح (${saudiPickerSelectedIds.size} موظف سعودي)` : `Updated recipients list with ${saudiPickerSelectedIds.size} Saudi staff`
+        );
+      }
+    }
+    window.applySaudiPickerSelection = applySaudiPickerSelection;
 
     function updateRecipientCountBadge() {
       const count = selectedRecipientIds.size + manualRecipients.length;
@@ -9747,15 +10212,25 @@
     }
     window.copyPersonalizedMessageText = copyPersonalizedMessageText;
 
+    let isDispatchHistoryExpanded = false;
+    function toggleDispatchHistoryLogsExpand() {
+      isDispatchHistoryExpanded = !isDispatchHistoryExpanded;
+      renderMessageHistoryLogs();
+    }
+    window.toggleDispatchHistoryLogsExpand = toggleDispatchHistoryLogsExpand;
+
     function renderMessageHistoryLogs() {
       const container = document.getElementById("msg-history-container");
       if (!container) return;
       const lang = document.documentElement.getAttribute("lang") || "en";
 
-      if (state.messageDispatchLogs.length === 0) {
+      if (!state.messageDispatchLogs || state.messageDispatchLogs.length === 0) {
         container.innerHTML = `<div style="padding: 2rem; text-align: center; color: var(--text-faint); font-size: 0.85rem;">No WhatsApp messages dispatched yet.</div>`;
         return;
       }
+
+      const totalLogs = state.messageDispatchLogs.length;
+      const displayLogs = isDispatchHistoryExpanded ? state.messageDispatchLogs : state.messageDispatchLogs.slice(0, 5);
 
       container.innerHTML = `
         <div class="table-responsive-wrapper">
@@ -9771,7 +10246,7 @@
               </tr>
             </thead>
             <tbody>
-              ${state.messageDispatchLogs.slice(0, 20).map(log => `
+              ${displayLogs.map(log => `
                 <tr>
                   <td style="font-weight: 700; color: var(--text-main);">${log.recipientName}</td>
                   <td style="font-size: 0.8rem; color: var(--text-muted);">${log.phone}</td>
@@ -9795,6 +10270,17 @@
             </tbody>
           </table>
         </div>
+        ${totalLogs > 5 ? `
+          <div style="display: flex; justify-content: center; align-items: center; padding-top: 0.75rem; border-top: 1px dashed var(--border-subtle); margin-top: 0.5rem;">
+            <button type="button" onclick="toggleDispatchHistoryLogsExpand()" class="btn btn-secondary" style="font-size: 0.78rem; font-weight: 700; padding: 0.4rem 1.25rem; display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 9999px;">
+              <span>${isDispatchHistoryExpanded ? '▲' : '▼'}</span>
+              <span>${isDispatchHistoryExpanded
+                ? (lang === 'ar' ? 'عرض أقل (See Less)' : 'See Less')
+                : (lang === 'ar' ? `عرض المزيد (See More +${totalLogs - 5})` : `See More (${totalLogs - 5} more)`)}</span>
+              <span>${isDispatchHistoryExpanded ? '▲' : '▼'}</span>
+            </button>
+          </div>
+        ` : ''}
       `;
     }
 

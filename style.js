@@ -52,7 +52,27 @@
     },
     showToast: function (title, body) {
       playSoundChime(587.33, 880);
+      // Remove any existing toast so only the latest toast remains
+      document.querySelectorAll(".ostan-toast-alert").forEach(el => el.remove());
+
+      // Track notification history for the notification center bell
+      window.systemNotificationHistory = window.systemNotificationHistory || [];
+      window.systemNotificationHistory.unshift({
+        id: Date.now() + Math.random(),
+        title: title || "Notification",
+        body: body || "",
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now()
+      });
+      if (window.systemNotificationHistory.length > 50) {
+        window.systemNotificationHistory.pop();
+      }
+      if (typeof window.updateNotificationBellUI === "function") {
+        try { window.updateNotificationBellUI(); } catch (e) { console.error(e); }
+      }
+
       const toast = document.createElement("div");
+      toast.className = "ostan-toast-alert";
       toast.style.cssText = `
         position: fixed;
         bottom: 24px;
@@ -81,7 +101,7 @@
       document.body.appendChild(toast);
       setTimeout(() => {
         if (toast.parentElement) toast.remove();
-      }, 6000);
+      }, 5000);
     },
     init: function () {
       const savedTheme = localStorage.getItem("ostan_theme") || "dark";
