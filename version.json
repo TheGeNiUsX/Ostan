@@ -1,0 +1,7 @@
+{
+  "version": "1.0.5",
+  "commit": "595fd26",
+  "buildTime": 1789079049315,
+  "releaseDate": "2026-09-10T22:24:09.315Z",
+  "message": "feat(system): add zero-downtime live auto-update engine with automated build detection and client auto-refresh"
+}

@@ -10,7 +10,8 @@
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "version:bump": "node scripts/update-build-version.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

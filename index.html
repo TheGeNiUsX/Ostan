@@ -3492,6 +3492,170 @@
       }
     }
 
+    // =========================================================================
+    // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
+    // =========================================================================
+    window.OSTAN_BUILD = {
+  "version": "1.0.5",
+  "commit": "595fd26",
+  "buildTime": 1789079049315,
+  "releaseDate": "2026-09-10T22:24:09.315Z",
+  "message": "feat(system): add zero-downtime live auto-update engine with automated build detection and client auto-refresh"
+};
+
+    let _ostanUpdateTriggered = false;
+    let _ostanUpdateCountdownTimer = null;
+
+    function renderAutoUpdateBanner(newVersion) {
+      if (document.getElementById("ostan-live-update-banner")) return;
+
+      if (!document.getElementById("ostan-banner-anim-style")) {
+        const s = document.createElement("style");
+        s.id = "ostan-banner-anim-style";
+        s.textContent = `
+          @keyframes ostanBannerSlideDown {
+            from { transform: translate(-50%, -100%); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+          }
+        `;
+        document.head.appendChild(s);
+      }
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const banner = document.createElement("div");
+      banner.id = "ostan-live-update-banner";
+      banner.style.cssText = `
+        position: fixed;
+        top: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9999999;
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.96), rgba(5, 150, 105, 0.96));
+        color: #ffffff;
+        padding: 0.75rem 1.4rem;
+        border-radius: 9999px;
+        box-shadow: 0 10px 30px -5px rgba(16, 185, 129, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.25);
+        display: flex;
+        align-items: center;
+        gap: 0.85rem;
+        font-family: inherit;
+        font-size: 0.88rem;
+        font-weight: 600;
+        backdrop-filter: blur(12px);
+        animation: ostanBannerSlideDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+      `;
+
+      let countdown = 3;
+      const verLabel = newVersion.version ? `v${newVersion.version}` : (newVersion.commit || "");
+      const titleEn = `🚀 System update deployed (${verLabel})! Refreshing in <span id="ostan-update-countdown" style="text-decoration: underline; font-weight: 800;">${countdown}s</span>...`;
+      const titleAr = `🚀 تم نشر تحديث جديد للنظام (${verLabel})! جاري التحديث التلقائي خلال <span id="ostan-update-countdown" style="text-decoration: underline; font-weight: 800;">${countdown}ث</span>...`;
+
+      banner.innerHTML = `
+        <span style="font-size: 1.15rem; display: inline-block;">⚡</span>
+        <div>${lang === "ar" ? titleAr : titleEn}</div>
+        <button id="btn-ostan-update-now" type="button" style="
+          background: #ffffff;
+          color: #065f46;
+          border: none;
+          padding: 0.35rem 0.85rem;
+          border-radius: 9999px;
+          font-weight: 700;
+          font-size: 0.8rem;
+          cursor: pointer;
+          margin-inline-start: 0.5rem;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        ">${lang === "ar" ? "تحديث الآن" : "Update Now"}</button>
+      `;
+
+      document.body.appendChild(banner);
+
+      const btn = document.getElementById("btn-ostan-update-now");
+      if (btn) {
+        btn.onclick = () => {
+          if (_ostanUpdateCountdownTimer) clearInterval(_ostanUpdateCountdownTimer);
+          window.location.reload(true);
+        };
+      }
+
+      _ostanUpdateCountdownTimer = setInterval(() => {
+        countdown--;
+        const cdEl = document.getElementById("ostan-update-countdown");
+        if (cdEl) cdEl.textContent = `${countdown}${lang === "ar" ? "ث" : "s"}`;
+        if (countdown <= 0) {
+          clearInterval(_ostanUpdateCountdownTimer);
+          window.location.reload(true);
+        }
+      }, 1000);
+    }
+
+    function checkIsUserTyping() {
+      const active = document.activeElement;
+      if (!active) return false;
+      const tag = active.tagName.toUpperCase();
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || active.isContentEditable;
+    }
+
+    async function checkRemoteSystemVersion() {
+      if (_ostanUpdateTriggered) return;
+
+      const currentBuildTime = (window.OSTAN_BUILD && window.OSTAN_BUILD.buildTime) || 0;
+      const currentCommit = (window.OSTAN_BUILD && window.OSTAN_BUILD.commit) || "";
+
+      // List of candidate endpoints (own server first, then GitHub raw CDN)
+      const endpoints = [
+        `./version.json?_t=${Date.now()}`,
+        `https://raw.githubusercontent.com/TheGeNiUsX/Ostan/main/version.json?_t=${Date.now()}`
+      ];
+
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url, { cache: "no-store" });
+          if (!res.ok) continue;
+          const remote = await res.json();
+          if (!remote || (!remote.buildTime && !remote.commit)) continue;
+
+          // Detect newer deployment
+          const isNewer = (remote.buildTime && remote.buildTime > currentBuildTime) || 
+                          (remote.commit && remote.commit !== currentCommit && (remote.buildTime || 0) >= currentBuildTime);
+
+          if (isNewer) {
+            _ostanUpdateTriggered = true;
+            console.log(`[Live Auto-Update] 🚀 New deployment detected: v${remote.version} (${remote.commit}) at ${remote.releaseDate}`);
+
+            // If user is actively typing, defer 6 seconds
+            if (checkIsUserTyping()) {
+              setTimeout(() => {
+                renderAutoUpdateBanner(remote);
+              }, 6000);
+            } else {
+              renderAutoUpdateBanner(remote);
+            }
+            return;
+          }
+        } catch (e) {
+          // Fall through to next candidate endpoint
+        }
+      }
+    }
+
+    function startLiveAutoUpdateEngine() {
+      // 1. Initial check shortly after startup
+      setTimeout(checkRemoteSystemVersion, 4000);
+
+      // 2. Periodic background check every 25 seconds
+      setInterval(checkRemoteSystemVersion, 25000);
+
+      // 3. Check immediately when the user switches back to this browser tab or window
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          checkRemoteSystemVersion();
+        }
+      });
+      window.addEventListener("focus", checkRemoteSystemVersion);
+    }
+    window.startLiveAutoUpdateEngine = startLiveAutoUpdateEngine;
+    window.checkRemoteSystemVersion = checkRemoteSystemVersion;
+
     const DEFAULT_USERS = [
       {
         id: "u-osama",
@@ -11727,6 +11891,9 @@
     });
 
     // App Boot Initialization
+    if (typeof startLiveAutoUpdateEngine === "function") {
+      startLiveAutoUpdateEngine();
+    }
     const initialUser = getCurrentUser();
     if (!initialUser) {
       document.getElementById("auth-portal-fullscreen").style.display = "flex";
