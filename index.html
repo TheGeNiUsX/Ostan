@@ -4051,6 +4051,15 @@
 
       state.activeModule = mod;
       
+      // Persist active section across page refreshes and synchronize URL hash
+      const persistedHash = (mod === "employees" && typeof activeEmployeeTab !== "undefined" && activeEmployeeTab === "saudi") ? "saudi-staff" : mod;
+      try {
+        localStorage.setItem("ostan_active_module", persistedHash);
+        if (window.location.hash.replace("#", "") !== persistedHash) {
+          history.replaceState(null, "", "#" + persistedHash);
+        }
+      } catch (e) {}
+
       // Update sidebar nav highlighting
       document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
       const activeNav = document.getElementById("nav-" + mod);
@@ -4925,6 +4934,16 @@
       }
 
       activeEmployeeTab = tab || "all";
+      try {
+        localStorage.setItem("ostan_active_emp_tab", activeEmployeeTab);
+        if (state.activeModule === "employees") {
+          const modName = (activeEmployeeTab === "saudi") ? "saudi-staff" : "employees";
+          localStorage.setItem("ostan_active_module", modName);
+          if (window.location.hash.replace("#", "") !== modName) {
+            history.replaceState(null, "", "#" + modName);
+          }
+        }
+      } catch(e) {}
       const tabAll = document.getElementById("emp-tab-all");
       const tabSaudi = document.getElementById("emp-tab-saudi");
       const subviewAll = document.getElementById("emp-subview-all");
@@ -6779,6 +6798,9 @@
         tab = "matrix";
       }
       currentDeptTab = tab;
+      try {
+        localStorage.setItem("ostan_active_dept_tab", tab);
+      } catch (e) {}
       const tabMatrix = document.getElementById("dept-tab-matrix");
       const tabPerms = document.getElementById("dept-tab-permissions");
       const containerMatrix = document.getElementById("dept-container-matrix");
@@ -11186,7 +11208,7 @@
         document.getElementById("app-shell-root").style.display = "grid";
         updateUserSessionUI();
         applyModuleVisibility();
-        setModule("dashboard");
+        restoreActiveSectionOnBoot();
       } else {
         if (errBox) {
           errBox.textContent = lang === "ar"
@@ -11253,6 +11275,10 @@
         waQrTimerInterval = null;
       }
       state.currentUserId = "";
+      try {
+        localStorage.removeItem("ostan_active_module");
+        history.replaceState(null, "", window.location.pathname);
+      } catch(e) {}
       saveState();
       updateWhatsAppConnectionUI();
       updateWhatsAppApiStatusUI();
@@ -11624,6 +11650,82 @@
       }
     }
 
+    // =========================================================================
+    // PERSISTENT NAVIGATION & ACTIVE SECTION RESTORATION
+    // =========================================================================
+    function restoreActiveSectionOnBoot() {
+      const user = getCurrentUser();
+      if (!user) {
+        setModule("dashboard");
+        return;
+      }
+
+      let target = "";
+      const hash = (window.location.hash || "").replace("#", "").trim().toLowerCase();
+      if (hash) {
+        target = hash;
+      }
+      if (!target) {
+        try {
+          target = localStorage.getItem("ostan_active_module") || "dashboard";
+        } catch(e) {
+          target = "dashboard";
+        }
+      }
+
+      if (target === "saudi-staff") {
+        if (typeof setEmployeeViewTab === "function") setEmployeeViewTab("saudi");
+        const saudiAccess = getSectionAccess("saudi-staff", user);
+        if (saudiAccess === "accessible") {
+          setModule("employees");
+        } else if (getSectionAccess("employees", user) === "accessible") {
+          if (typeof setEmployeeViewTab === "function") setEmployeeViewTab("all");
+          setModule("employees");
+        } else {
+          setModule("dashboard");
+        }
+        return;
+      }
+
+      if (target === "employees") {
+        let savedTab = "all";
+        try { savedTab = localStorage.getItem("ostan_active_emp_tab") || "all"; } catch(e) {}
+        if (typeof setEmployeeViewTab === "function") setEmployeeViewTab(savedTab);
+      }
+
+      if (target === "departments") {
+        let savedDeptTab = "matrix";
+        try { savedDeptTab = localStorage.getItem("ostan_active_dept_tab") || "matrix"; } catch(e) {}
+        if (typeof setDeptViewTab === "function") setDeptViewTab(savedDeptTab);
+      }
+
+      const validViews = ["dashboard", "employees", "departments", "tasks", "reminders", "stock", "stock-requests", "reports", "audit-logs", "messages", "settings", "notification-logs"];
+      if (!validViews.includes(target)) {
+        target = "dashboard";
+      }
+
+      const access = getSectionAccess(target, user);
+      if (access === "accessible") {
+        setModule(target);
+      } else {
+        setModule("dashboard");
+      }
+    }
+    window.restoreActiveSectionOnBoot = restoreActiveSectionOnBoot;
+
+    // Synchronize browser forward/backward navigation
+    window.addEventListener("hashchange", () => {
+      const hash = (window.location.hash || "").replace("#", "").trim().toLowerCase();
+      if (hash && hash !== state.activeModule) {
+        if (hash === "saudi-staff") {
+          if (typeof setEmployeeViewTab === "function") setEmployeeViewTab("saudi");
+          setModule("employees");
+        } else {
+          setModule(hash);
+        }
+      }
+    });
+
     // App Boot Initialization
     const initialUser = getCurrentUser();
     if (!initialUser) {
@@ -11636,7 +11738,7 @@
       updateUserSessionUI();
       applyModuleVisibility();
       updateWhatsAppApiStatusUI();
-      setModule("dashboard");
+      restoreActiveSectionOnBoot();
 
       // Initialize WhatsApp Studio Dispatch Mode and Cloud Link
       const savedWaMode = localStorage.getItem('ostan_wa_dispatch_mode') || 'direct';
