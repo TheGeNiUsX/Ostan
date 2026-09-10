@@ -798,10 +798,6 @@
         <p data-i18n="auth_subtitle" style="font-size: 0.82rem; color: var(--text-muted); margin-top: 4px;">Enterprise Operations & Business Intelligence Platform</p>
       </div>
 
-      <div id="auth-superadmin-banner" style="display: none; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.15); border: 1px solid rgba(244, 63, 94, 0.35); color: #fb7185; font-size: 0.8rem; font-weight: 700; margin-bottom: 1rem; text-align: center;">
-        👑 Master Super Admin: Osama Al-Twaish
-      </div>
-
       <div id="auth-portal-error" style="display: none; padding: 0.75rem; border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.15); color: #fb7185; font-size: 0.8rem; margin-bottom: 1rem;"></div>
 
       <form onsubmit="handleAuthPortalSubmit(event)" style="display: flex; flex-direction: column; gap: 0.9rem;">
@@ -10842,8 +10838,7 @@
     window.setAuthPortalMode = setAuthPortalMode;
 
     function checkAuthEmailSpecialRule(emailVal) {
-      const banner = document.getElementById("auth-superadmin-banner");
-      if (banner) banner.style.display = (emailVal.toLowerCase().trim() === "waseem.tw@hotmail.com") ? "block" : "none";
+      // Banner removed
     }
     window.checkAuthEmailSpecialRule = checkAuthEmailSpecialRule;
 
