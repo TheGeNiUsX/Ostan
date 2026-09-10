@@ -12,5 +12,17 @@ services:
     volumes:
       - ostan_postgres_data:/var/lib/postgresql/data
 
+  whatsapp-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ostan-whatsapp-gateway
+    restart: always
+    ports:
+      - "5001:5001"
+    volumes:
+      - ostan_whatsapp_sessions:/app/whatsapp_sessions
+
 volumes:
   ostan_postgres_data:
+  ostan_whatsapp_sessions:

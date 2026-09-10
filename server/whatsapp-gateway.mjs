@@ -20,7 +20,7 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const fbDb = getFirestore(fbApp);
 
-const PORT = process.env.WHATSAPP_PORT || 5001;
+const PORT = process.env.PORT || process.env.WHATSAPP_PORT || 5001;
 // Bind to 0.0.0.0 so the gateway is reachable from any device on the same network (LAN)
 const HOST = process.env.WHATSAPP_HOST || '0.0.0.0';
 const BASE_SESSIONS_DIR = path.join(process.cwd(), 'whatsapp_sessions');
@@ -519,6 +519,16 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(200, { success: true, message: `Restarted session for ${userId}` });
     });
     return;
+  }
+
+  // 5. GET / or /health (for cloud hosting health checks & uptime monitors)
+  if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) {
+    return sendJSON(200, {
+      status: 'ok',
+      service: 'ostan-whatsapp-gateway',
+      activeSessions: userSessions.size,
+      timestamp: Date.now()
+    });
   }
 
   sendJSON(404, { success: false, error: 'Endpoint not found' });
