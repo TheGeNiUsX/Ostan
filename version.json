@@ -1,7 +1,7 @@
 {
-  "version": "1.0.9",
-  "commit": "879fcdc",
-  "buildTime": 1789080770770,
-  "releaseDate": "2026-09-10T22:52:50.770Z",
-  "message": "fix(permissions): lock and preserve selected employee across saves, re-renders, and Firestore sync"
+  "version": "1.0.11",
+  "commit": "d7d73e6",
+  "buildTime": 1789081456305,
+  "releaseDate": "2026-09-10T23:04:16.305Z",
+  "message": "fix(permissions): protect permissions from stale Firestore overwrites on update and page reload"
 }

@@ -3496,11 +3496,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.9",
-  "commit": "879fcdc",
-  "buildTime": 1789080770770,
-  "releaseDate": "2026-09-10T22:52:50.770Z",
-  "message": "fix(permissions): lock and preserve selected employee across saves, re-renders, and Firestore sync"
+  "version": "1.0.11",
+  "commit": "d7d73e6",
+  "buildTime": 1789081456305,
+  "releaseDate": "2026-09-10T23:04:16.305Z",
+  "message": "fix(permissions): protect permissions from stale Firestore overwrites on update and page reload"
 };
 
     let _ostanUpdateTriggered = false;
@@ -3731,6 +3731,26 @@
       }
       delete u.password;
       return u;
+    });
+
+    // Restore persistent granular permissions backups across updates and restarts
+    sanitizedUsers.forEach(u => {
+      const backupKey = "ostan_perm_backup_" + (u.email ? u.email.toLowerCase().trim() : u.id);
+      try {
+        const raw = localStorage.getItem(backupKey);
+        if (raw) {
+          const b = JSON.parse(raw);
+          if (b && b.permissions) {
+            const bTime = (b.updatedAt && new Date(b.updatedAt).getTime()) || 0;
+            const uTime = (u.updatedAt && new Date(u.updatedAt).getTime()) || 0;
+            if (bTime >= uTime) {
+              u.permissions = b.permissions;
+              if (b.sectionAccess) u.sectionAccess = b.sectionAccess;
+              u.updatedAt = b.updatedAt;
+            }
+          }
+        }
+      } catch(e) {}
     });
 
     // Save cleaned users to localStorage so existing sessions don't retain false Saudi defaults
@@ -7303,6 +7323,15 @@
       user.sectionAccess["audit-logs"] = auditView ? "accessible" : "hidden";
       user.sectionAccess.messages = msgView ? "accessible" : "hidden";
       user.sectionAccess.settings = settingsView ? "accessible" : "hidden";
+      user.updatedAt = new Date().toISOString();
+      const backupKey = "ostan_perm_backup_" + (user.email ? user.email.toLowerCase().trim() : user.id);
+      try {
+        localStorage.setItem(backupKey, JSON.stringify({
+          permissions: user.permissions,
+          sectionAccess: user.sectionAccess,
+          updatedAt: user.updatedAt
+        }));
+      } catch(e) {}
 
       saveState();
       renderDepartments();
@@ -7436,6 +7465,15 @@
         u.permissions[sectionKey].view = (next === "accessible");
       }
 
+      u.updatedAt = new Date().toISOString();
+      const uBackupKey = "ostan_perm_backup_" + (u.email ? u.email.toLowerCase().trim() : u.id);
+      try {
+        localStorage.setItem(uBackupKey, JSON.stringify({
+          permissions: u.permissions,
+          sectionAccess: u.sectionAccess,
+          updatedAt: u.updatedAt
+        }));
+      } catch(e) {}
       saveState();
       renderDepartments();
       applyModuleVisibility();
@@ -11530,11 +11568,16 @@
                 targetUser.phone = docData.phone;
                 targetUser.compactPhone = docData.compactPhone || docData.phone;
               }
-              if (docData.sectionAccess) {
-                targetUser.sectionAccess = { ...targetUser.sectionAccess, ...docData.sectionAccess };
-              }
-              if (docData.permissions) {
-                targetUser.permissions = { ...targetUser.permissions, ...docData.permissions };
+              const localUpdated = (targetUser.updatedAt && new Date(targetUser.updatedAt).getTime()) || 0;
+              const remoteUpdated = (docData.updatedAt && new Date(docData.updatedAt).getTime()) || 0;
+              if (remoteUpdated >= localUpdated) {
+                if (docData.sectionAccess) {
+                  targetUser.sectionAccess = { ...targetUser.sectionAccess, ...docData.sectionAccess };
+                }
+                if (docData.permissions) {
+                  targetUser.permissions = { ...targetUser.permissions, ...docData.permissions };
+                }
+                if (docData.updatedAt) targetUser.updatedAt = docData.updatedAt;
               }
               if (typeof docData.salary !== "undefined") {
                 targetUser.salary = Number(docData.salary);
@@ -12003,8 +12046,13 @@
                   u.role = d.role;
                   changed = true;
                 }
-                if (d.permissions) u.permissions = d.permissions;
-                if (d.sectionAccess) u.sectionAccess = d.sectionAccess;
+                const localUpdated = (u.updatedAt && new Date(u.updatedAt).getTime()) || 0;
+                const remoteUpdated = (d.updatedAt && new Date(d.updatedAt).getTime()) || 0;
+                if (remoteUpdated >= localUpdated) {
+                  if (d.permissions) u.permissions = d.permissions;
+                  if (d.sectionAccess) u.sectionAccess = d.sectionAccess;
+                  if (d.updatedAt) u.updatedAt = d.updatedAt;
+                }
                 if (d.idProfession) u.idProfession = d.idProfession;
                 if (d.crNumber) u.crNumber = d.crNumber;
                 if (d.crName) u.crName = d.crName;
