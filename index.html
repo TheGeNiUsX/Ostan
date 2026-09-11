@@ -11,8 +11,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Core Scripts -->
-  <script src="style.js?v=2.5"></script>
-  <script src="translation.js?v=2.5"></script>
+  <script src="style.js?v=4.0.0"></script>
+  <script src="translation.js?v=4.0.0"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -23,6 +23,24 @@
       if (!d.en) d.en = {};
       if (!d.ar) d.ar = {};
       d.en.nav_saudi_staff = "Saudi Staff";
+      d.en.whatsapp_studio_title = "WhatsApp Pairing Studio";
+      d.ar.whatsapp_studio_title = "استوديو ربط واتساب (WhatsApp QR)";
+      d.en.msg_composer_title = "Message Composer";
+      d.ar.msg_composer_title = "كتابة وصياغة الرسالة";
+      d.en.msg_prewritten_title = "Pre-written Texts & Quick Templates";
+      d.ar.msg_prewritten_title = "نصوص ورسائل جاهزة (قوالب سريعة)";
+      d.en.btn_download_extension = "Auto-Sender Extension (.ZIP)";
+      d.ar.btn_download_extension = "تحميل أداة الإرسال التلقائي (.ZIP)";
+      d.en.btn_setup_guide = "Setup Guide (3 Steps)";
+      d.ar.btn_setup_guide = "دليل التفعيل (٣ خطوات سهلة)";
+      d.en.whatsapp_refresh_qr = "Refresh QR Code";
+      d.ar.whatsapp_refresh_qr = "تحديث الرمز";
+      d.en.btn_filter_saudi_msg = "Saudi Staff";
+      d.ar.btn_filter_saudi_msg = "الكادر السعودي";
+      d.en.btn_dispatch_direct = "Send Directly (Background Dispatch • No Extension)";
+      d.ar.btn_dispatch_direct = "إرسال مباشر (تلقائي بالخلفية • بدون متصفح وبدون إضافة)";
+      d.en.btn_dispatch_extension = "Send via WhatsApp Web + Extension (Old Version)";
+      d.ar.btn_dispatch_extension = "إرسال عبر واتساب ويب + الإضافة (النسخة السابقة)";
       d.ar.nav_saudi_staff = "الكادر السعودي";
       d.en.perm_sec_saudi = "🇸🇦 Saudi Staff & Payroll Hub";
       d.ar.perm_sec_saudi = "🇸🇦 الكادر الوطني وإدارة الرواتب";
@@ -3567,11 +3585,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.15",
-  "commit": "786a2ea",
-  "buildTime": 1789159501159,
-  "releaseDate": "2026-09-11T20:45:01.159Z",
-  "message": "feat(messages): add customizable human stop points pattern (7-15s pause every 4 chats) with real background randomization to bypass AI detection"
+  "version": "1.0.16",
+  "commit": "017bfbc",
+  "buildTime": 1789159969916,
+  "releaseDate": "2026-09-11T20:52:49.916Z",
+  "message": "fix(ui): remove duplicate emojis in Messages Sender headers, buttons and translations"
 };
 
     let _ostanUpdateTriggered = false;
@@ -11012,7 +11030,7 @@
         if (state.waDispatchMode === "extension") {
           btnMeta.style.display = "none";
           btnWeb.style.display = "inline-flex";
-          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_extension) || (lang === 'ar' ? '🚀 إرسال عبر واتساب ويب + الإضافة (النسخة السابقة)' : '🚀 Send via WhatsApp Web + Extension (Old Version)');
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_extension) || (lang === 'ar' ? 'إرسال عبر واتساب ويب + الإضافة (النسخة السابقة)' : 'Send via WhatsApp Web + Extension (Old Version)');
           btnWeb.innerHTML = `<span>🚀</span> <span>${txt}</span>`;
         } else {
           btnMeta.style.display = "inline-flex";

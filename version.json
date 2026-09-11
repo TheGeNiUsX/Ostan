@@ -1,7 +1,7 @@
 {
-  "version": "1.0.15",
-  "commit": "786a2ea",
-  "buildTime": 1789159501159,
-  "releaseDate": "2026-09-11T20:45:01.159Z",
-  "message": "feat(messages): add customizable human stop points pattern (7-15s pause every 4 chats) with real background randomization to bypass AI detection"
+  "version": "1.0.16",
+  "commit": "017bfbc",
+  "buildTime": 1789159969916,
+  "releaseDate": "2026-09-11T20:52:49.916Z",
+  "message": "fix(ui): remove duplicate emojis in Messages Sender headers, buttons and translations"
 }

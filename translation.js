@@ -309,7 +309,7 @@
       auto_send_modal_desc: "Because browsers block websites from clicking buttons inside WhatsApp Web, drag this button to your bookmarks bar. Click it once in WhatsApp Web to automatically press Send on all incoming messages!",
       auto_mode_banner_title: "⚡ 100% Hands-Free Automated Sender Mode",
       auto_mode_banner_desc: "Enables hands-free dispatching: automatically clicks the Send button and closes tabs for all selected contacts.",
-      btn_download_extension: "Download Auto-Sender Extension (.ZIP)",
+      btn_download_extension: "Auto-Sender Extension (.ZIP)",
       btn_setup_guide: "Setup Guide (3 Steps)",
       dispatch_runner_next_btn: "Open Next Recipient Now",
       dispatch_runner_pause: "Pause Timer",
@@ -738,7 +738,18 @@
       const key = el.getAttribute("data-i18n");
       const translation = getTranslation(key, targetLang);
       if (translation !== null && typeof translation !== "undefined") {
-        el.textContent = translation;
+        let cleanText = translation;
+        const leadingEmojiRegex = /^([\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}][\uFE00-\uFE0F]?\s*)/u;
+        if (typeof cleanText === "string" && leadingEmojiRegex.test(cleanText)) {
+          const prevSiblingText = el.previousElementSibling ? el.previousElementSibling.textContent : "";
+          const prevNodeText = (el.previousSibling && el.previousSibling.nodeType === 3) ? el.previousSibling.textContent : "";
+          const parentPreText = (el.parentElement && el.parentElement.firstChild !== el) ? el.parentElement.textContent : "";
+          const hasPriorEmoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u.test(prevSiblingText + " " + prevNodeText);
+          if (hasPriorEmoji) {
+            cleanText = cleanText.replace(leadingEmojiRegex, "").trim();
+          }
+        }
+        el.textContent = cleanText;
       }
     });
 
