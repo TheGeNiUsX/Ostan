@@ -2288,9 +2288,10 @@
                     Human Simulation Score: <strong style="color: #10b981;">100%</strong> (Average ~17.5s per message with random jitter)
                   </span>
                 </div>
-                <!-- Dynamic Visual Meter Bar -->
-                <div style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; display: flex;">
-                  <div id="delay-risk-bar" style="width: 3%; height: 100%; background: #10b981; border-radius: 999px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                <!-- Dynamic Visual Meter Bar (100% Safe = Full Green, Not Safe = Green with Red remainder) -->
+                <div id="delay-meter-track" style="width: 100%; height: 8px; background: rgba(239, 68, 68, 0.2); border-radius: 999px; overflow: hidden; display: flex; box-shadow: inset 0 1px 2px rgba(0,0,0,0.35);">
+                  <div id="delay-risk-bar" style="width: 100%; height: 100%; background: #10b981; border-radius: 999px; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);"></div>
+                  <div id="delay-danger-bar" style="width: 0%; height: 100%; background: #ef4444; border-radius: 0 999px 999px 0; transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);"></div>
                 </div>
               </div>
             </div>
@@ -3585,11 +3586,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.16",
-  "commit": "017bfbc",
-  "buildTime": 1789159969916,
-  "releaseDate": "2026-09-11T20:52:49.916Z",
-  "message": "fix(ui): remove duplicate emojis in Messages Sender headers, buttons and translations"
+  "version": "1.0.17",
+  "commit": "2314ec0",
+  "buildTime": 1789160268899,
+  "releaseDate": "2026-09-11T20:57:48.899Z",
+  "message": "fix(ui): apply multi-layer emoji deduplication engine, inline fallbacks and cache-buster"
 };
 
     let _ostanUpdateTriggered = false;
@@ -10337,9 +10338,39 @@
       }
 
       const riskBar = document.getElementById("delay-risk-bar");
+      const dangerBar = document.getElementById("delay-danger-bar");
+      const meterTrack = document.getElementById("delay-meter-track");
+
+      const safePercent = Math.max(0, Math.min(100, Math.round(assessment.humanScore)));
+      const dangerPercent = 100 - safePercent;
+
       if (riskBar) {
-        riskBar.style.width = Math.max(3, assessment.riskPercent) + "%";
-        riskBar.style.background = assessment.color;
+        if (safePercent >= 100) {
+          // 100% Safe: Green bar goes ALL THE WAY TO THE END!
+          riskBar.style.width = "100%";
+          riskBar.style.background = "#10b981";
+          riskBar.style.borderRadius = "999px";
+          if (dangerBar) {
+            dangerBar.style.width = "0%";
+            dangerBar.style.display = "none";
+          }
+          if (meterTrack) {
+            meterTrack.style.background = "rgba(16, 185, 129, 0.15)";
+          }
+        } else {
+          // Not 100% safe: Green bar fills safe portion, rest of the bar is RED!
+          riskBar.style.width = safePercent + "%";
+          riskBar.style.background = "#10b981";
+          riskBar.style.borderRadius = "999px 0 0 999px";
+          if (dangerBar) {
+            dangerBar.style.display = "block";
+            dangerBar.style.width = dangerPercent + "%";
+            dangerBar.style.background = "#ef4444";
+          }
+          if (meterTrack) {
+            meterTrack.style.background = "rgba(239, 68, 68, 0.35)";
+          }
+        }
       }
 
       const hiddenSelect = document.getElementById("msg-delay-select");

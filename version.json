@@ -1,7 +1,7 @@
 {
-  "version": "1.0.16",
-  "commit": "017bfbc",
-  "buildTime": 1789159969916,
-  "releaseDate": "2026-09-11T20:52:49.916Z",
-  "message": "fix(ui): remove duplicate emojis in Messages Sender headers, buttons and translations"
+  "version": "1.0.17",
+  "commit": "2314ec0",
+  "buildTime": 1789160268899,
+  "releaseDate": "2026-09-11T20:57:48.899Z",
+  "message": "fix(ui): apply multi-layer emoji deduplication engine, inline fallbacks and cache-buster"
 }
