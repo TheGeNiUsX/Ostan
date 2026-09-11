@@ -2098,58 +2098,130 @@
 
             <!-- 2. Target Audience & Recipient Selection -->
             <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem;">
+              <!-- Header with 2-part Switcher: Ostan Employees vs Custom List -->
+              <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
                 <div style="display: flex; align-items: center; gap: 0.6rem;">
                   <span style="font-size: 1.3rem;">👥</span>
                   <div data-i18n="msg_recipients_title" style="font-weight: 800; font-size: 1rem; color: var(--text-main);">Select Recipients</div>
                 </div>
+
+                <!-- 2 Parts Switcher: 1. Ostan Employees, 2. Custom List -->
+                <div style="display: flex; align-items: center; gap: 0.35rem; background: var(--bg-surface); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+                  <button id="tab-btn-recipients-ostan" type="button" onclick="switchRecipientsTab('ostan')" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; font-weight: 700; border-radius: 4px;">
+                    🏢 <span data-i18n="tab_recipients_ostan">Ostan Employees</span>
+                  </button>
+                  <button id="tab-btn-recipients-custom" type="button" onclick="switchRecipientsTab('custom')" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.75rem; font-weight: 700; border-radius: 4px;">
+                    📋 <span data-i18n="tab_recipients_custom">Custom List</span>
+                    <span id="custom-contacts-pill-badge" class="badge badge-emerald" style="font-size: 0.62rem; padding: 0.1rem 0.35rem; margin-inline-start: 4px;">0</span>
+                  </button>
+                </div>
+
                 <span id="msg-recipient-count-badge" class="badge badge-primary">0 Selected</span>
               </div>
 
-              <!-- Quick Filter Buttons -->
-              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
-                <button id="msg-filter-all-btn" type="button" onclick="selectRecipientGroup('all')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
-                  👥 <span data-i18n="msg_recipients_all">All Staff</span>
-                </button>
-                <button id="msg-filter-saudi-btn" type="button" onclick="openSaudiRecipientPickerModal()" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
-                  🇸🇦 <span data-i18n="btn_filter_saudi_msg">Saudi Staff</span>
-                </button>
-                <button id="msg-filter-stock-btn" type="button" onclick="selectRecipientGroup('stock')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
-                  📦 <span data-i18n="msg_recipients_stock">Warehouse</span>
-                </button>
-                <button type="button" onclick="selectRecipientGroup('clear')" class="btn btn-ghost" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
-                  ✕ Clear
-                </button>
-              </div>
-
-              <!-- Salary Filter for Saudi Staff -->
-              <div id="msg-saudi-salary-filter-box" style="background: rgba(16, 185, 129, 0.06); border: 1px dashed rgba(16, 185, 129, 0.3); padding: 0.5rem 0.65rem; border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.35rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 0.72rem; font-weight: 700; color: #10b981;" data-i18n="msg_salary_filter_title">💰 Filter Saudis by Salary Range:</span>
-                  <span id="msg-salary-match-count" style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;"></span>
+              <!-- PART 1: Ostan Employees Recipient Panel -->
+              <div id="panel-recipients-ostan" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Quick Filter Buttons -->
+                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                  <button id="msg-filter-all-btn" type="button" onclick="selectRecipientGroup('all')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                    👥 <span data-i18n="msg_recipients_all">All Staff</span>
+                  </button>
+                  <button id="msg-filter-saudi-btn" type="button" onclick="openSaudiRecipientPickerModal()" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
+                    🇸🇦 <span data-i18n="btn_filter_saudi_msg">Saudi Staff</span>
+                  </button>
+                  <button id="msg-filter-stock-btn" type="button" onclick="selectRecipientGroup('stock')" class="btn btn-secondary" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                    📦 <span data-i18n="msg_recipients_stock">Warehouse</span>
+                  </button>
+                  <button type="button" onclick="selectRecipientGroup('clear')" class="btn btn-ghost" style="padding: 0.35rem 0.65rem; font-size: 0.75rem;">
+                    ✕ Clear
+                  </button>
                 </div>
-                <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
-                  <button type="button" onclick="filterSaudiBySalary('all', this)" class="btn btn-ghost active-sal-filter" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle); font-weight: 600;">All</button>
-                  <button type="button" onclick="filterSaudiBySalary('1500', this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">1,500 SAR</button>
-                  <button type="button" onclick="filterSaudiBySalary('4000', this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">4,000 SAR</button>
-                  <button type="button" onclick="filterSaudiBySalary('5500', this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">5,500 SAR</button>
+
+                <!-- Salary Filter for Saudi Staff -->
+                <div id="msg-saudi-salary-filter-box" style="background: rgba(16, 185, 129, 0.06); border: 1px dashed rgba(16, 185, 129, 0.3); padding: 0.5rem 0.65rem; border-radius: var(--radius-sm); display: flex; flex-direction: column; gap: 0.35rem;">
+                  <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.72rem; font-weight: 700; color: #10b981;" data-i18n="msg_salary_filter_title">💰 Filter Saudis by Salary Range:</span>
+                    <span id="msg-salary-match-count" style="font-size: 0.68rem; color: var(--text-muted); font-weight: 600;"></span>
+                  </div>
+                  <div style="display: flex; gap: 0.25rem; flex-wrap: wrap;">
+                    <button type="button" onclick="filterSaudiBySalary('all', this)" class="btn btn-ghost active-sal-filter" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle); font-weight: 600;">All</button>
+                    <button type="button" onclick="filterSaudiBySalary('1500', this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">1,500 SAR</button>
+                    <button type="button" onclick="filterSaudiBySalary('4000', this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">4,000 SAR</button>
+                    <button type="button" onclick="filterSaudiBySalary('5500', this)" class="btn btn-ghost" style="padding: 0.18rem 0.45rem; font-size: 0.68rem; border: 1px solid var(--border-subtle);">5,500 SAR</button>
+                  </div>
+                </div>
+
+                <!-- Search Staff Filter -->
+                <input id="msg-user-search" type="text" placeholder="Search workers by name or role..." oninput="renderMessageRecipientsList()" class="input-field" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">
+
+                <!-- Scrollable Workers Checklist -->
+                <div id="msg-recipients-container" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 4px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.5rem; background: var(--bg-surface);">
+                  <!-- Dynamic recipient rows -->
+                </div>
+
+                <!-- Manual Phone Input Option -->
+                <div style="display: flex; gap: 0.5rem; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
+                  <input id="msg-manual-phone" type="text" placeholder="+966 5X XXX XXXX (Custom Phone)" class="input-field" style="font-size: 0.8rem; flex: 1;">
+                  <button type="button" onclick="addManualPhoneRecipient()" class="btn btn-secondary" style="padding: 0.45rem 0.75rem; font-size: 0.75rem; white-space: nowrap;">
+                    + Add
+                  </button>
                 </div>
               </div>
 
-              <!-- Search Staff Filter -->
-              <input id="msg-user-search" type="text" placeholder="Search workers by name or role..." oninput="renderMessageRecipientsList()" class="input-field" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;">
+              <!-- PART 2: 100% User-Private Custom List Panel -->
+              <div id="panel-recipients-custom" style="display: none; flex-direction: column; gap: 0.85rem;">
+                <!-- Top Actions Bar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                  <div style="display: flex; align-items: center; gap: 0.4rem;">
+                    <span class="badge badge-emerald" style="font-size: 0.68rem; font-weight: 800; padding: 0.2rem 0.5rem; border-radius: 9999px;">
+                      🔒 <span data-i18n="custom_contacts_privacy">100% Private to You</span>
+                    </span>
+                    <span style="font-size: 0.72rem; color: var(--text-muted);" data-i18n="custom_contacts_subtitle">Independent contact book</span>
+                  </div>
 
-              <!-- Scrollable Workers Checklist -->
-              <div id="msg-recipients-container" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 4px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.5rem; background: var(--bg-surface);">
-                <!-- Dynamic recipient rows -->
-              </div>
+                  <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                    <!-- Hidden File Input for Excel (.xlsx, .xls) and CSV (.csv) -->
+                    <input type="file" id="custom-contacts-excel-file" accept=".xlsx, .xls, .csv, text/csv, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel" style="display: none;" onchange="handleCustomContactsFileUpload(event)">
+                    
+                    <button type="button" onclick="document.getElementById('custom-contacts-excel-file').click()" class="btn btn-secondary" style="padding: 0.3rem 0.65rem; font-size: 0.74rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;" title="Upload .xlsx, .xls, or .csv spreadsheet">
+                      📥 <span data-i18n="btn_import_excel_csv">Import Excel / CSV</span>
+                    </button>
 
-              <!-- Manual Phone Input Option -->
-              <div style="display: flex; gap: 0.5rem; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.75rem;">
-                <input id="msg-manual-phone" type="text" placeholder="+966 5X XXX XXXX (Custom Phone)" class="input-field" style="font-size: 0.8rem; flex: 1;">
-                <button type="button" onclick="addManualPhoneRecipient()" class="btn btn-secondary" style="padding: 0.45rem 0.75rem; font-size: 0.75rem; white-space: nowrap;">
-                  + Add
-                </button>
+                    <button type="button" onclick="downloadCustomContactsTemplate('csv')" class="btn btn-ghost" style="padding: 0.3rem 0.5rem; font-size: 0.72rem;" title="Download sample template format">
+                      📄 <span data-i18n="btn_download_template">Template</span>
+                    </button>
+
+                    <button type="button" onclick="selectCustomContactsGroup('all')" class="btn btn-ghost" style="padding: 0.3rem 0.5rem; font-size: 0.72rem;" title="Select all custom contacts">
+                      ☑️ <span data-i18n="btn_select_all_custom">All</span>
+                    </button>
+
+                    <button type="button" onclick="selectCustomContactsGroup('clear')" class="btn btn-ghost" style="padding: 0.3rem 0.5rem; font-size: 0.72rem;" title="Deselect all custom contacts">
+                      ✕ <span data-i18n="btn_deselect_all_custom">Deselect</span>
+                    </button>
+
+                    <button type="button" onclick="clearUserCustomContacts()" class="btn btn-ghost" style="padding: 0.3rem 0.5rem; font-size: 0.72rem; color: #fb7185;" title="Clear all contacts from list">
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Search Custom Contacts Filter -->
+                <input id="custom-contacts-search" type="text" placeholder="Search custom contacts by name, phone, notes..." oninput="renderCustomContactsList()" class="input-field" style="font-size: 0.8rem; padding: 0.4rem 0.75rem;" data-i18n="custom_contacts_search_ph">
+
+                <!-- Scrollable Custom Contacts Checklist -->
+                <div id="custom-contacts-container" style="max-height: 180px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 4px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.5rem; background: var(--bg-surface);">
+                  <!-- Dynamic custom contact rows -->
+                </div>
+
+                <!-- Inline Add Custom Contact Bar -->
+                <div style="display: flex; gap: 0.4rem; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.65rem; flex-wrap: wrap;">
+                  <input id="custom-contact-new-name" type="text" placeholder="Contact Name" class="input-field" style="font-size: 0.78rem; flex: 1; min-width: 110px;" data-i18n="custom_contact_name_ph">
+                  <input id="custom-contact-new-phone" type="text" placeholder="+966 5X XXX XXXX" class="input-field" style="font-size: 0.78rem; flex: 1.2; min-width: 130px;" data-i18n="custom_contact_phone_ph">
+                  <input id="custom-contact-new-notes" type="text" placeholder="Tag / Note" class="input-field" style="font-size: 0.78rem; flex: 0.9; min-width: 90px;" data-i18n="custom_contact_notes_ph">
+                  <button type="button" onclick="addUserCustomContactManually()" class="btn btn-primary" style="padding: 0.4rem 0.75rem; font-size: 0.75rem; white-space: nowrap; font-weight: 700;">
+                    + Add
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -3603,11 +3675,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.21",
-  "commit": "77e8633",
-  "buildTime": 1789162812705,
-  "releaseDate": "2026-09-11T21:40:12.705Z",
-  "message": "fix(settings): isolate Disconnect to Active tab, unify all active numbers, and prevent duplicate audit sessions"
+  "version": "1.0.22",
+  "commit": "5bd4ebc",
+  "buildTime": 1789167064065,
+  "releaseDate": "2026-09-11T22:51:04.065Z",
+  "message": "fix(settings): backfill Hussain into WhatsApp audit registry and synchronize live cloud sessions"
 };
 
     let _ostanUpdateTriggered = false;
@@ -3947,9 +4019,9 @@
       })),
       warningTemplates: (() => {
         const defaultW = {
-          taskApproaching: `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\n{greeting} *{name}*\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد النهائي: {deadline}\n⏳ الوقت المتبقي: *{remaining}*\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`,
-          taskOverdue: `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\n{greeting} *{name}*\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد كان: {deadline}\nيرجى العمل على إكمال المهمة وتحديث حالتها فوراً.`,
-          reminderDue: `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنود تذكيركم بالموعد التالي:\n📌 التذكير: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد: {time}\n⏳ الحالة: *{status}*`
+          taskApproaching: `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\r\n{greeting} *{name}*\r\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك:\r\n📌 المهمة: *{title}*\r\n📝 الوصف: {description}\r\n⏱️ الموعد النهائي: {deadline}\r\n⏳ الوقت المتبقي: *{remaining}*\r\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`,
+          taskOverdue: `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\r\n{greeting} *{name}*\r\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\r\n📌 المهمة: *{title}*\r\n📝 الوصف: {description}\r\n⏱️ الموعد كان: {deadline}\r\nيرجى العمل على إكمال المهمة وتحديث حالتها فوراً.`,
+          reminderDue: `⏰ *[تذكير مجدول / Scheduled Reminder]*\r\nنود تذكيركم بالموعد التالي:\r\n📌 التذكير: *{title}*\r\n📝 الوصف: {description}\r\n⏱️ الموعد: {time}\r\n⏳ الحالة: *{status}*`
         };
         try {
           const saved = JSON.parse(localStorage.getItem("ostan_warning_templates") || "null");
@@ -5337,9 +5409,9 @@
       if (!confirm(lang === "ar" ? "هل ترغب في استعادة القوالب الافتراضية؟" : "Reset templates to defaults?")) return;
 
       state.warningTemplates = {
-        taskApproaching: `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\n{greeting} *{name}*\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد النهائي: {deadline}\n⏳ الوقت المتبقي: *${"{remaining}"}*\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`,
-        taskOverdue: `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\n{greeting} *{name}*\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد كان: {deadline}\nيرجى العمل على إكمال المهمة وتحديث حالتها فوراً.`,
-        reminderDue: `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنود تذكيركم بالموعد التالي:\n📌 التذكير: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد: {time}\n⏳ الحالة: *{status}*`
+        taskApproaching: `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\r\n{greeting} *{name}*\r\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك:\r\n📌 المهمة: *{title}*\r\n📝 الوصف: {description}\r\n⏱️ الموعد النهائي: {deadline}\r\n⏳ الوقت المتبقي: *${"{remaining}"}*\r\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`,
+        taskOverdue: `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\r\n{greeting} *{name}*\r\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\r\n📌 المهمة: *{title}*\r\n📝 الوصف: {description}\r\n⏱️ الموعد كان: {deadline}\r\nيرجى العمل على إكمال المهمة وتحديث حالتها فوراً.`,
+        reminderDue: `⏰ *[تذكير مجدول / Scheduled Reminder]*\r\nنود تذكيركم بالموعد التالي:\r\n📌 التذكير: *{title}*\r\n📝 الوصف: {description}\r\n⏱️ الموعد: {time}\r\n⏳ الحالة: *{status}*`
       };
       saveState();
       renderSettingsWarningTemplates();
@@ -5680,7 +5752,7 @@
       if (cleaned.length !== 9) {
         return {
           valid: false,
-          error: `Saudi phone number must be exactly 9 digits after +966 (currently ${cleaned.length} digits). Spaces are ignored.\n\nExample formula: +966 50 123 4567`
+          error: `Saudi phone number must be exactly 9 digits after +966 (currently ${cleaned.length} digits). Spaces are ignored.\r\n\r\nExample formula: +966 50 123 4567`
         };
       }
 
@@ -6184,7 +6256,7 @@
         "تاريخ بدء العمل"
       ];
       const rows = sampleData.map(r => headers.map(h => `"${(r[h] || "").toString().replace(/"/g, '""')}"`).join(","));
-      const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
+      const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\r\n");
       const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -6807,7 +6879,7 @@
     function copyProvisionedCredentials() {
       if (!lastProvisionedCredentials) return;
       const origin = (window.location.origin && window.location.origin !== "null") ? window.location.origin : window.location.href.split('#')[0];
-      const text = `🌟 Ostan Enterprise Platform Credentials\n👤 Name: ${lastProvisionedCredentials.name}\n📧 Email: ${lastProvisionedCredentials.email}\n🔑 Password: ${lastProvisionedCredentials.password}\n🌐 Login URL: ${origin}`;
+      const text = `🌟 Ostan Enterprise Platform Credentials\r\n👤 Name: ${lastProvisionedCredentials.name}\r\n📧 Email: ${lastProvisionedCredentials.email}\r\n🔑 Password: ${lastProvisionedCredentials.password}\r\n🌐 Login URL: ${origin}`;
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => {
           const lang = document.documentElement.getAttribute("lang") || "en";
@@ -9335,8 +9407,8 @@
                 const descText = task.description ? task.description : "—";
                 const deadlineStr = task.deadline ? task.deadline.replace('T', ' ') : "";
 
-                const defaultAppr = `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\n{greeting} *{name}*\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد النهائي: {deadline}\n⏳ الوقت المتبقي: *{remaining}*\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`;
-                const defaultOver = `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\n{greeting} *{name}*\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\n📌 المهمة: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد كان: {deadline}\nيرجى العمل على إكمال المهمة وتحديث حالتها فوراً.`;
+                const defaultAppr = `⚠️ *[تنبيه اقتراب الموعد النهائي / Task Deadline Warning]*\r\n{greeting} *{name}*\r\nنود تنبيهك باقتراب الموعد النهائي للمهمة المسندة إليك:\r\n📌 المهمة: *{title}*\r\n📝 الوصف: {description}\r\n⏱️ الموعد النهائي: {deadline}\r\n⏳ الوقت المتبقي: *{remaining}*\r\nيرجى سرعة إنجاز المهمة وتسليمها قبل انتهاء الوقت.`;
+                const defaultOver = `🚨 *[تنبيه انتهاء موعد المهمة / Task Overdue]*\r\n{greeting} *{name}*\r\nلقد انتهى الموعد النهائي المحدد للمهمة المسندة إليك:\r\n📌 المهمة: *{title}*\r\n📝 الوصف: {description}\r\n⏱️ الموعد كان: {deadline}\r\nيرجى العمل على إكمال المهمة وتحديث حالتها فوراً.`;
 
                 let rawTemplate = isOverdue
                   ? (state.warningTemplates?.taskOverdue || defaultOver)
@@ -9409,7 +9481,7 @@
               } else {
                 const descText = rem.description ? rem.description : "—";
                 const timeStr = rem.reminderTime ? rem.reminderTime.replace('T', ' ') : "";
-                const defaultRem = `⏰ *[تذكير مجدول / Scheduled Reminder]*\nنود تذكيركم بالموعد التالي:\n📌 التذكير: *{title}*\n📝 الوصف: {description}\n⏱️ الموعد: {time}\n⏳ الحالة: *{status}*`;
+                const defaultRem = `⏰ *[تذكير مجدول / Scheduled Reminder]*\r\nنود تذكيركم بالموعد التالي:\r\n📌 التذكير: *{title}*\r\n📝 الوصف: {description}\r\n⏱️ الموعد: {time}\r\n⏳ الحالة: *{status}*`;
 
                 let rawTemplate = state.warningTemplates?.reminderDue || defaultRem;
                 let waMsg = rawTemplate
@@ -9487,6 +9559,8 @@
 
     let selectedRecipientIds = new Set();
     let manualRecipients = [];
+    let selectedCustomContactIds = new Set();
+    window._activeRecipientsTab = "ostan"; // "ostan" | "custom"
     let waQrTimerInterval = null;
 
     function applyMessageSenderPermissions() {
@@ -9541,6 +9615,7 @@
         renderSuperAdminWaNumbersChart();
       }
       renderMessageRecipientsList();
+      try { loadUserCustomContactsCloud(); } catch(e) {}
       renderMessageTemplates();
       renderMessageHistoryLogs();
       updateMessageComposerStats();
@@ -10190,6 +10265,399 @@
     }
     window.testLiveWhatsAppConnection = testLiveWhatsAppConnection;
 
+    
+    // =========================================================================
+    // 100% USER-ISOLATED CUSTOM CONTACTS RECIPIENTS ENGINE (EXCEL / CSV IMPORT)
+    // =========================================================================
+    
+    function getUserCustomContactsStorageKey() {
+      const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      const cleanId = (curUser?.id || "guest").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+      return "ostan_custom_contacts_" + cleanId;
+    }
+
+    function getUserCustomContacts() {
+      const key = getUserCustomContactsStorageKey();
+      try {
+        return JSON.parse(localStorage.getItem(key) || "[]") || [];
+      } catch (e) {
+        return [];
+      }
+    }
+    window.getUserCustomContacts = getUserCustomContacts;
+
+    function saveUserCustomContacts(contacts) {
+      const key = getUserCustomContactsStorageKey();
+      try {
+        localStorage.setItem(key, JSON.stringify(contacts));
+      } catch (e) {}
+
+      // Cloud Firestore synchronization strictly scoped to this user's private doc:
+      // userCustomContacts/{userId} -> completely inaccessible by any other user!
+      const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      const cleanId = (curUser?.id || "guest").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+      if (window.fbDb && cleanId !== "guest") {
+        window.fbDb.collection("userCustomContacts").doc(cleanId).set({
+          userId: cleanId,
+          userEmail: curUser?.email || null,
+          userName: curUser?.name || null,
+          contacts: contacts,
+          updatedAt: Date.now()
+        }, { merge: true }).catch(() => {});
+      }
+    }
+    window.saveUserCustomContacts = saveUserCustomContacts;
+
+    function loadUserCustomContactsCloud() {
+      const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+      if (!curUser || !window.fbDb) return;
+      const cleanId = (curUser.id || "guest").toLowerCase().replace(/[^a-z0-9_-]/g, "_");
+      if (cleanId === "guest") return;
+
+      if (window._userCustomContactsUnsub) {
+        try { window._userCustomContactsUnsub(); } catch(e) {}
+        window._userCustomContactsUnsub = null;
+      }
+
+      window._userCustomContactsUnsub = window.fbDb.collection("userCustomContacts").doc(cleanId).onSnapshot(docSnap => {
+        if (docSnap.exists) {
+          const d = docSnap.data();
+          if (Array.isArray(d?.contacts)) {
+            const key = "ostan_custom_contacts_" + cleanId;
+            localStorage.setItem(key, JSON.stringify(d.contacts));
+            renderCustomContactsList();
+          }
+        }
+      }, err => console.warn("userCustomContacts sync notice:", err));
+    }
+    window.loadUserCustomContactsCloud = loadUserCustomContactsCloud;
+
+    function switchRecipientsTab(tab) {
+      window._activeRecipientsTab = tab;
+      const ostanBtn = document.getElementById("tab-btn-recipients-ostan");
+      const customBtn = document.getElementById("tab-btn-recipients-custom");
+      const ostanPanel = document.getElementById("panel-recipients-ostan");
+      const customPanel = document.getElementById("panel-recipients-custom");
+
+      if (tab === "ostan") {
+        if (ostanBtn) {
+          ostanBtn.className = "btn btn-primary";
+          ostanBtn.style.background = "";
+          ostanBtn.style.color = "";
+        }
+        if (customBtn) {
+          customBtn.className = "btn btn-ghost";
+          customBtn.style.background = "";
+          customBtn.style.color = "";
+          customBtn.style.borderColor = "";
+        }
+        if (ostanPanel) ostanPanel.style.display = "flex";
+        if (customPanel) customPanel.style.display = "none";
+      } else {
+        if (ostanBtn) {
+          ostanBtn.className = "btn btn-ghost";
+          ostanBtn.style.background = "";
+          ostanBtn.style.color = "";
+        }
+        if (customBtn) {
+          customBtn.className = "btn btn-primary";
+          customBtn.style.background = "linear-gradient(135deg, #10b981, #059669)";
+          customBtn.style.color = "#ffffff";
+          customBtn.style.borderColor = "#10b981";
+        }
+        if (ostanPanel) ostanPanel.style.display = "none";
+        if (customPanel) customPanel.style.display = "flex";
+        renderCustomContactsList();
+      }
+    }
+    window.switchRecipientsTab = switchRecipientsTab;
+
+    function renderCustomContactsList() {
+      const container = document.getElementById("custom-contacts-container");
+      if (!container) return;
+      const q = (document.getElementById("custom-contacts-search")?.value || "").toLowerCase().trim();
+      const contacts = getUserCustomContacts();
+
+      const pillBadge = document.getElementById("custom-contacts-pill-badge");
+      if (pillBadge) pillBadge.textContent = contacts.length;
+
+      const filtered = contacts.filter(c => {
+        if (!q) return true;
+        const name = (c.name || "").toLowerCase();
+        const phone = (c.phone || "").toLowerCase();
+        const notes = (c.notes || "").toLowerCase();
+        return name.includes(q) || phone.includes(q) || notes.includes(q);
+      });
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const isAr = lang === "ar";
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+            <div style="font-size: 1.75rem;">📋</div>
+            <div style="font-weight: 700; color: var(--text-main);">
+              ${q ? (isAr ? "لم يتم العثور على جهات اتصال مطابقة" : "No matching contacts found") : (isAr ? "القائمة المخصصة فارغة حالياً" : "Your Custom List is Empty")}
+            </div>
+            <div style="font-size: 0.72rem; max-width: 280px; line-height: 1.4;">
+              ${isAr ? "قم باستيراد ملف Excel أو CSV، أو أضف رقماً مخصصاً في الأسفل. هذه القائمة خاصة بك 100% ومستقلة تماماً." : "Upload an Excel (.xlsx, .xls) or .csv file, or add numbers below. This list is 100% private to you."}
+            </div>
+            <button type="button" onclick="document.getElementById('custom-contacts-excel-file').click()" class="btn btn-secondary" style="margin-top: 0.35rem; padding: 0.35rem 0.75rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
+              📥 ${isAr ? "استيراد ملف Excel / CSV" : "Import Excel / CSV"}
+            </button>
+          </div>
+        `;
+        updateRecipientCountBadge();
+        return;
+      }
+
+      container.innerHTML = filtered.map(c => {
+        const isChecked = selectedCustomContactIds.has(c.id);
+        const initials = (c.name || "C").trim().slice(0, 2).toUpperCase();
+        return `
+          <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(16, 185, 129, 0.12)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? '#10b981' : 'var(--border-subtle)'}; transition: all 0.15s ease;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
+              <input type="checkbox" onchange="toggleCustomContactSelect('${c.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer;">
+              <div style="width: 28px; height: 28px; min-width: 28px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #0d9488); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: #ffffff;">
+                ${initials}
+              </div>
+              <div style="overflow: hidden;">
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                  ${escapeHtml(c.name || (isAr ? "جهة اتصال" : "Contact"))}
+                </div>
+                <div style="font-size: 0.7rem; color: #10b981; font-weight: 600;">
+                  ${escapeHtml(c.phone)}
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.45rem;">
+              ${c.notes ? `<span class="badge badge-secondary" style="font-size: 0.65rem; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.notes)}</span>` : ''}
+              <button type="button" onclick="event.preventDefault(); event.stopPropagation(); deleteUserCustomContact('${c.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.35rem; font-size: 0.75rem; color: #fb7185;" title="${isAr ? 'حذف من القائمة' : 'Delete contact'}">
+                🗑️
+              </button>
+            </div>
+          </label>
+        `;
+      }).join("");
+
+      updateRecipientCountBadge();
+    }
+    window.renderCustomContactsList = renderCustomContactsList;
+
+    function toggleCustomContactSelect(id) {
+      if (selectedCustomContactIds.has(id)) {
+        selectedCustomContactIds.delete(id);
+      } else {
+        selectedCustomContactIds.add(id);
+      }
+      renderCustomContactsList();
+    }
+    window.toggleCustomContactSelect = toggleCustomContactSelect;
+
+    function selectCustomContactsGroup(action) {
+      const contacts = getUserCustomContacts();
+      if (action === "all") {
+        contacts.forEach(c => selectedCustomContactIds.add(c.id));
+      } else if (action === "clear") {
+        selectedCustomContactIds.clear();
+      }
+      renderCustomContactsList();
+    }
+    window.selectCustomContactsGroup = selectCustomContactsGroup;
+
+    function addUserCustomContactManually() {
+      const nameInput = document.getElementById("custom-contact-new-name");
+      const phoneInput = document.getElementById("custom-contact-new-phone");
+      const notesInput = document.getElementById("custom-contact-new-notes");
+      if (!phoneInput) return;
+
+      const rawPhone = phoneInput.value.trim();
+      if (!rawPhone || rawPhone.length < 8) {
+        alert("Please enter a valid phone number with country code (e.g. +966501234567)");
+        return;
+      }
+
+      let clean = rawPhone.replace(/[^0-9+]/g, "");
+      if (clean.startsWith("05") && clean.length === 10) clean = "+966" + clean.slice(1);
+      else if (clean.startsWith("5") && clean.length === 9) clean = "+966" + clean;
+      else if (!clean.startsWith("+")) clean = "+" + clean;
+
+      const digitsOnly = clean.replace(/[^0-9]/g, "");
+      const rawName = (nameInput?.value || "").trim() || "Custom Contact";
+      const rawNotes = (notesInput?.value || "").trim();
+
+      const contacts = getUserCustomContacts();
+      const existingIdx = contacts.findIndex(c => c.cleanPhone === digitsOnly);
+      if (existingIdx !== -1) {
+        contacts[existingIdx].name = rawName;
+        if (rawNotes) contacts[existingIdx].notes = rawNotes;
+      } else {
+        const newContact = {
+          id: "cst-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6),
+          name: rawName,
+          phone: clean,
+          cleanPhone: digitsOnly,
+          notes: rawNotes,
+          addedAt: Date.now()
+        };
+        contacts.unshift(newContact);
+        selectedCustomContactIds.add(newContact.id);
+      }
+
+      saveUserCustomContacts(contacts);
+      if (nameInput) nameInput.value = "";
+      phoneInput.value = "";
+      if (notesInput) notesInput.value = "";
+
+      renderCustomContactsList();
+    }
+    window.addUserCustomContactManually = addUserCustomContactManually;
+
+    function deleteUserCustomContact(id) {
+      const contacts = getUserCustomContacts().filter(c => c.id !== id);
+      selectedCustomContactIds.delete(id);
+      saveUserCustomContacts(contacts);
+      renderCustomContactsList();
+    }
+    window.deleteUserCustomContact = deleteUserCustomContact;
+
+    function clearUserCustomContacts() {
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const isAr = lang === "ar";
+      if (!confirm(isAr ? "هل أنت متأكد من مسح جميع جهات الاتصال في قائمتك الخاصة؟" : "Are you sure you want to clear your entire private custom contact list?")) {
+        return;
+      }
+      selectedCustomContactIds.clear();
+      saveUserCustomContacts([]);
+      renderCustomContactsList();
+    }
+    window.clearUserCustomContacts = clearUserCustomContacts;
+
+    function handleCustomContactsFileUpload(e) {
+      const file = e.target?.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          if (typeof XLSX === "undefined") {
+            alert("Excel parser library is loading. Please retry in a moment.");
+            return;
+          }
+          const workbook = XLSX.read(data, { type: "array" });
+          const firstSheet = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheet];
+          const rawRows = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+          if (!rawRows || rawRows.length === 0) {
+            alert("The uploaded spreadsheet contains no data rows.");
+            return;
+          }
+
+          const getVal = (row, ...keys) => {
+            for (const k of keys) {
+              for (const rowKey of Object.keys(row)) {
+                if (rowKey.trim().toLowerCase() === k.toLowerCase()) {
+                  return String(row[rowKey]).trim();
+                }
+              }
+            }
+            return "";
+          };
+
+          const existingContacts = getUserCustomContacts();
+          const existingCleanPhones = new Set(existingContacts.map(c => c.cleanPhone));
+          let importedCount = 0;
+          let skippedCount = 0;
+
+          rawRows.forEach(row => {
+            const rawName = getVal(row, "name", "full name", "contact", "customer", "client", "employee", "الاسم", "اسم", "العميل", "جهات الاتصال", "المستلم") || ("Contact " + (existingContacts.length + importedCount + 1));
+            const rawPhone = getVal(row, "phone", "mobile", "number", "telephone", "phone number", "whatsapp", "الجوال", "رقم الجوال", "الهاتف", "رقم الهاتف", "الرقم", "واتساب");
+            const rawNotes = getVal(row, "notes", "note", "tag", "category", "role", "dept", "department", "company", "ملاحظات", "ملاحظة", "تصنيف", "الجهة", "الشركة");
+
+            if (!rawPhone) return;
+
+            let clean = rawPhone.replace(/[^0-9+]/g, "");
+            if (clean.startsWith("05") && clean.length === 10) clean = "+966" + clean.slice(1);
+            else if (clean.startsWith("5") && clean.length === 9) clean = "+966" + clean;
+            else if (!clean.startsWith("+")) clean = "+" + clean;
+
+            const digitsOnly = clean.replace(/[^0-9]/g, "");
+            if (digitsOnly.length < 8) return;
+
+            if (existingCleanPhones.has(digitsOnly)) {
+              skippedCount++;
+              return;
+            }
+
+            existingCleanPhones.add(digitsOnly);
+            const newContact = {
+              id: "cst-" + Date.now() + "-" + Math.random().toString(36).substr(2, 6),
+              name: rawName,
+              phone: clean,
+              cleanPhone: digitsOnly,
+              notes: rawNotes || "",
+              addedAt: Date.now()
+            };
+            existingContacts.push(newContact);
+            selectedCustomContactIds.add(newContact.id);
+            importedCount++;
+          });
+
+          saveUserCustomContacts(existingContacts);
+          renderCustomContactsList();
+
+          const lang = document.documentElement.getAttribute("lang") || "en";
+          const isAr = lang === "ar";
+          const msg = isAr 
+            ? ("تم استيراد " + importedCount + " جهة اتصال بنجاح" + (skippedCount > 0 ? " (تم تخطي " + skippedCount + " أرقام مكررة)" : ""))
+            : ("Successfully imported " + importedCount + " contacts" + (skippedCount > 0 ? " (" + skippedCount + " duplicates skipped)" : ""));
+
+          if (window.OstanStyle) {
+            window.OstanStyle.showToast(isAr ? "استيراد جهات الاتصال" : "Contacts Imported", msg);
+          } else {
+            alert(msg);
+          }
+        } catch (err) {
+          console.error("Excel/CSV import error:", err);
+          alert("Failed to parse file: " + err.message);
+        } finally {
+          if (e.target) e.target.value = "";
+        }
+      };
+
+      reader.readAsArrayBuffer(file);
+    }
+    window.handleCustomContactsFileUpload = handleCustomContactsFileUpload;
+
+    function downloadCustomContactsTemplate(format = "csv") {
+      const sampleData = [
+        { "Name": "Ahmed Ali", "Phone": "+966501234567", "Notes": "VIP Client" },
+        { "Name": "Sarah Al-Ghamdi", "Phone": "+966551234567", "Notes": "Subcontractor" },
+        { "Name": "Khalid Al-Otaibi", "Phone": "+966561234567", "Notes": "Supply Partner" }
+      ];
+
+      if (format === "xlsx" && typeof XLSX !== "undefined") {
+        const ws = XLSX.utils.json_to_sheet(sampleData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Contacts");
+        XLSX.writeFile(wb, "Ostan_Custom_Contacts_Template.xlsx");
+      } else {
+        const csvContent = "data:text/csv;charset=utf-8," 
+          + "Name,Phone,Notes\r\n"
+          + sampleData.map(r => '"' + r.Name + '","' + r.Phone + '","' + r.Notes + '"').join("\r\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "Ostan_Custom_Contacts_Template.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+    window.downloadCustomContactsTemplate = downloadCustomContactsTemplate;
+
     function renderMessageRecipientsList() {
       const container = document.getElementById("msg-recipients-container");
       if (!container) return;
@@ -10658,7 +11126,8 @@
     window.applySaudiPickerSelection = applySaudiPickerSelection;
 
     function updateRecipientCountBadge() {
-      const count = selectedRecipientIds.size + manualRecipients.length;
+      const customCount = typeof selectedCustomContactIds !== "undefined" ? selectedCustomContactIds.size : 0;
+      const count = selectedRecipientIds.size + manualRecipients.length + customCount;
       const badge = document.getElementById("msg-recipient-count-badge");
       if (badge) badge.textContent = `${count} Selected`;
     }
@@ -10983,9 +11452,10 @@
         return;
       }
 
-      const totalRecipientsCount = selectedRecipientIds.size + manualRecipients.length;
+      const customCount = typeof selectedCustomContactIds !== "undefined" ? selectedCustomContactIds.size : 0;
+      const totalRecipientsCount = selectedRecipientIds.size + manualRecipients.length + customCount;
       if (totalRecipientsCount === 0) {
-        alert("Please select at least one employee or enter a manual phone number.");
+        alert("Please select at least one employee, custom contact, or enter a manual phone number.");
         return;
       }
 
@@ -10994,6 +11464,8 @@
       const minVal = delayInfo.min;
       const maxVal = delayInfo.max;
       const selectedUsers = state.users.filter(u => selectedRecipientIds.has(u.id));
+      const userCustomContactsList = getUserCustomContacts();
+      const selectedCustoms = userCustomContactsList.filter(c => selectedCustomContactIds.has(c.id));
 
       const items = [];
       selectedUsers.forEach(u => {
@@ -11004,6 +11476,19 @@
           user: u,
           name: u.name,
           phone: u.phone,
+          message: personalized,
+          url: waUrl
+        });
+      });
+
+      selectedCustoms.forEach(c => {
+        const cleanPhone = (c.phone || "").replace(/[^0-9]/g, "");
+        const personalized = buildPersonalizedMessage(rawText, { name: c.name, role: c.notes || "Custom Contact", company: "Ostan" });
+        const waUrl = `https://web.whatsapp.com/send/?phone=${cleanPhone}&text=${encodeURIComponent(personalized)}`;
+        items.push({
+          user: null,
+          name: c.name,
+          phone: c.phone,
           message: personalized,
           url: waUrl
         });
@@ -11751,9 +12236,10 @@
         return;
       }
 
-      const totalRecipientsCount = selectedRecipientIds.size + manualRecipients.length;
+      const customCount = typeof selectedCustomContactIds !== "undefined" ? selectedCustomContactIds.size : 0;
+      const totalRecipientsCount = selectedRecipientIds.size + manualRecipients.length + customCount;
       if (totalRecipientsCount === 0) {
-        alert("Please select at least one employee or enter a manual phone number.");
+        alert("Please select at least one employee, custom contact, or enter a manual phone number.");
         return;
       }
 
@@ -11765,6 +12251,9 @@
       }
 
       const selectedUsers = state.users.filter(u => selectedRecipientIds.has(u.id));
+      const userCustomContactsList = getUserCustomContacts();
+      const selectedCustoms = userCustomContactsList.filter(c => selectedCustomContactIds.has(c.id));
+
       const items = [];
       selectedUsers.forEach(u => {
         const personalized = buildPersonalizedMessage(rawText, u);
@@ -11772,6 +12261,16 @@
           user: u,
           name: u.name,
           phone: u.phone || "+966501234567",
+          message: personalized
+        });
+      });
+
+      selectedCustoms.forEach(c => {
+        const personalized = buildPersonalizedMessage(rawText, { name: c.name, role: c.notes || "Custom Contact", company: "Ostan" });
+        items.push({
+          user: null,
+          name: c.name,
+          phone: c.phone || "+966501234567",
           message: personalized
         });
       });
