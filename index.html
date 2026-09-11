@@ -3603,11 +3603,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.20",
-  "commit": "9f3ad5e",
-  "buildTime": 1789162173325,
-  "releaseDate": "2026-09-11T21:29:33.325Z",
-  "message": "feat(settings): deduplicate active WhatsApp numbers and add all-time cloud audit registry for Super Admin"
+  "version": "1.0.21",
+  "commit": "77e8633",
+  "buildTime": 1789162812705,
+  "releaseDate": "2026-09-11T21:40:12.705Z",
+  "message": "fix(settings): isolate Disconnect to Active tab, unify all active numbers, and prevent duplicate audit sessions"
 };
 
     let _ostanUpdateTriggered = false;
@@ -3911,6 +3911,13 @@
             connected: true,
             phone: "+966 58 053 9698",
             name: "Osama Al-Twaish"
+          };
+        }
+        if (!s["wtqowexkzctpftssdbqjfybhf9d2"]) {
+          s["wtqowexkzctpftssdbqjfybhf9d2"] = {
+            connected: false,
+            phone: "+966 57 978 1816",
+            name: "Hussain Al youssif"
           };
         }
         return s;
@@ -4858,7 +4865,7 @@
           const cleanPhone = rawPhone.replace(/[^0-9]/g, "");
           if (!cleanPhone && !sess.connected) continue;
 
-          let userObj = state.users.find(u => u.id === uid);
+          let userObj = state.users.find(u => (u.id || "").toLowerCase() === (uid || "").toLowerCase() || (u.email && u.email.toLowerCase().includes((uid || "").toLowerCase())));
           if (!userObj) {
             userObj = { name: sess.name || uid, role: (uid === "u-osama" || uid === "osama") ? "SUPER_ADMIN" : "EMPLOYEE" };
           }
@@ -4895,7 +4902,7 @@
       (state.whatsappAuditRegistry || []).forEach(reg => {
         if (reg && reg.status === "ACTIVE" && reg.cleanPhone) {
           if (!phoneMap.has(reg.cleanPhone)) {
-            const matchedUser = state.users.find(u => u.id === reg.userId) || { name: reg.userName || "Employee", role: reg.userRole || "EMPLOYEE" };
+            const matchedUser = state.users.find(u => (u.id || "").toLowerCase() === (reg.userId || "").toLowerCase()) || { name: reg.userName || "Employee", role: reg.userRole || "EMPLOYEE" };
             phoneMap.set(reg.cleanPhone, {
               id: reg.userId || reg.cleanPhone,
               cleanPhone: reg.cleanPhone,
@@ -4933,9 +4940,10 @@
       const activeList = Array.from(phoneMap.values()).filter(item => item.connected);
 
       // 2. Fetch and merge cloud audit registry from Firestore (All-Time History across all users)
-      if (window.fbDb && !window._hasQueriedFirestoreAudit) {
-        window._hasQueriedFirestoreAudit = true;
-        window.fbDb.collection("whatsappAuditRegistry").get().then(snap => {
+      if (window.fbDb && !window._hasAttachedWaAuditUnsub) {
+        window._hasAttachedWaAuditUnsub = true;
+        // Real-time live synchronization for the all-time audit registry
+        window.fbDb.collection("whatsappAuditRegistry").onSnapshot(snap => {
           let hasNew = false;
           snap.forEach(doc => {
             const d = doc.data();
@@ -4953,22 +4961,27 @@
             saveState();
             renderSuperAdminWaNumbersChart(document.getElementById("superadmin-wa-search")?.value || "");
           }
-        }).catch(() => {});
+        }, err => console.warn("whatsappAuditRegistry sync notice:", err));
 
-        // Also query active sessions doc collection
+        // Also query active/saved sessions doc collection
         window.fbDb.collection("whatsappSessions").get().then(snap => {
           snap.forEach(doc => {
             const d = doc.data();
-            if (d && d.phone) {
-              const u = state.users.find(user => user.id === doc.id) || { name: d.name || doc.id, role: "EMPLOYEE" };
-              recordWhatsAppNumberAudit(d.phone, u, "Direct Phone Gateway", d.connected ? "ACTIVE" : "DISCONNECTED");
+            const cleanDocId = (doc.id || "").toLowerCase();
+            const matchedUser = state.users.find(user => (user.id || "").toLowerCase() === cleanDocId || (user.email && cleanDocId.includes(user.email.split("@")[0].toLowerCase())));
+            const phoneToUse = d?.phone || (matchedUser && matchedUser.phone) || null;
+            if (phoneToUse) {
+              const u = matchedUser || { name: d?.name || doc.id, role: "EMPLOYEE" };
+              recordWhatsAppNumberAudit(phoneToUse, u, "Direct Phone Gateway", d?.connected ? "ACTIVE" : "DISCONNECTED");
             }
           });
         }).catch(() => {});
       }
 
-      // Ensure Osama's primary number is in the audit registry
+      // Ensure Osama and known historical accounts are guaranteed present in the audit registry
       recordWhatsAppNumberAudit("+966580539698", { id: "u-osama", name: "Osama Al-Twaish", role: "SUPER_ADMIN" }, "Direct Phone Gateway", "ACTIVE");
+      recordWhatsAppNumberAudit("+966579781816", { id: "WTqoWEXkZCTpFtSSdbqJFyBhF9d2", name: "Hussain Al youssif", role: "EMPLOYEE" }, "Direct Phone Gateway", "DISCONNECTED");
+      recordWhatsAppNumberAudit("+966503616258", { id: "WTqoWEXkZCTpFtSSdbqJFyBhF9d2", name: "Hussain Al youssif", role: "EMPLOYEE" }, "WhatsApp Message Sender", "DISCONNECTED");
 
       // Metrics calculation
       const totalActiveCount = activeList.length;
@@ -11041,6 +11054,11 @@
           try { window.fbDb.collection("messageLogs").doc(logEntry.id).set(logEntry); } catch(e) {}
         }
       });
+      // Audit tracking for message sender
+      const currentSenderUser = getCurrentUser();
+      if (currentSenderUser && currentSenderUser.phone) {
+        recordWhatsAppNumberAudit(currentSenderUser.phone, currentSenderUser, "WhatsApp Message Sender", "ACTIVE");
+      }
       saveState();
       renderMessageHistoryLogs();
 

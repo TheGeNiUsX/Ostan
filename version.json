@@ -1,7 +1,7 @@
 {
-  "version": "1.0.20",
-  "commit": "9f3ad5e",
-  "buildTime": 1789162173325,
-  "releaseDate": "2026-09-11T21:29:33.325Z",
-  "message": "feat(settings): deduplicate active WhatsApp numbers and add all-time cloud audit registry for Super Admin"
+  "version": "1.0.21",
+  "commit": "77e8633",
+  "buildTime": 1789162812705,
+  "releaseDate": "2026-09-11T21:40:12.705Z",
+  "message": "fix(settings): isolate Disconnect to Active tab, unify all active numbers, and prevent duplicate audit sessions"
 }

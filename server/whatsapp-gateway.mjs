@@ -80,6 +80,26 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
       const liveRef = doc(fbDb, 'systemSettings', 'whatsapp_live');
       await setDoc(liveRef, data, { merge: true });
     }
+
+    // 3. Keep Super Admin WhatsApp Audit Registry in sync for all-time historical tracking
+    if (session.phone) {
+      const cleanPhone = String(session.phone).replace(/[^0-9]/g, '');
+      if (cleanPhone && cleanPhone.length >= 7) {
+        const auditRef = doc(fbDb, 'whatsappAuditRegistry', cleanPhone);
+        await setDoc(auditRef, {
+          id: 'reg_' + cleanPhone,
+          cleanPhone,
+          phone: '+' + cleanPhone,
+          userId: cleanUserId,
+          userName: session.name || (cleanUserId === 'u-osama' ? 'Osama Al-Twaish' : cleanUserId),
+          userRole: cleanUserId === 'u-osama' ? 'SUPER_ADMIN' : 'EMPLOYEE',
+          status: isConnected ? 'ACTIVE' : 'DISCONNECTED',
+          linkType: 'Direct Phone Gateway',
+          lastActiveAt: now,
+          syncedAt: now
+        }, { merge: true }).catch(() => {});
+      }
+    }
     console.log(`[WhatsApp Gateway] ☁️ Synced live state for user '${cleanUserId}' to Cloud Firestore (Status: ${session.status}, Phone: ${session.phone || 'none'})`);
   } catch (err) {
     console.warn(`[WhatsApp Gateway] Firestore live state sync notice for '${cleanUserId}':`, err?.message || err);
@@ -184,6 +204,7 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
     if (state.creds?.me?.id) {
       const id = state.creds.me.id;
       session.phone = id.split(':')[0] || id.split('@')[0];
+      session.savedPhone = session.phone;
       session.name = state.creds.me.name || `User ${cleanUserId}`;
       session.status = 'connecting';
       console.log(`[WhatsApp Gateway] 📱 Restored saved pairing credentials for '${cleanUserId}' (Phone: +${session.phone})`);
@@ -209,9 +230,10 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
       const { connection, lastDisconnect, qr } = update;
 
       if (qr) {
-        // If user already has authenticated credentials, do not let transient QR wipe the linked state
-        if (session.phone && sock?.user?.id) {
-          console.log(`[WhatsApp Gateway] User '${cleanUserId}' already paired (+${session.phone}), ignoring transient QR`);
+        // If user already has authenticated credentials on disk or in memory, do not let transient QR wipe the linked state
+        if (session.savedPhone || (session.phone && sock?.user?.id)) {
+          session.phone = session.savedPhone || session.phone;
+          console.log(`[WhatsApp Gateway] User '${cleanUserId}' already paired (+${session.phone}), preserving linked phone`);
         } else {
           session.status = 'qr_ready';
           session.phone = null;
