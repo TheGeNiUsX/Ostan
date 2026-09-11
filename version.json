@@ -1,7 +1,7 @@
 {
-  "version": "1.0.18",
-  "commit": "ae36ff8",
-  "buildTime": 1789161094269,
-  "releaseDate": "2026-09-11T21:11:34.269Z",
-  "message": "feat(messages): update safety meter bar to fill 100% green when safe and color the remainder red"
+  "version": "1.0.19",
+  "commit": "ae6a18d",
+  "buildTime": 1789161459572,
+  "releaseDate": "2026-09-11T21:17:39.572Z",
+  "message": "feat(settings): add Super Admin exclusive WhatsApp numbers linked chart with remote disconnect action"
 }

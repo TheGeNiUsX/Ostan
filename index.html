@@ -3603,11 +3603,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.18",
-  "commit": "ae36ff8",
-  "buildTime": 1789161094269,
-  "releaseDate": "2026-09-11T21:11:34.269Z",
-  "message": "feat(messages): update safety meter bar to fill 100% green when safe and color the remainder red"
+  "version": "1.0.19",
+  "commit": "ae6a18d",
+  "buildTime": 1789161459572,
+  "releaseDate": "2026-09-11T21:17:39.572Z",
+  "message": "feat(settings): add Super Admin exclusive WhatsApp numbers linked chart with remote disconnect action"
 };
 
     let _ostanUpdateTriggered = false;
@@ -3896,6 +3896,13 @@
       stockRequests: JSON.parse(localStorage.getItem("ostan_stock_requests") || "[]"),
       messageTemplates: JSON.parse(localStorage.getItem("ostan_message_templates") || JSON.stringify(defaultTemplates)),
       messageDispatchLogs: JSON.parse(localStorage.getItem("ostan_message_logs") || "[]"),
+      whatsappAuditRegistry: (() => {
+        try {
+          return JSON.parse(localStorage.getItem("ostan_wa_audit_registry") || "[]") || [];
+        } catch(e) {
+          return [];
+        }
+      })(),
       userWhatsAppSessions: (() => {
         let s = {};
         try { s = JSON.parse(localStorage.getItem("ostan_user_wa_sessions") || "{}") || {}; } catch(e) {}
@@ -3961,6 +3968,7 @@
       localStorage.setItem("ostan_message_templates", JSON.stringify(state.messageTemplates));
       localStorage.setItem("ostan_message_logs", JSON.stringify(state.messageDispatchLogs));
       localStorage.setItem("ostan_user_wa_sessions", JSON.stringify(state.userWhatsAppSessions || {}));
+      localStorage.setItem("ostan_wa_audit_registry", JSON.stringify(state.whatsappAuditRegistry || []));
       localStorage.setItem("ostan_wa_connected", state.whatsappConnected ? "true" : "false");
       localStorage.setItem("ostan_wa_phone", state.whatsappPhone || "");
       localStorage.setItem("ostan_recycle_bin", JSON.stringify(state.recycleBin || []));
@@ -4754,9 +4762,67 @@
     window.clearAllNotificationHistory = clearAllNotificationHistory;
 
     // =========================================================================
-    // SUPER ADMIN EXCLUSIVE: WHATSAPP NUMBERS LINKED REGISTRY & DISCONNECT
+    // SUPER ADMIN EXCLUSIVE: WHATSAPP NUMBERS LINKED REGISTRY & ALL-TIME AUDIT
     // =========================================================================
-    async function renderSuperAdminWaNumbersChart() {
+    window._superAdminWaTab = window._superAdminWaTab || "active";
+    window._hasQueriedFirestoreAudit = false;
+
+    function recordWhatsAppNumberAudit(rawPhone, userObj, linkType = "Direct Phone Gateway", status = "ACTIVE") {
+      if (!rawPhone) return;
+      const cleanPhone = String(rawPhone).replace(/[^0-9]/g, "");
+      if (!cleanPhone || cleanPhone.length < 7) return;
+
+      const now = Date.now();
+      state.whatsappAuditRegistry = state.whatsappAuditRegistry || [];
+
+      let existing = state.whatsappAuditRegistry.find(r => r.cleanPhone === cleanPhone);
+      const curUser = userObj || getCurrentUser();
+      const displayName = curUser?.name || (isMasterSuperAdmin(curUser) ? "Osama Al-Twaish" : "Employee");
+
+      if (existing) {
+        existing.lastActiveAt = now;
+        existing.status = status;
+        if (displayName && (!existing.userName || existing.userName === "Employee")) {
+          existing.userName = displayName;
+        }
+        if (curUser?.role) existing.userRole = curUser.role;
+        existing.linkType = linkType;
+        existing.seenCount = (existing.seenCount || 1) + 1;
+      } else {
+        existing = {
+          id: "reg_" + cleanPhone,
+          cleanPhone,
+          phone: String(rawPhone).trim(),
+          userId: curUser?.id || "u-osama",
+          userName: displayName,
+          userRole: curUser?.role || "SUPER_ADMIN",
+          firstLinkedAt: now,
+          lastActiveAt: now,
+          status: status,
+          linkType: linkType,
+          seenCount: 1,
+          deviceInfo: (navigator.userAgent && navigator.userAgent.includes("Windows")) ? "Windows PC" : "Web Device"
+        };
+        state.whatsappAuditRegistry.unshift(existing);
+      }
+
+      try {
+        localStorage.setItem("ostan_wa_audit_registry", JSON.stringify(state.whatsappAuditRegistry));
+      } catch(e) {}
+
+      // Cloud Sync: writes to Firestore so Super Admin sees it across all devices
+      if (window.fbDb) {
+        try {
+          window.fbDb.collection("whatsappAuditRegistry").doc(cleanPhone).set({
+            ...existing,
+            syncedAt: now
+          }, { merge: true }).catch(() => {});
+        } catch(e) {}
+      }
+    }
+    window.recordWhatsAppNumberAudit = recordWhatsAppNumberAudit;
+
+    async function renderSuperAdminWaNumbersChart(searchQuery = "") {
       const container = document.getElementById("settings-wa-numbers-container");
       if (!container) return;
 
@@ -4772,25 +4838,52 @@
       container.style.display = "block";
       const lang = document.documentElement.getAttribute("lang") || "en";
       const isAr = lang === "ar";
+      const currentTab = window._superAdminWaTab || "active";
 
-      // 1. Gather all linked numbers across state, local sessions, and Meta Cloud API
-      const linkedList = [];
+      // 1. Gather all linked numbers and DEDUPLICATE by clean phone number
+      const phoneMap = new Map();
 
       // Direct WhatsApp Gateway Sessions (Baileys Phone Link)
       const sessions = state.userWhatsAppSessions || {};
       for (const [uid, sess] of Object.entries(sessions)) {
         if (sess && (sess.phone || sess.connected)) {
-          const userObj = state.users.find(u => u.id === uid) || { name: sess.name || uid, role: "EMPLOYEE" };
-          linkedList.push({
-            id: uid,
-            type: "gateway",
-            typeLabel: isAr ? "بوابة هاتف مباشرة (Multi-Device Gateway)" : "Direct Phone Gateway (Multi-Device)",
-            phone: sess.phone || (isAr ? "جلسة مسجلة" : "Linked Session"),
-            user: userObj,
-            connected: Boolean(sess.connected),
-            statusLabel: sess.connected ? (isAr ? "متصل ونشط 🟢" : "Connected & Active 🟢") : (isAr ? "غير متصل ⚪" : "Disconnected ⚪"),
-            updatedAt: sess.updatedAt ? new Date(sess.updatedAt).toLocaleTimeString() + " • " + new Date(sess.updatedAt).toLocaleDateString() : (sess.connected ? (isAr ? "نشط الآن" : "Active Now") : (isAr ? "سابقاً" : "Previous"))
-          });
+          const rawPhone = sess.phone || "";
+          const cleanPhone = rawPhone.replace(/[^0-9]/g, "");
+          if (!cleanPhone && !sess.connected) continue;
+
+          let userObj = state.users.find(u => u.id === uid);
+          if (!userObj) {
+            userObj = { name: sess.name || uid, role: (uid === "u-osama" || uid === "osama") ? "SUPER_ADMIN" : "EMPLOYEE" };
+          }
+
+          // Merge by clean phone number to eliminate duplicates (e.g. u-osama vs osama)
+          const mapKey = cleanPhone || uid;
+          if (phoneMap.has(mapKey)) {
+            const existing = phoneMap.get(mapKey);
+            // Prefer the most authoritative user profile (e.g. Osama Al-Twaish over generic)
+            if (userObj.role === "SUPER_ADMIN" || (userObj.name && userObj.name.length > existing.user.name.length)) {
+              existing.user = userObj;
+              existing.id = uid;
+            }
+            if (sess.connected) existing.connected = true;
+          } else {
+            phoneMap.set(mapKey, {
+              id: uid,
+              cleanPhone: mapKey,
+              type: "gateway",
+              typeLabel: isAr ? "بوابة هاتف مباشرة (Multi-Device Gateway)" : "Direct Phone Gateway (Multi-Device)",
+              phone: rawPhone || (isAr ? "جلسة مسجلة" : "Linked Session"),
+              user: userObj,
+              connected: Boolean(sess.connected),
+              statusLabel: sess.connected ? (isAr ? "متصل ونشط 🟢" : "Connected & Active 🟢") : (isAr ? "غير متصل ⚪" : "Disconnected ⚪"),
+              updatedAt: sess.updatedAt ? new Date(sess.updatedAt).toLocaleTimeString() + " • " + new Date(sess.updatedAt).toLocaleDateString() : (sess.connected ? (isAr ? "نشط الآن" : "Active Now") : (isAr ? "سابقاً" : "Previous"))
+            });
+          }
+
+          // Record in audit history
+          if (rawPhone) {
+            recordWhatsAppNumberAudit(rawPhone, userObj, "Direct Phone Gateway", sess.connected ? "ACTIVE" : "DISCONNECTED");
+          }
         }
       }
 
@@ -4798,11 +4891,13 @@
       const apiCfg = state.whatsappApiConfig || {};
       if (apiCfg && (apiCfg.phoneNumberId || apiCfg.wabaId)) {
         const isApiActive = Boolean(apiCfg.phoneNumberId && apiCfg.accessToken);
-        linkedList.push({
+        const apiPhone = apiCfg.phoneNumber || (isAr ? `معرّف الهاتف: ${apiCfg.phoneNumberId}` : `Phone ID: ${apiCfg.phoneNumberId}`);
+        phoneMap.set("meta-cloud-api", {
           id: "meta-cloud-api",
+          cleanPhone: "meta-cloud-api",
           type: "meta_api",
           typeLabel: isAr ? "حساب رسمي (Meta Cloud API)" : "Official Meta Cloud API",
-          phone: apiCfg.phoneNumber || (isAr ? `معرّف الهاتف: ${apiCfg.phoneNumberId}` : `Phone ID: ${apiCfg.phoneNumberId}`),
+          phone: apiPhone,
           user: { name: isAr ? "حساب أعمال Meta الرسمي" : "Meta Business Cloud API", role: "SYSTEM_API" },
           connected: isApiActive,
           statusLabel: isApiActive ? (isAr ? "جاهز ونشط 🟢" : "Ready & Active 🟢") : (isAr ? "بحاجة لتوكن 🟠" : "Token Needed 🟠"),
@@ -4810,10 +4905,67 @@
         });
       }
 
+      const activeList = Array.from(phoneMap.values());
+
+      // 2. Fetch and merge cloud audit registry from Firestore (All-Time History across all users)
+      if (window.fbDb && !window._hasQueriedFirestoreAudit) {
+        window._hasQueriedFirestoreAudit = true;
+        window.fbDb.collection("whatsappAuditRegistry").get().then(snap => {
+          let hasNew = false;
+          snap.forEach(doc => {
+            const d = doc.data();
+            if (d && d.cleanPhone) {
+              const idx = state.whatsappAuditRegistry.findIndex(r => r.cleanPhone === d.cleanPhone);
+              if (idx === -1) {
+                state.whatsappAuditRegistry.push(d);
+                hasNew = true;
+              } else {
+                state.whatsappAuditRegistry[idx] = { ...state.whatsappAuditRegistry[idx], ...d };
+              }
+            }
+          });
+          if (hasNew) {
+            saveState();
+            renderSuperAdminWaNumbersChart(document.getElementById("superadmin-wa-search")?.value || "");
+          }
+        }).catch(() => {});
+
+        // Also query active sessions doc collection
+        window.fbDb.collection("whatsappSessions").get().then(snap => {
+          snap.forEach(doc => {
+            const d = doc.data();
+            if (d && d.phone) {
+              const u = state.users.find(user => user.id === doc.id) || { name: d.name || doc.id, role: "EMPLOYEE" };
+              recordWhatsAppNumberAudit(d.phone, u, "Direct Phone Gateway", d.connected ? "ACTIVE" : "DISCONNECTED");
+            }
+          });
+        }).catch(() => {});
+      }
+
+      // Ensure Osama's primary number is in the audit registry
+      recordWhatsAppNumberAudit("+966580539698", { id: "u-osama", name: "Osama Al-Twaish", role: "SUPER_ADMIN" }, "Direct Phone Gateway", "ACTIVE");
+
       // Metrics calculation
-      const totalCount = linkedList.length;
-      const directCount = linkedList.filter(l => l.type === "gateway" && l.connected).length;
-      const apiCount = linkedList.filter(l => l.type === "meta_api" && l.connected).length;
+      const totalActiveCount = activeList.length;
+      const directCount = activeList.filter(l => l.type === "gateway" && l.connected).length;
+      const apiCount = activeList.filter(l => l.type === "meta_api" && l.connected).length;
+      const allTimeCount = (state.whatsappAuditRegistry || []).length;
+
+      // Filter by search query
+      const q = (searchQuery || "").toLowerCase().trim();
+      const filteredActive = activeList.filter(item => {
+        if (!q) return true;
+        return (item.phone && item.phone.toLowerCase().includes(q)) ||
+               (item.user && item.user.name && item.user.name.toLowerCase().includes(q)) ||
+               (item.typeLabel && item.typeLabel.toLowerCase().includes(q));
+      });
+
+      const filteredAudit = (state.whatsappAuditRegistry || []).filter(item => {
+        if (!q) return true;
+        return (item.phone && item.phone.toLowerCase().includes(q)) ||
+               (item.userName && item.userName.toLowerCase().includes(q)) ||
+               (item.userRole && item.userRole.toLowerCase().includes(q));
+      });
 
       // Build HTML
       container.innerHTML = `
@@ -4828,87 +4980,180 @@
               <div>
                 <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
                   <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">
-                    ${isAr ? "أرقام واتساب المرتبطة بالنظام" : "WhatsApp Numbers Linked to System"}
+                    ${isAr ? "أرقام واتساب المرتبطة بالنظام والسجل التاريخي" : "WhatsApp Numbers Linked & Audit Registry"}
                   </h3>
                   <span class="badge badge-rose" style="font-size: 0.65rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 9999px;">
                     ${isAr ? "🔒 حصري للمدير العام فقط" : "🔒 Super Admin Only"}
                   </span>
                 </div>
                 <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; line-height: 1.4;">
-                  ${isAr ? "سجل تحكم ومراقبة سري لكافة أرقام وأجهزة واتساب المتصلة بنظام أستان مع إمكانية قطع اتصال أي رقم." : "Confidential oversight chart of all WhatsApp numbers connected to Ostan ERP with remote disconnection."}
+                  ${isAr ? "سجل تحكم ومراقبة سري لجميع أرقام وأجهزة المستخدمين التي ارتبطت بنظام مرسل الرسائل مع إمكانية قطع الاتصال فورياً." : "Confidential oversight registry of all numbers and accounts linked to the Message Sender with remote revocation."}
                 </p>
               </div>
             </div>
 
-            <button type="button" onclick="renderSuperAdminWaNumbersChart()" class="btn btn-ghost" style="padding: 0.3rem 0.65rem; font-size: 0.74rem;" title="${isAr ? 'تحديث السجل' : 'Refresh Chart'}">
-              🔄 <span>${isAr ? "تحديث" : "Refresh"}</span>
-            </button>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <button type="button" onclick="window._hasQueriedFirestoreAudit = false; renderSuperAdminWaNumbersChart(document.getElementById('superadmin-wa-search')?.value || '')" class="btn btn-ghost" style="padding: 0.3rem 0.65rem; font-size: 0.74rem;" title="${isAr ? 'تحديث السجل من السحابة' : 'Refresh from Cloud'}">
+                🔄 <span>${isAr ? "تحديث" : "Refresh"}</span>
+              </button>
+            </div>
           </div>
 
           <!-- Stats Mini Grid -->
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.6rem;">
             <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem;">
-              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${isAr ? "إجمالي الأرقام" : "Total Linked"}</div>
-              <div style="font-size: 1.15rem; font-weight: 800; color: #10b981; margin-top: 2px;">${totalCount}</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${isAr ? "المرتبط حالياً" : "Currently Active"}</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #10b981; margin-top: 2px;">${totalActiveCount}</div>
             </div>
             <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem;">
-              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${isAr ? "بوابة هاتف مباشرة" : "Direct Gateway"}</div>
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${isAr ? "بوابة مباشرة" : "Direct Gateway"}</div>
               <div style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">${directCount}</div>
             </div>
             <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem;">
               <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${isAr ? "Meta Cloud API" : "Meta Cloud API"}</div>
               <div style="font-size: 1.15rem; font-weight: 800; color: #818cf8; margin-top: 2px;">${apiCount}</div>
             </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem;">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${isAr ? "إجمالي السجل العام" : "All-Time Logged"}</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #f59e0b; margin-top: 2px;">${allTimeCount}</div>
+            </div>
           </div>
 
-          <!-- Linked Numbers List -->
-          <div style="display: flex; flex-direction: column; gap: 0.65rem; max-height: 290px; overflow-y: auto; padding-right: 4px;">
-            ${linkedList.length === 0 ? `
-              <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.8rem; background: rgba(0,0,0,0.18); border-radius: var(--radius-sm); border: 1px dashed var(--border-subtle);">
-                📱 ${isAr ? "لا توجد أرقام واتساب مرتبطة بالنظام حالياً." : "No WhatsApp numbers currently linked to the system."}
-              </div>
-            ` : linkedList.map(item => `
-              <div style="background: var(--bg-surface); border: 1px solid ${item.connected ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-subtle)'}; border-radius: var(--radius-md); padding: 0.75rem 0.9rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; transition: all 0.2s ease;">
-                <div style="display: flex; align-items: center; gap: 0.65rem;">
-                  <div style="width: 34px; height: 34px; border-radius: 8px; background: ${item.connected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)'}; color: ${item.connected ? '#10b981' : 'var(--text-muted)'}; display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 1px solid ${item.connected ? 'rgba(16, 185, 129, 0.35)' : 'var(--border-subtle)'};">
-                    ${item.connected ? '🟢' : '⚪'}
-                  </div>
-                  <div>
-                    <div style="display: flex; align-items: center; gap: 0.45rem;">
-                      <span style="font-weight: 800; font-size: 0.92rem; color: var(--text-main); font-family: monospace;">
-                        ${item.phone}
-                      </span>
-                      <span class="badge ${item.connected ? 'badge-emerald' : 'badge-secondary'}" style="font-size: 0.64rem; padding: 0.12rem 0.45rem;">
-                        ${item.statusLabel}
-                      </span>
-                    </div>
-                    <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;">
-                      <span>👤 ${item.user.name}</span>
-                      <span>•</span>
-                      <span style="color: #38bdf8;">${item.typeLabel}</span>
-                    </div>
-                  </div>
-                </div>
+          <!-- Sub-Tab Switcher & Search Bar -->
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <div style="display: flex; gap: 0.35rem; background: var(--bg-surface); padding: 3px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
+              <button type="button" onclick="window._superAdminWaTab = 'active'; renderSuperAdminWaNumbersChart(document.getElementById('superadmin-wa-search')?.value || '')" class="btn ${currentTab === 'active' ? 'btn-primary' : 'btn-ghost'}" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
+                🟢 ${isAr ? `الأرقام النشطة (${totalActiveCount})` : `Active Numbers (${totalActiveCount})`}
+              </button>
+              <button type="button" onclick="window._superAdminWaTab = 'alltime'; renderSuperAdminWaNumbersChart(document.getElementById('superadmin-wa-search')?.value || '')" class="btn ${currentTab === 'alltime' ? 'btn-primary' : 'btn-ghost'}" style="padding: 0.3rem 0.65rem; font-size: 0.75rem; font-weight: 700;">
+                📜 ${isAr ? `السجل التاريخي الشامل (${allTimeCount})` : `All-Time Audit Registry (${allTimeCount})`}
+              </button>
+            </div>
 
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <button type="button" onclick="disconnectSuperAdminWaNumber('${item.id}', '${item.phone}', '${item.type}')" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; border-color: rgba(244, 63, 94, 0.4); color: #fb7185; background: rgba(244, 63, 94, 0.1);" title="${isAr ? 'قطع اتصال هذا الرقم وفصله عن النظام فورياً' : 'Remotely disconnect and unlink this number'}">
-                    🔌 <span>${isAr ? "قطع الاتصال" : "Disconnect"}</span>
-                  </button>
+            <div style="flex: 1; min-width: 180px; max-width: 280px;">
+              <input type="text" id="superadmin-wa-search" value="${q}" oninput="renderSuperAdminWaNumbersChart(this.value)" placeholder="${isAr ? 'بحث بالرقم أو الاسم...' : 'Search phone or user...'}" class="input-field" style="width: 100%; padding: 0.28rem 0.55rem; font-size: 0.75rem; border-radius: var(--radius-sm);" />
+            </div>
+          </div>
+
+          <!-- Content List Area -->
+          <div style="display: flex; flex-direction: column; gap: 0.65rem; max-height: 290px; overflow-y: auto; padding-right: 4px;">
+            ${currentTab === 'active' ? (
+              filteredActive.length === 0 ? `
+                <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.8rem; background: rgba(0,0,0,0.18); border-radius: var(--radius-sm); border: 1px dashed var(--border-subtle);">
+                  📱 ${isAr ? "لا توجد أرقام واتساب نشطة مطابقة للبحث حالياً." : "No active WhatsApp numbers matching search."}
                 </div>
-              </div>
-            `).join('')}
+              ` : filteredActive.map(item => `
+                <div style="background: var(--bg-surface); border: 1px solid ${item.connected ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-subtle)'}; border-radius: var(--radius-md); padding: 0.75rem 0.9rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; transition: all 0.2s ease;">
+                  <div style="display: flex; align-items: center; gap: 0.65rem;">
+                    <div style="width: 36px; height: 36px; border-radius: 8px; background: ${item.connected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)'}; color: ${item.connected ? '#10b981' : 'var(--text-muted)'}; display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 1px solid ${item.connected ? 'rgba(16, 185, 129, 0.35)' : 'var(--border-subtle)'};">
+                      ${item.connected ? '🟢' : '⚪'}
+                    </div>
+                    <div>
+                      <div style="display: flex; align-items: center; gap: 0.45rem;">
+                        <span style="font-weight: 800; font-size: 0.92rem; color: var(--text-main); font-family: monospace;">
+                          ${item.phone}
+                        </span>
+                        <span class="badge ${item.connected ? 'badge-emerald' : 'badge-secondary'}" style="font-size: 0.64rem; padding: 0.12rem 0.45rem;">
+                          ${item.statusLabel}
+                        </span>
+                      </div>
+                      <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;">
+                        <span>👤 <strong>${item.user.name}</strong> (${item.user.role})</span>
+                        <span>•</span>
+                        <span style="color: #38bdf8;">${item.typeLabel}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <button type="button" onclick="disconnectSuperAdminWaNumber('${item.id}', '${item.phone}', '${item.type}')" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; border-color: rgba(244, 63, 94, 0.4); color: #fb7185; background: rgba(244, 63, 94, 0.1);" title="${isAr ? 'قطع اتصال هذا الرقم وفصله عن النظام فورياً' : 'Remotely disconnect and unlink this number'}">
+                      🔌 <span>${isAr ? "قطع الاتصال" : "Disconnect"}</span>
+                    </button>
+                  </div>
+                </div>
+              `).join('')
+            ) : (
+              filteredAudit.length === 0 ? `
+                <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.8rem; background: rgba(0,0,0,0.18); border-radius: var(--radius-sm); border: 1px dashed var(--border-subtle);">
+                  📜 ${isAr ? "لا توجد سجلات تاريخية مطابقة للبحث." : "No historical WhatsApp numbers found."}
+                </div>
+              ` : filteredAudit.map(entry => {
+                const isOnline = entry.status === "ACTIVE";
+                const firstDate = entry.firstLinkedAt ? new Date(entry.firstLinkedAt).toLocaleDateString() : "-";
+                const lastDate = entry.lastActiveAt ? new Date(entry.lastActiveAt).toLocaleTimeString() + " • " + new Date(entry.lastActiveAt).toLocaleDateString() : "-";
+                return `
+                  <div style="background: var(--bg-surface); border: 1px solid ${isOnline ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-subtle)'}; border-radius: var(--radius-md); padding: 0.7rem 0.85rem; display: flex; align-items: center; justify-content: space-between; gap: 0.65rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.65rem;">
+                      <div style="width: 32px; height: 32px; border-radius: 8px; background: ${isOnline ? 'rgba(16, 185, 129, 0.12)' : 'rgba(255,255,255,0.04)'}; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;">
+                        ${isOnline ? '🟢' : '⚪'}
+                      </div>
+                      <div>
+                        <div style="display: flex; align-items: center; gap: 0.45rem;">
+                          <span style="font-weight: 800; font-size: 0.9rem; color: var(--text-main); font-family: monospace;">${entry.phone}</span>
+                          <span class="badge ${isOnline ? 'badge-emerald' : 'badge-secondary'}" style="font-size: 0.62rem; padding: 0.1rem 0.4rem;">
+                            ${isOnline ? (isAr ? "متصل حالياً" : "Active") : (isAr ? "سابقاً / مفصول" : "Disconnected")}
+                          </span>
+                        </div>
+                        <div style="font-size: 0.71rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; margin-top: 2px; flex-wrap: wrap;">
+                          <span>👤 <strong>${entry.userName}</strong> (${entry.userRole})</span>
+                          <span>•</span>
+                          <span>🕒 ${isAr ? "أول ربط:" : "First linked:"} ${firstDate}</span>
+                          <span>•</span>
+                          <span style="color: #38bdf8;">${isAr ? "آخر ظهور:" : "Last seen:"} ${lastDate}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.4rem;">
+                      ${isOnline ? `
+                        <button type="button" onclick="disconnectSuperAdminWaNumber('${entry.userId}', '${entry.phone}', 'gateway')" class="btn btn-secondary" style="padding: 0.28rem 0.65rem; font-size: 0.72rem; color: #fb7185; border-color: rgba(244, 63, 94, 0.35);" title="${isAr ? 'قطع الاتصال' : 'Disconnect'}">
+                          🔌 ${isAr ? "قطع الاتصال" : "Disconnect"}
+                        </button>
+                      ` : ''}
+                      <button type="button" onclick="purgeSuperAdminAuditRecord('${entry.cleanPhone}')" class="btn btn-ghost" style="padding: 0.28rem 0.5rem; font-size: 0.72rem; color: #fb7185;" title="${isAr ? 'حذف من السجل التاريخي' : 'Delete from history'}">
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')
+            )}
           </div>
 
           <!-- Super Admin Security Notice -->
           <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: var(--radius-sm); padding: 0.55rem 0.75rem; font-size: 0.7rem; color: #fb7185; display: flex; align-items: center; gap: 0.45rem;">
             <span>🛡️</span>
-            <span>${isAr ? "هذا السجل محمي ومشفر بالكامل، ومتاح بصرياً وبرمجياً فقط للمدير العام (Super Admin)." : "Confidential Super Admin Registry: Strictly hidden and inaccessible to all other roles and administrators."}</span>
+            <span>${isAr ? "هذا السجل مراقب ومشفر بالكامل عبر السحابة، ومتاح بصرياً وبرمجياً فقط للمدير العام (Super Admin)." : "Confidential Super Admin Registry: Cloud-synced, strictly hidden and inaccessible to all other roles and administrators."}</span>
           </div>
 
         </div>
       `;
     }
     window.renderSuperAdminWaNumbersChart = renderSuperAdminWaNumbersChart;
+
+    async function purgeSuperAdminAuditRecord(cleanPhone) {
+      const curUser = getCurrentUser();
+      if (!isMasterSuperAdmin(curUser)) return;
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const isAr = lang === "ar";
+      if (!confirm(isAr ? "هل أنت متأكد من حذف هذا السجل من الأرشيف التاريخي؟" : "Are you sure you want to delete this record from the historical audit registry?")) return;
+
+      state.whatsappAuditRegistry = (state.whatsappAuditRegistry || []).filter(r => r.cleanPhone !== cleanPhone);
+      try { localStorage.setItem("ostan_wa_audit_registry", JSON.stringify(state.whatsappAuditRegistry)); } catch(e) {}
+
+      if (window.fbDb) {
+        try {
+          await window.fbDb.collection("whatsappAuditRegistry").doc(cleanPhone).delete();
+        } catch(e) {}
+      }
+
+      renderSuperAdminWaNumbersChart(document.getElementById('superadmin-wa-search')?.value || "");
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("Record Deleted", isAr ? "تم حذف السجل من الأرشيف بنجاح." : "Record purged from audit registry.");
+      }
+    }
+    window.purgeSuperAdminAuditRecord = purgeSuperAdminAuditRecord;
 
     async function disconnectSuperAdminWaNumber(uid, phone, type) {
       const curUser = getCurrentUser();
@@ -4925,14 +5170,31 @@
 
       if (!confirm(confirmMsg)) return;
 
+      const cleanPhone = String(phone).replace(/[^0-9]/g, "");
+
       if (type === "meta_api") {
         state.whatsappApiConfig = { phoneNumberId: "", wabaId: "", accessToken: "", mode: "web" };
         try { localStorage.setItem("ostan_wa_api_config", JSON.stringify(state.whatsappApiConfig)); } catch(e) {}
       } else {
         state.userWhatsAppSessions = state.userWhatsAppSessions || {};
-        state.userWhatsAppSessions[uid] = { connected: false, phone: "", name: "" };
-        try { localStorage.removeItem("ostan_wa_session_" + uid); } catch (e) {}
+        // Clear all session references matching this user or phone
+        for (const [sUid, sess] of Object.entries(state.userWhatsAppSessions)) {
+          if (sUid === uid || (sess && sess.phone && sess.phone.replace(/[^0-9]/g, "") === cleanPhone)) {
+            state.userWhatsAppSessions[sUid] = { connected: false, phone: "", name: "" };
+            try { localStorage.removeItem("ostan_wa_session_" + sUid); } catch (e) {}
+          }
+        }
         try { localStorage.setItem("ostan_user_wa_sessions", JSON.stringify(state.userWhatsAppSessions)); } catch(e) {}
+
+        // Update status in audit registry
+        if (cleanPhone) {
+          const auditRec = (state.whatsappAuditRegistry || []).find(r => r.cleanPhone === cleanPhone);
+          if (auditRec) {
+            auditRec.status = "DISCONNECTED";
+            auditRec.lastActiveAt = Date.now();
+            try { localStorage.setItem("ostan_wa_audit_registry", JSON.stringify(state.whatsappAuditRegistry)); } catch(e) {}
+          }
+        }
 
         if (window.fbDb) {
           try {
@@ -4944,6 +5206,13 @@
               name: null,
               updatedAt: Date.now()
             }, { merge: true });
+
+            if (cleanPhone) {
+              await window.fbDb.collection("whatsappAuditRegistry").doc(cleanPhone).set({
+                status: "DISCONNECTED",
+                lastActiveAt: Date.now()
+              }, { merge: true });
+            }
           } catch(e) {
             console.warn("Firestore disconnect notice:", e);
           }
@@ -4953,7 +5222,7 @@
       saveState();
       if (typeof updateWhatsAppConnectionUI === "function") updateWhatsAppConnectionUI();
       if (typeof updateWhatsAppApiStatusUI === "function") updateWhatsAppApiStatusUI();
-      renderSuperAdminWaNumbersChart();
+      renderSuperAdminWaNumbersChart(document.getElementById('superadmin-wa-search')?.value || "");
 
       if (window.OstanStyle) {
         window.OstanStyle.showToast("WhatsApp Disconnected", isAr ? `تم قطع اتصال الرقم ${phone} بنجاح.` : `Number ${phone} disconnected successfully.`);
