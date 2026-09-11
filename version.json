@@ -1,7 +1,7 @@
 {
-  "version": "1.0.19",
-  "commit": "ae6a18d",
-  "buildTime": 1789161459572,
-  "releaseDate": "2026-09-11T21:17:39.572Z",
-  "message": "feat(settings): add Super Admin exclusive WhatsApp numbers linked chart with remote disconnect action"
+  "version": "1.0.20",
+  "commit": "9f3ad5e",
+  "buildTime": 1789162173325,
+  "releaseDate": "2026-09-11T21:29:33.325Z",
+  "message": "feat(settings): deduplicate active WhatsApp numbers and add all-time cloud audit registry for Super Admin"
 }
