@@ -3238,7 +3238,7 @@
         <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 0.75rem 1rem; display: flex; align-items: flex-start; gap: 0.6rem;">
           <span style="font-size: 1.25rem; flex-shrink: 0;">⚠️</span>
           <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-main);">
-            <strong data-i18n="dispatch_runner_step_inst" style="color: #fbbf24; display: block; margin-bottom: 2px;">⚠️ In WhatsApp Web: Press [Enter] or click [➤ Send] to send the text.</strong>
+            <strong data-i18n="dispatch_runner_step_inst" style="color: #fbbf24; display: block; margin-bottom: 2px;">In WhatsApp Web: Press [Enter] or click [➤ Send] to send the text.</strong>
             <div data-i18n="dispatch_runner_info" style="font-size: 0.73rem; color: var(--text-muted);">
               WhatsApp Web puts the message in the chat box. Press Enter in WhatsApp to send, then click 'I Sent It' or let the anti-ban delay timer advance automatically.
             </div>
@@ -3567,11 +3567,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.14",
-  "commit": "e63e4a0",
-  "buildTime": 1789158383499,
-  "releaseDate": "2026-09-11T20:26:23.499Z",
-  "message": "feat(messages): add randomized human cadence timer with min/max slots, live AI ban risk meter, and natural jitter"
+  "version": "1.0.15",
+  "commit": "786a2ea",
+  "buildTime": 1789159501159,
+  "releaseDate": "2026-09-11T20:45:01.159Z",
+  "message": "feat(messages): add customizable human stop points pattern (7-15s pause every 4 chats) with real background randomization to bypass AI detection"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9169,7 +9169,7 @@
         }
         if (btnDirect) {
           btnDirect.style.display = 'inline-flex';
-          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_direct) || (lang === 'ar' ? '⚡ إرسال مباشر (تلقائي بالخلفية • بدون متصفح وبدون إضافة)' : '⚡ Send Directly (Background Dispatch • No Extension)');
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_direct) || (lang === 'ar' ? 'إرسال مباشر (تلقائي بالخلفية • بدون متصفح وبدون إضافة)' : 'Send Directly (Background Dispatch • No Extension)');
           btnDirect.innerHTML = `<span>⚡</span> <span>${txt}</span>`;
         }
         if (btnExtension) {
@@ -9188,7 +9188,7 @@
         }
         if (btnExtension) {
           btnExtension.style.display = 'inline-flex';
-          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_extension) || (lang === 'ar' ? '🚀 إرسال عبر واتساب ويب + الإضافة (النسخة السابقة)' : '🚀 Send via WhatsApp Web + Extension (Old Version)');
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_extension) || (lang === 'ar' ? 'إرسال عبر واتساب ويب + الإضافة (النسخة السابقة)' : 'Send via WhatsApp Web + Extension (Old Version)');
           btnExtension.innerHTML = `<span>🚀</span> <span>${txt}</span>`;
         }
         if (btnDirect) {
@@ -11017,7 +11017,7 @@
         } else {
           btnMeta.style.display = "inline-flex";
           btnWeb.style.display = "none";
-          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_direct) || (lang === 'ar' ? '⚡ إرسال مباشر (تلقائي بالخلفية • بدون متصفح وبدون إضافة)' : '⚡ Send Directly (Background Dispatch • No Extension)');
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_direct) || (lang === 'ar' ? 'إرسال مباشر (تلقائي بالخلفية • بدون متصفح وبدون إضافة)' : 'Send Directly (Background Dispatch • No Extension)');
           btnMeta.innerHTML = `<span>⚡</span> <span>${txt}</span>`;
         }
       }
