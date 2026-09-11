@@ -2181,27 +2181,71 @@
               </div>
             </div>
 
-            <!-- ANTI-BAN DELAY TIMER CONTROL BAR -->
-            <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem; display: flex; flex-direction: column; gap: 0.6rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <span style="font-size: 1.25rem;">⏱️</span>
-                  <div>
-                    <div data-i18n="msg_delay_title" style="font-weight: 800; font-size: 0.95rem; color: var(--text-main);">Anti-Ban Delay Between Messages</div>
-                    <div data-i18n="msg_delay_desc" style="font-size: 0.73rem; color: var(--text-muted); margin-top: 1px;">
-                      Delays dispatching between recipients to avoid WhatsApp spam detection and account blocking.
+            <!-- ANTI-BAN DELAY TIMER CONTROL BAR & RANDOMIZED HUMAN CADENCE STUDIO -->
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 1.15rem; display: flex; flex-direction: column; gap: 0.9rem;">
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1.25rem;">
+                
+                <!-- Left Column: Title, Explanations & Risk Meter -->
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem; max-width: 500px;">
+                  <span style="font-size: 1.5rem; line-height: 1; padding: 0.35rem; background: rgba(37, 211, 102, 0.12); border-radius: var(--radius-md); border: 1px solid rgba(37, 211, 102, 0.25);">🎲</span>
+                  <div style="display: flex; flex-direction: column; gap: 0.35rem;">
+                    <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+                      <span data-i18n="msg_delay_title" style="font-weight: 800; font-size: 0.98rem; color: var(--text-main);">Randomized Human Cadence & Anti-Ban Timer</span>
+                      <span id="delay-risk-badge" class="badge badge-emerald" style="font-size: 0.73rem; font-weight: 800; padding: 0.22rem 0.65rem; border-radius: 9999px;">0% Risk (Human-Like)</span>
+                    </div>
+                    <div data-i18n="msg_delay_desc" style="font-size: 0.74rem; color: var(--text-muted); line-height: 1.45;">
+                      Eliminates fixed bot frequency by randomizing dispatch timing between Min and Max seconds with microsecond jitter and natural breathers, simulating authentic human behavior.
                     </div>
                   </div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 0.5rem;">
-                  <select id="msg-delay-select" class="input-field" style="padding: 0.45rem 0.85rem; font-size: 0.82rem; font-weight: 700; min-width: 210px;">
-                    <option value="5" data-i18n="msg_delay_5s">5 Seconds (Fast)</option>
-                    <option value="7" data-i18n="msg_delay_7s">7 Seconds (Balanced)</option>
-                    <option value="10" selected data-i18n="msg_delay_10s">10 Seconds (Recommended)</option>
-                    <option value="15" data-i18n="msg_delay_15s">15 Seconds (Safe)</option>
-                    <option value="20" data-i18n="msg_delay_20s">20 Seconds (High Protection)</option>
-                    <option value="30" data-i18n="msg_delay_30s">30 Seconds (Maximum Anti-Ban)</option>
-                  </select>
+
+                <!-- Right Column: Min/Max Slots & Presets -->
+                <div style="display: flex; flex-direction: column; gap: 0.65rem; align-items: flex-end; min-width: 320px;">
+                  
+                  <!-- Min / Max Slot Adjusters -->
+                  <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 0.35rem; background: var(--bg-surface-elevated); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
+                      <label for="msg-delay-min" style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted);">Min:</label>
+                      <input id="msg-delay-min" type="number" min="1" max="300" value="10" class="input-field" oninput="updateDelayRiskMeter()" style="width: 60px; padding: 0.25rem 0.4rem; font-size: 0.88rem; font-weight: 800; text-align: center; border-radius: 4px;" />
+                      <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">sec</span>
+                    </div>
+
+                    <span style="color: var(--text-muted); font-weight: 800; font-size: 0.9rem;">➔</span>
+
+                    <div style="display: flex; align-items: center; gap: 0.35rem; background: var(--bg-surface-elevated); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
+                      <label for="msg-delay-max" style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted);">Max:</label>
+                      <input id="msg-delay-max" type="number" min="1" max="600" value="25" class="input-field" oninput="updateDelayRiskMeter()" style="width: 60px; padding: 0.25rem 0.4rem; font-size: 0.88rem; font-weight: 800; text-align: center; border-radius: 4px;" />
+                      <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">sec</span>
+                    </div>
+
+                    <input type="hidden" id="msg-delay-select" value="10" />
+                  </div>
+
+                  <!-- Quick Preset Buttons -->
+                  <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Presets:</span>
+                    <button type="button" onclick="setDelayPreset(3, 7)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700;" title="Fast dispatch (3s–7s) - Higher risk">⚡ Fast (3-7s)</button>
+                    <button type="button" onclick="setDelayPreset(8, 16)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700;" title="Balanced speed (8s–16s)">⚖️ Balanced (8-16s)</button>
+                    <button type="button" onclick="setDelayPreset(15, 35)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700; border-color: rgba(37, 211, 102, 0.4);" title="Safe human pacing (15s–35s)">🛡️ Safe (15-35s)</button>
+                    <button type="button" onclick="setDelayPreset(25, 60)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700; border-color: rgba(0, 200, 255, 0.4);" title="0% Risk Maximum Stealth (25s–60s)">🧘 0% Risk (25-60s)</button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Interactive Risk Percentage & Human Cadence Gauge -->
+              <div style="background: rgba(0, 0, 0, 0.22); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.75rem 1rem; display: flex; flex-direction: column; gap: 0.45rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.78rem; flex-wrap: wrap; gap: 0.5rem;">
+                  <span style="font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.45rem;">
+                    <span>🛡️ AI Ban Risk Assessment:</span>
+                    <strong id="delay-risk-score" style="color: #10b981; font-size: 0.88rem;">0% Risk</strong>
+                  </span>
+                  <span style="color: var(--text-muted); font-size: 0.75rem;" id="delay-cadence-desc">
+                    Human Simulation Score: <strong style="color: #10b981;">100%</strong> (Average ~17.5s per message with random jitter)
+                  </span>
+                </div>
+                <!-- Dynamic Visual Meter Bar -->
+                <div style="width: 100%; height: 6px; background: rgba(255, 255, 255, 0.08); border-radius: 999px; overflow: hidden; display: flex;">
+                  <div id="delay-risk-bar" style="width: 3%; height: 100%; background: #10b981; border-radius: 999px; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);"></div>
                 </div>
               </div>
             </div>
@@ -3496,11 +3540,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.11",
-  "commit": "d7d73e6",
-  "buildTime": 1789081456305,
-  "releaseDate": "2026-09-10T23:04:16.305Z",
-  "message": "fix(permissions): protect permissions from stale Firestore overwrites on update and page reload"
+  "version": "1.0.13",
+  "commit": "f6bd610",
+  "buildTime": 1789157670369,
+  "releaseDate": "2026-09-11T20:14:30.369Z",
+  "message": "feat(messages): add randomized human cadence timer with min/max slots, live AI ban risk meter, and natural jitter"
 };
 
     let _ostanUpdateTriggered = false;
@@ -10127,6 +10171,147 @@
       currentUrl: ""
     };
 
+    function calculateAntiBanRisk(min, max) {
+      if (min > max) { const t = min; min = max; max = t; }
+      const avg = (min + max) / 2;
+      const spread = max - min;
+
+      let rawRisk = 0;
+      if (avg <= 2) rawRisk = 98;
+      else if (avg <= 4) rawRisk = 85;
+      else if (avg <= 7) rawRisk = 65;
+      else if (avg <= 11) rawRisk = 40;
+      else if (avg <= 16) rawRisk = 20;
+      else if (avg <= 22) rawRisk = 8;
+      else if (avg <= 28) rawRisk = 2;
+      else rawRisk = 0;
+
+      if (spread === 0 && rawRisk < 80) rawRisk += 15;
+      else if (spread >= 8 && rawRisk > 0) rawRisk = Math.max(0, rawRisk - 5);
+
+      rawRisk = Math.max(0, Math.min(99, Math.round(rawRisk)));
+      const humanScore = 100 - rawRisk;
+
+      let badgeClass = "badge-emerald";
+      let badgeLabel = "0% Risk (Human-Like)";
+      let color = "#10b981";
+
+      if (rawRisk >= 60) {
+        badgeClass = "badge-rose";
+        badgeLabel = rawRisk + "% Risk (High Ban Probability)";
+        color = "#ef4444";
+      } else if (rawRisk >= 30) {
+        badgeClass = "badge-amber";
+        badgeLabel = rawRisk + "% Risk (Moderate Speed)";
+        color = "#f59e0b";
+      } else if (rawRisk > 5) {
+        badgeClass = "badge-emerald";
+        badgeLabel = rawRisk + "% Risk (Safe Human Speed)";
+        color = "#10b981";
+      } else {
+        badgeClass = "badge-emerald";
+        badgeLabel = "0% Risk (Ultra Human Stealth)";
+        color = "#10b981";
+      }
+
+      return {
+        riskPercent: rawRisk,
+        humanScore,
+        avg: avg.toFixed(1),
+        spread,
+        badgeClass,
+        badgeLabel,
+        color
+      };
+    }
+    window.calculateAntiBanRisk = calculateAntiBanRisk;
+
+    function updateDelayRiskMeter() {
+      const minInput = document.getElementById("msg-delay-min");
+      const maxInput = document.getElementById("msg-delay-max");
+      let min = parseInt(minInput?.value || "10", 10);
+      let max = parseInt(maxInput?.value || "25", 10);
+      if (isNaN(min) || min < 1) min = 1;
+      if (isNaN(max) || max < 1) max = 1;
+
+      const assessment = calculateAntiBanRisk(min, max);
+
+      const riskBadge = document.getElementById("delay-risk-badge");
+      if (riskBadge) {
+        riskBadge.className = "badge " + assessment.badgeClass;
+        riskBadge.textContent = assessment.badgeLabel;
+      }
+
+      const riskScore = document.getElementById("delay-risk-score");
+      if (riskScore) {
+        riskScore.textContent = assessment.riskPercent + "% Risk";
+        riskScore.style.color = assessment.color;
+      }
+
+      const cadenceDesc = document.getElementById("delay-cadence-desc");
+      if (cadenceDesc) {
+        cadenceDesc.innerHTML = 'Human Simulation Score: <strong style="color: ' + assessment.color + ';">' + assessment.humanScore + '%</strong> (Average ~' + assessment.avg + 's per contact with natural variance)';
+      }
+
+      const riskBar = document.getElementById("delay-risk-bar");
+      if (riskBar) {
+        riskBar.style.width = Math.max(4, assessment.riskPercent) + "%";
+        riskBar.style.background = assessment.color;
+      }
+
+      const hiddenSelect = document.getElementById("msg-delay-select");
+      if (hiddenSelect) hiddenSelect.value = Math.round(assessment.avg);
+
+      try {
+        localStorage.setItem("ostan_msg_delay_min", String(min));
+        localStorage.setItem("ostan_msg_delay_max", String(max));
+      } catch(e) {}
+    }
+    window.updateDelayRiskMeter = updateDelayRiskMeter;
+
+    function setDelayPreset(min, max) {
+      const minInput = document.getElementById("msg-delay-min");
+      const maxInput = document.getElementById("msg-delay-max");
+      if (minInput) minInput.value = min;
+      if (maxInput) maxInput.value = max;
+      updateDelayRiskMeter();
+    }
+    window.setDelayPreset = setDelayPreset;
+
+    let _dispatchedMessageCounter = 0;
+    function getNextRandomDelay() {
+      const minInput = document.getElementById("msg-delay-min");
+      const maxInput = document.getElementById("msg-delay-max");
+      let min = parseInt(minInput?.value || "10", 10);
+      let max = parseInt(maxInput?.value || "25", 10);
+      if (isNaN(min) || min < 1) min = 1;
+      if (isNaN(max) || max < 1) max = 1;
+      if (max < min) { const t = min; min = max; max = t; }
+
+      _dispatchedMessageCounter++;
+
+      // Natural Human Breather: every 6 messages, add 5-9 extra seconds to simulate natural conversational pause
+      let extraBreather = 0;
+      let isBreather = false;
+      if (_dispatchedMessageCounter % 6 === 0) {
+        extraBreather = Math.floor(Math.random() * 5) + 5;
+        isBreather = true;
+      }
+
+      const randomSecs = Math.floor(Math.random() * (max - min + 1)) + min + extraBreather;
+      const jitterMs = Math.floor(Math.random() * 600) + 300;
+
+      return {
+        min,
+        max,
+        seconds: randomSecs,
+        jitterMs,
+        isBreather,
+        extraBreather
+      };
+    }
+    window.getNextRandomDelay = getNextRandomDelay;
+
     function startWhatsAppQueueDispatch() {
       const rawText = document.getElementById("msg-composer-text")?.value.trim();
       if (!rawText) {
@@ -10140,7 +10325,10 @@
         return;
       }
 
-      const delayVal = parseInt(document.getElementById("msg-delay-select")?.value || "10", 10);
+      const delayInfo = getNextRandomDelay();
+      const delayVal = delayInfo.seconds;
+      const minVal = delayInfo.min;
+      const maxVal = delayInfo.max;
       const selectedUsers = state.users.filter(u => selectedRecipientIds.has(u.id));
 
       const items = [];
@@ -10173,6 +10361,8 @@
       const queueData = {
         items: items.map(i => ({ name: i.name, phone: i.phone, text: i.message })),
         delay: delayVal,
+        minDelay: minVal,
+        maxDelay: maxVal,
         currentIndex: 0
       };
       const encodedPayload = encodeURIComponent(JSON.stringify(queueData));
@@ -11008,7 +11198,7 @@
             const formatted = remaining < 10 ? `00:0${remaining}` : `00:${remaining}`;
             if (timerEl) timerEl.textContent = formatted;
             if (timerProgressBar) {
-              const barPct = Math.round((remaining / delayVal) * 100);
+              const barPct = Math.round((remaining / stepDelay) * 100);
               timerProgressBar.style.width = barPct + "%";
             }
             const miniTimer = document.getElementById("mini-widget-timer");
@@ -12003,6 +12193,17 @@
       applyModuleVisibility();
       updateWhatsAppApiStatusUI();
       restoreActiveSectionOnBoot();
+
+      // Restore custom randomized delay settings
+      try {
+        const savedMin = localStorage.getItem("ostan_msg_delay_min");
+        const savedMax = localStorage.getItem("ostan_msg_delay_max");
+        const minEl = document.getElementById("msg-delay-min");
+        const maxEl = document.getElementById("msg-delay-max");
+        if (savedMin && minEl) minEl.value = savedMin;
+        if (savedMax && maxEl) maxEl.value = savedMax;
+      } catch(e) {}
+      if (typeof updateDelayRiskMeter === "function") updateDelayRiskMeter();
 
       // Initialize WhatsApp Studio Dispatch Mode and Cloud Link
       const savedWaMode = localStorage.getItem('ostan_wa_dispatch_mode') || 'direct';

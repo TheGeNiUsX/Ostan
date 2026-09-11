@@ -138,7 +138,9 @@
   const currentItem = queue && Array.isArray(queue.items) ? queue.items[queue.currentIndex || 0] : { phone: singlePhone, text: singleText, name: singlePhone };
   const currentIndex = queue ? (queue.currentIndex || 0) : 0;
   const totalItems = queue ? queue.items.length : 1;
-  const delaySecs = (queue && queue.delay) ? parseInt(queue.delay, 10) : 10;
+  const minDelay = (queue && queue.minDelay) ? parseInt(queue.minDelay, 10) : ((queue && queue.delay) ? parseInt(queue.delay, 10) : 10);
+  const maxDelay = (queue && queue.maxDelay) ? parseInt(queue.maxDelay, 10) : minDelay;
+  const delaySecs = Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
 
   // De-duplication key
   const dedupeKey = `ostan_sent_idx_${currentIndex}_${currentItem.phone}`;
@@ -233,10 +235,13 @@
   }, 500);
 
   function startQueueCountdown(activeQueue, currentIdx) {
-    let remaining = delaySecs;
+    const min = (activeQueue && activeQueue.minDelay) ? parseInt(activeQueue.minDelay, 10) : ((activeQueue && activeQueue.delay) ? parseInt(activeQueue.delay, 10) : 10);
+    const max = (activeQueue && activeQueue.maxDelay) ? parseInt(activeQueue.maxDelay, 10) : min;
+    const stepDelay = Math.floor(Math.random() * (max - min + 1)) + min;
+    let remaining = stepDelay;
     const nextItem = activeQueue.items[currentIdx + 1];
 
-    updateHud(`✅ Sent! Waiting ${remaining}s... Next: ${nextItem.name || nextItem.phone}`, "#10b981");
+    updateHud(`✅ Sent! 🎲 Waiting ${remaining}s (Random ${min}s-${max}s)... Next: ${nextItem.name || nextItem.phone}`, "#10b981");
 
     const timer = setInterval(() => {
       remaining--;
