@@ -357,6 +357,11 @@
       btn_unblock_employee: "✅ Unblock",
       status_blocked: "BLOCKED",
       status_active: "ACTIVE",
+      settings_wa_chart_title: "WhatsApp Numbers Linked to System",
+      settings_wa_chart_desc: "Confidential registry of all WhatsApp devices and numbers connected to Ostan ERP.",
+      settings_wa_super_admin_badge: "🔒 Super Admin Only",
+      settings_wa_disconnect_btn: "Disconnect",
+
       auth_err_account_blocked: "That account is blocked Please contact the Administrator",
     },
 
@@ -713,6 +718,11 @@
       btn_unblock_employee: "✅ إلغاء الحظر",
       status_blocked: "محظور",
       status_active: "نشط",
+      settings_wa_chart_title: "أرقام واتساب المرتبطة بالنظام",
+      settings_wa_chart_desc: "سجل سري لكافة أرقام وأجهزة واتساب المتصلة بنظام أستان عبر المستخدمين.",
+      settings_wa_super_admin_badge: "🔒 حصري للمدير العام فقط",
+      settings_wa_disconnect_btn: "قطع الاتصال",
+
       auth_err_account_blocked: "تم حظر هذا الحساب، يرجى التواصل مع الإدارة",
     },
   };

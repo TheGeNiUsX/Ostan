@@ -1,7 +1,7 @@
 {
-  "version": "1.0.17",
-  "commit": "2314ec0",
-  "buildTime": 1789160268899,
-  "releaseDate": "2026-09-11T20:57:48.899Z",
-  "message": "fix(ui): apply multi-layer emoji deduplication engine, inline fallbacks and cache-buster"
+  "version": "1.0.18",
+  "commit": "ae36ff8",
+  "buildTime": 1789161094269,
+  "releaseDate": "2026-09-11T21:11:34.269Z",
+  "message": "feat(messages): update safety meter bar to fill 100% green when safe and color the remainder red"
 }

@@ -40,6 +40,10 @@
       d.en.btn_dispatch_direct = "Send Directly (Background Dispatch • No Extension)";
       d.ar.btn_dispatch_direct = "إرسال مباشر (تلقائي بالخلفية • بدون متصفح وبدون إضافة)";
       d.en.btn_dispatch_extension = "Send via WhatsApp Web + Extension (Old Version)";
+      d.en.settings_wa_chart_title = "WhatsApp Numbers Linked to System";
+      d.ar.settings_wa_chart_title = "أرقام واتساب المرتبطة بالنظام";
+      d.en.settings_wa_super_admin_badge = "🔒 Super Admin Only";
+      d.ar.settings_wa_super_admin_badge = "🔒 حصري للمدير العام فقط";
       d.ar.btn_dispatch_extension = "إرسال عبر واتساب ويب + الإضافة (النسخة السابقة)";
       d.ar.nav_saudi_staff = "الكادر السعودي";
       d.en.perm_sec_saudi = "🇸🇦 Saudi Staff & Payroll Hub";
@@ -2331,30 +2335,43 @@
         </section>
 
         <!-- =====================================================================
-             VIEW 10: SETTINGS
+             VIEW 10: SETTINGS (With Super Admin Exclusive WhatsApp Numbers Registry)
              ===================================================================== -->
-        <section id="view-settings" style="display: none; flex-direction: column; gap: 1.5rem; max-width: 720px;">
-          <div class="glass-panel" style="padding: 1.25rem 1.5rem;">
-            <h2 data-i18n="settings_section_title" style="font-size: 1.3rem; font-weight: 800;">System Settings</h2>
-            <p data-i18n="settings_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Customize interface appearance themes, automated warning notification templates, and test audio alarm diagnostics.</p>
-          </div>
+        <section id="view-settings" style="display: none; flex-direction: column; gap: 1.5rem; width: 100%; max-width: 1400px;">
+          <!-- Top Row Grid: General Settings (Left) + Super Admin WhatsApp Numbers Chart (Right / Red-Marked Location) -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 1.5rem; align-items: stretch;">
+            
+            <!-- Left Column: Header & Theme/Audio Settings -->
+            <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+              <div class="glass-panel" style="padding: 1.25rem 1.5rem;">
+                <h2 data-i18n="settings_section_title" style="font-size: 1.3rem; font-weight: 800;">System Settings</h2>
+                <p data-i18n="settings_section_desc" style="font-size: 0.82rem; color: var(--text-muted);">Customize interface appearance themes, automated warning notification templates, and test audio alarm diagnostics.</p>
+              </div>
 
-          <!-- THEME & AUDIO DIAGNOSTICS -->
-          <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
-            <div>
-              <label data-i18n="settings_theme_label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Theme Mode</label>
-              <div style="display: flex; gap: 0.5rem;">
-                <button class="btn btn-primary" onclick="window.OstanStyle.setTheme('dark')" style="flex: 1;">Dark Theme</button>
-                <button class="btn btn-secondary" onclick="window.OstanStyle.setTheme('light')" style="flex: 1;">Light Theme</button>
+              <!-- THEME & AUDIO DIAGNOSTICS -->
+              <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem; flex: 1;">
+                <div>
+                  <label data-i18n="settings_theme_label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Theme Mode</label>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="window.OstanStyle.setTheme('dark')" style="flex: 1;">Dark Theme</button>
+                    <button class="btn btn-secondary" onclick="window.OstanStyle.setTheme('light')" style="flex: 1;">Light Theme</button>
+                  </div>
+                </div>
+
+                <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
+                  <label data-i18n="settings_audio_label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Audio Alarm Diagnostics</label>
+                  <button class="btn btn-secondary" onclick="window.OstanStyle.playChime(880, 880)" style="width: 100%; justify-content: center;">
+                    <span data-i18n="btn_test_audio">Test Audio Alarm Chime (880Hz)</span>
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div style="border-top: 1px solid var(--border-subtle); padding-top: 1rem;">
-              <label data-i18n="settings_audio_label" style="font-size: 0.8rem; color: var(--text-muted); display: block; margin-bottom: 6px;">Audio Alarm Diagnostics</label>
-              <button class="btn btn-secondary" onclick="window.OstanStyle.playChime(880, 880)" style="width: 100%; justify-content: center;">
-                <span data-i18n="btn_test_audio">Test Audio Alarm Chime (880Hz)</span>
-              </button>
+            <!-- Right Column (RED-MARKED LOCATION): Super Admin Exclusive WhatsApp Numbers Registry & Chart -->
+            <div id="settings-wa-numbers-container" style="display: none; height: 100%;">
+              <!-- Rendered strictly and exclusively for Super Admin via renderSuperAdminWaNumbersChart() -->
             </div>
+
           </div>
 
           <!-- WARNING MESSAGES & REMINDERS TEMPLATES CHART & EDITOR -->
@@ -3586,11 +3603,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.17",
-  "commit": "2314ec0",
-  "buildTime": 1789160268899,
-  "releaseDate": "2026-09-11T20:57:48.899Z",
-  "message": "fix(ui): apply multi-layer emoji deduplication engine, inline fallbacks and cache-buster"
+  "version": "1.0.18",
+  "commit": "ae36ff8",
+  "buildTime": 1789161094269,
+  "releaseDate": "2026-09-11T21:11:34.269Z",
+  "message": "feat(messages): update safety meter bar to fill 100% green when safe and color the remainder red"
 };
 
     let _ostanUpdateTriggered = false;
@@ -4138,6 +4155,7 @@
     window.deleteTaskFromFirestore = deleteTaskFromFirestore;
 
     function isMasterSuperAdmin(user = getCurrentUser()) {
+    window.isMasterSuperAdmin = isMasterSuperAdmin;
       return !!(user && (user.role === "SUPER_ADMIN" || (user.email && user.email.toLowerCase().trim() === "waseem.tw@hotmail.com")));
     }
 
@@ -4389,6 +4407,7 @@
       }
       if (mod === "settings") {
         renderSettingsWarningTemplates();
+        renderSuperAdminWaNumbersChart();
       }
       if (mod === "notification-logs") {
         renderFullNotificationLogs();
@@ -4733,6 +4752,214 @@
       }
     }
     window.clearAllNotificationHistory = clearAllNotificationHistory;
+
+    // =========================================================================
+    // SUPER ADMIN EXCLUSIVE: WHATSAPP NUMBERS LINKED REGISTRY & DISCONNECT
+    // =========================================================================
+    async function renderSuperAdminWaNumbersChart() {
+      const container = document.getElementById("settings-wa-numbers-container");
+      if (!container) return;
+
+      const curUser = getCurrentUser();
+      // STRICT SUPER ADMIN ONLY ACCESS CHECK:
+      // Even if another user has full system settings permissions, they are strictly blocked.
+      if (!isMasterSuperAdmin(curUser)) {
+        container.style.display = "none";
+        container.innerHTML = ""; // Strictly wiped so inspect-element shows zero numbers
+        return;
+      }
+
+      container.style.display = "block";
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const isAr = lang === "ar";
+
+      // 1. Gather all linked numbers across state, local sessions, and Meta Cloud API
+      const linkedList = [];
+
+      // Direct WhatsApp Gateway Sessions (Baileys Phone Link)
+      const sessions = state.userWhatsAppSessions || {};
+      for (const [uid, sess] of Object.entries(sessions)) {
+        if (sess && (sess.phone || sess.connected)) {
+          const userObj = state.users.find(u => u.id === uid) || { name: sess.name || uid, role: "EMPLOYEE" };
+          linkedList.push({
+            id: uid,
+            type: "gateway",
+            typeLabel: isAr ? "بوابة هاتف مباشرة (Multi-Device Gateway)" : "Direct Phone Gateway (Multi-Device)",
+            phone: sess.phone || (isAr ? "جلسة مسجلة" : "Linked Session"),
+            user: userObj,
+            connected: Boolean(sess.connected),
+            statusLabel: sess.connected ? (isAr ? "متصل ونشط 🟢" : "Connected & Active 🟢") : (isAr ? "غير متصل ⚪" : "Disconnected ⚪"),
+            updatedAt: sess.updatedAt ? new Date(sess.updatedAt).toLocaleTimeString() + " • " + new Date(sess.updatedAt).toLocaleDateString() : (sess.connected ? (isAr ? "نشط الآن" : "Active Now") : (isAr ? "سابقاً" : "Previous"))
+          });
+        }
+      }
+
+      // Meta WhatsApp Cloud API (if configured)
+      const apiCfg = state.whatsappApiConfig || {};
+      if (apiCfg && (apiCfg.phoneNumberId || apiCfg.wabaId)) {
+        const isApiActive = Boolean(apiCfg.phoneNumberId && apiCfg.accessToken);
+        linkedList.push({
+          id: "meta-cloud-api",
+          type: "meta_api",
+          typeLabel: isAr ? "حساب رسمي (Meta Cloud API)" : "Official Meta Cloud API",
+          phone: apiCfg.phoneNumber || (isAr ? `معرّف الهاتف: ${apiCfg.phoneNumberId}` : `Phone ID: ${apiCfg.phoneNumberId}`),
+          user: { name: isAr ? "حساب أعمال Meta الرسمي" : "Meta Business Cloud API", role: "SYSTEM_API" },
+          connected: isApiActive,
+          statusLabel: isApiActive ? (isAr ? "جاهز ونشط 🟢" : "Ready & Active 🟢") : (isAr ? "بحاجة لتوكن 🟠" : "Token Needed 🟠"),
+          updatedAt: isAr ? "سحابي دائم" : "Cloud Dedicated"
+        });
+      }
+
+      // Metrics calculation
+      const totalCount = linkedList.length;
+      const directCount = linkedList.filter(l => l.type === "gateway" && l.connected).length;
+      const apiCount = linkedList.filter(l => l.type === "meta_api" && l.connected).length;
+
+      // Build HTML
+      container.innerHTML = `
+        <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.15rem; border: 1px solid rgba(16, 185, 129, 0.35); background: linear-gradient(180deg, rgba(16, 185, 129, 0.05) 0%, var(--bg-surface-elevated) 100%); box-shadow: 0 4px 20px rgba(0,0,0,0.35); height: 100%;">
+          
+          <!-- Card Header -->
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.85rem; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 42px; height: 42px; border-radius: 10px; background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.4); display: flex; align-items: center; justify-content: center; font-size: 1.35rem; box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);">
+                📱
+              </div>
+              <div>
+                <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+                  <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                    ${isAr ? "أرقام واتساب المرتبطة بالنظام" : "WhatsApp Numbers Linked to System"}
+                  </h3>
+                  <span class="badge badge-rose" style="font-size: 0.65rem; font-weight: 800; padding: 0.15rem 0.5rem; border-radius: 9999px;">
+                    ${isAr ? "🔒 حصري للمدير العام فقط" : "🔒 Super Admin Only"}
+                  </span>
+                </div>
+                <p style="font-size: 0.74rem; color: var(--text-muted); margin-top: 3px; line-height: 1.4;">
+                  ${isAr ? "سجل تحكم ومراقبة سري لكافة أرقام وأجهزة واتساب المتصلة بنظام أستان مع إمكانية قطع اتصال أي رقم." : "Confidential oversight chart of all WhatsApp numbers connected to Ostan ERP with remote disconnection."}
+                </p>
+              </div>
+            </div>
+
+            <button type="button" onclick="renderSuperAdminWaNumbersChart()" class="btn btn-ghost" style="padding: 0.3rem 0.65rem; font-size: 0.74rem;" title="${isAr ? 'تحديث السجل' : 'Refresh Chart'}">
+              🔄 <span>${isAr ? "تحديث" : "Refresh"}</span>
+            </button>
+          </div>
+
+          <!-- Stats Mini Grid -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 0.6rem;">
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem;">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${isAr ? "إجمالي الأرقام" : "Total Linked"}</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #10b981; margin-top: 2px;">${totalCount}</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem;">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${isAr ? "بوابة هاتف مباشرة" : "Direct Gateway"}</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #38bdf8; margin-top: 2px;">${directCount}</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 0.6rem 0.75rem;">
+              <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 600;">${isAr ? "Meta Cloud API" : "Meta Cloud API"}</div>
+              <div style="font-size: 1.15rem; font-weight: 800; color: #818cf8; margin-top: 2px;">${apiCount}</div>
+            </div>
+          </div>
+
+          <!-- Linked Numbers List -->
+          <div style="display: flex; flex-direction: column; gap: 0.65rem; max-height: 290px; overflow-y: auto; padding-right: 4px;">
+            ${linkedList.length === 0 ? `
+              <div style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.8rem; background: rgba(0,0,0,0.18); border-radius: var(--radius-sm); border: 1px dashed var(--border-subtle);">
+                📱 ${isAr ? "لا توجد أرقام واتساب مرتبطة بالنظام حالياً." : "No WhatsApp numbers currently linked to the system."}
+              </div>
+            ` : linkedList.map(item => `
+              <div style="background: var(--bg-surface); border: 1px solid ${item.connected ? 'rgba(16, 185, 129, 0.3)' : 'var(--border-subtle)'}; border-radius: var(--radius-md); padding: 0.75rem 0.9rem; display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; transition: all 0.2s ease;">
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                  <div style="width: 34px; height: 34px; border-radius: 8px; background: ${item.connected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(255,255,255,0.05)'}; color: ${item.connected ? '#10b981' : 'var(--text-muted)'}; display: flex; align-items: center; justify-content: center; font-size: 1rem; border: 1px solid ${item.connected ? 'rgba(16, 185, 129, 0.35)' : 'var(--border-subtle)'};">
+                    ${item.connected ? '🟢' : '⚪'}
+                  </div>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 0.45rem;">
+                      <span style="font-weight: 800; font-size: 0.92rem; color: var(--text-main); font-family: monospace;">
+                        ${item.phone}
+                      </span>
+                      <span class="badge ${item.connected ? 'badge-emerald' : 'badge-secondary'}" style="font-size: 0.64rem; padding: 0.12rem 0.45rem;">
+                        ${item.statusLabel}
+                      </span>
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.35rem; margin-top: 2px;">
+                      <span>👤 ${item.user.name}</span>
+                      <span>•</span>
+                      <span style="color: #38bdf8;">${item.typeLabel}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                  <button type="button" onclick="disconnectSuperAdminWaNumber('${item.id}', '${item.phone}', '${item.type}')" class="btn btn-secondary" style="padding: 0.35rem 0.75rem; font-size: 0.75rem; border-color: rgba(244, 63, 94, 0.4); color: #fb7185; background: rgba(244, 63, 94, 0.1);" title="${isAr ? 'قطع اتصال هذا الرقم وفصله عن النظام فورياً' : 'Remotely disconnect and unlink this number'}">
+                    🔌 <span>${isAr ? "قطع الاتصال" : "Disconnect"}</span>
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+
+          <!-- Super Admin Security Notice -->
+          <div style="background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.25); border-radius: var(--radius-sm); padding: 0.55rem 0.75rem; font-size: 0.7rem; color: #fb7185; display: flex; align-items: center; gap: 0.45rem;">
+            <span>🛡️</span>
+            <span>${isAr ? "هذا السجل محمي ومشفر بالكامل، ومتاح بصرياً وبرمجياً فقط للمدير العام (Super Admin)." : "Confidential Super Admin Registry: Strictly hidden and inaccessible to all other roles and administrators."}</span>
+          </div>
+
+        </div>
+      `;
+    }
+    window.renderSuperAdminWaNumbersChart = renderSuperAdminWaNumbersChart;
+
+    async function disconnectSuperAdminWaNumber(uid, phone, type) {
+      const curUser = getCurrentUser();
+      if (!isMasterSuperAdmin(curUser)) {
+        alert("Access Denied: Super Admin only.");
+        return;
+      }
+
+      const lang = document.documentElement.getAttribute("lang") || "en";
+      const isAr = lang === "ar";
+      const confirmMsg = isAr
+        ? `هل أنت متأكد من رغبتك في قطع اتصال وحذف رقم واتساب (${phone}) نهائياً من النظام؟ سيتوقف الإرسال من هذا الرقم فوراً.`
+        : `Are you sure you want to remotely disconnect WhatsApp number (${phone})? This will immediately sever dispatch capability for this account.`;
+
+      if (!confirm(confirmMsg)) return;
+
+      if (type === "meta_api") {
+        state.whatsappApiConfig = { phoneNumberId: "", wabaId: "", accessToken: "", mode: "web" };
+        try { localStorage.setItem("ostan_wa_api_config", JSON.stringify(state.whatsappApiConfig)); } catch(e) {}
+      } else {
+        state.userWhatsAppSessions = state.userWhatsAppSessions || {};
+        state.userWhatsAppSessions[uid] = { connected: false, phone: "", name: "" };
+        try { localStorage.removeItem("ostan_wa_session_" + uid); } catch (e) {}
+        try { localStorage.setItem("ostan_user_wa_sessions", JSON.stringify(state.userWhatsAppSessions)); } catch(e) {}
+
+        if (window.fbDb) {
+          try {
+            await window.fbDb.collection("whatsappSessions").doc(uid).set({
+              status: "disconnected",
+              connected: false,
+              loggedOut: true,
+              phone: null,
+              name: null,
+              updatedAt: Date.now()
+            }, { merge: true });
+          } catch(e) {
+            console.warn("Firestore disconnect notice:", e);
+          }
+        }
+      }
+
+      saveState();
+      if (typeof updateWhatsAppConnectionUI === "function") updateWhatsAppConnectionUI();
+      if (typeof updateWhatsAppApiStatusUI === "function") updateWhatsAppApiStatusUI();
+      renderSuperAdminWaNumbersChart();
+
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("WhatsApp Disconnected", isAr ? `تم قطع اتصال الرقم ${phone} بنجاح.` : `Number ${phone} disconnected successfully.`);
+      }
+    }
+    window.disconnectSuperAdminWaNumber = disconnectSuperAdminWaNumber;
 
     function renderSettingsWarningTemplates() {
       const wt = state.warningTemplates || {};
@@ -9006,6 +9233,9 @@
       applyMessageSenderPermissions();
       updateWhatsAppConnectionUI();
       updateWhatsAppApiStatusUI();
+      if (typeof renderSuperAdminWaNumbersChart === "function") {
+        renderSuperAdminWaNumbersChart();
+      }
       renderMessageRecipientsList();
       renderMessageTemplates();
       renderMessageHistoryLogs();
