@@ -235,13 +235,34 @@
   }, 500);
 
   function startQueueCountdown(activeQueue, currentIdx) {
-    const min = (activeQueue && activeQueue.minDelay) ? parseInt(activeQueue.minDelay, 10) : ((activeQueue && activeQueue.delay) ? parseInt(activeQueue.delay, 10) : 10);
+    const min = (activeQueue && activeQueue.minDelay) ? parseInt(activeQueue.minDelay, 10) : ((activeQueue && activeQueue.delay) ? parseInt(activeQueue.delay, 10) : 15);
     const max = (activeQueue && activeQueue.maxDelay) ? parseInt(activeQueue.maxDelay, 10) : min;
-    const stepDelay = Math.floor(Math.random() * (max - min + 1)) + min;
+    let stepDelay = Math.floor(Math.random() * (max - min + 1)) + min;
+
+    // Human Stop Points Pattern Check
+    const stopEnabled = activeQueue && (activeQueue.humanStopEnabled !== false);
+    const stopFreq = (activeQueue && activeQueue.humanStopFreq) ? parseInt(activeQueue.humanStopFreq, 10) : 4;
+    const stopMin = (activeQueue && activeQueue.humanStopMin) ? parseInt(activeQueue.humanStopMin, 10) : 7;
+    const stopMax = (activeQueue && activeQueue.humanStopMax) ? parseInt(activeQueue.humanStopMax, 10) : 15;
+
+    let isStopPoint = false;
+    let stopPause = 0;
+    if (stopEnabled && ((currentIdx + 1) % stopFreq === 0)) {
+      const sMin = Math.min(stopMin, stopMax);
+      const sMax = Math.max(stopMin, stopMax);
+      stopPause = Math.floor(Math.random() * (sMax - sMin + 1)) + sMin;
+      stepDelay += stopPause;
+      isStopPoint = true;
+    }
+
     let remaining = stepDelay;
     const nextItem = activeQueue.items[currentIdx + 1];
 
-    updateHud(`✅ Sent! 🎲 Waiting ${remaining}s (Random ${min}s-${max}s)... Next: ${nextItem.name || nextItem.phone}`, "#10b981");
+    if (isStopPoint) {
+      updateHud(`🧘 [Human Stop Point: +${stopPause}s Pause every ${stopFreq} chats] Resting ${remaining}s... Next: ${nextItem.name || nextItem.phone}`, "#10b981");
+    } else {
+      updateHud(`✅ Sent! 🎲 Natural Cadence: ${remaining}s (${min}s-${max}s)... Next: ${nextItem.name || nextItem.phone}`, "#10b981");
+    }
 
     const timer = setInterval(() => {
       remaining--;

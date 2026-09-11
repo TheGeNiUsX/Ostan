@@ -2199,35 +2199,62 @@
                   </div>
                 </div>
 
-                <!-- Right Column: Min/Max Slots & Presets -->
-                <div style="display: flex; flex-direction: column; gap: 0.65rem; align-items: flex-end; min-width: 320px;">
+                <!-- Middle & Right Columns: Human Stop Points & Min/Max Slots (User-Specified Location) -->
+                <div style="display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap; justify-content: flex-end; flex: 1;">
                   
-                  <!-- Min / Max Slot Adjusters -->
-                  <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
-                    <div style="display: flex; align-items: center; gap: 0.35rem; background: var(--bg-surface-elevated); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
-                      <label for="msg-delay-min" style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted);">Min:</label>
-                      <input id="msg-delay-min" type="number" min="1" max="300" value="10" class="input-field" oninput="updateDelayRiskMeter()" style="width: 60px; padding: 0.25rem 0.4rem; font-size: 0.88rem; font-weight: 800; text-align: center; border-radius: 4px;" />
-                      <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">sec</span>
+                  <!-- Human Stop Points Breather Control (RED MARKED LOCATION) -->
+                  <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); padding: 0.5rem 0.85rem; border-radius: var(--radius-md); display: flex; flex-direction: column; gap: 0.35rem; min-width: 280px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;">
+                      <label style="display: flex; align-items: center; gap: 0.45rem; cursor: pointer; user-select: none; margin: 0;">
+                        <input id="human-stop-enabled" type="checkbox" checked onchange="toggleHumanStopPattern(this.checked)" style="width: 17px; height: 17px; accent-color: #10b981; cursor: pointer;" />
+                        <span style="font-weight: 800; font-size: 0.82rem; color: #10b981; display: flex; align-items: center; gap: 0.25rem;">
+                          <span>🧘</span> <span>Human Stop Points</span>
+                        </span>
+                      </label>
+                      <span id="human-stop-status-pill" class="badge badge-emerald" style="font-size: 0.68rem; padding: 0.15rem 0.45rem; font-weight: 800;">Active</span>
                     </div>
 
-                    <span style="color: var(--text-muted); font-weight: 800; font-size: 0.9rem;">➔</span>
-
-                    <div style="display: flex; align-items: center; gap: 0.35rem; background: var(--bg-surface-elevated); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
-                      <label for="msg-delay-max" style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted);">Max:</label>
-                      <input id="msg-delay-max" type="number" min="1" max="600" value="25" class="input-field" oninput="updateDelayRiskMeter()" style="width: 60px; padding: 0.25rem 0.4rem; font-size: 0.88rem; font-weight: 800; text-align: center; border-radius: 4px;" />
-                      <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">sec</span>
+                    <!-- Adjustable Slots for Human Stop Points -->
+                    <div id="human-stop-slots" style="display: flex; align-items: center; gap: 0.35rem; font-size: 0.74rem; color: var(--text-muted); flex-wrap: wrap;">
+                      <span>Every</span>
+                      <input id="human-stop-freq" type="number" min="2" max="50" value="4" class="input-field" oninput="updateDelayRiskMeter()" style="width: 48px; padding: 0.2rem 0.35rem; font-size: 0.82rem; font-weight: 800; text-align: center; border-radius: 4px;" title="Pause frequency (chats count)" />
+                      <span>chats, pause</span>
+                      <input id="human-stop-min" type="number" min="1" max="120" value="7" class="input-field" oninput="updateDelayRiskMeter()" style="width: 48px; padding: 0.2rem 0.35rem; font-size: 0.82rem; font-weight: 800; text-align: center; border-radius: 4px;" title="Minimum pause seconds" />
+                      <span>-</span>
+                      <input id="human-stop-max" type="number" min="1" max="300" value="15" class="input-field" oninput="updateDelayRiskMeter()" style="width: 48px; padding: 0.2rem 0.35rem; font-size: 0.82rem; font-weight: 800; text-align: center; border-radius: 4px;" title="Maximum pause seconds" />
+                      <span>sec</span>
                     </div>
-
-                    <input type="hidden" id="msg-delay-select" value="10" />
                   </div>
 
-                  <!-- Quick Preset Buttons -->
-                  <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
-                    <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Presets:</span>
-                    <button type="button" onclick="setDelayPreset(3, 7)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700;" title="Fast dispatch (3s–7s) - Higher risk">⚡ Fast (3-7s)</button>
-                    <button type="button" onclick="setDelayPreset(8, 16)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700;" title="Balanced speed (8s–16s)">⚖️ Balanced (8-16s)</button>
-                    <button type="button" onclick="setDelayPreset(15, 35)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700; border-color: rgba(37, 211, 102, 0.4);" title="Safe human pacing (15s–35s)">🛡️ Safe (15-35s)</button>
-                    <button type="button" onclick="setDelayPreset(25, 60)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700; border-color: rgba(0, 200, 255, 0.4);" title="0% Risk Maximum Stealth (25s–60s)">🧘 0% Risk (25-60s)</button>
+                  <!-- Right: Min/Max Interval Adjusters & Presets -->
+                  <div style="display: flex; flex-direction: column; gap: 0.65rem; align-items: flex-end; min-width: 300px;">
+                    <!-- Min / Max Slot Adjusters -->
+                    <div style="display: flex; align-items: center; gap: 0.55rem; flex-wrap: wrap;">
+                      <div style="display: flex; align-items: center; gap: 0.35rem; background: var(--bg-surface-elevated); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
+                        <label for="msg-delay-min" style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted);">Min:</label>
+                        <input id="msg-delay-min" type="number" min="1" max="300" value="15" class="input-field" oninput="updateDelayRiskMeter()" style="width: 60px; padding: 0.25rem 0.4rem; font-size: 0.88rem; font-weight: 800; text-align: center; border-radius: 4px;" />
+                        <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">sec</span>
+                      </div>
+
+                      <span style="color: var(--text-muted); font-weight: 800; font-size: 0.9rem;">➔</span>
+
+                      <div style="display: flex; align-items: center; gap: 0.35rem; background: var(--bg-surface-elevated); padding: 0.4rem 0.75rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);">
+                        <label for="msg-delay-max" style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted);">Max:</label>
+                        <input id="msg-delay-max" type="number" min="1" max="600" value="35" class="input-field" oninput="updateDelayRiskMeter()" style="width: 60px; padding: 0.25rem 0.4rem; font-size: 0.88rem; font-weight: 800; text-align: center; border-radius: 4px;" />
+                        <span style="font-size: 0.74rem; color: var(--text-muted); font-weight: 600;">sec</span>
+                      </div>
+
+                      <input type="hidden" id="msg-delay-select" value="25" />
+                    </div>
+
+                    <!-- Quick Preset Buttons -->
+                    <div style="display: flex; align-items: center; gap: 0.35rem; flex-wrap: wrap;">
+                      <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">Presets:</span>
+                      <button type="button" onclick="setDelayPreset(3, 7)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700;" title="Fast dispatch (3s–7s) - Higher risk">⚡ Fast (3-7s)</button>
+                      <button type="button" onclick="setDelayPreset(8, 16)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700;" title="Balanced speed (8s–16s)">⚖️ Balanced (8-16s)</button>
+                      <button type="button" onclick="setDelayPreset(15, 35)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700; border-color: rgba(37, 211, 102, 0.4);" title="Safe human pacing (15s–35s)">🛡️ Safe (15-35s)</button>
+                      <button type="button" onclick="setDelayPreset(25, 60)" class="btn btn-secondary" style="padding: 0.22rem 0.55rem; font-size: 0.72rem; font-weight: 700; border-color: rgba(0, 200, 255, 0.4);" title="0% Risk Maximum Stealth (25s–60s)">🧘 0% Risk (25-60s)</button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3540,10 +3567,10 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.13",
-  "commit": "f6bd610",
-  "buildTime": 1789157670369,
-  "releaseDate": "2026-09-11T20:14:30.369Z",
+  "version": "1.0.14",
+  "commit": "e63e4a0",
+  "buildTime": 1789158383499,
+  "releaseDate": "2026-09-11T20:26:23.499Z",
   "message": "feat(messages): add randomized human cadence timer with min/max slots, live AI ban risk meter, and natural jitter"
 };
 
@@ -10171,10 +10198,36 @@
       currentUrl: ""
     };
 
+    function toggleHumanStopPattern(isEnabled) {
+      const slots = document.getElementById("human-stop-slots");
+      const statusPill = document.getElementById("human-stop-status-pill");
+      if (slots) {
+        slots.style.opacity = isEnabled ? "1" : "0.4";
+        slots.style.pointerEvents = isEnabled ? "auto" : "none";
+      }
+      if (statusPill) {
+        statusPill.className = isEnabled ? "badge badge-emerald" : "badge badge-secondary";
+        statusPill.textContent = isEnabled ? "Active" : "Disabled";
+      }
+      try {
+        localStorage.setItem("ostan_human_stop_enabled", isEnabled ? "true" : "false");
+      } catch(e) {}
+      updateDelayRiskMeter();
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast("Human Pattern", isEnabled ? "Human Stop Points Enabled (7-15s random pauses every 4 chats)" : "Human Stop Points Disabled");
+      }
+    }
+    window.toggleHumanStopPattern = toggleHumanStopPattern;
+
     function calculateAntiBanRisk(min, max) {
       if (min > max) { const t = min; min = max; max = t; }
       const avg = (min + max) / 2;
       const spread = max - min;
+
+      const stopEnabled = document.getElementById("human-stop-enabled") ? document.getElementById("human-stop-enabled").checked : true;
+      const stopFreq = parseInt(document.getElementById("human-stop-freq")?.value || "4", 10) || 4;
+      const stopMin = parseInt(document.getElementById("human-stop-min")?.value || "7", 10) || 7;
+      const stopMax = parseInt(document.getElementById("human-stop-max")?.value || "15", 10) || 15;
 
       let rawRisk = 0;
       if (avg <= 2) rawRisk = 98;
@@ -10188,6 +10241,11 @@
 
       if (spread === 0 && rawRisk < 80) rawRisk += 15;
       else if (spread >= 8 && rawRisk > 0) rawRisk = Math.max(0, rawRisk - 5);
+
+      // Benefit of Human Stop Points: reduces risk further because bursts are broken every N chats
+      if (stopEnabled && stopFreq <= 5 && stopMax >= 7) {
+        rawRisk = Math.max(0, rawRisk - 8);
+      }
 
       rawRisk = Math.max(0, Math.min(99, Math.round(rawRisk)));
       const humanScore = 100 - rawRisk;
@@ -10204,7 +10262,7 @@
         badgeClass = "badge-amber";
         badgeLabel = rawRisk + "% Risk (Moderate Speed)";
         color = "#f59e0b";
-      } else if (rawRisk > 5) {
+      } else if (rawRisk > 3) {
         badgeClass = "badge-emerald";
         badgeLabel = rawRisk + "% Risk (Safe Human Speed)";
         color = "#10b981";
@@ -10219,6 +10277,10 @@
         humanScore,
         avg: avg.toFixed(1),
         spread,
+        stopEnabled,
+        stopFreq,
+        stopMin,
+        stopMax,
         badgeClass,
         badgeLabel,
         color
@@ -10229,8 +10291,8 @@
     function updateDelayRiskMeter() {
       const minInput = document.getElementById("msg-delay-min");
       const maxInput = document.getElementById("msg-delay-max");
-      let min = parseInt(minInput?.value || "10", 10);
-      let max = parseInt(maxInput?.value || "25", 10);
+      let min = parseInt(minInput?.value || "15", 10);
+      let max = parseInt(maxInput?.value || "35", 10);
       if (isNaN(min) || min < 1) min = 1;
       if (isNaN(max) || max < 1) max = 1;
 
@@ -10250,12 +10312,15 @@
 
       const cadenceDesc = document.getElementById("delay-cadence-desc");
       if (cadenceDesc) {
-        cadenceDesc.innerHTML = 'Human Simulation Score: <strong style="color: ' + assessment.color + ';">' + assessment.humanScore + '%</strong> (Average ~' + assessment.avg + 's per contact with natural variance)';
+        const stopNote = assessment.stopEnabled 
+          ? ' + <span style="color: #10b981; font-weight: 700;">🧘 Stop Point every ' + assessment.stopFreq + ' chats (' + assessment.stopMin + '-' + assessment.stopMax + 's pause)</span>'
+          : '';
+        cadenceDesc.innerHTML = 'Human Simulation Score: <strong style="color: ' + assessment.color + ';">' + assessment.humanScore + '%</strong> (Average ~' + assessment.avg + 's per contact' + stopNote + ')';
       }
 
       const riskBar = document.getElementById("delay-risk-bar");
       if (riskBar) {
-        riskBar.style.width = Math.max(4, assessment.riskPercent) + "%";
+        riskBar.style.width = Math.max(3, assessment.riskPercent) + "%";
         riskBar.style.background = assessment.color;
       }
 
@@ -10265,6 +10330,12 @@
       try {
         localStorage.setItem("ostan_msg_delay_min", String(min));
         localStorage.setItem("ostan_msg_delay_max", String(max));
+        const stopFreq = document.getElementById("human-stop-freq")?.value;
+        const stopMin = document.getElementById("human-stop-min")?.value;
+        const stopMax = document.getElementById("human-stop-max")?.value;
+        if (stopFreq) localStorage.setItem("ostan_human_stop_freq", stopFreq);
+        if (stopMin) localStorage.setItem("ostan_human_stop_min", stopMin);
+        if (stopMax) localStorage.setItem("ostan_human_stop_max", stopMax);
       } catch(e) {}
     }
     window.updateDelayRiskMeter = updateDelayRiskMeter;
@@ -10282,32 +10353,42 @@
     function getNextRandomDelay() {
       const minInput = document.getElementById("msg-delay-min");
       const maxInput = document.getElementById("msg-delay-max");
-      let min = parseInt(minInput?.value || "10", 10);
-      let max = parseInt(maxInput?.value || "25", 10);
+      let min = parseInt(minInput?.value || "15", 10);
+      let max = parseInt(maxInput?.value || "35", 10);
       if (isNaN(min) || min < 1) min = 1;
       if (isNaN(max) || max < 1) max = 1;
       if (max < min) { const t = min; min = max; max = t; }
 
       _dispatchedMessageCounter++;
 
-      // Natural Human Breather: every 6 messages, add 5-9 extra seconds to simulate natural conversational pause
+      const stopEnabled = document.getElementById("human-stop-enabled") ? document.getElementById("human-stop-enabled").checked : true;
+      const stopFreq = parseInt(document.getElementById("human-stop-freq")?.value || "4", 10) || 4;
+      const stopMin = parseInt(document.getElementById("human-stop-min")?.value || "7", 10) || 7;
+      const stopMax = parseInt(document.getElementById("human-stop-max")?.value || "15", 10) || 15;
+
       let extraBreather = 0;
       let isBreather = false;
-      if (_dispatchedMessageCounter % 6 === 0) {
-        extraBreather = Math.floor(Math.random() * 5) + 5;
+      if (stopEnabled && (_dispatchedMessageCounter % stopFreq === 0)) {
+        const sMin = Math.min(stopMin, stopMax);
+        const sMax = Math.max(stopMin, stopMax);
+        extraBreather = Math.floor(Math.random() * (sMax - sMin + 1)) + sMin;
         isBreather = true;
       }
 
-      const randomSecs = Math.floor(Math.random() * (max - min + 1)) + min + extraBreather;
+      const baseDelay = Math.floor(Math.random() * (max - min + 1)) + min;
+      const totalSeconds = baseDelay + extraBreather;
       const jitterMs = Math.floor(Math.random() * 600) + 300;
 
       return {
         min,
         max,
-        seconds: randomSecs,
+        baseDelay,
+        seconds: totalSeconds,
         jitterMs,
         isBreather,
-        extraBreather
+        extraBreather,
+        stopFreq,
+        messageIndex: _dispatchedMessageCounter
       };
     }
     window.getNextRandomDelay = getNextRandomDelay;
@@ -10363,6 +10444,10 @@
         delay: delayVal,
         minDelay: minVal,
         maxDelay: maxVal,
+        humanStopEnabled: document.getElementById("human-stop-enabled") ? document.getElementById("human-stop-enabled").checked : true,
+        humanStopFreq: parseInt(document.getElementById("human-stop-freq")?.value || "4", 10) || 4,
+        humanStopMin: parseInt(document.getElementById("human-stop-min")?.value || "7", 10) || 7,
+        humanStopMax: parseInt(document.getElementById("human-stop-max")?.value || "15", 10) || 15,
         currentIndex: 0
       };
       const encodedPayload = encodeURIComponent(JSON.stringify(queueData));
@@ -10486,7 +10571,21 @@
 
     function startDelayTimerCountdown() {
       if (queueState.timerInterval) clearInterval(queueState.timerInterval);
-      queueState.remainingCountdown = queueState.delaySeconds;
+      const delayInfo = getNextRandomDelay();
+      queueState.delaySeconds = delayInfo.seconds;
+      queueState.remainingCountdown = delayInfo.seconds;
+
+      const delayBadge = document.getElementById("runner-delay-badge");
+      if (delayBadge) {
+        if (delayInfo.isBreather) {
+          delayBadge.innerHTML = '🧘 <strong>Stop Point Breather:</strong> +' + delayInfo.extraBreather + 's (Every ' + delayInfo.stopFreq + ' chats) • Total: ' + delayInfo.seconds + 's';
+          delayBadge.className = "badge badge-emerald";
+        } else {
+          delayBadge.innerHTML = '🎲 <strong>Anti-Ban Cadence:</strong> ' + delayInfo.seconds + 's (' + delayInfo.min + 's-' + delayInfo.max + 's)';
+          delayBadge.className = "badge badge-primary";
+        }
+      }
+
       updateTimerUI();
 
       queueState.timerInterval = setInterval(() => {

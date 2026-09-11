@@ -1,7 +1,7 @@
 {
-  "version": "1.0.13",
-  "commit": "f6bd610",
-  "buildTime": 1789157670369,
-  "releaseDate": "2026-09-11T20:14:30.369Z",
+  "version": "1.0.14",
+  "commit": "e63e4a0",
+  "buildTime": 1789158383499,
+  "releaseDate": "2026-09-11T20:26:23.499Z",
   "message": "feat(messages): add randomized human cadence timer with min/max slots, live AI ban risk meter, and natural jitter"
 }
