@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.34",
-  "commit": "1328e1f",
-  "buildTime": 1789234859035,
-  "releaseDate": "2026-09-12T17:40:59.035Z",
-  "message": "feat(messages): expand recipient list view height and add multi-tier live selection counters"
+  "version": "1.0.35",
+  "commit": "15ee465",
+  "buildTime": 1789239455866,
+  "releaseDate": "2026-09-12T18:57:35.866Z",
+  "message": "fix(gateway): smooth Baileys pairing handshake, creds persistence, and version negotiation"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9954,11 +9954,39 @@
         cloudBadge.style.color = "#10b981";
       }
 
-      // 1. Connected / Linked State (Only when live gateway confirms connected status and valid phone)
-      if (liveData.status === "connected" && liveData.phone && liveData.phone !== "none" && !liveData.loggedOut && liveData.connected !== false) {
-        const wasConnected = curSession.connected;
+      // Has a valid paired phone number
+      const rawPhone = liveData.phone ? String(liveData.phone).replace(/[^0-9]/g, "") : "";
+      const hasPhone = Boolean(rawPhone && rawPhone.length >= 7);
+
+      // 1. Explicit Mobile Unpair / Logout (Only when phone explicitly unregistered from WhatsApp app)
+      if (liveData.loggedOut || (liveData.status === "disconnected" && !hasPhone && !liveData.qr)) {
+        curSession.connected = false;
+        curSession.phone = "";
+        curSession.name = "";
+        state.userWhatsAppSessions[activeUid] = curSession;
+        try { localStorage.removeItem("ostan_wa_session_" + activeUid); } catch(e) {}
+        saveState();
+        updateWhatsAppConnectionUI();
+
+        if (qrImg) qrImg.style.display = "none";
+        if (qrSvg) qrSvg.style.display = "block";
+        if (beam) beam.style.display = "none";
+        if (indicator) {
+          indicator.style.color = "var(--text-faint)";
+          indicator.innerHTML = `<span>🔌</span> <span>Not Connected (${userName})</span>`;
+        }
+        if (statusUnified) {
+          statusUnified.textContent = `${userName}: Disconnected`;
+        }
+        return;
+      }
+
+      // 2. Connected / Linked State (Fully verified and active)
+      if (liveData.status === "connected" && hasPhone) {
+        if (typeof stopWhatsAppQRTimer === "function") stopWhatsAppQRTimer();
+        const wasConnected = curSession.connected && curSession.phone;
         curSession.connected = true;
-        curSession.phone = "+" + String(liveData.phone).replace(/[^0-9]/g, "");
+        curSession.phone = "+" + rawPhone;
         if (liveData.name) curSession.name = liveData.name;
         state.userWhatsAppSessions[activeUid] = curSession;
         try {
@@ -9984,8 +10012,31 @@
         return;
       }
 
-      // 2. Disconnected or QR Available State (Strictly reset connected session)
-      if (liveData.status === "disconnected" || liveData.status === "qr_ready" || liveData.connected === false || liveData.loggedOut || liveData.qr) {
+      // 3. Handshake Reconnect / Connecting with Paired Phone (DO NOT WIPE THE PHONE!)
+      if (hasPhone && (liveData.status === "connecting" || !liveData.status || liveData.connected === false)) {
+        if (typeof stopWhatsAppQRTimer === "function") stopWhatsAppQRTimer();
+        curSession.connected = true;
+        curSession.phone = "+" + rawPhone;
+        if (liveData.name) curSession.name = liveData.name;
+        state.userWhatsAppSessions[activeUid] = curSession;
+        try {
+          localStorage.setItem("ostan_wa_session_" + activeUid, JSON.stringify(curSession));
+        } catch(e) {}
+        saveState();
+        updateWhatsAppConnectionUI();
+
+        if (indicator) {
+          indicator.style.color = "#10b981";
+          indicator.innerHTML = `<span class="status-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> <span>Linked: ${curSession.phone} (Syncing session...)</span>`;
+        }
+        if (statusUnified) {
+          statusUnified.textContent = `${userName}: Linked (${curSession.phone})`;
+        }
+        return;
+      }
+
+      // 4. QR Code Ready to Scan (Unpaired State)
+      if (liveData.qr && !hasPhone) {
         curSession.connected = false;
         curSession.phone = "";
         curSession.name = "";
@@ -9994,37 +10045,24 @@
         saveState();
         updateWhatsAppConnectionUI();
 
-        if (liveData.qr) {
-          if (qrImg) {
-            qrImg.src = liveData.qr;
-            qrImg.style.display = "block";
-          }
-          if (qrSvg) qrSvg.style.display = "none";
-          if (beam) beam.style.display = "none";
-          if (indicator) {
-            indicator.style.color = "#f59e0b";
-            indicator.innerHTML = `<span>⚡</span> <span>Scan QR code with your phone to link (${userName})</span>`;
-          }
-          if (statusUnified) {
-            statusUnified.textContent = `Scan QR Code to Link for ${userName}`;
-          }
-        } else {
-          if (qrImg) qrImg.style.display = "none";
-          if (qrSvg) qrSvg.style.display = "block";
-          if (beam) beam.style.display = "none";
-          if (indicator) {
-            indicator.style.color = "var(--text-faint)";
-            indicator.innerHTML = `<span>🔌</span> <span>Not Connected (${userName})</span>`;
-          }
-          if (statusUnified) {
-            statusUnified.textContent = `${userName}: Disconnected`;
-          }
+        if (qrImg) {
+          qrImg.src = liveData.qr;
+          qrImg.style.display = "block";
+        }
+        if (qrSvg) qrSvg.style.display = "none";
+        if (beam) beam.style.display = "none";
+        if (indicator) {
+          indicator.style.color = "#f59e0b";
+          indicator.innerHTML = `<span>⚡</span> <span>Scan QR code with your phone to link (${userName})</span>`;
+        }
+        if (statusUnified) {
+          statusUnified.textContent = `Scan QR Code to Link for ${userName}`;
         }
         return;
       }
 
-      // 4. Connecting (Do NOT hide existing QR if one is already visible, prevents flickering!)
-      if (liveData.status === "connecting") {
+      // 5. Initial Connecting to Gateway (Before QR or Phone is known)
+      if (liveData.status === "connecting" && !hasPhone) {
         if (statusUnified) statusUnified.textContent = `Connecting ${userName}'s WhatsApp...`;
         if (indicator) {
           indicator.style.color = "#f59e0b";
@@ -10172,13 +10210,35 @@
     }
     window.startLiveWhatsAppPolling = startLiveWhatsAppPolling;
 
+    function stopWhatsAppQRTimer() {
+      if (waQrTimerInterval) {
+        clearInterval(waQrTimerInterval);
+        waQrTimerInterval = null;
+      }
+      const timerEl = document.getElementById("wa-qr-timer");
+      if (timerEl) timerEl.textContent = "02:00";
+    }
+    window.stopWhatsAppQRTimer = stopWhatsAppQRTimer;
+
     function startWhatsAppQRTimer() {
+      // Don't run timer if phone is already linked
+      const curSession = getCurUserWaSession();
+      if (curSession && curSession.connected && curSession.phone) {
+        stopWhatsAppQRTimer();
+        return;
+      }
+
       if (waQrTimerInterval) clearInterval(waQrTimerInterval);
       let secondsLeft = 120;
       const timerEl = document.getElementById("wa-qr-timer");
       if (!timerEl) return;
 
       waQrTimerInterval = setInterval(() => {
+        const s = getCurUserWaSession();
+        if (s && s.connected && s.phone) {
+          stopWhatsAppQRTimer();
+          return;
+        }
         if (secondsLeft <= 0) {
           refreshWhatsAppQR(false);
           secondsLeft = 120;
@@ -12550,24 +12610,41 @@
       let isLiveConnected = isCurrentWaConnected();
       let currentPhone = getCurrentWaPhone();
 
-      // Probe live gateway in real-time to avoid waiting for countdown timer when disconnected
+      // Probe live gateway in real-time or fall back to Cloud Firestore for remote users
       try {
         const gwRes = await fetch(`${gwBase}/api/status?userId=${encodeURIComponent(activeUid)}`, {
           method: "GET",
           headers: { "x-user-id": activeUid },
-          signal: AbortSignal.timeout(3500)
+          signal: AbortSignal.timeout(3000)
         });
         if (gwRes.ok) {
           const gwData = await gwRes.json();
           handleLiveWhatsAppSnapshot(gwData);
-          isLiveConnected = Boolean(gwData.status === "connected" && gwData.phone);
-          if (gwData.phone) currentPhone = "+" + String(gwData.phone).replace(/[^0-9]/g, "");
+          if (gwData.phone) {
+            isLiveConnected = true;
+            currentPhone = "+" + String(gwData.phone).replace(/[^0-9]/g, "");
+          }
         }
       } catch (gwErr) {
-        console.warn("Pre-flight gateway check notice:", gwErr);
+        // Direct gateway unreachable (e.g. remote user accessing from GitHub Pages)
+        // Fall back to checking Cloud Firestore!
+        if (window.fbDb) {
+          try {
+            const docSnap = await window.fbDb.collection("whatsappSessions").doc(activeUid).get();
+            if (docSnap.exists) {
+              const liveData = docSnap.data();
+              if (liveData && liveData.phone) {
+                handleLiveWhatsAppSnapshot(liveData);
+                isLiveConnected = true;
+                currentPhone = "+" + String(liveData.phone).replace(/[^0-9]/g, "");
+              }
+            }
+          } catch (fbErr) {}
+        }
       }
 
-      if (!isLiveConnected) {
+      // If neither gateway nor Firestore has a linked phone, offer web dispatch
+      if (!isLiveConnected && !currentPhone) {
         const lang = document.documentElement.getAttribute("lang") || "en";
         const isAr = lang === "ar";
         const switchConfirm = confirm(

@@ -56,6 +56,7 @@ function getLanIPs() {
 async function syncSessionStateToFirestore(cleanUserId, session) {
   try {
     const isConnected = session.status === 'connected' && Boolean(session.phone);
+    const isPaired = Boolean(session.phone);
     const now = Date.now();
 
     // Prevent burning Firestore write quotas with identical status/QR writes
@@ -63,7 +64,7 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
       session._lastStatus === session.status &&
       session._lastQr === session.qr &&
       session._lastPhone === session.phone &&
-      (now - (session._lastSyncTime || 0)) < 20000
+      (now - (session._lastSyncTime || 0)) < 15000
     ) {
       return;
     }
@@ -73,7 +74,7 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
     session._lastPhone = session.phone;
     session._lastSyncTime = now;
 
-    const activeQr = (session.status === 'connected' || session.status === 'connecting') ? null : (session.qr || null);
+    const activeQr = (session.status === 'connected' || session.status === 'connecting' || isPaired) ? null : (session.qr || null);
     const data = {
       userId: cleanUserId,
       status: session.status,
@@ -81,6 +82,7 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
       phone: session.phone || null,
       name: session.name || null,
       connected: isConnected,
+      paired: isPaired,
       lanIPs: getLanIPs(),
       gatewayPort: PORT,
       updatedAt: now
@@ -107,14 +109,14 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
           userId: cleanUserId,
           userName: session.name || (cleanUserId === 'u-osama' ? 'Osama Al-Twaish' : cleanUserId),
           userRole: cleanUserId === 'u-osama' ? 'SUPER_ADMIN' : 'EMPLOYEE',
-          status: isConnected ? 'ACTIVE' : 'DISCONNECTED',
+          status: isConnected ? 'ACTIVE' : (isPaired ? 'CONNECTING' : 'DISCONNECTED'),
           linkType: 'Direct Phone Gateway',
           lastActiveAt: now,
           syncedAt: now
         }, { merge: true }).catch(() => {});
       }
     }
-    console.log(`[WhatsApp Gateway] ☁️ Synced live state for user '${cleanUserId}' to Cloud Firestore (Status: ${session.status}, Phone: ${session.phone || 'none'})`);
+    console.log(`[WhatsApp Gateway] ☁️ Synced live state for '${cleanUserId}' (Status: ${session.status}, Phone: ${session.phone || 'none'}, Paired: ${isPaired})`);
   } catch (err) {
     console.warn(`[WhatsApp Gateway] Firestore live state sync notice for '${cleanUserId}':`, err?.message || err);
   }
@@ -287,9 +289,10 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
       printQRInTerminal: false,
       browser: Browsers.ubuntu('Chrome'),
       syncFullHistory: false,
-      connectTimeoutMs: 60000,
-      defaultQueryTimeoutMs: 60000,
-      keepAliveIntervalMs: 25000,
+      markOnlineOnConnect: false,
+      connectTimeoutMs: 30000,
+      defaultQueryTimeoutMs: 30000,
+      keepAliveIntervalMs: 15000,
     });
 
     session.sock = sock;
@@ -299,7 +302,6 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
         const id = state.creds.me.id;
         session.phone = id.split(':')[0] || id.split('@')[0];
         session.name = state.creds.me.name || session.name || `User ${cleanUserId}`;
-        session.status = 'connecting';
         session.qr = null;
         syncSessionStateToFirestore(cleanUserId, session);
       }
@@ -367,7 +369,7 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
           }
           syncSessionStateToFirestore(cleanUserId, session);
 
-          const delay = (statusCode === 440) ? 3000 : 1200;
+          const delay = (statusCode === 440) ? 2000 : 600;
           console.log(`[WhatsApp Gateway] ⚡ Reconnecting pairing session for '${cleanUserId}' in ${delay}ms...`);
           setTimeout(() => {
             startWhatsAppSocketForUser(cleanUserId);
@@ -437,8 +439,8 @@ async function sendWhatsAppMessageForUser(userId, targetPhone, messageText) {
     if (!session.sock && !session.isStarting) {
       startWhatsAppSocketForUser(cleanId);
     }
-    // Wait up to 6 seconds for connection handshake
-    for (let i = 0; i < 15; i++) {
+    // Wait up to 12 seconds for connection handshake
+    for (let i = 0; i < 30; i++) {
       await new Promise(r => setTimeout(r, 400));
       if (session.status === 'connected' && session.sock) break;
     }
@@ -580,6 +582,8 @@ const server = http.createServer(async (req, res) => {
       qr: session.qr,
       phone: session.phone,
       name: session.name,
+      connected: session.status === 'connected' && Boolean(session.phone),
+      paired: Boolean(session.phone),
       timestamp: Date.now()
     });
   }
@@ -685,7 +689,27 @@ server.listen(PORT, HOST, () => {
   console.log(`💡 TIP: Copy the Network access URL above into the`);
   console.log(`   "Messages Sender" → "⚙️ WhatsApp API Config" → "Gateway URL" field`);
   console.log(`   so all remote users can reach the QR pairing engine.\n`);
-  // Automatically start the default session
+
+  // Automatically restore and connect sessions with existing saved credentials on disk
+  try {
+    if (fs.existsSync(BASE_SESSIONS_DIR)) {
+      const items = fs.readdirSync(BASE_SESSIONS_DIR, { withFileTypes: true });
+      for (const it of items) {
+        if (it.isDirectory() && it.name.startsWith('user_')) {
+          const uId = it.name.replace('user_', '');
+          const credFile = path.join(BASE_SESSIONS_DIR, it.name, 'creds.json');
+          if (fs.existsSync(credFile)) {
+            console.log(`[WhatsApp Gateway] 🔄 Auto-reconnecting saved pairing for user '${uId}' on startup...`);
+            startWhatsAppSocketForUser(uId, false);
+          }
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[WhatsApp Gateway] Startup session scan notice:', e?.message || e);
+  }
+
+  // Ensure default session entry exists
   getOrCreateUserSession('u-osama');
 
   // Real-time Cloud Outbox Listener for Remote Users

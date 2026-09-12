@@ -1,7 +1,7 @@
 {
-  "version": "1.0.34",
-  "commit": "1328e1f",
-  "buildTime": 1789234859035,
-  "releaseDate": "2026-09-12T17:40:59.035Z",
-  "message": "feat(messages): expand recipient list view height and add multi-tier live selection counters"
+  "version": "1.0.35",
+  "commit": "15ee465",
+  "buildTime": 1789239455866,
+  "releaseDate": "2026-09-12T18:57:35.866Z",
+  "message": "fix(gateway): smooth Baileys pairing handshake, creds persistence, and version negotiation"
 }
