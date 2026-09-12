@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import { initializeApp } from 'firebase/app';
-import { getFirestore, doc, setDoc, onSnapshot, collection, updateDoc } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection, updateDoc } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: "AIzaSyBosnwK5ima8AFANYoBxfzPN9mb-yNwVnQ",
@@ -106,6 +106,56 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
   }
 }
 
+/** Persist Baileys credentials to Cloud Firestore so ephemeral cloud containers (e.g. Render) survive restarts */
+async function saveAuthToFirestore(cleanUserId, authDir) {
+  try {
+    const credsPath = path.join(authDir, 'creds.json');
+    if (!fs.existsSync(credsPath)) return;
+    const raw = fs.readFileSync(credsPath, 'utf8');
+    const parsed = JSON.parse(raw);
+    if (!parsed?.me?.id) return;
+
+    await setDoc(doc(fbDb, 'whatsappAuth', cleanUserId), {
+      userId: cleanUserId,
+      credsRaw: raw,
+      phone: parsed.me.id.split(':')[0] || parsed.me.id.split('@')[0],
+      name: parsed.me.name || cleanUserId,
+      registered: parsed.registered !== false,
+      updatedAt: Date.now()
+    }, { merge: true });
+    console.log(`[WhatsApp Gateway] ☁️ Saved persistent auth credentials for '${cleanUserId}' to Cloud Firestore!`);
+  } catch (err) {
+    console.warn(`[WhatsApp Gateway] Cloud auth save notice for '${cleanUserId}':`, err?.message || err);
+  }
+}
+
+/** Restore Baileys credentials from Cloud Firestore onto disk before initializing socket */
+async function restoreAuthFromFirestore(cleanUserId, authDir) {
+  try {
+    const credsPath = path.join(authDir, 'creds.json');
+    if (fs.existsSync(credsPath)) {
+      try {
+        const local = JSON.parse(fs.readFileSync(credsPath, 'utf8'));
+        if (local?.me?.id && local.registered !== false) return true;
+      } catch (e) {}
+    }
+
+    const authSnap = await getDoc(doc(fbDb, 'whatsappAuth', cleanUserId));
+    if (authSnap.exists()) {
+      const data = authSnap.data();
+      if (data && data.credsRaw) {
+        if (!fs.existsSync(authDir)) fs.mkdirSync(authDir, { recursive: true });
+        fs.writeFileSync(credsPath, data.credsRaw, 'utf8');
+        console.log(`[WhatsApp Gateway] ☁️ Restored persistent auth credentials for '${cleanUserId}' from Cloud Firestore!`);
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn(`[WhatsApp Gateway] Cloud auth restore notice for '${cleanUserId}':`, err?.message || err);
+  }
+  return false;
+}
+
 // Ensure base sessions directory exists
 if (!fs.existsSync(BASE_SESSIONS_DIR)) {
   fs.mkdirSync(BASE_SESSIONS_DIR, { recursive: true });
@@ -197,6 +247,9 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
   session.status = session.phone ? 'connected' : (session.qr ? 'qr_ready' : 'connecting');
   syncSessionStateToFirestore(cleanUserId, session);
 
+  // Restore persistent credentials from Cloud Firestore before loading state
+  await restoreAuthFromFirestore(cleanUserId, session.authDir);
+
   try {
     const { state, saveCreds } = await useMultiFileAuthState(session.authDir);
 
@@ -224,7 +277,10 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
 
     session.sock = sock;
 
-    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('creds.update', async () => {
+      await saveCreds();
+      await saveAuthToFirestore(cleanUserId, session.authDir);
+    });
 
     sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
@@ -443,6 +499,12 @@ async function logoutWhatsAppForUser(userId) {
     } catch (e) {}
   }
 
+  // Remove persistent cloud auth backup on explicit logout
+  try {
+    await deleteDoc(doc(fbDb, 'whatsappAuth', cleanId));
+    console.log(`[WhatsApp Gateway] Removed cloud auth document for ${cleanId}`);
+  } catch (e) {}
+
   if (session) {
     session.status = 'disconnected';
     session.qr = null;
@@ -556,6 +618,15 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(200, { success: true, message: `Restarted session for ${userId}` });
     });
     return;
+  }
+
+  // 4b. POST or GET /api/refresh or /refresh
+  if ((req.method === 'POST' || req.method === 'GET') && (url.pathname === '/api/refresh' || url.pathname === '/refresh')) {
+    const userId = sanitizeUserId(url.searchParams.get('userId') || req.headers['x-user-id'] || 'u-osama');
+    const session = getOrCreateUserSession(userId);
+    session.isStarting = false;
+    startWhatsAppSocketForUser(userId, true);
+    return sendJSON(200, { success: true, message: `Refreshed pairing session for ${userId}` });
   }
 
   // 5. GET or HEAD / or /health (for UptimeRobot and cloud health monitors)

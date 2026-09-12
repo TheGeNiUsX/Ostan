@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.30",
-  "commit": "e2e549d",
-  "buildTime": 1789230451065,
-  "releaseDate": "2026-09-12T16:27:31.065Z",
-  "message": "fix(whatsapp): prevent premature second message dispatch by resetting interval state and enforcing per-step anti-ban countdown"
+  "version": "1.0.31",
+  "commit": "5975a7e",
+  "buildTime": 1789231082988,
+  "releaseDate": "2026-09-12T16:38:02.988Z",
+  "message": "fix(whatsapp): prevent session wipe on page reload and preserve paired phone"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9755,21 +9755,12 @@
         } catch (e) {}
       }
 
-      if (!state.userWhatsAppSessions[uid] || !state.userWhatsAppSessions[uid].phone) {
-        if (uid === "u-osama") {
-          state.userWhatsAppSessions[uid] = {
-            connected: true,
-            phone: "+966 58 053 9698",
-            name: "Osama Al-Twaish"
-          };
-          try { localStorage.setItem("ostan_wa_session_u-osama", JSON.stringify(state.userWhatsAppSessions[uid])); } catch(e) {}
-        } else {
-          state.userWhatsAppSessions[uid] = {
-            connected: false,
-            phone: "",
-            name: ""
-          };
-        }
+      if (!state.userWhatsAppSessions[uid]) {
+        state.userWhatsAppSessions[uid] = {
+          connected: false,
+          phone: "",
+          name: ""
+        };
       }
       return state.userWhatsAppSessions[uid];
     }
@@ -9800,6 +9791,7 @@
       const pairedView = document.getElementById("wa-qr-paired-view");
       const phoneDisplay = document.getElementById("wa-connected-phone-display");
       const unifiedStatusText = document.getElementById("wa-unified-status-text");
+      const indicator = document.getElementById("wa-gateway-indicator");
       const userBadge = document.getElementById("wa-active-user-badge");
       const lang = document.documentElement.getAttribute("lang") || "en";
 
@@ -9817,7 +9809,12 @@
         if (unpairedView) unpairedView.style.display = "none";
         if (pairedView) pairedView.style.display = "flex";
         if (phoneDisplay) phoneDisplay.textContent = curSession.phone;
-        if (unifiedStatusText) unifiedStatusText.textContent = `${userName}: Linked (${curSession.phone})`;
+        if (indicator) {
+          indicator.style.color = "#10b981";
+          indicator.innerHTML = `<span class="status-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> <span id="wa-unified-status-text">${lang === "ar" ? "واتساب متصل ويعمل بنجاح" : "WhatsApp Live & Linked"} (${curSession.phone})</span>`;
+        } else if (unifiedStatusText) {
+          unifiedStatusText.textContent = `${userName}: Linked (${curSession.phone})`;
+        }
       } else {
         if (statusPill) {
           statusPill.className = "badge badge-amber";
@@ -9827,7 +9824,12 @@
         if (statusText) statusText.textContent = lang === "ar" ? "غير متصل / امسح الرمز للربط" : "Disconnected / Scan QR to Pair";
         if (unpairedView) unpairedView.style.display = "flex";
         if (pairedView) pairedView.style.display = "none";
-        if (unifiedStatusText) unifiedStatusText.textContent = `Pair Account for ${userName}`;
+        if (indicator) {
+          indicator.style.color = "#f59e0b";
+          indicator.innerHTML = `<span>⚡</span> <span id="wa-unified-status-text">${lang === "ar" ? "امسح رمز الاستجابة للربط" : "Scan QR to link"} ${userName}'s WhatsApp</span>`;
+        } else if (unifiedStatusText) {
+          unifiedStatusText.textContent = `Pair Account for ${userName}`;
+        }
       }
     }
 
@@ -9983,14 +9985,6 @@
 
       // 2. Disconnected or QR Available State
       if (liveData.status === "disconnected" || liveData.status === "qr_ready" || liveData.qr) {
-        // PROTECTION: If user already has a paired phone saved locally, DO NOT wipe it on transient cloud disconnects or QR generations unless it was an explicit user logout!
-        if (curSession.phone && !liveData.loggedOut) {
-          console.log("[WhatsApp Sync] Preserving saved paired phone against remote cloud snapshot:", curSession.phone);
-          curSession.connected = true;
-          updateWhatsAppConnectionUI();
-          return;
-        }
-
         curSession.connected = false;
         curSession.phone = "";
         curSession.name = "";
@@ -10006,22 +10000,10 @@
           }
           if (qrSvg) qrSvg.style.display = "none";
           if (beam) beam.style.display = "none";
-          if (indicator) {
-            indicator.style.color = "#25D366";
-            indicator.textContent = `⚡ Scan QR to link ${userName}'s WhatsApp`;
-          }
-          if (statusUnified) {
-            statusUnified.textContent = `Scan QR Code to Link for ${userName}`;
-          }
         } else {
           if (qrImg) qrImg.style.display = "none";
           if (qrSvg) qrSvg.style.display = "block";
           if (beam) beam.style.display = "none";
-          if (statusUnified) statusUnified.textContent = `Disconnected • Ready to Pair`;
-          if (indicator) {
-            indicator.style.color = "#94a3b8";
-            indicator.textContent = "⚪ Disconnected";
-          }
         }
         return;
       }

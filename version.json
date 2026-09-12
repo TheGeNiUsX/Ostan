@@ -1,7 +1,7 @@
 {
-  "version": "1.0.30",
-  "commit": "e2e549d",
-  "buildTime": 1789230451065,
-  "releaseDate": "2026-09-12T16:27:31.065Z",
-  "message": "fix(whatsapp): prevent premature second message dispatch by resetting interval state and enforcing per-step anti-ban countdown"
+  "version": "1.0.31",
+  "commit": "5975a7e",
+  "buildTime": 1789231082988,
+  "releaseDate": "2026-09-12T16:38:02.988Z",
+  "message": "fix(whatsapp): prevent session wipe on page reload and preserve paired phone"
 }
