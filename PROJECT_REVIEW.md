@@ -123,3 +123,4 @@ When a user scans the QR code:
 1. **Never wipe `curSession.phone`** when `status === 'connecting'` or during code `515` reconnects. Once paired, retain the phone number until the user explicitly logs out or unpairs from mobile.
 2. **Always support remote clients:** Any new WhatsApp feature must function both via direct HTTP (for local users) AND via Firebase Cloud Firestore (for remote users on GitHub Pages or custom domains).
 3. **Keep this file (`PROJECT_REVIEW.md`) updated:** Whenever adding an endpoint, modifying gateway behavior, changing roles, or fixing connection issues, document it in this file.
+4. **Automatic Git Commit & Push (Mandatory):** Accept all code changes by default and automatically commit and push them to GitHub (`origin main`) whenever work is done or updated, ensuring GitHub Pages and the repository are always in sync.
