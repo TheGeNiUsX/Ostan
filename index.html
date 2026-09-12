@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.24",
-  "commit": "eab1328",
-  "buildTime": 1789195441393,
-  "releaseDate": "2026-09-12T06:44:01.393Z",
-  "message": "feat(messages): expand recipient list height and add multi-tier live selection counters and filter"
+  "version": "1.0.25",
+  "commit": "c93bca3",
+  "buildTime": 1789223526276,
+  "releaseDate": "2026-09-12T14:32:06.276Z",
+  "message": "feat(messaging): expand recipient checklist height and add multi-tier live selection counters"
 };
 
     let _ostanUpdateTriggered = false;
@@ -12338,39 +12338,37 @@
       else if (cleanPhone.startsWith("5") && cleanPhone.length === 9) cleanPhone = "966" + cleanPhone;
 
       const activeUid = getActiveUserId();
+      const isDirectMode = isCurrentWaConnected() || state.waDispatchMode === 'direct';
+
       // 0. PRIORITY: Direct background sending via linked phone (Baileys gateway or Firebase Outbox)
-      if (isCurrentWaConnected() || state.waDispatchMode === 'direct') {
+      if (isDirectMode) {
+        let directError = null;
+        const gwBase = getWaGatewayUrl();
+
+        // 1. Try Direct Gateway HTTP API (with 25s timeout for cold starts and Baileys processing)
         try {
-          let liveRes = null;
-          const gwBase = getWaGatewayUrl();
-          try {
-            liveRes = await fetch(`${gwBase}/api/send`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json", "x-user-id": activeUid },
-              body: JSON.stringify({ userId: activeUid, phone: cleanPhone, message: messageText }),
-              signal: AbortSignal.timeout(4000)
-            });
-          } catch (e) {
-            try {
-              liveRes = await fetch("/api/whatsapp/live-qr", {
-                method: "POST",
-                headers: { "Content-Type": "application/json", "x-user-id": activeUid },
-                body: JSON.stringify({ action: "send", userId: activeUid, phone: cleanPhone, message: messageText }),
-                signal: AbortSignal.timeout(4000)
-              });
-            } catch (e2) { liveRes = null; }
+          const liveRes = await fetch(`${gwBase}/api/send`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "x-user-id": activeUid },
+            body: JSON.stringify({ userId: activeUid, phone: cleanPhone, message: messageText }),
+            signal: AbortSignal.timeout(25000)
+          });
+
+          const liveData = await liveRes.json().catch(() => null);
+          if (liveRes.ok && liveData && liveData.success) {
+            return { success: true, messageId: liveData.messageId || ("wa-live-" + Date.now()) };
           }
-          if (liveRes && liveRes.ok) {
-            const liveData = await liveRes.json();
-            if (liveData.success) {
-              return { success: true, messageId: liveData.messageId || "wa-live-" + Date.now() };
-            }
+          if (liveData && liveData.error) {
+            directError = liveData.error;
+          } else {
+            directError = `Gateway returned HTTP ${liveRes.status}`;
           }
         } catch (liveErr) {
           console.warn("Live QR gateway dispatch notice:", liveErr);
+          directError = liveErr.name === 'TimeoutError' ? 'Gateway request timed out (25s)' : (liveErr.message || 'Gateway connection failed');
         }
 
-        // Remote user fallback: queue to Firebase Cloud Outbox so the linked gateway picks it up online!
+        // 2. Cloud Firestore Outbox Fallback (for remote clients or when direct HTTP is unreachable)
         if (window.fbDb) {
           try {
             const outboxRef = window.fbDb.collection("whatsappOutbox").doc();
@@ -12379,62 +12377,83 @@
               phone: cleanPhone,
               message: messageText,
               status: "pending",
-              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+              createdAt: (typeof firebase !== "undefined" && firebase.firestore?.FieldValue?.serverTimestamp)
+                ? firebase.firestore.FieldValue.serverTimestamp()
+                : new Date().toISOString()
             });
 
-            const sentPromise = new Promise((resolve) => {
-              const unsub = outboxRef.onSnapshot((snap) => {
-                const d = snap.data();
-                if (d && d.status === "sent") {
-                  unsub();
-                  resolve({ success: true, messageId: d.messageId || outboxRef.id });
-                } else if (d && d.status === "failed") {
-                  unsub();
-                  resolve({ success: false, error: d.error || "Gateway dispatch failed" });
-                }
-              });
-              setTimeout(() => {
-                unsub();
-                resolve({ success: true, messageId: "wa-queued-" + outboxRef.id });
-              }, 12000);
+            const outboxRes = await new Promise((resolve) => {
+              let unsub = () => {};
+              const timer = setTimeout(() => {
+                try { unsub(); } catch (e) {}
+                resolve({ success: false, error: "Outbox timed out waiting for gateway pickup (15s)" });
+              }, 15000);
+
+              try {
+                unsub = outboxRef.onSnapshot((snap) => {
+                  const d = snap.data();
+                  if (d && d.status === "sent") {
+                    clearTimeout(timer);
+                    try { unsub(); } catch (e) {}
+                    resolve({ success: true, messageId: d.messageId || outboxRef.id });
+                  } else if (d && d.status === "failed") {
+                    clearTimeout(timer);
+                    try { unsub(); } catch (e) {}
+                    resolve({ success: false, error: d.error || "Gateway dispatch failed" });
+                  }
+                }, (snapErr) => {
+                  clearTimeout(timer);
+                  resolve({ success: false, error: snapErr?.message || "Outbox listener error" });
+                });
+              } catch (e) {
+                clearTimeout(timer);
+                resolve({ success: false, error: e?.message || "Outbox error" });
+              }
             });
-            const outboxRes = await sentPromise;
-            if (outboxRes.success) return outboxRes;
+
+            if (outboxRes && outboxRes.success) return outboxRes;
+            if (outboxRes && outboxRes.error) directError = outboxRes.error;
           } catch (fbErr) {
             console.warn("Cloud outbox fallback notice:", fbErr);
           }
         }
+
+        // DIRECT MODE MUST NEVER FALL THROUGH TO UNCONFIGURED META API!
+        return {
+          success: false,
+          error: directError || "Direct WhatsApp dispatch failed. Please verify your phone is linked in WhatsApp Studio."
+        };
       }
 
+      // 1. API Mode (UltraMsg or Meta Cloud API)
       const cfg = state.whatsappApiConfig || {};
-      const payload = {
-        provider: cfg.provider || "ultramsg",
-        phone: cleanPhone,
-        message: messageText,
-        phoneNumberId: cfg.phoneNumberId,
-        accessToken: cfg.accessToken,
-        instanceId: cfg.phoneNumberId,
-        token: cfg.accessToken
-      };
-
       if (cfg.provider === "ultramsg") {
+        if (!cfg.phoneNumberId || !cfg.accessToken) {
+          return { success: false, error: "UltraMsg configuration missing (Instance ID / Token missing)." };
+        }
         try {
           const ultraRes = await fetch(`https://api.ultramsg.com/${encodeURIComponent(cfg.phoneNumberId)}/messages/chat`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: cfg.accessToken, to: cleanPhone, body: messageText })
           });
-          const ultraData = await ultraRes.json();
+          const ultraData = await ultraRes.json().catch(() => ({}));
           if (ultraData.sent === "true" || ultraData.id) {
             return { success: true, messageId: String(ultraData.id) };
           } else {
-            return { success: false, error: ultraData.error || "UltraMsg error" };
+            return { success: false, error: ultraData.error || "UltraMsg dispatch error" };
           }
         } catch (e) {
           return { success: false, error: e.message || "Network dispatch failure" };
         }
       } else {
-        // Meta
+        // Meta Cloud API: Validate credentials before attempting fetch
+        if (!cfg.phoneNumberId || !cfg.accessToken) {
+          return {
+            success: false,
+            error: "WhatsApp API is not configured (Phone ID / Token missing). Please link your WhatsApp phone via WhatsApp Studio or configure API keys."
+          };
+        }
         try {
           const metaUrl = `https://graph.facebook.com/v20.0/${encodeURIComponent(cfg.phoneNumberId)}/messages`;
           const directRes = await fetch(metaUrl, {
@@ -12451,7 +12470,7 @@
               text: { preview_url: false, body: messageText }
             })
           });
-          const directData = await directRes.json();
+          const directData = await directRes.json().catch(() => ({}));
           if (directRes.ok && directData.messages?.[0]?.id) {
             return { success: true, messageId: directData.messages[0].id };
           } else {
@@ -12580,6 +12599,11 @@
         // Dispatch via Live WhatsApp Web gateway or API
         const sendRes = await sendSingleMetaWhatsAppMessage(item.phone, item.message);
 
+        let cleanDigits = item.phone.replace(/[^0-9]/g, "");
+        if (cleanDigits.startsWith("05") && cleanDigits.length === 10) cleanDigits = "966" + cleanDigits.slice(1);
+        else if (cleanDigits.startsWith("5") && cleanDigits.length === 9) cleanDigits = "966" + cleanDigits;
+        const waWebUrl = "https://web.whatsapp.com/send?phone=" + encodeURIComponent(cleanDigits) + "&text=" + encodeURIComponent(item.message);
+
         const logEntry = {
           id: "wa-msg-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
           recipientName: item.name,
@@ -12587,7 +12611,7 @@
           message: item.message,
           timestamp: new Date().toLocaleTimeString() + " • " + new Date().toISOString().split("T")[0],
           status: sendRes.success ? `SENT ✅` : `FAILED ❌ (${sendRes.error})`,
-          url: "WhatsApp Direct"
+          url: waWebUrl
         };
 
         state.messageDispatchLogs.unshift(logEntry);

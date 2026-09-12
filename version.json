@@ -1,7 +1,7 @@
 {
-  "version": "1.0.24",
-  "commit": "eab1328",
-  "buildTime": 1789195441393,
-  "releaseDate": "2026-09-12T06:44:01.393Z",
-  "message": "feat(messages): expand recipient list height and add multi-tier live selection counters and filter"
+  "version": "1.0.25",
+  "commit": "c93bca3",
+  "buildTime": 1789223526276,
+  "releaseDate": "2026-09-12T14:32:06.276Z",
+  "message": "feat(messaging): expand recipient checklist height and add multi-tier live selection counters"
 }

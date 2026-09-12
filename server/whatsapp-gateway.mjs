@@ -347,9 +347,24 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
 }
 
 async function sendWhatsAppMessageForUser(userId, targetPhone, messageText) {
-  const session = getOrCreateUserSession(userId);
+  const cleanId = sanitizeUserId(userId);
+  const session = getOrCreateUserSession(cleanId);
+
+  // If disconnected or socket null but auth credentials exist on disk, attempt fast auto-reconnect
+  if ((session.status !== 'connected' || !session.sock) && (session.phone || fs.existsSync(session.authDir))) {
+    console.log(`[WhatsApp Gateway] 🔄 Session '${cleanId}' not ready for send. Attempting socket auto-reconnect...`);
+    if (!session.sock && !session.isStarting) {
+      startWhatsAppSocketForUser(cleanId);
+    }
+    // Wait up to 6 seconds for connection handshake
+    for (let i = 0; i < 15; i++) {
+      await new Promise(r => setTimeout(r, 400));
+      if (session.status === 'connected' && session.sock) break;
+    }
+  }
+
   if (session.status !== 'connected' || !session.sock) {
-    throw new Error(`WhatsApp is not connected for user '${session.userId}'. Please scan the QR code first.`);
+    throw new Error(`WhatsApp is not connected for user '${session.userId}'. Please scan the QR code in WhatsApp Studio.`);
   }
 
   let cleanPhone = String(targetPhone).replace(/[^0-9]/g, '');
