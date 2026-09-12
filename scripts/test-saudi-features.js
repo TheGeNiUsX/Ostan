@@ -51,8 +51,8 @@ assert(translations.includes('emp_tab_saudi: "🇸🇦 الكادر السعود
 assert(translations.includes('metric_saudi_payroll: "Monthly Saudi Payroll"'), 'English translation for metric_saudi_payroll');
 assert(translations.includes('metric_saudi_payroll: "إجمالي مسيرات الرواتب"'), 'Arabic translation for metric_saudi_payroll');
 assert(translations.includes('token_salary: "{salary}"'), 'token_salary key present');
-assert(translations.includes('btn_filter_saudi_msg: "🇸🇦 Saudi Staff"'), 'btn_filter_saudi_msg in English');
-assert(translations.includes('btn_filter_saudi_msg: "🇸🇦 الكادر السعودي"'), 'btn_filter_saudi_msg in Arabic');
+assert(translations.includes('btn_filter_saudi_msg: "Saudi Staff"'), 'btn_filter_saudi_msg in English');
+assert(translations.includes('btn_filter_saudi_msg: "الكادر السعودي"'), 'btn_filter_saudi_msg in Arabic');
 assert(translations.includes('label_id_profession: "المهنة في الهوية"'), 'Arabic label for ID Profession');
 assert(translations.includes('label_cr_number: "رقم السجل"'), 'Arabic label for CR Number');
 assert(translations.includes('label_cr_name: "اسم السجل"'), 'Arabic label for CR Name');

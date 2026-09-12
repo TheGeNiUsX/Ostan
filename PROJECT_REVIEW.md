@@ -11,7 +11,7 @@
 If your context window was reset, pruned, or you are a new AI taking over:
 1. **What is Ostan?** An enterprise-grade Operations, Staff Management, Task Dispatch, Inventory, and WhatsApp Automation platform for Saudi businesses with native dual-language (English LTR & Arabic RTL) support.
 2. **How is the app hosted?**
-   - **Frontend:** Hosted live at `https://thegeniusx.github.io` (and locally via Next.js at `localhost:3000` / standalone `index.html`).
+   - **Frontend:** Hosted live at `https://thegeniusx.github.io/Ostan/` (and locally via Next.js at `localhost:3000` / standalone `index.html`).
    - **Backend WhatsApp Gateway:** Hosted on Render (`https://ostan-whatsapp-gateway.onrender.com`), with local/LAN fallback (`server/whatsapp-gateway.mjs` on port `5001`).
    - **Cloud Sync & Data Bus:** Google Cloud Firestore (Project `ostan-75a0c`).
    - **Relational Database:** PostgreSQL with Prisma ORM.

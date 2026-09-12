@@ -1,7 +1,7 @@
 {
-  "version": "1.0.36",
-  "commit": "a41697a",
-  "buildTime": 1789240425341,
-  "releaseDate": "2026-09-12T19:13:45.341Z",
-  "message": "docs: add auto git commit & push rule to project savior"
+  "version": "1.0.37",
+  "commit": "67feaa3",
+  "buildTime": 1789240974399,
+  "releaseDate": "2026-09-12T19:22:54.399Z",
+  "message": "fix(whatsapp): eliminate rapid unlinking/linking loop, clear stale loggedOut flag, and deduplicate toasts"
 }
