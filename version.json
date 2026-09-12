@@ -1,7 +1,7 @@
 {
-  "version": "1.0.27",
-  "commit": "be6f05e",
-  "buildTime": 1789225427523,
-  "releaseDate": "2026-09-12T15:03:47.523Z",
-  "message": "fix(messaging): resolve direct dispatch step delay and adapt runner instructions for direct mode"
+  "version": "1.0.28",
+  "commit": "e94df28",
+  "buildTime": 1789226026199,
+  "releaseDate": "2026-09-12T15:13:46.199Z",
+  "message": "chore(release): bump build version to v1.0.27"
 }

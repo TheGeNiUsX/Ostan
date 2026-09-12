@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.27",
-  "commit": "be6f05e",
-  "buildTime": 1789225427523,
-  "releaseDate": "2026-09-12T15:03:47.523Z",
-  "message": "fix(messaging): resolve direct dispatch step delay and adapt runner instructions for direct mode"
+  "version": "1.0.28",
+  "commit": "e94df28",
+  "buildTime": 1789226026199,
+  "releaseDate": "2026-09-12T15:13:46.199Z",
+  "message": "chore(release): bump build version to v1.0.27"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9838,6 +9838,7 @@
       const btnExtension = document.getElementById('btn-dispatch-whatsapp-web');
       const lang = document.documentElement.getAttribute('lang') || 'en';
 
+      const isAr = lang === 'ar';
       if (state.waDispatchMode === 'direct') {
         if (choiceDirect) {
           choiceDirect.style.borderColor = '#25D366';
@@ -9850,12 +9851,19 @@
           choiceExtension.style.boxShadow = 'none';
         }
         if (btnDirect) {
+          btnDirect.className = 'btn btn-primary';
           btnDirect.style.display = 'inline-flex';
-          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_direct) || (lang === 'ar' ? 'إرسال مباشر (تلقائي بالخلفية • بدون متصفح وبدون إضافة)' : 'Send Directly (Background Dispatch • No Extension)');
+          btnDirect.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+          btnDirect.style.borderColor = '#10b981';
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_direct) || (isAr ? 'إرسال مباشر (تلقائي بالخلفية • بدون إضافة)' : 'Send Directly (Background Dispatch • No Extension)');
           btnDirect.innerHTML = `<span>⚡</span> <span>${txt}</span>`;
         }
         if (btnExtension) {
-          btnExtension.style.display = 'none';
+          btnExtension.className = 'btn btn-secondary';
+          btnExtension.style.display = 'inline-flex';
+          btnExtension.style.background = '';
+          btnExtension.style.borderColor = 'var(--border-subtle)';
+          btnExtension.innerHTML = `<span>🚀</span> <span>${isAr ? 'إرسال عبر واتساب ويب' : 'Send via WhatsApp Web'}</span>`;
         }
       } else {
         if (choiceExtension) {
@@ -9869,12 +9877,19 @@
           choiceDirect.style.boxShadow = 'none';
         }
         if (btnExtension) {
+          btnExtension.className = 'btn btn-primary';
           btnExtension.style.display = 'inline-flex';
-          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_extension) || (lang === 'ar' ? 'إرسال عبر واتساب ويب + الإضافة (النسخة السابقة)' : 'Send via WhatsApp Web + Extension (Old Version)');
+          btnExtension.style.background = '#25D366';
+          btnExtension.style.borderColor = '#25D366';
+          const txt = (window.i18n && window.i18n[lang]?.btn_dispatch_extension) || (isAr ? 'إرسال عبر واتساب ويب + الإضافة' : 'Send via WhatsApp Web + Auto-Send');
           btnExtension.innerHTML = `<span>🚀</span> <span>${txt}</span>`;
         }
         if (btnDirect) {
-          btnDirect.style.display = 'none';
+          btnDirect.className = 'btn btn-secondary';
+          btnDirect.style.display = 'inline-flex';
+          btnDirect.style.background = '';
+          btnDirect.style.borderColor = 'var(--border-subtle)';
+          btnDirect.innerHTML = `<span>⚡</span> <span>${isAr ? 'إرسال مباشر (بالخلفية)' : 'Send Directly (Background)'}</span>`;
         }
       }
     }
@@ -9924,41 +9939,11 @@
         cloudBadge.style.color = "#10b981";
       }
 
-      // 1. Explicit Disconnect / Logout
-      if (liveData.status === "disconnected" && (liveData.loggedOut === true || !curSession.connected)) {
-        curSession.connected = false;
-        curSession.phone = "";
-        curSession.name = "";
-        state.userWhatsAppSessions[activeUid] = curSession;
-        try { localStorage.removeItem("ostan_wa_session_" + activeUid); } catch(e) {}
-        saveState();
-        updateWhatsAppConnectionUI();
-
-        if (qrImg) qrImg.style.display = "none";
-        if (qrSvg) qrSvg.style.display = "block";
-        if (beam) beam.style.display = "none";
-        if (statusUnified) statusUnified.textContent = `Disconnected • Ready to Pair`;
-        if (indicator) {
-          indicator.style.color = "#94a3b8";
-          indicator.textContent = "⚪ Disconnected";
-        }
-        return;
-      }
-
-      // 2. Connected / Linked State (Keep rock-solid!)
-      const isConnectedOrHasPhone = Boolean(
-        liveData.status === "connected" ||
-        liveData.connected ||
-        (liveData.phone && liveData.phone !== "none") ||
-        (curSession.connected && curSession.phone && liveData.status !== "disconnected")
-      );
-
-      if (isConnectedOrHasPhone) {
+      // 1. Connected / Linked State (Only when live gateway confirms connected status and phone)
+      if (liveData.status === "connected" && liveData.phone && liveData.phone !== "none") {
         const wasConnected = curSession.connected;
         curSession.connected = true;
-        if (liveData.phone && liveData.phone !== "none") {
-          curSession.phone = "+" + String(liveData.phone).replace(/[^0-9]/g, "");
-        }
+        curSession.phone = "+" + String(liveData.phone).replace(/[^0-9]/g, "");
         if (liveData.name) curSession.name = liveData.name;
         state.userWhatsAppSessions[activeUid] = curSession;
         try {
@@ -9984,25 +9969,41 @@
         return;
       }
 
-      // 3. QR Code Ready or Available (for unpaired state)
-      if (liveData.qr) {
+      // 2. Disconnected or QR Available State
+      if (liveData.status === "disconnected" || liveData.status === "qr_ready" || liveData.qr) {
         curSession.connected = false;
         curSession.phone = "";
+        curSession.name = "";
         state.userWhatsAppSessions[activeUid] = curSession;
+        try { localStorage.removeItem("ostan_wa_session_" + activeUid); } catch(e) {}
+        saveState();
         updateWhatsAppConnectionUI();
 
-        if (qrImg) {
-          qrImg.src = liveData.qr;
-          qrImg.style.display = "block";
-        }
-        if (qrSvg) qrSvg.style.display = "none";
-        if (beam) beam.style.display = "none";
-        if (indicator) {
-          indicator.style.color = "#25D366";
-          indicator.textContent = `⚡ Scan QR to link ${userName}'s WhatsApp`;
-        }
-        if (statusUnified) {
-          statusUnified.textContent = `Scan QR Code to Link for ${userName}`;
+        if (liveData.qr) {
+          if (qrImg) {
+            qrImg.src = liveData.qr;
+            qrImg.style.display = "block";
+          }
+          if (qrSvg) qrSvg.style.display = "none";
+          if (beam) beam.style.display = "none";
+          if (indicator) {
+            indicator.style.color = "#25D366";
+            indicator.textContent = `⚡ Scan QR to link ${userName}'s WhatsApp`;
+          }
+          if (statusUnified) {
+            statusUnified.textContent = `Scan QR Code to Link for ${userName}`;
+          }
+        } else {
+          if (qrImg) qrImg.style.display = "none";
+          if (qrSvg) qrSvg.style.display = "block";
+          if (beam) beam.style.display = "none";
+          if (statusUnified) statusUnified.textContent = `Disconnected • Ready to Pair`;
+          if (indicator) {
+            indicator.style.color = "#94a3b8";
+            indicator.textContent = "⚪ Disconnected";
+          }
+          // Request fresh QR from gateway
+          requestWhatsAppSessionForUser(false);
         }
         return;
       }
@@ -12524,10 +12525,43 @@
         return;
       }
 
-      const isLiveConnected = isCurrentWaConnected();
-      const currentPhone = getCurrentWaPhone();
+      const activeUid = getActiveUserId();
+      const gwBase = getWaGatewayUrl();
+      let isLiveConnected = isCurrentWaConnected();
+      let currentPhone = getCurrentWaPhone();
+
+      // Probe live gateway in real-time to avoid waiting for countdown timer when disconnected
+      try {
+        const gwRes = await fetch(`${gwBase}/api/status?userId=${encodeURIComponent(activeUid)}`, {
+          method: "GET",
+          headers: { "x-user-id": activeUid },
+          signal: AbortSignal.timeout(3500)
+        });
+        if (gwRes.ok) {
+          const gwData = await gwRes.json();
+          handleLiveWhatsAppSnapshot(gwData);
+          isLiveConnected = Boolean(gwData.status === "connected" && gwData.phone);
+          if (gwData.phone) currentPhone = "+" + String(gwData.phone).replace(/[^0-9]/g, "");
+        }
+      } catch (gwErr) {
+        console.warn("Pre-flight gateway check notice:", gwErr);
+      }
+
       if (!isLiveConnected) {
-        alert("WhatsApp is not linked yet. Please scan the QR code above to link your WhatsApp phone before dispatching.");
+        const lang = document.documentElement.getAttribute("lang") || "en";
+        const isAr = lang === "ar";
+        const switchConfirm = confirm(
+          isAr 
+            ? "⚠️ حساب واتساب غير متصل على خادم الإرسال المباشر لهذا الحساب.\n\nهل ترغب في بدء الإرسال الآن عبر «واتساب ويب» مباشرة من المتصفح دون الحاجة لربط الخادم؟"
+            : "⚠️ WhatsApp is not connected on the background gateway for this account.\n\nWould you like to dispatch right now using WhatsApp Web directly from your browser?"
+        );
+        if (switchConfirm) {
+          startWhatsAppQueueDispatch();
+        } else {
+          const qrBox = document.getElementById("wa-qr-unpaired-view") || document.getElementById("wa-choice-direct");
+          if (qrBox) qrBox.scrollIntoView({ behavior: "smooth" });
+          requestWhatsAppSessionForUser(true);
+        }
         return;
       }
 
@@ -12677,6 +12711,30 @@
         } else {
           failureCount++;
           if (timerEl) timerEl.textContent = "FAILED ❌";
+
+          // Immediate abort on gateway disconnect/auth failure so user does not wait for wasted timers!
+          const errLower = (sendRes.error || "").toLowerCase();
+          if (errLower.includes("not connected") || errLower.includes("scan the qr") || errLower.includes("logged out") || errLower.includes("unpaired")) {
+            queueState.active = false;
+            const curSession = getCurUserWaSession();
+            curSession.connected = false;
+            saveState();
+            updateWhatsAppConnectionUI();
+
+            const lang = document.documentElement.getAttribute("lang") || "en";
+            const isAr = lang === "ar";
+            const switchFallback = confirm(
+              isAr
+                ? "⚠️ تعذر الإرسال المباشر: خادم واتساب غير متصل.\n\nهل ترغب في إرسال باقي الرسائل الآن عبر «واتساب ويب» فوراً؟"
+                : "⚠️ Direct dispatch stopped: WhatsApp is not connected on the gateway.\n\nWould you like to dispatch the remaining messages via WhatsApp Web now?"
+            );
+            if (switchFallback) {
+              const modal = document.getElementById("modal-dispatch-runner");
+              if (modal) modal.style.display = "none";
+              startWhatsAppQueueDispatch();
+            }
+            break;
+          }
         }
 
         // Anti-Ban Delay Countdown between messages
