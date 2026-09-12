@@ -1,7 +1,7 @@
 {
-  "version": "1.0.22",
-  "commit": "5bd4ebc",
-  "buildTime": 1789167064065,
-  "releaseDate": "2026-09-11T22:51:04.065Z",
-  "message": "fix(settings): backfill Hussain into WhatsApp audit registry and synchronize live cloud sessions"
+  "version": "1.0.23",
+  "commit": "2cede08",
+  "buildTime": 1789194837159,
+  "releaseDate": "2026-09-12T06:33:57.159Z",
+  "message": "feat(messages): add user-isolated Custom Recipients list with Excel/CSV import and header switcher"
 }
