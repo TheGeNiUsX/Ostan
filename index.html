@@ -2079,7 +2079,7 @@
                   </div>
                   <div>
                     <div style="font-weight: 800; font-size: 1.1rem; color: var(--text-main);">WhatsApp Linked &amp; Active</div>
-                    <div id="wa-connected-phone-display" style="font-size: 1rem; font-weight: 800; color: #10b981; margin-top: 3px;">+966 58 053 9698</div>
+                    <div id="wa-connected-phone-display" style="font-size: 1rem; font-weight: 800; color: #10b981; margin-top: 3px;">--</div>
                     <div style="font-size: 0.73rem; color: var(--text-faint); margin-top: 3px;">Integrated with Ostan ERP • Ready to send from any computer anywhere</div>
                   </div>
                   <div style="display: flex; gap: 0.5rem; margin-top: 0.35rem;">
@@ -2178,8 +2178,8 @@
                   </div>
                 </div>
 
-                <!-- Scrollable Workers Checklist (Expanded height to fit 8-10+ rows comfortably) -->
-                <div id="msg-recipients-container" style="min-height: 280px; max-height: 440px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface); scroll-behavior: smooth;">
+                <!-- Scrollable Workers Checklist (Expanded height to fit 10-12+ rows comfortably with user resize handle) -->
+                <div id="msg-recipients-container" style="min-height: 340px; max-height: 540px; resize: vertical; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface); scroll-behavior: smooth;">
                   <!-- Dynamic recipient rows -->
                 </div>
 
@@ -2251,8 +2251,8 @@
                   </div>
                 </div>
 
-                <!-- Scrollable Custom Contacts Checklist (Expanded height to fit 8-10+ rows comfortably) -->
-                <div id="custom-contacts-container" style="min-height: 280px; max-height: 440px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface); scroll-behavior: smooth;">
+                <!-- Scrollable Custom Contacts Checklist (Expanded height to fit 10-12+ rows comfortably with user resize handle) -->
+                <div id="custom-contacts-container" style="min-height: 340px; max-height: 540px; resize: vertical; overflow-y: auto; display: flex; flex-direction: column; gap: 0.35rem; padding: 0.5rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--bg-surface); scroll-behavior: smooth;">
                   <!-- Dynamic custom contact rows -->
                 </div>
 
@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.31",
-  "commit": "5975a7e",
-  "buildTime": 1789231082988,
-  "releaseDate": "2026-09-12T16:38:02.988Z",
-  "message": "fix(whatsapp): prevent session wipe on page reload and preserve paired phone"
+  "version": "1.0.32",
+  "commit": "f23059b",
+  "buildTime": 1789231989412,
+  "releaseDate": "2026-09-12T16:53:09.412Z",
+  "message": "fix(whatsapp): synchronize session state, cloud auth persistence, and clean QR display"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9953,8 +9953,8 @@
         cloudBadge.style.color = "#10b981";
       }
 
-      // 1. Connected / Linked State (Only when live gateway confirms connected status and phone)
-      if (liveData.status === "connected" && liveData.phone && liveData.phone !== "none") {
+      // 1. Connected / Linked State (Only when live gateway confirms connected status and valid phone)
+      if (liveData.status === "connected" && liveData.phone && liveData.phone !== "none" && !liveData.loggedOut && liveData.connected !== false) {
         const wasConnected = curSession.connected;
         curSession.connected = true;
         curSession.phone = "+" + String(liveData.phone).replace(/[^0-9]/g, "");
@@ -9983,8 +9983,8 @@
         return;
       }
 
-      // 2. Disconnected or QR Available State
-      if (liveData.status === "disconnected" || liveData.status === "qr_ready" || liveData.qr) {
+      // 2. Disconnected or QR Available State (Strictly reset connected session)
+      if (liveData.status === "disconnected" || liveData.status === "qr_ready" || liveData.connected === false || liveData.loggedOut || liveData.qr) {
         curSession.connected = false;
         curSession.phone = "";
         curSession.name = "";
@@ -10000,10 +10000,24 @@
           }
           if (qrSvg) qrSvg.style.display = "none";
           if (beam) beam.style.display = "none";
+          if (indicator) {
+            indicator.style.color = "#f59e0b";
+            indicator.innerHTML = `<span>⚡</span> <span>Scan QR code with your phone to link (${userName})</span>`;
+          }
+          if (statusUnified) {
+            statusUnified.textContent = `Scan QR Code to Link for ${userName}`;
+          }
         } else {
           if (qrImg) qrImg.style.display = "none";
           if (qrSvg) qrSvg.style.display = "block";
           if (beam) beam.style.display = "none";
+          if (indicator) {
+            indicator.style.color = "var(--text-faint)";
+            indicator.innerHTML = `<span>🔌</span> <span>Not Connected (${userName})</span>`;
+          }
+          if (statusUnified) {
+            statusUnified.textContent = `${userName}: Disconnected`;
+          }
         }
         return;
       }
@@ -10533,8 +10547,8 @@
           const isChecked = typeof selectedCustomContactIds !== "undefined" && selectedCustomContactIds.has(c.id);
           const initials = (c.name || "C").trim().slice(0, 2).toUpperCase();
           return `
-            <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(16, 185, 129, 0.14)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? '#10b981' : 'var(--border-subtle)'}; border-inline-start: ${isChecked ? '4px solid #10b981' : '1px solid var(--border-subtle)'}; transition: all 0.15s ease; user-select: none;">
-              <div style="display: flex; align-items: center; gap: 0.65rem; overflow: hidden;">
+            <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.36rem 0.6rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(16, 185, 129, 0.14)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? '#10b981' : 'var(--border-subtle)'}; border-inline-start: ${isChecked ? '4px solid #10b981' : '1px solid var(--border-subtle)'}; transition: all 0.15s ease; user-select: none;">
+              <div style="display: flex; align-items: center; gap: 0.6rem; overflow: hidden;">
                 <input type="checkbox" onchange="toggleCustomContactSelect('${c.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 17px; height: 17px; accent-color: #10b981;">
                 <div style="width: 30px; height: 30px; min-width: 30px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #0d9488); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #ffffff; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                   ${initials}
@@ -10868,8 +10882,8 @@
             const isSaudi = typeof isSaudiEmployee === "function" ? isSaudiEmployee(u) : false;
             const sal = parseFloat(u.salary) || 0;
             return `
-              <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(99, 102, 241, 0.14)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? '#6366f1' : 'var(--border-subtle)'}; border-inline-start: ${isChecked ? '4px solid #6366f1' : '1px solid var(--border-subtle)'}; transition: all 0.15s ease; user-select: none;">
-                <div style="display: flex; align-items: center; gap: 0.65rem;">
+              <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.36rem 0.6rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(99, 102, 241, 0.14)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? '#6366f1' : 'var(--border-subtle)'}; border-inline-start: ${isChecked ? '4px solid #6366f1' : '1px solid var(--border-subtle)'}; transition: all 0.15s ease; user-select: none;">
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
                   <input type="checkbox" onchange="toggleRecipientSelect('${u.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 17px; height: 17px; accent-color: #6366f1;">
                   <div style="width: 30px; height: 30px; border-radius: 50%; background: ${isSaudi && canViewSaudi ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #6366f1, #3b82f6)'}; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: #ffffff; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
                     ${(u.name || "U")[0]}

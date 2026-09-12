@@ -1,7 +1,7 @@
 {
-  "version": "1.0.31",
-  "commit": "5975a7e",
-  "buildTime": 1789231082988,
-  "releaseDate": "2026-09-12T16:38:02.988Z",
-  "message": "fix(whatsapp): prevent session wipe on page reload and preserve paired phone"
+  "version": "1.0.32",
+  "commit": "f23059b",
+  "buildTime": 1789231989412,
+  "releaseDate": "2026-09-12T16:53:09.412Z",
+  "message": "fix(whatsapp): synchronize session state, cloud auth persistence, and clean QR display"
 }
