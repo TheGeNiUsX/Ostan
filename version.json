@@ -1,7 +1,7 @@
 {
-  "version": "1.0.32",
-  "commit": "f23059b",
-  "buildTime": 1789231989412,
-  "releaseDate": "2026-09-12T16:53:09.412Z",
-  "message": "fix(whatsapp): synchronize session state, cloud auth persistence, and clean QR display"
+  "version": "1.0.33",
+  "commit": "7c5dede",
+  "buildTime": 1789234086384,
+  "releaseDate": "2026-09-12T17:28:06.384Z",
+  "message": "fix(gateway): resolve QR pairing hang by supporting immediate 515 restart, standard browser tuple, and non-destructive creds sync"
 }

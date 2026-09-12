@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-  <title>Ostan — Enterprise Business Management System</title>
+  <title>Ostan</title>
   
   <!-- Modern Typography (Inter & Cairo) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.32",
-  "commit": "f23059b",
-  "buildTime": 1789231989412,
-  "releaseDate": "2026-09-12T16:53:09.412Z",
-  "message": "fix(whatsapp): synchronize session state, cloud auth persistence, and clean QR display"
+  "version": "1.0.33",
+  "commit": "7c5dede",
+  "buildTime": 1789234086384,
+  "releaseDate": "2026-09-12T17:28:06.384Z",
+  "message": "fix(gateway): resolve QR pairing hang by supporting immediate 515 restart, standard browser tuple, and non-destructive creds sync"
 };
 
     let _ostanUpdateTriggered = false;
@@ -6933,7 +6933,7 @@
     function copyProvisionedCredentials() {
       if (!lastProvisionedCredentials) return;
       const origin = (window.location.origin && window.location.origin !== "null") ? window.location.origin : window.location.href.split('#')[0];
-      const text = `🌟 Ostan Enterprise Platform Credentials\r\n👤 Name: ${lastProvisionedCredentials.name}\r\n📧 Email: ${lastProvisionedCredentials.email}\r\n🔑 Password: ${lastProvisionedCredentials.password}\r\n🌐 Login URL: ${origin}`;
+      const text = `🌟 Ostan Credentials\r\n👤 Name: ${lastProvisionedCredentials.name}\r\n📧 Email: ${lastProvisionedCredentials.email}\r\n🔑 Password: ${lastProvisionedCredentials.password}\r\n🌐 Login URL: ${origin}`;
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(() => {
           const lang = document.documentElement.getAttribute("lang") || "en";
@@ -9669,6 +9669,7 @@
         renderSuperAdminWaNumbersChart();
       }
       renderMessageRecipientsList();
+      renderCustomContactsList();
       try { loadUserCustomContactsCloud(); } catch(e) {}
       renderMessageTemplates();
       renderMessageHistoryLogs();
@@ -10418,6 +10419,8 @@
         }
         if (ostanPanel) ostanPanel.style.display = "flex";
         if (customPanel) customPanel.style.display = "none";
+        renderMessageRecipientsList();
+        updateRecipientCountBadge();
       } else {
         if (ostanBtn) {
           ostanBtn.className = "btn btn-ghost";
@@ -10433,6 +10436,7 @@
         if (ostanPanel) ostanPanel.style.display = "none";
         if (customPanel) customPanel.style.display = "flex";
         renderCustomContactsList();
+        updateRecipientCountBadge();
       }
     }
     window.switchRecipientsTab = switchRecipientsTab;
@@ -12887,7 +12891,7 @@
       const nowTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       const name = user ? (user.nameAr || user.name) : "Staff";
       const role = user ? user.role : "EMPLOYEE";
-      const company = "Ostan Enterprise";
+      const company = "Ostan";
 
       const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
       const isMaster = curUser ? isMasterSuperAdmin(curUser) : false;
