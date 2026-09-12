@@ -3386,11 +3386,11 @@
         </div>
 
         <!-- Action Instructions Alert Box -->
-        <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 0.75rem 1rem; display: flex; align-items: flex-start; gap: 0.6rem;">
-          <span style="font-size: 1.25rem; flex-shrink: 0;">⚠️</span>
+        <div id="runner-instruction-box" style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: var(--radius-md); padding: 0.75rem 1rem; display: flex; align-items: flex-start; gap: 0.6rem;">
+          <span id="runner-inst-icon" style="font-size: 1.25rem; flex-shrink: 0;">⚠️</span>
           <div style="font-size: 0.8rem; line-height: 1.45; color: var(--text-main);">
-            <strong data-i18n="dispatch_runner_step_inst" style="color: #fbbf24; display: block; margin-bottom: 2px;">In WhatsApp Web: Press [Enter] or click [➤ Send] to send the text.</strong>
-            <div data-i18n="dispatch_runner_info" style="font-size: 0.73rem; color: var(--text-muted);">
+            <strong id="runner-inst-title" data-i18n="dispatch_runner_step_inst" style="color: #fbbf24; display: block; margin-bottom: 2px;">In WhatsApp Web: Press [Enter] or click [➤ Send] to send the text.</strong>
+            <div id="runner-inst-desc" data-i18n="dispatch_runner_info" style="font-size: 0.73rem; color: var(--text-muted);">
               WhatsApp Web puts the message in the chat box. Press Enter in WhatsApp to send, then click 'I Sent It' or let the anti-ban delay timer advance automatically.
             </div>
           </div>
@@ -3406,13 +3406,13 @@
               ⏸️ <span data-i18n="dispatch_runner_pause">Pause Timer</span>
             </button>
             <button type="button" onclick="confirmCurrentSentAndAdvance()" class="btn btn-primary" style="background: #10b981; border-color: #10b981; font-size: 0.82rem; font-weight: 700; padding: 0.45rem 0.95rem;">
-              <span data-i18n="btn_confirm_sent">✅ I Sent It — Next Recipient</span>
+              <span id="runner-confirm-btn-text" data-i18n="btn_confirm_sent">✅ I Sent It — Next Recipient</span>
             </button>
           </div>
         </div>
 
         <!-- Auto-Send Bookmarklet Link -->
-        <div style="text-align: center; border-top: 1px solid var(--border-subtle); padding-top: 0.6rem;">
+        <div id="runner-auto-send-link-wrapper" style="text-align: center; border-top: 1px solid var(--border-subtle); padding-top: 0.6rem;">
           <a href="javascript:void(0)" onclick="openAutoSendHelperModal()" style="font-size: 0.75rem; color: #25D366; text-decoration: underline; cursor: pointer; font-weight: 700;">
             ⚡ Want WhatsApp Web to click Send automatically without pressing Enter? Get Auto-Send Helper ↵
           </a>
@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.25",
-  "commit": "c93bca3",
-  "buildTime": 1789223526276,
-  "releaseDate": "2026-09-12T14:32:06.276Z",
-  "message": "feat(messaging): expand recipient checklist height and add multi-tier live selection counters"
+  "version": "1.0.26",
+  "commit": "5942c71",
+  "buildTime": 1789225305266,
+  "releaseDate": "2026-09-12T15:01:45.266Z",
+  "message": "fix(whatsapp): resolve Meta Graph API error by fixing direct gateway timeout and credential guard"
 };
 
     let _ostanUpdateTriggered = false;
@@ -11784,6 +11784,8 @@
 
       queueState.active = true;
       queueState.paused = false;
+      queueState.isDirectDispatch = false;
+      queueState.skipDelay = false;
       queueState.items = items;
       queueState.currentIndex = 0;
       queueState.delaySeconds = delayVal;
@@ -11794,6 +11796,26 @@
       document.getElementById("runner-content-active").style.display = "flex";
       document.getElementById("runner-content-completed").style.display = "none";
       document.getElementById("runner-delay-badge").textContent = `${delayVal}s Anti-Ban Delay`;
+
+      // Configure instructions for WhatsApp Web Mode
+      const instBox = document.getElementById("runner-instruction-box");
+      if (instBox) {
+        instBox.style.background = "rgba(245, 158, 11, 0.12)";
+        instBox.style.borderColor = "rgba(245, 158, 11, 0.35)";
+      }
+      const instIcon = document.getElementById("runner-inst-icon");
+      if (instIcon) instIcon.textContent = "⚠️";
+      const instTitle = document.getElementById("runner-inst-title");
+      if (instTitle) {
+        instTitle.textContent = "In WhatsApp Web: Press [Enter] or click [➤ Send] to send the text.";
+        instTitle.style.color = "#fbbf24";
+      }
+      const instDesc = document.getElementById("runner-inst-desc");
+      if (instDesc) instDesc.textContent = "WhatsApp Web puts the message in the chat box. Press Enter in WhatsApp to send, then click 'I Sent It' or let the anti-ban delay timer advance automatically.";
+      const confirmBtnText = document.getElementById("runner-confirm-btn-text");
+      if (confirmBtnText) confirmBtnText.textContent = "✅ I Sent It — Next Recipient";
+      const autoSendWrap = document.getElementById("runner-auto-send-link-wrapper");
+      if (autoSendWrap) autoSendWrap.style.display = "block";
 
       // Open WhatsApp Web with clean queue payload! The extension navigates autonomously without tab collisions!
       try {
@@ -11963,7 +11985,12 @@
     window.togglePauseWhatsAppQueue = togglePauseWhatsAppQueue;
 
     function confirmCurrentSentAndAdvance() {
+      queueState.skipDelay = true;
       if (queueState.timerInterval) clearInterval(queueState.timerInterval);
+      if (queueState.isDirectDispatch) {
+        // Direct mode: the async while loop will immediately break on queueState.skipDelay
+        return;
+      }
       if (queueState.currentIndex < queueState.items.length) {
         const item = queueState.items[queueState.currentIndex];
         if (item) {
@@ -12542,6 +12569,8 @@
       const delayVal = parseInt(document.getElementById("msg-delay-select")?.value || "10", 10);
       queueState.active = true;
       queueState.paused = false;
+      queueState.isDirectDispatch = true;
+      queueState.skipDelay = false;
       queueState.delaySeconds = delayVal;
 
       const pauseBtn = document.getElementById("runner-pause-btn");
@@ -12557,6 +12586,26 @@
       document.getElementById("runner-content-completed").style.display = "none";
       document.getElementById("runner-delay-badge").textContent = `${delayVal}s Anti-Ban Delay`;
 
+      // Configure instructions for Direct Phone Background Dispatch Mode
+      const instBox = document.getElementById("runner-instruction-box");
+      if (instBox) {
+        instBox.style.background = "rgba(16, 185, 129, 0.12)";
+        instBox.style.borderColor = "rgba(16, 185, 129, 0.35)";
+      }
+      const instIcon = document.getElementById("runner-inst-icon");
+      if (instIcon) instIcon.textContent = "⚡";
+      const instTitle = document.getElementById("runner-inst-title");
+      if (instTitle) {
+        instTitle.textContent = "Direct Phone Background Dispatch Active";
+        instTitle.style.color = "#34d399";
+      }
+      const instDesc = document.getElementById("runner-inst-desc");
+      if (instDesc) instDesc.textContent = "Messages are sent automatically in the background using your linked phone. No need to press Enter in WhatsApp!";
+      const confirmBtnText = document.getElementById("runner-confirm-btn-text");
+      if (confirmBtnText) confirmBtnText.textContent = "⏭️ Skip Delay & Send Next";
+      const autoSendWrap = document.getElementById("runner-auto-send-link-wrapper");
+      if (autoSendWrap) autoSendWrap.style.display = "none";
+
       const openBtn = document.getElementById("runner-open-btn");
       if (openBtn) openBtn.style.display = "none";
 
@@ -12565,6 +12614,7 @@
 
       for (let i = 0; i < items.length; i++) {
         if (!queueState.active) break;
+        queueState.skipDelay = false;
 
         const item = items[i];
         const currentNum = i + 1;
@@ -12632,18 +12682,20 @@
         // Anti-Ban Delay Countdown between messages
         if (i < items.length - 1 && queueState.active) {
           let remaining = delayVal;
+          const stepBase = Math.max(1, delayVal);
           while (remaining > 0 && queueState.active) {
+            if (queueState.skipDelay) break;
             // Handle user pause
             while (queueState.paused && queueState.active) {
               if (timerEl) timerEl.textContent = "PAUSED ⏸️";
               await new Promise(r => setTimeout(r, 400));
             }
-            if (!queueState.active) break;
+            if (!queueState.active || queueState.skipDelay) break;
 
             const formatted = remaining < 10 ? `00:0${remaining}` : `00:${remaining}`;
             if (timerEl) timerEl.textContent = formatted;
             if (timerProgressBar) {
-              const barPct = Math.round((remaining / stepDelay) * 100);
+              const barPct = Math.round((remaining / stepBase) * 100);
               timerProgressBar.style.width = barPct + "%";
             }
             const miniTimer = document.getElementById("mini-widget-timer");
