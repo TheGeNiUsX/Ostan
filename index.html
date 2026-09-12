@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.28",
-  "commit": "e94df28",
-  "buildTime": 1789226026199,
-  "releaseDate": "2026-09-12T15:13:46.199Z",
-  "message": "chore(release): bump build version to v1.0.27"
+  "version": "1.0.29",
+  "commit": "08bdc5d",
+  "buildTime": 1789229661718,
+  "releaseDate": "2026-09-12T16:14:21.718Z",
+  "message": "fix(whatsapp): add live gateway pre-flight check, fail-fast abort on disconnect, and dual dispatch buttons"
 };
 
     let _ostanUpdateTriggered = false;
@@ -11783,6 +11783,12 @@
       saveState();
       renderMessageHistoryLogs();
 
+      if (queueState.timerInterval) {
+        clearInterval(queueState.timerInterval);
+        queueState.timerInterval = null;
+      }
+      _dispatchedMessageCounter = 0;
+
       queueState.active = true;
       queueState.paused = false;
       queueState.isDirectDispatch = false;
@@ -12600,12 +12606,22 @@
         });
       });
 
-      const delayVal = parseInt(document.getElementById("msg-delay-select")?.value || "10", 10);
+      if (queueState.timerInterval) {
+        clearInterval(queueState.timerInterval);
+        queueState.timerInterval = null;
+      }
+      _dispatchedMessageCounter = 0;
+
+      const initialDelayInfo = getNextRandomDelay();
+      const delayVal = initialDelayInfo.seconds;
       queueState.active = true;
       queueState.paused = false;
       queueState.isDirectDispatch = true;
       queueState.skipDelay = false;
+      queueState.items = items;
+      queueState.currentIndex = 0;
       queueState.delaySeconds = delayVal;
+      queueState.remainingCountdown = delayVal;
 
       const pauseBtn = document.getElementById("runner-pause-btn");
       if (pauseBtn) {
@@ -12649,6 +12665,7 @@
       for (let i = 0; i < items.length; i++) {
         if (!queueState.active) break;
         queueState.skipDelay = false;
+        queueState.currentIndex = i;
 
         const item = items[i];
         const currentNum = i + 1;
@@ -12739,8 +12756,24 @@
 
         // Anti-Ban Delay Countdown between messages
         if (i < items.length - 1 && queueState.active) {
-          let remaining = delayVal;
-          const stepBase = Math.max(1, delayVal);
+          queueState.skipDelay = false;
+          const delayInfo = getNextRandomDelay();
+          const stepDelay = Math.max(2, delayInfo.seconds);
+          queueState.delaySeconds = stepDelay;
+          queueState.remainingCountdown = stepDelay;
+          let remaining = stepDelay;
+
+          const delayBadge = document.getElementById("runner-delay-badge");
+          if (delayBadge) {
+            if (delayInfo.isBreather) {
+              delayBadge.innerHTML = '🧘 <strong>Stop Point Breather:</strong> +' + delayInfo.extraBreather + 's (Every ' + delayInfo.stopFreq + ' chats) • Total: ' + stepDelay + 's';
+              delayBadge.className = "badge badge-emerald";
+            } else {
+              delayBadge.innerHTML = '🎲 <strong>Anti-Ban Cadence:</strong> ' + stepDelay + 's (' + delayInfo.min + 's-' + delayInfo.max + 's)';
+              delayBadge.className = "badge badge-primary";
+            }
+          }
+
           while (remaining > 0 && queueState.active) {
             if (queueState.skipDelay) break;
             // Handle user pause
@@ -12750,10 +12783,11 @@
             }
             if (!queueState.active || queueState.skipDelay) break;
 
+            queueState.remainingCountdown = remaining;
             const formatted = remaining < 10 ? `00:0${remaining}` : `00:${remaining}`;
             if (timerEl) timerEl.textContent = formatted;
             if (timerProgressBar) {
-              const barPct = Math.round((remaining / stepBase) * 100);
+              const barPct = Math.round((remaining / stepDelay) * 100);
               timerProgressBar.style.width = barPct + "%";
             }
             const miniTimer = document.getElementById("mini-widget-timer");
@@ -12762,6 +12796,7 @@
             await new Promise(r => setTimeout(r, 1000));
             remaining--;
           }
+          queueState.skipDelay = false;
           if (timerEl && queueState.active) timerEl.textContent = "00:00";
           if (timerProgressBar) timerProgressBar.style.width = "0%";
         }

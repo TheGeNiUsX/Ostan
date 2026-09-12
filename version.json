@@ -1,7 +1,7 @@
 {
-  "version": "1.0.28",
-  "commit": "e94df28",
-  "buildTime": 1789226026199,
-  "releaseDate": "2026-09-12T15:13:46.199Z",
-  "message": "chore(release): bump build version to v1.0.27"
+  "version": "1.0.29",
+  "commit": "08bdc5d",
+  "buildTime": 1789229661718,
+  "releaseDate": "2026-09-12T16:14:21.718Z",
+  "message": "fix(whatsapp): add live gateway pre-flight check, fail-fast abort on disconnect, and dual dispatch buttons"
 }

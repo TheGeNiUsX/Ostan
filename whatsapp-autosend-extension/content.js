@@ -38,6 +38,11 @@
     try {
       const decoded = JSON.parse(decodeURIComponent(encodedPayload));
       if (decoded && Array.isArray(decoded.items) && decoded.items.length > 0) {
+        try {
+          Object.keys(sessionStorage).forEach(k => {
+            if (k.startsWith("ostan_sent_idx_")) sessionStorage.removeItem(k);
+          });
+        } catch (e) {}
         sessionStorage.setItem("ostan_active_queue", JSON.stringify(decoded));
         console.log("[Ostan Auto-Sender] Received and stored new dispatch queue:", decoded);
         // Clean URL to prevent any pollution
