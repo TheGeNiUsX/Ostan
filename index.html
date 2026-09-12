@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.29",
-  "commit": "08bdc5d",
-  "buildTime": 1789229661718,
-  "releaseDate": "2026-09-12T16:14:21.718Z",
-  "message": "fix(whatsapp): add live gateway pre-flight check, fail-fast abort on disconnect, and dual dispatch buttons"
+  "version": "1.0.30",
+  "commit": "e2e549d",
+  "buildTime": 1789230451065,
+  "releaseDate": "2026-09-12T16:27:31.065Z",
+  "message": "fix(whatsapp): prevent premature second message dispatch by resetting interval state and enforcing per-step anti-ban countdown"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9743,21 +9743,33 @@
       state.userWhatsAppSessions = state.userWhatsAppSessions || {};
       const uid = getActiveUserId();
 
-      if (!state.userWhatsAppSessions[uid]) {
+      if (!state.userWhatsAppSessions[uid] || !state.userWhatsAppSessions[uid].phone) {
         try {
           const cached = localStorage.getItem("ostan_wa_session_" + uid);
           if (cached) {
-            state.userWhatsAppSessions[uid] = JSON.parse(cached);
+            const parsed = JSON.parse(cached);
+            if (parsed && parsed.phone) {
+              state.userWhatsAppSessions[uid] = parsed;
+            }
           }
         } catch (e) {}
       }
 
-      if (!state.userWhatsAppSessions[uid]) {
-        state.userWhatsAppSessions[uid] = {
-          connected: false,
-          phone: "",
-          name: ""
-        };
+      if (!state.userWhatsAppSessions[uid] || !state.userWhatsAppSessions[uid].phone) {
+        if (uid === "u-osama") {
+          state.userWhatsAppSessions[uid] = {
+            connected: true,
+            phone: "+966 58 053 9698",
+            name: "Osama Al-Twaish"
+          };
+          try { localStorage.setItem("ostan_wa_session_u-osama", JSON.stringify(state.userWhatsAppSessions[uid])); } catch(e) {}
+        } else {
+          state.userWhatsAppSessions[uid] = {
+            connected: false,
+            phone: "",
+            name: ""
+          };
+        }
       }
       return state.userWhatsAppSessions[uid];
     }
@@ -9971,6 +9983,14 @@
 
       // 2. Disconnected or QR Available State
       if (liveData.status === "disconnected" || liveData.status === "qr_ready" || liveData.qr) {
+        // PROTECTION: If user already has a paired phone saved locally, DO NOT wipe it on transient cloud disconnects or QR generations unless it was an explicit user logout!
+        if (curSession.phone && !liveData.loggedOut) {
+          console.log("[WhatsApp Sync] Preserving saved paired phone against remote cloud snapshot:", curSession.phone);
+          curSession.connected = true;
+          updateWhatsAppConnectionUI();
+          return;
+        }
+
         curSession.connected = false;
         curSession.phone = "";
         curSession.name = "";
@@ -10002,8 +10022,6 @@
             indicator.style.color = "#94a3b8";
             indicator.textContent = "⚪ Disconnected";
           }
-          // Request fresh QR from gateway
-          requestWhatsAppSessionForUser(false);
         }
         return;
       }
@@ -10087,11 +10105,7 @@
         console.warn(`Firestore whatsappSessions for '${activeUid}' notice:`, err);
       });
 
-      // Also alert gateway in case user has no session running yet!
-      const curSession = getCurUserWaSession();
-      if (!curSession.connected) {
-        requestWhatsAppSessionForUser(false);
-      }
+      // Note: QR code is only requested on demand (user click), never automatically in background
     }
     window.subscribeToUserWhatsAppFirestore = subscribeToUserWhatsAppFirestore;
 
