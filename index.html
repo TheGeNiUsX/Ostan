@@ -3729,11 +3729,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.35",
-  "commit": "15ee465",
-  "buildTime": 1789239455866,
-  "releaseDate": "2026-09-12T18:57:35.866Z",
-  "message": "fix(gateway): smooth Baileys pairing handshake, creds persistence, and version negotiation"
+  "version": "1.0.36",
+  "commit": "a41697a",
+  "buildTime": 1789240425341,
+  "releaseDate": "2026-09-12T19:13:45.341Z",
+  "message": "docs: add auto git commit & push rule to project savior"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9958,11 +9958,47 @@
       const rawPhone = liveData.phone ? String(liveData.phone).replace(/[^0-9]/g, "") : "";
       const hasPhone = Boolean(rawPhone && rawPhone.length >= 7);
 
-      // 1. Explicit Mobile Unpair / Logout (Only when phone explicitly unregistered from WhatsApp app)
-      if (liveData.loggedOut || (liveData.status === "disconnected" && !hasPhone && !liveData.qr)) {
+      // 1. Connected / Linked State (Priority: if phone exists, it is linked!)
+      if (hasPhone && (liveData.status === "connected" || !liveData.status || liveData.status === "connecting" || liveData.connected !== false)) {
+        if (typeof stopWhatsAppQRTimer === "function") stopWhatsAppQRTimer();
+        const formattedPhone = "+" + rawPhone;
+        const isFreshConnect = (!curSession.connected || curSession.phone !== formattedPhone) && curSession._lastNotifiedPhone !== formattedPhone;
+        
+        curSession.connected = true;
+        curSession.phone = formattedPhone;
+        if (liveData.name) curSession.name = liveData.name;
+        state.userWhatsAppSessions[activeUid] = curSession;
+        try {
+          localStorage.setItem("ostan_wa_session_" + activeUid, JSON.stringify(curSession));
+        } catch(e) {}
+        saveState();
+        updateWhatsAppConnectionUI();
+
+        const isFullyOpen = liveData.status === "connected";
+        if (indicator) {
+          indicator.style.color = "#10b981";
+          indicator.innerHTML = `<span class="status-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> <span>Linked: ${curSession.phone} (${isFullyOpen ? (curSession.name || "Active") : "Syncing..."})</span>`;
+        }
+        if (statusUnified) {
+          statusUnified.textContent = `${userName}: Linked (${curSession.phone})`;
+        }
+        if (isFreshConnect && isFullyOpen && window.OstanStyle) {
+          curSession._lastNotifiedPhone = formattedPhone;
+          const lang = document.documentElement.getAttribute("lang") || "en";
+          window.OstanStyle.showToast(
+            lang === "ar" ? "تم ربط واتساب بنجاح!" : "WhatsApp Connected!",
+            lang === "ar" ? `رقمك الآن متصل بالنظام: ${curSession.phone}` : `Your phone ${curSession.phone} is now linked.`
+          );
+        }
+        return;
+      }
+
+      // 2. Explicit Mobile Unpair / Logout (ONLY when NO phone is present AND explicitly logged out)
+      if (!hasPhone && (liveData.loggedOut || (liveData.status === "disconnected" && !liveData.qr))) {
         curSession.connected = false;
         curSession.phone = "";
         curSession.name = "";
+        curSession._lastNotifiedPhone = "";
         state.userWhatsAppSessions[activeUid] = curSession;
         try { localStorage.removeItem("ostan_wa_session_" + activeUid); } catch(e) {}
         saveState();
@@ -9977,37 +10013,6 @@
         }
         if (statusUnified) {
           statusUnified.textContent = `${userName}: Disconnected`;
-        }
-        return;
-      }
-
-      // 2. Connected / Linked State (Fully verified and active)
-      if (liveData.status === "connected" && hasPhone) {
-        if (typeof stopWhatsAppQRTimer === "function") stopWhatsAppQRTimer();
-        const wasConnected = curSession.connected && curSession.phone;
-        curSession.connected = true;
-        curSession.phone = "+" + rawPhone;
-        if (liveData.name) curSession.name = liveData.name;
-        state.userWhatsAppSessions[activeUid] = curSession;
-        try {
-          localStorage.setItem("ostan_wa_session_" + activeUid, JSON.stringify(curSession));
-        } catch(e) {}
-        saveState();
-        updateWhatsAppConnectionUI();
-
-        if (indicator) {
-          indicator.style.color = "#10b981";
-          indicator.innerHTML = `<span class="status-pulse-dot" style="width: 7px; height: 7px; border-radius: 50%; background: #10b981; display: inline-block;"></span> <span>Linked: ${curSession.phone} (${curSession.name || "Active"})</span>`;
-        }
-        if (statusUnified) {
-          statusUnified.textContent = `${userName}: Linked (${curSession.phone})`;
-        }
-        if (!wasConnected && window.OstanStyle) {
-          const lang = document.documentElement.getAttribute("lang") || "en";
-          window.OstanStyle.showToast(
-            lang === "ar" ? "تم ربط واتساب بنجاح!" : "WhatsApp Connected!",
-            lang === "ar" ? `رقمك الآن متصل بالنظام: ${curSession.phone}` : `Your phone ${curSession.phone} is now linked.`
-          );
         }
         return;
       }
@@ -10108,6 +10113,7 @@
             userName: curUser?.name || activeUid,
             userEmail: curUser?.email || "",
             action: forceRefresh ? "refresh" : "request_qr",
+            loggedOut: false,
             timestamp: Date.now()
           }, { merge: true });
         } catch (err) {

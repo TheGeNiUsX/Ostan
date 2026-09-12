@@ -15,14 +15,17 @@ If your context window was reset, pruned, or you are a new AI taking over:
    - **Backend WhatsApp Gateway:** Hosted on Render (`https://ostan-whatsapp-gateway.onrender.com`), with local/LAN fallback (`server/whatsapp-gateway.mjs` on port `5001`).
    - **Cloud Sync & Data Bus:** Google Cloud Firestore (Project `ostan-75a0c`).
    - **Relational Database:** PostgreSQL with Prisma ORM.
-3. **What was the latest critical bug fixed?**
-   - **The Problem:** When pairing a phone via WhatsApp Studio, the number linked successfully, then immediately vanished, followed by continuous flickering of `"⏳ Establishing WebSocket connection..."` and `"🔌 Not Connected"`. After about 60 seconds, the number would reappear. Furthermore, dispatching messages displayed: `⚠️ WhatsApp is not connected on the background gateway for this account`.
-   - **The Root Cause:** In Baileys multi-device pairing, after scanning the QR code, WhatsApp MD servers perform a key handshake and emit code `515` (`restartRequired`), temporarily setting `session.status = 'connecting'` and `connected: false`. In `index.html`, condition 2 treated `connected === false` as a full disconnection, wiping `curSession.phone = ""` and resetting localStorage. Polling then alternated between `"connecting"` and `"disconnected"`. Additionally, `waQrTimerInterval` kept running while linked and restarted the socket at 0s, and the pre-flight dispatch check lacked a Firestore fallback for remote users (e.g. on GitHub Pages).
-   - **The Resolution:** 
-     1. Updated `handleLiveWhatsAppSnapshot` in `index.html`: if `hasPhone` is true, status is treated as linked even while `connecting` / syncing; the phone number is NEVER wiped. Condition 2 (reset) only triggers on explicit `loggedOut` or true unpaired states.
-     2. Stopped `waQrTimerInterval` as soon as a phone is linked so it cannot trigger socket restarts mid-session.
-     3. Added a Cloud Firestore fallback to the pre-flight check in `startWhatsAppCloudApiDispatch`, allowing remote users on GitHub Pages to seamlessly dispatch via the Cloud Firestore Outbox even if direct HTTP to the gateway fails.
-     4. Optimized `server/whatsapp-gateway.mjs`: fast restart delay (600ms), `paired: true` flag synced to Firestore, auto-reconnect of saved sessions on gateway boot, and increased message send retry wait to 12s.
+3. **What were the latest critical bugs fixed?**
+   - **Bug A — Disappearing Phone & WebSocket Loading Flicker:**
+     - **Cause:** Baileys multi-device pairing emits code `515` (`restartRequired`) upon QR scan, temporarily setting `status = 'connecting'` and `connected: false`. In `index.html`, `connected === false` was checked prematurely, wiping `curSession.phone = ""` and clearing localStorage.
+     - **Fix:** Preserved paired phone session across handshake reconnects; stopped QR countdown timer upon pairing; added Firestore fallback to pre-flight dispatch check.
+   - **Bug B — Rapid Unlinking & Linking Loop (50+ Duplicate Notifications):**
+     - **Cause:** When a previous logout/reset was performed, `loggedOut: true` was saved to Firestore with `{ merge: true }` and stale `whatsappRequests` were left undeleted. Because `syncSessionStateToFirestore` never explicitly cleared `loggedOut: false`, the document perpetually retained `loggedOut: true`. When Firestore snapshots arrived, `index.html` unlinked the session; then subsequent `/api/status` polls reconnected it, creating an infinite oscillate-and-toast loop.
+     - **Fix:** 
+       1. Prioritized `hasPhone` in `index.html`: if a phone is paired, it CANNOT be unlinked by an errant `loggedOut` flag. Explicit unpair only occurs when no phone is present.
+       2. Explicitly sync `loggedOut: false` in `server/whatsapp-gateway.mjs` whenever a user has an active session.
+       3. Automatically delete processed documents from `whatsappRequests` so old commands never re-execute.
+       4. Added toast deduplication (`curSession._lastNotifiedPhone`) so "WhatsApp Connected!" only toasts once per session.
 
 ---
 

@@ -83,6 +83,7 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
       name: session.name || null,
       connected: isConnected,
       paired: isPaired,
+      loggedOut: false,
       lanIPs: getLanIPs(),
       gatewayPort: PORT,
       updatedAt: now
@@ -764,6 +765,11 @@ server.listen(PORT, HOST, () => {
 
             const cleanId = sanitizeUserId(reqData.userId);
             console.log(`[WhatsApp Gateway] ⚡ Cloud request received for user: ${cleanId} (action: ${reqData.action || 'request_qr'})`);
+            // Remove request doc so it is not processed repeatedly
+            try {
+              deleteDoc(doc(fbDb, 'whatsappRequests', change.doc.id)).catch(() => {});
+            } catch (e) {}
+
             const session = getOrCreateUserSession(cleanId);
             session.lastRequestTime = Date.now();
             session.qrRetries = 0; // reset retry counter on active request
