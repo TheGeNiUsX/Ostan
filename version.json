@@ -1,7 +1,7 @@
 {
-  "version": "1.0.33",
-  "commit": "7c5dede",
-  "buildTime": 1789234086384,
-  "releaseDate": "2026-09-12T17:28:06.384Z",
-  "message": "fix(gateway): resolve QR pairing hang by supporting immediate 515 restart, standard browser tuple, and non-destructive creds sync"
+  "version": "1.0.34",
+  "commit": "1328e1f",
+  "buildTime": 1789234859035,
+  "releaseDate": "2026-09-12T17:40:59.035Z",
+  "message": "feat(messages): expand recipient list view height and add multi-tier live selection counters"
 }

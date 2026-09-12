@@ -1,4 +1,4 @@
-import { makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers } from '@whiskeysockets/baileys';
+import { makeWASocket, useMultiFileAuthState, DisconnectReason, Browsers, fetchLatestBaileysVersion } from '@whiskeysockets/baileys';
 import QRCode from 'qrcode';
 import pino from 'pino';
 import http from 'http';
@@ -7,6 +7,19 @@ import path from 'path';
 import os from 'os';
 import { initializeApp } from 'firebase/app';
 import { getFirestore, doc, setDoc, getDoc, deleteDoc, onSnapshot, collection, updateDoc } from 'firebase/firestore';
+
+let cachedWaVersion = null;
+async function getWaVersion() {
+  if (cachedWaVersion) return cachedWaVersion;
+  try {
+    const { version } = await fetchLatestBaileysVersion();
+    if (Array.isArray(version) && version.length >= 3) {
+      cachedWaVersion = version;
+      return cachedWaVersion;
+    }
+  } catch (e) {}
+  return [2, 3000, 1043857760];
+}
 
 const firebaseConfig = {
   apiKey: "AIzaSyBosnwK5ima8AFANYoBxfzPN9mb-yNwVnQ",
@@ -60,10 +73,11 @@ async function syncSessionStateToFirestore(cleanUserId, session) {
     session._lastPhone = session.phone;
     session._lastSyncTime = now;
 
+    const activeQr = (session.status === 'connected' || session.status === 'connecting') ? null : (session.qr || null);
     const data = {
       userId: cleanUserId,
       status: session.status,
-      qr: session.qr || null,
+      qr: activeQr,
       phone: session.phone || null,
       name: session.name || null,
       connected: isConnected,
@@ -227,8 +241,11 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
 
   if (session.isStarting && !forceRestart) return;
 
-  if (forceRestart && session.sock) {
-    try { session.sock.end(); } catch (e) {}
+  if (session.sock) {
+    try {
+      session.sock.ev.removeAllListeners();
+      session.sock.end();
+    } catch (e) {}
     session.sock = null;
   }
 
@@ -262,8 +279,10 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
       session.phone = null;
     }
 
+    const waVersion = await getWaVersion();
     const sock = makeWASocket({
       auth: state,
+      version: waVersion,
       logger: pino({ level: 'silent' }),
       printQRInTerminal: false,
       browser: Browsers.ubuntu('Chrome'),
@@ -281,6 +300,7 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
         session.phone = id.split(':')[0] || id.split('@')[0];
         session.name = state.creds.me.name || session.name || `User ${cleanUserId}`;
         session.status = 'connecting';
+        session.qr = null;
         syncSessionStateToFirestore(cleanUserId, session);
       }
       await saveCreds();
@@ -317,6 +337,8 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
 
         console.log(`[WhatsApp Gateway] User '${cleanUserId}' connection closed (code: ${statusCode}, isRestart: ${isRestartRequired}, hasCreds: ${hasCredentials}). Reconnecting: ${shouldReconnect}`);
 
+        try { sock.ev.removeAllListeners(); } catch (e) {}
+
         if (isLoggedOut) {
           console.log(`[WhatsApp Gateway] ⚠️ User '${cleanUserId}' was unpaired / logged out from mobile. Cleaning session files...`);
           session.status = 'disconnected';
@@ -337,6 +359,7 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
         if (isRestartRequired || hasCredentials) {
           // Handshake restart (e.g. 515 upon QR scan) or existing paired session reconnection
           session.status = 'connecting';
+          session.qr = null;
           session.isStarting = false;
           session.qrRetries = 0;
           if (state.creds?.me?.id) {
@@ -344,7 +367,7 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
           }
           syncSessionStateToFirestore(cleanUserId, session);
 
-          const delay = (statusCode === 440) ? 15000 : 500;
+          const delay = (statusCode === 440) ? 3000 : 1200;
           console.log(`[WhatsApp Gateway] ⚡ Reconnecting pairing session for '${cleanUserId}' in ${delay}ms...`);
           setTimeout(() => {
             startWhatsAppSocketForUser(cleanUserId);
@@ -380,9 +403,9 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
         session.isStarting = false;
         session.qrRetries = 0;
 
-        const id = sock?.user?.id || '';
+        const id = sock?.user?.id || state?.creds?.me?.id || '';
         session.phone = id.split(':')[0] || id.split('@')[0];
-        session.name = sock?.user?.name || `User ${cleanUserId}`;
+        session.name = sock?.user?.name || state?.creds?.me?.name || `User ${cleanUserId}`;
 
         console.log(`\n======================================================`);
         console.log(`[WhatsApp Gateway] 🟢 User '${cleanUserId}' CONNECTED!`);
@@ -390,6 +413,8 @@ async function startWhatsAppSocketForUser(cleanUserId, forceRestart = false) {
         console.log(`Account Name: ${session.name}`);
         console.log(`======================================================\n`);
 
+        await saveCreds().catch(() => {});
+        await saveAuthToFirestore(cleanUserId, session.authDir).catch(() => {});
         syncSessionStateToFirestore(cleanUserId, session);
       }
     });
