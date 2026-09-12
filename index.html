@@ -3714,15 +3714,26 @@
       }
     }
 
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+    window.escapeHtml = escapeHtml;
+
     // =========================================================================
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.23",
-  "commit": "2cede08",
-  "buildTime": 1789194837159,
-  "releaseDate": "2026-09-12T06:33:57.159Z",
-  "message": "feat(messages): add user-isolated Custom Recipients list with Excel/CSV import and header switcher"
+  "version": "1.0.24",
+  "commit": "eab1328",
+  "buildTime": 1789195441393,
+  "releaseDate": "2026-09-12T06:44:01.393Z",
+  "message": "feat(messages): expand recipient list height and add multi-tier live selection counters and filter"
 };
 
     let _ostanUpdateTriggered = false;
@@ -10468,88 +10479,93 @@
     function renderCustomContactsList() {
       const container = document.getElementById("custom-contacts-container");
       if (!container) return;
-      const q = (document.getElementById("custom-contacts-search")?.value || "").toLowerCase().trim();
-      const contacts = getUserCustomContacts();
+      try {
+        const _esc = typeof escapeHtml === "function" ? escapeHtml : (s => (s == null ? "" : String(s)));
+        const q = (document.getElementById("custom-contacts-search")?.value || "").toLowerCase().trim();
+        const contacts = typeof getUserCustomContacts === "function" ? getUserCustomContacts() : [];
 
-      const filtered = contacts.filter(c => {
-        if (window._filterSelectedOnlyCustom && !selectedCustomContactIds.has(c.id)) return false;
-        if (!q) return true;
-        const name = (c.name || "").toLowerCase();
-        const phone = (c.phone || "").toLowerCase();
-        const notes = (c.notes || "").toLowerCase();
-        return name.includes(q) || phone.includes(q) || notes.includes(q);
-      });
+        const filtered = contacts.filter(c => {
+          if (window._filterSelectedOnlyCustom && typeof selectedCustomContactIds !== "undefined" && !selectedCustomContactIds.has(c.id)) return false;
+          if (!q) return true;
+          const name = (c.name || "").toLowerCase();
+          const phone = (c.phone || "").toLowerCase();
+          const notes = (c.notes || "").toLowerCase();
+          return name.includes(q) || phone.includes(q) || notes.includes(q);
+        });
 
-      const lang = document.documentElement.getAttribute("lang") || "en";
-      const isAr = lang === "ar";
+        const lang = document.documentElement.getAttribute("lang") || "en";
+        const isAr = lang === "ar";
 
-      if (filtered.length === 0) {
-        if (window._filterSelectedOnlyCustom && contacts.length > 0) {
-          container.innerHTML = `
-            <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-              <div style="font-size: 1.6rem;">🎯</div>
-              <div style="font-weight: 700; color: var(--text-main);">
-                ${isAr ? "لم يتم تحديد أي أرقام من القائمة المخصصة بعد" : "No Custom Numbers Selected Yet"}
+        if (filtered.length === 0) {
+          if (window._filterSelectedOnlyCustom && contacts.length > 0) {
+            container.innerHTML = `
+              <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <div style="font-size: 1.6rem;">🎯</div>
+                <div style="font-weight: 700; color: var(--text-main);">
+                  ${isAr ? "لم يتم تحديد أي أرقام من القائمة المخصصة بعد" : "No Custom Numbers Selected Yet"}
+                </div>
+                <div style="font-size: 0.72rem; max-width: 280px; line-height: 1.4;">
+                  ${isAr ? "حدد جهات الاتصال بالنقر على المربعات، أو انقر 'عرض الكل'." : "Check any contacts to select them, or toggle 'Show All' to view your full list."}
+                </div>
+                <button type="button" onclick="toggleFilterSelectedOnly('custom')" class="btn btn-secondary" style="margin-top: 0.35rem; padding: 0.3rem 0.65rem; font-size: 0.74rem;">
+                  ${isAr ? "عرض كل جهات الاتصال" : "Show All Contacts"}
+                </button>
               </div>
-              <div style="font-size: 0.72rem; max-width: 280px; line-height: 1.4;">
-                ${isAr ? "حدد جهات الاتصال بالنقر على المربعات، أو انقر 'عرض الكل'." : "Check any contacts to select them, or toggle 'Show All' to view your full list."}
+            `;
+          } else {
+            container.innerHTML = `
+              <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <div style="font-size: 1.75rem;">📋</div>
+                <div style="font-weight: 700; color: var(--text-main);">
+                  ${q ? (isAr ? "لم يتم العثور على جهات اتصال مطابقة" : "No matching contacts found") : (isAr ? "القائمة المخصصة فارغة حالياً" : "Your Custom List is Empty")}
+                </div>
+                <div style="font-size: 0.72rem; max-width: 280px; line-height: 1.4;">
+                  ${isAr ? "قم باستيراد ملف Excel أو CSV، أو أضف رقماً مخصصاً في الأسفل. هذه القائمة خاصة بك 100% ومستقلة تماماً." : "Upload an Excel (.xlsx, .xls) or .csv file, or add numbers below. This list is 100% private to you."}
+                </div>
+                <button type="button" onclick="document.getElementById('custom-contacts-excel-file').click()" class="btn btn-secondary" style="margin-top: 0.35rem; padding: 0.35rem 0.75rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
+                  📥 ${isAr ? "استيراد ملف Excel / CSV" : "Import Excel / CSV"}
+                </button>
               </div>
-              <button type="button" onclick="toggleFilterSelectedOnly('custom')" class="btn btn-secondary" style="margin-top: 0.35rem; padding: 0.3rem 0.65rem; font-size: 0.74rem;">
-                ${isAr ? "عرض كل جهات الاتصال" : "Show All Contacts"}
-              </button>
-            </div>
-          `;
-        } else {
-          container.innerHTML = `
-            <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-              <div style="font-size: 1.75rem;">📋</div>
-              <div style="font-weight: 700; color: var(--text-main);">
-                ${q ? (isAr ? "لم يتم العثور على جهات اتصال مطابقة" : "No matching contacts found") : (isAr ? "القائمة المخصصة فارغة حالياً" : "Your Custom List is Empty")}
-              </div>
-              <div style="font-size: 0.72rem; max-width: 280px; line-height: 1.4;">
-                ${isAr ? "قم باستيراد ملف Excel أو CSV، أو أضف رقماً مخصصاً في الأسفل. هذه القائمة خاصة بك 100% ومستقلة تماماً." : "Upload an Excel (.xlsx, .xls) or .csv file, or add numbers below. This list is 100% private to you."}
-              </div>
-              <button type="button" onclick="document.getElementById('custom-contacts-excel-file').click()" class="btn btn-secondary" style="margin-top: 0.35rem; padding: 0.35rem 0.75rem; font-size: 0.75rem; border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-weight: 700;">
-                📥 ${isAr ? "استيراد ملف Excel / CSV" : "Import Excel / CSV"}
-              </button>
-            </div>
-          `;
+            `;
+          }
+          updateRecipientCountBadge();
+          return;
         }
+
+        container.innerHTML = filtered.map(c => {
+          const isChecked = typeof selectedCustomContactIds !== "undefined" && selectedCustomContactIds.has(c.id);
+          const initials = (c.name || "C").trim().slice(0, 2).toUpperCase();
+          return `
+            <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(16, 185, 129, 0.14)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? '#10b981' : 'var(--border-subtle)'}; border-inline-start: ${isChecked ? '4px solid #10b981' : '1px solid var(--border-subtle)'}; transition: all 0.15s ease; user-select: none;">
+              <div style="display: flex; align-items: center; gap: 0.65rem; overflow: hidden;">
+                <input type="checkbox" onchange="toggleCustomContactSelect('${c.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 17px; height: 17px; accent-color: #10b981;">
+                <div style="width: 30px; height: 30px; min-width: 30px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #0d9488); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #ffffff; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                  ${initials}
+                </div>
+                <div style="overflow: hidden;">
+                  <div style="font-size: 0.83rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 0.35rem;">
+                    <span>${_esc(c.name || (isAr ? "جهة اتصال" : "Contact"))}</span>
+                    ${isChecked ? '<span class="badge badge-emerald" style="font-size: 0.6rem; padding: 0.05rem 0.35rem; font-weight: 800;">✓ Selected</span>' : ''}
+                  </div>
+                  <div style="font-size: 0.72rem; color: #10b981; font-weight: 700; font-family: monospace;">
+                    ${_esc(c.phone)}
+                  </div>
+                </div>
+              </div>
+              <div style="display: flex; align-items: center; gap: 0.45rem;">
+                ${c.notes ? `<span class="badge badge-secondary" style="font-size: 0.65rem; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${_esc(c.notes)}</span>` : ''}
+                <button type="button" onclick="event.preventDefault(); event.stopPropagation(); deleteUserCustomContact('${c.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.35rem; font-size: 0.75rem; color: #fb7185;" title="${isAr ? 'حذف من القائمة' : 'Delete contact'}">
+                  🗑️
+                </button>
+              </div>
+            </label>
+          `;
+        }).join("");
+
         updateRecipientCountBadge();
-        return;
+      } catch (err) {
+        console.error("Error in renderCustomContactsList:", err);
       }
-
-      container.innerHTML = filtered.map(c => {
-        const isChecked = selectedCustomContactIds.has(c.id);
-        const initials = (c.name || "C").trim().slice(0, 2).toUpperCase();
-        return `
-          <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(16, 185, 129, 0.14)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? '#10b981' : 'var(--border-subtle)'}; border-inline-start: ${isChecked ? '4px solid #10b981' : '1px solid var(--border-subtle)'}; transition: all 0.15s ease; user-select: none;">
-            <div style="display: flex; align-items: center; gap: 0.65rem; overflow: hidden;">
-              <input type="checkbox" onchange="toggleCustomContactSelect('${c.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 17px; height: 17px; accent-color: #10b981;">
-              <div style="width: 30px; height: 30px; min-width: 30px; border-radius: 50%; background: linear-gradient(135deg, #10b981, #0d9488); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 800; color: #ffffff; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-                ${initials}
-              </div>
-              <div style="overflow: hidden;">
-                <div style="font-size: 0.83rem; font-weight: 700; color: var(--text-main); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 0.35rem;">
-                  <span>${escapeHtml(c.name || (isAr ? "جهة اتصال" : "Contact"))}</span>
-                  ${isChecked ? '<span class="badge badge-emerald" style="font-size: 0.6rem; padding: 0.05rem 0.35rem; font-weight: 800;">✓ Selected</span>' : ''}
-                </div>
-                <div style="font-size: 0.72rem; color: #10b981; font-weight: 700; font-family: monospace;">
-                  ${escapeHtml(c.phone)}
-                </div>
-              </div>
-            </div>
-            <div style="display: flex; align-items: center; gap: 0.45rem;">
-              ${c.notes ? `<span class="badge badge-secondary" style="font-size: 0.65rem; max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.notes)}</span>` : ''}
-              <button type="button" onclick="event.preventDefault(); event.stopPropagation(); deleteUserCustomContact('${c.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.35rem; font-size: 0.75rem; color: #fb7185;" title="${isAr ? 'حذف من القائمة' : 'Delete contact'}">
-                🗑️
-              </button>
-            </div>
-          </label>
-        `;
-      }).join("");
-
-      updateRecipientCountBadge();
     }
     window.renderCustomContactsList = renderCustomContactsList;
 
@@ -10770,127 +10786,133 @@
     function renderMessageRecipientsList() {
       const container = document.getElementById("msg-recipients-container");
       if (!container) return;
-      const query = (document.getElementById("msg-user-search")?.value || "").toLowerCase().trim();
+      try {
+        const _esc = typeof escapeHtml === "function" ? escapeHtml : (s => (s == null ? "" : String(s)));
+        const query = (document.getElementById("msg-user-search")?.value || "").toLowerCase().trim();
 
-      const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
-      const isMaster = curUser ? isMasterSuperAdmin(curUser) : false;
-      const canViewEmployees = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("employees", "view", curUser) : false);
-      const canViewSaudi = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("saudi-staff", "view", curUser) : false);
+        const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+        const isMaster = curUser ? isMasterSuperAdmin(curUser) : false;
+        const canViewEmployees = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("employees", "view", curUser) : false);
+        const canViewSaudi = isMaster || (curUser && typeof hasUserPermission === "function" ? hasUserPermission("saudi-staff", "view", curUser) : false);
 
-      let html = "";
+        let html = "";
 
-      // If user has permission to view neither employees nor Saudi staff
-      if (!canViewEmployees && !canViewSaudi) {
-        html = `
-          <div style="padding: 1.25rem 1rem; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); margin-bottom: 0.5rem;">
-            <div style="font-size: 1.25rem; margin-bottom: 0.35rem;">🔒</div>
-            <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Staff Directory Restricted</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; line-height: 1.4;">You do not have permission to view employee profiles or Saudi staff. You can still dispatch messages by entering phone numbers manually below.</div>
-          </div>
-        `;
-        if (manualRecipients.length > 0) {
+        // If user has permission to view neither employees nor Saudi staff
+        if (!canViewEmployees && !canViewSaudi) {
+          html = `
+            <div style="padding: 1.25rem 1rem; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px dashed rgba(239, 68, 68, 0.25); border-radius: var(--radius-sm); margin-bottom: 0.5rem;">
+              <div style="font-size: 1.25rem; margin-bottom: 0.35rem;">🔒</div>
+              <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Staff Directory Restricted</div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.25rem; line-height: 1.4;">You do not have permission to view employee profiles or Saudi staff. You can still dispatch messages by entering phone numbers manually below.</div>
+            </div>
+          `;
+          if (manualRecipients.length > 0) {
+            manualRecipients.forEach((p, idx) => {
+              html += `
+                <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; margin-bottom: 0.35rem;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📞</span>
+                    <span style="font-size: 0.8rem; font-weight: 700; color: #10b981;">${_esc(p)}</span>
+                    <span class="badge badge-emerald" style="font-size: 0.65rem;">External Phone</span>
+                  </div>
+                  <button onclick="removeManualPhoneRecipient(${idx})" class="btn btn-ghost" style="padding: 0.15rem 0.35rem; font-size: 0.7rem; color: #fb7185;">✕</button>
+                </div>
+              `;
+            });
+          }
+          container.innerHTML = html;
+          updateRecipientCountBadge();
+          return;
+        }
+
+        const allUsers = (typeof state !== "undefined" && Array.isArray(state.users)) ? state.users : [];
+        const filteredUsers = allUsers.filter(u => {
+          const isSaudi = typeof isSaudiEmployee === "function" ? isSaudiEmployee(u) : false;
+          if (isSaudi && !canViewSaudi) return false;
+          if (!isSaudi && !canViewEmployees) return false;
+
+          if (window._filterSelectedOnlyOstan && typeof selectedRecipientIds !== "undefined" && !selectedRecipientIds.has(u.id)) return false;
+
+          if (!query) return true;
+          const name = (u.name || "").toLowerCase();
+          const nameAr = (u.nameAr || "").toLowerCase();
+          const role = (u.role || "").toLowerCase();
+          const email = (u.email || "").toLowerCase();
+          return name.includes(query) || nameAr.includes(query) || role.includes(query) || email.includes(query);
+        });
+
+        const lang = document.documentElement.getAttribute("lang") || "en";
+        const isAr = lang === "ar";
+
+        if (filteredUsers.length === 0 && manualRecipients.length === 0) {
+          if (window._filterSelectedOnlyOstan) {
+            html = `
+              <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
+                <div style="font-size: 1.6rem;">🎯</div>
+                <div style="font-weight: 700; color: var(--text-main);">
+                  ${isAr ? "لم يتم تحديد أي موظف بعد" : "No Employees Selected Yet"}
+                </div>
+                <div style="font-size: 0.72rem; max-width: 280px; line-height: 1.4;">
+                  ${isAr ? "حدد موظفين بالنقر على المربعات، أو انقر 'عرض الكل'." : "Check any employees to select them, or toggle 'Show All' to view full staff."}
+                </div>
+                <button type="button" onclick="toggleFilterSelectedOnly('ostan')" class="btn btn-secondary" style="margin-top: 0.35rem; padding: 0.3rem 0.65rem; font-size: 0.74rem;">
+                  ${isAr ? "عرض كل الموظفين" : "Show All Staff"}
+                </button>
+              </div>
+            `;
+          } else {
+            html = `<div style="padding: 1rem; text-align: center; color: var(--text-faint); font-size: 0.8rem;">No matching staff found</div>`;
+          }
+        } else {
+          html = filteredUsers.map(u => {
+            const isChecked = typeof selectedRecipientIds !== "undefined" && selectedRecipientIds.has(u.id);
+            const phone = u.phone || ("+966 5" + (Math.abs(u.id.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000));
+            u.phone = phone;
+            const isSaudi = typeof isSaudiEmployee === "function" ? isSaudiEmployee(u) : false;
+            const sal = parseFloat(u.salary) || 0;
+            return `
+              <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(99, 102, 241, 0.14)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? '#6366f1' : 'var(--border-subtle)'}; border-inline-start: ${isChecked ? '4px solid #6366f1' : '1px solid var(--border-subtle)'}; transition: all 0.15s ease; user-select: none;">
+                <div style="display: flex; align-items: center; gap: 0.65rem;">
+                  <input type="checkbox" onchange="toggleRecipientSelect('${u.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 17px; height: 17px; accent-color: #6366f1;">
+                  <div style="width: 30px; height: 30px; border-radius: 50%; background: ${isSaudi && canViewSaudi ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #6366f1, #3b82f6)'}; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: #ffffff; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                    ${(u.name || "U")[0]}
+                  </div>
+                  <div>
+                    <div style="font-size: 0.83rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.35rem;">
+                      <span>${_esc(u.name)}</span>
+                      ${isSaudi && canViewSaudi ? '<span style="font-size: 0.75rem;" title="Saudi National">🇸🇦</span>' : ''}
+                      ${isChecked ? '<span class="badge badge-primary" style="font-size: 0.6rem; padding: 0.05rem 0.35rem; font-weight: 800;">✓ Selected</span>' : ''}
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">${_esc(phone)}</div>
+                  </div>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
+                  <span class="badge badge-secondary" style="font-size: 0.65rem;">${_esc(u.role || "Employee")}</span>
+                  ${canViewSaudi && sal > 0 ? `<span style="font-size: 0.68rem; font-weight: 700; color: #10b981;">💰 ${sal.toLocaleString()} SAR</span>` : ''}
+                </div>
+              </label>
+            `;
+          }).join("");
+
           manualRecipients.forEach((p, idx) => {
             html += `
-              <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.12); border: 1px solid #10b981; margin-bottom: 0.35rem;">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.14); border: 1px solid #10b981; border-inline-start: 4px solid #10b981;">
                 <div style="display: flex; align-items: center; gap: 0.5rem;">
                   <span>📞</span>
-                  <span style="font-size: 0.8rem; font-weight: 700; color: #10b981;">${p}</span>
-                  <span class="badge badge-emerald" style="font-size: 0.65rem;">External Phone</span>
+                  <span style="font-size: 0.8rem; font-weight: 700; color: #10b981; font-family: monospace;">${_esc(p)}</span>
+                  <span class="badge badge-emerald" style="font-size: 0.65rem; font-weight: 800;">Manual Phone</span>
                 </div>
-                <button onclick="removeManualPhoneRecipient(${idx})" class="btn btn-ghost" style="padding: 0.15rem 0.35rem; font-size: 0.7rem; color: #fb7185;">✕</button>
+                <button onclick="removeManualPhoneRecipient(${idx})" class="btn btn-ghost" style="padding: 0.15rem 0.35rem; font-size: 0.7rem; color: #fb7185;" title="Remove manual number">✕</button>
               </div>
             `;
           });
         }
+
         container.innerHTML = html;
         updateRecipientCountBadge();
-        return;
+      } catch (err) {
+        console.error("Error in renderMessageRecipientsList:", err);
       }
-
-      const filteredUsers = state.users.filter(u => {
-        const isSaudi = isSaudiEmployee(u);
-        if (isSaudi && !canViewSaudi) return false;
-        if (!isSaudi && !canViewEmployees) return false;
-
-        if (window._filterSelectedOnlyOstan && !selectedRecipientIds.has(u.id)) return false;
-
-        if (!query) return true;
-        const name = (u.name || "").toLowerCase();
-        const nameAr = (u.nameAr || "").toLowerCase();
-        const role = (u.role || "").toLowerCase();
-        const email = (u.email || "").toLowerCase();
-        return name.includes(query) || nameAr.includes(query) || role.includes(query) || email.includes(query);
-      });
-
-      const lang = document.documentElement.getAttribute("lang") || "en";
-      const isAr = lang === "ar";
-
-      if (filteredUsers.length === 0 && manualRecipients.length === 0) {
-        if (window._filterSelectedOnlyOstan) {
-          html = `
-            <div style="padding: 2rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.8rem; display: flex; flex-direction: column; align-items: center; gap: 0.5rem;">
-              <div style="font-size: 1.6rem;">🎯</div>
-              <div style="font-weight: 700; color: var(--text-main);">
-                ${isAr ? "لم يتم تحديد أي موظف بعد" : "No Employees Selected Yet"}
-              </div>
-              <div style="font-size: 0.72rem; max-width: 280px; line-height: 1.4;">
-                ${isAr ? "حدد موظفين بالنقر على المربعات، أو انقر 'عرض الكل'." : "Check any employees to select them, or toggle 'Show All' to view full staff."}
-              </div>
-              <button type="button" onclick="toggleFilterSelectedOnly('ostan')" class="btn btn-secondary" style="margin-top: 0.35rem; padding: 0.3rem 0.65rem; font-size: 0.74rem;">
-                ${isAr ? "عرض كل الموظفين" : "Show All Staff"}
-              </button>
-            </div>
-          `;
-        } else {
-          html = `<div style="padding: 1rem; text-align: center; color: var(--text-faint); font-size: 0.8rem;">No matching staff found</div>`;
-        }
-      } else {
-        html = filteredUsers.map(u => {
-          const isChecked = selectedRecipientIds.has(u.id);
-          const phone = u.phone || ("+966 5" + (Math.abs(u.id.split("").reduce((a,c) => a + c.charCodeAt(0), 0)) % 90000000 + 10000000));
-          u.phone = phone;
-          const isSaudi = isSaudiEmployee(u);
-          const sal = parseFloat(u.salary) || 0;
-          return `
-            <label style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; border-radius: var(--radius-sm); background: ${isChecked ? 'rgba(99, 102, 241, 0.14)' : 'var(--bg-surface-elevated)'}; cursor: pointer; border: 1px solid ${isChecked ? '#6366f1' : 'var(--border-subtle)'}; border-inline-start: ${isChecked ? '4px solid #6366f1' : '1px solid var(--border-subtle)'}; transition: all 0.15s ease; user-select: none;">
-              <div style="display: flex; align-items: center; gap: 0.65rem;">
-                <input type="checkbox" onchange="toggleRecipientSelect('${u.id}')" ${isChecked ? 'checked' : ''} style="cursor: pointer; width: 17px; height: 17px; accent-color: #6366f1;">
-                <div style="width: 30px; height: 30px; border-radius: 50%; background: ${isSaudi && canViewSaudi ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #6366f1, #3b82f6)'}; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 800; color: #ffffff; flex-shrink: 0; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
-                  ${(u.name || "U")[0]}
-                </div>
-                <div>
-                  <div style="font-size: 0.83rem; font-weight: 700; color: var(--text-main); display: flex; align-items: center; gap: 0.35rem;">
-                    <span>${escapeHtml(u.name)}</span>
-                    ${isSaudi && canViewSaudi ? '<span style="font-size: 0.75rem;" title="Saudi National">🇸🇦</span>' : ''}
-                    ${isChecked ? '<span class="badge badge-primary" style="font-size: 0.6rem; padding: 0.05rem 0.35rem; font-weight: 800;">✓ Selected</span>' : ''}
-                  </div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted); font-family: monospace;">${escapeHtml(phone)}</div>
-                </div>
-              </div>
-              <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.2rem;">
-                <span class="badge badge-secondary" style="font-size: 0.65rem;">${escapeHtml(u.role || "Employee")}</span>
-                ${canViewSaudi && sal > 0 ? `<span style="font-size: 0.68rem; font-weight: 700; color: #10b981;">💰 ${sal.toLocaleString()} SAR</span>` : ''}
-              </div>
-            </label>
-          `;
-        }).join("");
-
-        manualRecipients.forEach((p, idx) => {
-          html += `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 0.45rem 0.65rem; border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.14); border: 1px solid #10b981; border-inline-start: 4px solid #10b981;">
-              <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span>📞</span>
-                <span style="font-size: 0.8rem; font-weight: 700; color: #10b981; font-family: monospace;">${escapeHtml(p)}</span>
-                <span class="badge badge-emerald" style="font-size: 0.65rem; font-weight: 800;">Manual Phone</span>
-              </div>
-              <button onclick="removeManualPhoneRecipient(${idx})" class="btn btn-ghost" style="padding: 0.15rem 0.35rem; font-size: 0.7rem; color: #fb7185;" title="Remove manual number">✕</button>
-            </div>
-          `;
-        });
-      }
-
-      container.innerHTML = html;
-      updateRecipientCountBadge();
     }
     window.renderMessageRecipientsList = renderMessageRecipientsList;
 

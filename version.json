@@ -1,7 +1,7 @@
 {
-  "version": "1.0.23",
-  "commit": "2cede08",
-  "buildTime": 1789194837159,
-  "releaseDate": "2026-09-12T06:33:57.159Z",
-  "message": "feat(messages): add user-isolated Custom Recipients list with Excel/CSV import and header switcher"
+  "version": "1.0.24",
+  "commit": "eab1328",
+  "buildTime": 1789195441393,
+  "releaseDate": "2026-09-12T06:44:01.393Z",
+  "message": "feat(messages): expand recipient list height and add multi-tier live selection counters and filter"
 }
