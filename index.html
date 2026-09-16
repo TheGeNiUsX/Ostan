@@ -1417,7 +1417,7 @@
           <span>🏗️</span>
           <span data-i18n="nav_tasks">المشاريع والمهام</span>
         </a>
-        <a id="top-nav-employees" class="top-subnav-item" onclick="setModule('employees')">
+        <a id="top-nav-employees" class="top-subnav-item" onclick="setModule('employees', 'all')">
           <span>👥</span>
           <span data-i18n="nav_employees">الموظفين</span>
         </a>
@@ -4118,11 +4118,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.41",
-  "commit": "cc29857",
-  "buildTime": 1789578276806,
-  "releaseDate": "2026-09-16T17:04:36.806Z",
-  "message": "fix(ui): eliminate sidebar squish, enforce brand logo sizing, and set v2 light theme default"
+  "version": "1.0.42",
+  "commit": "7fae2e0",
+  "buildTime": 1789579320403,
+  "releaseDate": "2026-09-16T17:22:00.403Z",
+  "message": "fix(ui): restore sidebar nav vertical layout styles and merge footer profile with door exit icon"
 };
 
     let _ostanUpdateTriggered = false;
@@ -4837,7 +4837,7 @@
     }
     window.closeMobileSidebar = closeMobileSidebar;
 
-    function setModule(mod) {
+    function setModule(mod, subTab) {
       if (typeof window !== "undefined" && window.innerWidth <= 900) {
         closeMobileSidebar();
       }
@@ -4851,8 +4851,7 @@
         if (access === "hidden") {
           return;
         }
-        setModule("employees");
-        setEmployeeViewTab("saudi");
+        setModule("employees", "saudi");
         return;
       }
 
@@ -4872,6 +4871,12 @@
       }
 
       state.activeModule = mod;
+
+      // Automatically switch to requested employee sub-tab (defaults to 'all')
+      if (mod === "employees") {
+        const targetTab = subTab || "all";
+        setEmployeeViewTab(targetTab);
+      }
       
       // Persist active section across page refreshes and synchronize URL hash
       const persistedHash = (mod === "employees" && typeof activeEmployeeTab !== "undefined" && activeEmployeeTab === "saudi") ? "saudi-staff" : mod;
@@ -6339,13 +6344,19 @@
 
       const navSaudi = document.getElementById("nav-saudi-staff");
       const navEmp = document.getElementById("nav-employees");
+      const topNavSaudi = document.getElementById("top-nav-saudi-staff");
+      const topNavEmp = document.getElementById("top-nav-employees");
       if (state.activeModule === "employees") {
         if (tab === "saudi") {
           if (navSaudi) navSaudi.classList.add("active");
           if (navEmp) navEmp.classList.remove("active");
+          if (topNavSaudi) topNavSaudi.classList.add("active");
+          if (topNavEmp) topNavEmp.classList.remove("active");
         } else {
           if (navEmp) navEmp.classList.add("active");
           if (navSaudi) navSaudi.classList.remove("active");
+          if (topNavEmp) topNavEmp.classList.add("active");
+          if (topNavSaudi) topNavSaudi.classList.remove("active");
         }
       }
 

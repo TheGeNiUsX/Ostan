@@ -174,6 +174,7 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
    - Implemented `ostan_theme_v2` migration so existing browsers automatically default to the executive Light Theme on initial visit.
    - Restored full sidebar navigation layout styles (`.nav-item`, `.nav-sections-container`, `.nav-group-wrapper`, `.nav-section-title`): all items now stack vertically with proper margins, icons, and hover states, preventing inline wrapping.
    - Merged sidebar footer profile and sign-out button into a unified executive card featuring the user's avatar, name, badge, and a Door Exit with Arrow SVG logout button.
+   - Fixed navigation toggle between Employees and Saudi Staff: `setModule(mod, subTab)` now automatically activates the requested sub-tab (defaulting to `'all'` when selecting Employees). Synchronized both top burgundy bar items (`top-nav-employees`, `top-nav-saudi-staff`) and sidebar items (`nav-employees`, `nav-saudi-staff`) inside `setEmployeeViewTab`, ensuring instant toggling between All Employees and Saudi Staff.
 
 ---
 

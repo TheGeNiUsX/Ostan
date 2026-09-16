@@ -1,7 +1,7 @@
 {
-  "version": "1.0.41",
-  "commit": "cc29857",
-  "buildTime": 1789578276806,
-  "releaseDate": "2026-09-16T17:04:36.806Z",
-  "message": "fix(ui): eliminate sidebar squish, enforce brand logo sizing, and set v2 light theme default"
+  "version": "1.0.42",
+  "commit": "7fae2e0",
+  "buildTime": 1789579320403,
+  "releaseDate": "2026-09-16T17:22:00.403Z",
+  "message": "fix(ui): restore sidebar nav vertical layout styles and merge footer profile with door exit icon"
 }
