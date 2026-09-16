@@ -186,11 +186,20 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
        - **Size (المقاس):** Distribution matrix across sizes (`M`, `L`, `XL`, `2XL`, `3XL`, `4XL`, `5XL`, `Standard`) with size normalization (`XXL` ➔ `2XL`, `XXXL` ➔ `3XL`).
        - **Quantity (الكمية):** Net total items to dispatch, correctly filtering out rows with `0` quantity while preserving line records.
    - Live Inventory Deduction Workflow: when an order is marked as `DONE`, items are automatically deducted from `state.stock`, warehouse views update live, and low stock threshold alerts trigger automatically. Includes automatic inventory rollback if a completed order is cancelled.
-   - Cancelled Order Deletion Management (`deleteOrder` & `deleteAllCancelledOrders`):
-     - Individual deletion directly from table row actions with red trash button (`🗑️ حذف`).
-     - In-modal deletion button inside the Order Details slip for cancelled orders.
-     - Bulk deletion banner when viewing the Cancelled filter (`Cancelled (ملغي)`) allowing single-click cleanup of all archived/cancelled orders with confirmation and live localStorage persistence.
-   - Order Details & Dispatch Receipt Modal (`modal-order-details`) with printable layout (`window.print()`).
+   - Cancelled & Completed Order Deletion Governance (`deleteOrder` & `deleteAllCancelledOrders`):
+      - Individual deletion directly from table row actions with red trash button (`🗑️ حذف`).
+      - In-modal deletion button inside the Order Details slip for cancelled orders.
+      - **Super Admin Restriction on Completed Orders:** Orders marked as `DONE` can ONLY be deleted by the Super Admin (`isMasterSuperAdmin(user)`). Non-superadmin users are restricted from deleting completed/dispatched records to preserve audit and inventory integrity.
+      - Bulk deletion banner when viewing the Cancelled filter (`Cancelled (ملغي)`) allowing single-click cleanup of all archived/cancelled orders with confirmation and live localStorage persistence.
+    - Order Details & Dispatch Receipt Modal (`modal-order-details`) with printable layout (`window.print()`).
+8. **Inventory & Orders Architecture Upgrades**:
+   - **Executive 1-Look UI Scaling:** Expanded modal widths (`#modal-orders-excel-import` ➔ `980px`, `#modal-order-details` ➔ `960px`, `#modal-stock` ➔ `680px`), converted batch Excel preview into a spacious 4-column telemetry dashboard with horizontal size badges and city cards, eliminating restrictive inner scrollbars so users see all telemetry at a glance without scrolling down.
+   - **Stock Requests for Organizations:** Reordered inventory navigation so `Stock Requests (Organizations)` is positioned directly under `Orders & Fulfillment` in both the primary sidebar and the top burgundy subnav bar (`#top-nav-stock-requests`).
+   - **Project Name Association:** Added `Project Name / اسم المشروع` (`#stock-project`) inside the Add/Edit Inventory Item modal with automated persistence (`s.projectName`) and visual badge indicators (`🏗️ {projectName}`) on warehouse cards.
+   - **Super Admin Category & Fallback Icon Management:**
+     - Dynamic category and fallback icon registry (`state.stockCategories` & `state.stockIcons`) with localStorage persistence.
+     - Dedicated Category Manager (`#modal-stock-category-manager`) for Super Admin to add, rename, and delete categories (with automated item reassignment to General).
+     - Dedicated Icon Manager (`#modal-stock-icon-manager`) for Super Admin to add custom emoji icons and labels. Non-superadmin access is strictly blocked.
 
 ---
 

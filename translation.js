@@ -59,7 +59,7 @@
       nav_tasks_emp: "Tasks",
       nav_group_inv: "INVENTORY",
       nav_stock: "Stock & Inventory",
-      nav_stock_requests: "Stock Requests",
+      nav_stock_requests: "Stock Requests (Organizations)",
       nav_orders: "Orders & Fulfillment",
       orders_section_title: "Inventory Orders & Material Fulfillment",
       orders_section_desc: "Create, track, and fulfill material supply orders with automated stock deduction.",
@@ -265,7 +265,7 @@
       cat_consumables: "Consumables",
 
       // Stock Requests Section
-      requests_section_title: "Material & Stock Requests",
+      requests_section_title: "Stock Requests (Organizations)",
       requests_section_desc: "Submit and review material withdrawal requests with automated inventory deduction.",
       btn_submit_request: "+ Submit Request",
       col_request_item: "Requested Item",
@@ -508,7 +508,7 @@
       nav_tasks_emp: "المهام",
       nav_group_inv: "المستودع والمخزون",
       nav_stock: "المستودع والمخزون",
-      nav_stock_requests: "طلبات الصرف",
+      nav_stock_requests: "طلبات الصرف (للمؤسسات)",
       nav_orders: "الطلبيات وأوامر الصرف",
       orders_section_title: "إدارة الطلبيات وتوريد المواد",
       orders_section_desc: "إنشاء ومتابعة أوامر الصرف والتوريد مع الخصم التلقائي المباشر من المخزون.",
@@ -714,7 +714,7 @@
       cat_consumables: "مواد استهلاكية",
 
       // Stock Requests Section
-      requests_section_title: "طلبات صرف المواد والمعدات",
+      requests_section_title: "طلبات صرف المواد (للمؤسسات والمنظمات)",
       requests_section_desc: "تقديم ومراجعة واعتماد طلبات صرف المواد من المستودع مع الخصم التلقائي.",
       btn_submit_request: "+ تقديم طلب",
       col_request_item: "الصنف المطلوب",

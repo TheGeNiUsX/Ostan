@@ -353,6 +353,12 @@
                         </button>
                       ` : ''}
 
+                      ${o.status === "DONE" && (typeof isMasterSuperAdmin === "function" && isMasterSuperAdmin(typeof getCurrentUser === "function" ? getCurrentUser() : null)) ? `
+                        <button onclick="deleteOrder('${o.id}')" class="btn btn-ghost" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); background: rgba(239, 68, 68, 0.06); font-weight: 700;" title="${lang === 'ar' ? 'حذف الطلب المكتمل (صلاحية المدير العام)' : 'Delete Completed Order (Super Admin)'}">
+                          🗑️ ${lang === 'ar' ? 'حذف' : 'Delete'}
+                        </button>
+                      ` : ''}
+
                       <button onclick="openOrderDetails('${o.id}')" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" title="View Details / Print Slip">
                         👁️ سند
                       </button>
@@ -612,32 +618,49 @@
     }
   }
 
-  // Delete Cancelled Order
+  // Delete Cancelled or Completed Order (Completed restricted strictly to Super Admin)
   function deleteOrder(orderId) {
     const orders = (window.state && window.state.orders) ? window.state.orders : [];
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
     const lang = document.documentElement.getAttribute("lang") || "en";
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+    const isSuper = typeof isMasterSuperAdmin === "function" ? isMasterSuperAdmin(curUser) : (curUser && (curUser.role === "SUPER_ADMIN" || curUser.role === "superadmin"));
 
-    // Enforce business rule: only cancelled orders can be deleted
-    if (order.status !== "CANCELLED") {
+    // Business Rule: Completed orders (DONE) can ONLY be deleted by Super Admin!
+    if (order.status === "DONE") {
+      if (!isSuper) {
+        const msg = lang === "ar"
+          ? "عذراً، صلاحية حذف الطلبات المكتملة والمصروفة محصورة فقط بالمدير العام (Super Admin) لضمان سلامة المخزون والتدقيق المالي."
+          : "Permission denied: Only Super Admin can delete completed orders.";
+        if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+        else alert(msg);
+        return;
+      }
+
+      const confirmMsg = lang === "ar"
+        ? `⚠️ تنبيه المدير العام:\nطلب الصرف رقم (${order.orderNumber || order.id}) مكتمل وتم صرف كمياته من المخزون مسبقاً.\n\nهل أنت متأكد من حذف هذا السجل نهائياً؟\nهذا الإجراء لا يمكن التراجع عنه.`
+        : `⚠️ Super Admin Notice:\nOrder (${order.orderNumber || order.id}) is COMPLETED and items were already deducted from inventory.\n\nAre you sure you want to permanently delete this order record?\nThis action cannot be undone.`;
+
+      if (!confirm(confirmMsg)) return;
+    } else if (order.status === "CANCELLED") {
+      const confirmMsg = lang === "ar"
+        ? `هل أنت متأكد من حذف الطلب الملغي (${order.orderNumber || order.id}) نهائياً من النظام؟\nهذا الإجراء لا يمكن التراجع عنه.`
+        : `Are you sure you want to permanently delete cancelled order (${order.orderNumber || order.id})?\nThis action cannot be undone.`;
+
+      if (!confirm(confirmMsg)) return;
+    } else {
       const msg = lang === "ar"
-        ? "لا يمكن حذف الطلب إلا بعد إلغائه! يرجى إلغاء الطلب أولاً."
-        : "Only cancelled orders can be deleted! Please cancel the order first.";
+        ? "لا يمكن حذف الطلب وهو نشط! يرجى إلغاء الطلب أولاً قبل حذفه."
+        : "Cannot delete an active order! Please cancel the order before deleting it.";
       if (window.OstanStyle) window.OstanStyle.showToast("تنبيه", msg, "warning");
       else alert(msg);
       return;
     }
 
-    const confirmMsg = lang === "ar"
-      ? `هل أنت متأكد من حذف الطلب الملغي (${order.orderNumber || order.id}) نهائياً من النظام؟\nهذا الإجراء لا يمكن التراجع عنه.`
-      : `Are you sure you want to permanently delete cancelled order (${order.orderNumber || order.id})?\nThis action cannot be undone.`;
-
-    if (!confirm(confirmMsg)) return;
-
-    // Safety rollback if needed
-    if (order.stockDeducted) {
+    // Safety rollback if cancelled order had stock marked deducted
+    if (order.stockDeducted && order.status === "CANCELLED") {
       const stock = window.state.stock || [];
       (order.items || []).forEach(it => {
         let stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : null;
@@ -660,8 +683,8 @@
     if (typeof updateCounts === "function") updateCounts();
 
     const successMsg = lang === "ar"
-      ? `تم حذف الطلب الملغي (${order.orderNumber || order.id}) بنجاح.`
-      : `Cancelled order (${order.orderNumber || order.id}) has been deleted successfully.`;
+      ? `تم حذف الطلب (${order.orderNumber || order.id}) بنجاح.`
+      : `Order (${order.orderNumber || order.id}) has been deleted successfully.`;
 
     if (window.OstanStyle) {
       window.OstanStyle.showToast(lang === "ar" ? "تم الحذف" : "Deleted", successMsg);
@@ -724,6 +747,10 @@
             ${order.status === "CANCELLED" ? `
               <button onclick="deleteOrder('${order.id}')" class="btn btn-ghost" style="color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.3); background: rgba(239, 68, 68, 0.05); font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem;" title="Delete Cancelled Order">
                 🗑️ ${lang === 'ar' ? 'حذف هذا الطلب الملغي' : 'Delete Cancelled Order'}
+              </button>
+            ` : (order.status === "DONE" && (typeof isMasterSuperAdmin === "function" && isMasterSuperAdmin(typeof getCurrentUser === "function" ? getCurrentUser() : null))) ? `
+              <button onclick="deleteOrder('${order.id}')" class="btn btn-ghost" style="color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.3); background: rgba(239, 68, 68, 0.05); font-size: 0.75rem; font-weight: 700; padding: 0.3rem 0.65rem;" title="Delete Completed Order (Super Admin)">
+                🗑️ ${lang === 'ar' ? 'حذف الطلب المكتمل' : 'Delete Order'}
               </button>
             ` : ''}
             <span class="badge ${order.status === 'DONE' ? 'badge-emerald' : order.status === 'APPROVED' ? 'badge-cyan' : order.status === 'CANCELLED' ? 'badge-rose' : 'badge-amber'}" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">
@@ -922,60 +949,71 @@
           btn.textContent = `تأكيد استيراد الطلب (إجمالي ${parsed.netTotalQty} قطعة عبر ${parsed.citiesList.length} مدن)`;
         }
 
+        // Compact dropzone into a sleek top banner so nothing gets pushed down
+        const dropzone = document.getElementById("orders-excel-dropzone");
+        if (dropzone) {
+          dropzone.style.padding = "0.65rem 1rem";
+          dropzone.style.display = "flex";
+          dropzone.style.justifyContent = "space-between";
+          dropzone.style.alignItems = "center";
+        }
+
         if (preview) {
           preview.style.display = "block";
+          preview.style.maxHeight = "none";
           preview.innerHTML = `
             <div style="display: flex; flex-direction: column; gap: 0.85rem;">
-              <!-- Telemetry KPI Bar -->
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.5rem;">
-                <div style="padding: 0.65rem; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); text-align: center;">
-                  <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">إجمالي القطع المطلوب صرفها</div>
-                  <div style="font-size: 1.35rem; font-weight: 800; color: #10b981;">${parsed.netTotalQty} قطعة</div>
+              <!-- Telemetry KPI Bar in 4 Columns -->
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.65rem;">
+                <div style="padding: 0.75rem; background: rgba(16, 185, 129, 0.08); border-radius: var(--radius-md); border: 1px solid rgba(16, 185, 129, 0.25); text-align: center;">
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">إجمالي القطع المطلوب صرفها</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: #10b981;">${parsed.netTotalQty} <span style="font-size: 0.8rem; font-weight: 700;">قطعة</span></div>
                 </div>
-                <div style="padding: 0.65rem; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); text-align: center;">
-                  <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">عدد المدن / الفروع</div>
-                  <div style="font-size: 1.35rem; font-weight: 800; color: #2563eb;">${parsed.citiesList.length} مدن</div>
+                <div style="padding: 0.75rem; background: rgba(37, 99, 235, 0.08); border-radius: var(--radius-md); border: 1px solid rgba(37, 99, 235, 0.25); text-align: center;">
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">عدد المدن / الفروع</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: #2563eb;">${parsed.citiesList.length} <span style="font-size: 0.8rem; font-weight: 700;">مدن</span></div>
                 </div>
-                <div style="padding: 0.65rem; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); text-align: center;">
-                  <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">إجمالي الكوادر المسجلين</div>
-                  <div style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">${parsed.totalRecords} موظف</div>
+                <div style="padding: 0.75rem; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); text-align: center;">
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">إجمالي الكوادر المسجلين</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: var(--text-main);">${parsed.totalRecords} <span style="font-size: 0.8rem; font-weight: 700;">موظف</span></div>
                 </div>
-                <div style="padding: 0.65rem; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); text-align: center;">
-                  <div style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700;">طلبات معفاة (كمية 0)</div>
-                  <div style="font-size: 1.35rem; font-weight: 800; color: #94a3b8;">${parsed.zeroQtyCount}</div>
+                <div style="padding: 0.75rem; background: var(--bg-surface); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); text-align: center;">
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">طلبات معفاة (كمية 0)</div>
+                  <div style="font-size: 1.5rem; font-weight: 800; color: #94a3b8;">${parsed.zeroQtyCount} <span style="font-size: 0.8rem; font-weight: 700;">طلب</span></div>
                 </div>
               </div>
 
-              <!-- 1. COUNT BY SIZE -->
-              <div>
-                <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.35rem;">
-                  📏 توزيع وإحصاء المقاسات (Count by Size):
+              <!-- 1. COUNT BY SIZE (Expansive visible layout with high clarity) -->
+              <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem;">
+                <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-main); margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                  <span>📏 توزيع وإحصاء المقاسات (Count by Size):</span>
+                  <span style="font-size: 0.75rem; color: #2563eb; font-weight: 700;">${Object.keys(parsed.countBySize).length} مقاسات مطلوبة</span>
                 </div>
-                <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
                   ${Object.entries(parsed.countBySize).map(([sz, count]) => `
-                    <div style="padding: 0.3rem 0.65rem; background: rgba(37, 99, 235, 0.1); border: 1px solid rgba(37, 99, 235, 0.25); border-radius: 6px; font-size: 0.78rem;">
-                      <strong style="color: #2563eb;">${sz}:</strong> ${count} قطعة
+                    <div style="padding: 0.4rem 0.85rem; background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.25); border-radius: 6px; font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                      <strong style="color: #2563eb;">${sz}:</strong>
+                      <span style="font-weight: 800; color: var(--text-main);">${count} قطعة</span>
                     </div>
                   `).join("")}
                 </div>
               </div>
 
-              <!-- 2. COUNT BY CITY -->
-              <div>
-                <div style="font-weight: 800; font-size: 0.85rem; color: var(--text-main); margin-bottom: 0.35rem;">
+              <!-- 2. COUNT BY CITY (Compact horizontal grid) -->
+              <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem;">
+                <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-main); margin-bottom: 0.5rem;">
                   🏙️ توزيع المدن والكميات (Count by City):
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 0.35rem; max-height: 140px; overflow-y: auto;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.5rem; max-height: 180px; overflow-y: auto;">
                   ${Object.values(parsed.countByCity).map(c => {
                     const sizesStr = Object.entries(c.sizes).map(([s, q]) => `${s}: ${q}`).join(", ");
                     return `
-                      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.6rem; background: var(--bg-surface); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.78rem;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.8rem;">
                         <div>
-                          <strong style="color: var(--text-main);">${c.city}</strong>
-                          <span style="color: var(--text-muted); font-size: 0.72rem; margin-inline-start: 6px;">(${c.totalWorkers} موظف)</span>
-                          <div style="font-size: 0.7rem; color: var(--text-faint);">${sizesStr}</div>
+                          <strong style="color: var(--text-main); font-size: 0.85rem;">${c.city}</strong>
+                          <div style="color: var(--text-muted); font-size: 0.72rem; margin-top: 1px;">${c.totalWorkers} موظف • ${sizesStr}</div>
                         </div>
-                        <div style="font-weight: 800; color: #10b981; font-size: 0.85rem;">${c.totalQty} قطعة</div>
+                        <strong style="color: #10b981; font-size: 0.95rem; white-space: nowrap;">${c.totalQty} قطعة</strong>
                       </div>
                     `;
                   }).join("")}
@@ -996,7 +1034,8 @@
                   </label>
                 </div>
               </div>
-            </div>`;
+            </div>
+          `;
         }
 
       } catch (err) {

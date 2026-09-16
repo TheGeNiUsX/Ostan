@@ -1244,16 +1244,16 @@
               <span data-i18n="nav_stock">Stock & Inventory</span>
             </span>
           </a>
-          <a id="nav-stock-requests" class="nav-item" onclick="setModule('stock-requests')">
-            <span style="display: flex; align-items: center; gap: 0.6rem;">
-              <span>📄</span>
-              <span data-i18n="nav_stock_requests">Stock Requests</span>
-            </span>
-          </a>
           <a id="nav-orders" class="nav-item" onclick="setModule('orders')">
             <span style="display: flex; align-items: center; gap: 0.6rem;">
               <span>📋</span>
-              <span data-i18n="nav_orders">Orders</span>
+              <span data-i18n="nav_orders">Orders & Fulfillment</span>
+            </span>
+          </a>
+          <a id="nav-stock-requests" class="nav-item" onclick="setModule('stock-requests')">
+            <span style="display: flex; align-items: center; gap: 0.6rem;">
+              <span>📄</span>
+              <span data-i18n="nav_stock_requests">Stock Requests (Organizations)</span>
             </span>
           </a>
         </div>
@@ -1438,7 +1438,11 @@
         </a>
         <a id="top-nav-orders" class="top-subnav-item" onclick="setModule('orders')">
           <span>📋</span>
-          <span data-i18n="nav_orders">الطلبيات</span>
+          <span data-i18n="nav_orders">الطلبيات والتوريد</span>
+        </a>
+        <a id="top-nav-stock-requests" class="top-subnav-item" onclick="setModule('stock-requests')">
+          <span>📄</span>
+          <span data-i18n="nav_stock_requests">طلبات الصرف (للمؤسسات)</span>
         </a>
         <a id="top-nav-messages" class="top-subnav-item" onclick="setModule('messages')">
           <span>💬</span>
@@ -3657,20 +3661,31 @@
 
   <!-- STOCK ITEM MODAL (ADD & EDIT WITH PICTURES & 4 CATEGORIES) -->
   <div id="modal-stock" class="hud-modal-overlay" style="display: none;">
-    <div class="hud-modal-box">
+    <div class="hud-modal-box" style="max-width: 680px; width: 92vw;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
         <h2 id="modal-stock-heading" style="font-size: 1.25rem; font-weight: 800;">📦 Add Inventory Item</h2>
         <button onclick="closeModals()" style="background: none; border: none; font-size: 1.2rem; color: var(--text-muted); cursor: pointer;">✕</button>
       </div>
       <form onsubmit="saveStockItem(event)" style="display: flex; flex-direction: column; gap: 1rem;">
         <input id="stock-edit-id" type="hidden" value="">
-        <div>
-          <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Item Name *</label>
-          <input id="stock-name" type="text" required placeholder="e.g. Hydraulic Pump Valve" class="input-field">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Item Name / اسم الصنف *</label>
+            <input id="stock-name" type="text" required placeholder="e.g. Hydraulic Pump Valve / زي موحد" class="input-field">
+          </div>
+          <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Project Name / اسم المشروع</label>
+            <input id="stock-project" type="text" placeholder="e.g. مشروع نادك / مشروع الدمام / NEOM" class="input-field">
+          </div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
           <div>
-            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Category *</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Category / الفئة *</label>
+              <button type="button" id="btn-manage-categories" onclick="openCategoryManagerModal()" class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.72rem; color: #2563eb; display: none;" title="Manage Categories (Super Admin Only)">
+                ⚙️ إدارة الفئات
+              </button>
+            </div>
             <select id="stock-category" class="input-field">
               <option value="General">General (عام)</option>
               <option value="Equipment">Equipment (معدات)</option>
@@ -3679,7 +3694,12 @@
             </select>
           </div>
           <div>
-            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Fallback Icon</label>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Fallback Icon / الأيقونة</label>
+              <button type="button" id="btn-manage-icons" onclick="openIconManagerModal()" class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.72rem; color: #2563eb; display: none;" title="Add Icon (Super Admin Only)">
+                + إضافة أيقونة
+              </button>
+            </div>
             <select id="stock-icon" class="input-field">
               <option value="⚙️">⚙️ Machinery Part</option>
               <option value="🔧">🔧 Tool Kit</option>
@@ -4209,11 +4229,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.45",
-  "commit": "8e62177",
-  "buildTime": 1789584801417,
-  "releaseDate": "2026-09-16T18:53:21.418Z",
-  "message": "feat(orders): support dual-format excel templates with city, size, and quantity counting"
+  "version": "1.0.46",
+  "commit": "e13ca40",
+  "buildTime": 1789587665131,
+  "releaseDate": "2026-09-16T19:41:05.131Z",
+  "message": "feat(orders): add ability to delete cancelled orders individually and in bulk"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9417,6 +9437,7 @@
               </div>
 
               <div style="font-weight: 700; font-size: 1rem; color: var(--text-main); margin-top: 0.75rem;">${s.name}</div>
+              ${s.projectName ? `<div style="font-size: 0.75rem; color: #2563eb; font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 4px;"><span>🏗️</span> <span>${s.projectName}</span></div>` : ''}
               <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
                 ${lang === 'ar' ? 'الكمية المتوفرة:' : 'Available Qty:'} <strong style="color: var(--text-main); font-size: 0.95rem;">${s.quantity}</strong>
                 <span style="opacity: 0.6; margin: 0 4px;">•</span>
@@ -9848,6 +9869,296 @@
         : (lang === "ar" ? "👥 إضافة موظف جديد" : "👥 Add New Employee");
       document.getElementById("modal-worker").style.display = "flex";
     }
+    
+    // =========================================================================
+    // DYNAMIC CATEGORIES & FALLBACK ICONS (SUPER ADMIN ONLY)
+    // =========================================================================
+    function getStoredStockCategories() {
+      if (window.state && window.state.stockCategories && window.state.stockCategories.length > 0) {
+        return window.state.stockCategories;
+      }
+      try {
+        const saved = localStorage.getItem("ostan_stock_categories");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return [
+        { id: "General", name: "General (عام)" },
+        { id: "Equipment", name: "Equipment (معدات)" },
+        { id: "Tools", name: "Tools (أدوات وعدد)" },
+        { id: "Consumables", name: "Consumables (مواد استهلاكية)" }
+      ];
+    }
+
+    function getStoredStockIcons() {
+      if (window.state && window.state.stockIcons && window.state.stockIcons.length > 0) {
+        return window.state.stockIcons;
+      }
+      try {
+        const saved = localStorage.getItem("ostan_stock_icons");
+        if (saved) return JSON.parse(saved);
+      } catch (e) {}
+      return [
+        { icon: "⚙️", name: "Machinery Part" },
+        { icon: "🔧", name: "Tool Kit" },
+        { icon: "🦺", name: "Safety Vest" },
+        { icon: "⚡", name: "Electrical Unit" },
+        { icon: "🛢️", name: "Oil / Fuel Drum" },
+        { icon: "📦", name: "General Box" }
+      ];
+    }
+
+    function renderCategoryOptions(selectedVal) {
+      const select = document.getElementById("stock-category");
+      if (!select) return;
+      const categories = getStoredStockCategories();
+      window.state.stockCategories = categories;
+
+      select.innerHTML = categories.map(c => `
+        <option value="${c.id}" ${selectedVal === c.id ? 'selected' : ''}>${c.name}</option>
+      `).join("");
+
+      // Toggle Super Admin button
+      const curUser = getCurrentUser();
+      const isSuper = isMasterSuperAdmin(curUser);
+      const btn = document.getElementById("btn-manage-categories");
+      if (btn) btn.style.display = isSuper ? "inline-flex" : "none";
+    }
+    window.renderCategoryOptions = renderCategoryOptions;
+
+    function renderIconOptions(selectedVal) {
+      const select = document.getElementById("stock-icon");
+      if (!select) return;
+      const icons = getStoredStockIcons();
+      window.state.stockIcons = icons;
+
+      select.innerHTML = icons.map(i => `
+        <option value="${i.icon}" ${selectedVal === i.icon ? 'selected' : ''}>${i.icon} ${i.name}</option>
+      `).join("");
+
+      // Toggle Super Admin button
+      const curUser = getCurrentUser();
+      const isSuper = isMasterSuperAdmin(curUser);
+      const btn = document.getElementById("btn-manage-icons");
+      if (btn) btn.style.display = isSuper ? "inline-flex" : "none";
+    }
+    window.renderIconOptions = renderIconOptions;
+
+    function openCategoryManagerModal() {
+      const curUser = getCurrentUser();
+      if (!isMasterSuperAdmin(curUser)) {
+        alert("عذراً، إدارة وتعديل الفئات محصورة بالمدير العام فقط (Super Admin)!");
+        return;
+      }
+      renderCategoryManagerList();
+      const m = document.getElementById("modal-stock-category-manager");
+      if (m) m.style.display = "flex";
+    }
+    window.openCategoryManagerModal = openCategoryManagerModal;
+
+    function closeCategoryManagerModal() {
+      const m = document.getElementById("modal-stock-category-manager");
+      if (m) m.style.display = "none";
+    }
+    window.closeCategoryManagerModal = closeCategoryManagerModal;
+
+    function renderCategoryManagerList() {
+      const container = document.getElementById("category-manager-list");
+      if (!container) return;
+      const categories = getStoredStockCategories();
+
+      container.innerHTML = categories.map((c, idx) => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+          <div style="font-weight: 700; font-size: 0.85rem; color: var(--text-main);">
+            ${c.name}
+          </div>
+          <div style="display: flex; gap: 0.35rem;">
+            <button type="button" onclick="handleEditCategory('${c.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #2563eb;" title="تعديل اسم الفئة">
+              ✏️ تعديل
+            </button>
+            ${c.id !== "General" ? `
+              <button type="button" onclick="handleDeleteCategory('${c.id}')" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="حذف الفئة">
+                🗑️ حذف
+              </button>
+            ` : '<span style="font-size: 0.68rem; color: var(--text-faint); padding: 0.2rem 0.4rem;">أساسية</span>'}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function handleAddCategory() {
+      const curUser = getCurrentUser();
+      if (!isMasterSuperAdmin(curUser)) return;
+
+      const input = document.getElementById("new-category-name");
+      const name = input ? input.value.trim() : "";
+      if (!name) {
+        alert("يرجى إدخال اسم الفئة أولاً.");
+        return;
+      }
+
+      const categories = getStoredStockCategories();
+      const newId = "cat_" + Date.now();
+      categories.push({ id: newId, name: name });
+
+      window.state.stockCategories = categories;
+      try { localStorage.setItem("ostan_stock_categories", JSON.stringify(categories)); } catch (e) {}
+
+      if (input) input.value = "";
+      renderCategoryManagerList();
+      renderCategoryOptions();
+      if (window.OstanStyle) window.OstanStyle.showToast("تمت الإضافة", `تمت إضافة الفئة: ${name}`);
+    }
+    window.handleAddCategory = handleAddCategory;
+
+    function handleEditCategory(catId) {
+      const curUser = getCurrentUser();
+      if (!isMasterSuperAdmin(curUser)) return;
+
+      const categories = getStoredStockCategories();
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      const newName = prompt("أدخل الاسم الجديد للفئة:", cat.name);
+      if (!newName || !newName.trim()) return;
+
+      const oldName = cat.name;
+      cat.name = newName.trim();
+
+      // Update in state.stock
+      if (window.state && window.state.stock) {
+        window.state.stock.forEach(s => {
+          if (s.category === cat.id || s.category === oldName) {
+            s.category = cat.name;
+          }
+        });
+      }
+
+      window.state.stockCategories = categories;
+      try { localStorage.setItem("ostan_stock_categories", JSON.stringify(categories)); } catch (e) {}
+
+      saveState();
+      renderWarehouse();
+      renderCategoryManagerList();
+      renderCategoryOptions();
+      if (window.OstanStyle) window.OstanStyle.showToast("تم التعديل", `تم تحديث الفئة إلى: ${cat.name}`);
+    }
+    window.handleEditCategory = handleEditCategory;
+
+    function handleDeleteCategory(catId) {
+      const curUser = getCurrentUser();
+      if (!isMasterSuperAdmin(curUser)) return;
+
+      const categories = getStoredStockCategories();
+      const cat = categories.find(c => c.id === catId);
+      if (!cat) return;
+
+      if (!confirm(`هل أنت متأكد من حذف فئة (${cat.name})؟\nسيتم نقل الأصناف التابعة لها تلقائياً إلى الفئة العامة (General).`)) return;
+
+      const updated = categories.filter(c => c.id !== catId);
+      window.state.stockCategories = updated;
+
+      // Reassign affected stock items to General
+      if (window.state && window.state.stock) {
+        window.state.stock.forEach(s => {
+          if (s.category === cat.id || s.category === cat.name) {
+            s.category = "General";
+          }
+        });
+      }
+
+      try { localStorage.setItem("ostan_stock_categories", JSON.stringify(updated)); } catch (e) {}
+
+      saveState();
+      renderWarehouse();
+      renderCategoryManagerList();
+      renderCategoryOptions();
+      if (window.OstanStyle) window.OstanStyle.showToast("تم الحذف", `تم حذف فئة ${cat.name} بنجاح`);
+    }
+    window.handleDeleteCategory = handleDeleteCategory;
+
+    function openIconManagerModal() {
+      const curUser = getCurrentUser();
+      if (!isMasterSuperAdmin(curUser)) {
+        alert("عذراً، إضافة الأيقونات محصورة بالمدير العام فقط (Super Admin)!");
+        return;
+      }
+      renderIconManagerList();
+      const m = document.getElementById("modal-stock-icon-manager");
+      if (m) m.style.display = "flex";
+    }
+    window.openIconManagerModal = openIconManagerModal;
+
+    function closeIconManagerModal() {
+      const m = document.getElementById("modal-stock-icon-manager");
+      if (m) m.style.display = "none";
+    }
+    window.closeIconManagerModal = closeIconManagerModal;
+
+    function renderIconManagerList() {
+      const container = document.getElementById("icon-manager-list");
+      if (!container) return;
+      const icons = getStoredStockIcons();
+
+      container.innerHTML = icons.map((i, idx) => `
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.45rem 0.75rem; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm);">
+          <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span style="font-size: 1.4rem;">${i.icon}</span>
+            <span style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">${i.name}</span>
+          </div>
+          ${idx >= 6 ? `
+            <button type="button" onclick="handleDeleteIcon(${idx})" class="btn btn-ghost" style="padding: 0.2rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="حذف الأيقونة">
+              🗑️
+            </button>
+          ` : '<span style="font-size: 0.68rem; color: var(--text-faint);">افتراضي</span>'}
+        </div>
+      `).join("");
+    }
+
+    function handleAddIcon() {
+      const curUser = getCurrentUser();
+      if (!isMasterSuperAdmin(curUser)) return;
+
+      const emojiInput = document.getElementById("new-icon-emoji");
+      const labelInput = document.getElementById("new-icon-label");
+      const emoji = emojiInput ? emojiInput.value.trim() : "";
+      const label = labelInput ? labelInput.value.trim() : "";
+
+      if (!emoji || !label) {
+        alert("يرجى إدخال الرمز التعبيري (الأيقونة) والوصف.");
+        return;
+      }
+
+      const icons = getStoredStockIcons();
+      icons.push({ icon: emoji, name: label });
+
+      window.state.stockIcons = icons;
+      try { localStorage.setItem("ostan_stock_icons", JSON.stringify(icons)); } catch (e) {}
+
+      if (emojiInput) emojiInput.value = "";
+      if (labelInput) labelInput.value = "";
+      renderIconManagerList();
+      renderIconOptions();
+      if (window.OstanStyle) window.OstanStyle.showToast("تمت الإضافة", `تمت إضافة الأيقونة: ${emoji} ${label}`);
+    }
+    window.handleAddIcon = handleAddIcon;
+
+    function handleDeleteIcon(idx) {
+      const curUser = getCurrentUser();
+      if (!isMasterSuperAdmin(curUser)) return;
+
+      const icons = getStoredStockIcons();
+      if (idx < 0 || idx >= icons.length) return;
+
+      const removed = icons.splice(idx, 1);
+      window.state.stockIcons = icons;
+      try { localStorage.setItem("ostan_stock_icons", JSON.stringify(icons)); } catch (e) {}
+
+      renderIconManagerList();
+      renderIconOptions();
+      if (window.OstanStyle) window.OstanStyle.showToast("تم الحذف", "تمت إزالة الأيقونة بنجاح");
+    }
+    window.handleDeleteIcon = handleDeleteIcon;
+
     function openStockHUD() {
       if (!hasUserPermission("stock", "create")) {
         alert("Permission denied: You do not have permission to add warehouse items.");
@@ -10175,7 +10486,7 @@
           alert("Permission denied: You do not have permission to add warehouse items.");
           return;
         }
-        const newItem = { id: "stock-" + Date.now(), name, category, icon, imageUrl, quantity, threshold };
+        const newItem = { id: "stock-" + Date.now(), name, projectName, category, icon, imageUrl, quantity, threshold };
         state.stock.unshift(newItem);
         syncStockItemToFirestore(newItem);
       }
@@ -14694,7 +15005,7 @@
        MODAL: EXCEL BATCH IMPORT FOR ORDERS
        ========================================================================= -->
   <div id="modal-orders-excel-import" class="hud-modal-overlay" style="display: none;" onclick="if(event.target===this) closeOrdersExcelImportModal()">
-    <div class="hud-modal-box" style="max-width: 600px;">
+    <div class="hud-modal-box" style="max-width: 980px; width: 94vw; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
         <h3 data-i18n="modal_import_orders_title" style="font-weight: 800; font-size: 1.15rem; color: var(--text-main);">Batch Import Orders via Excel</h3>
         <button onclick="closeOrdersExcelImportModal()" class="btn btn-ghost" style="font-size: 1.2rem; padding: 0.2rem 0.5rem;">✕</button>
@@ -14734,7 +15045,7 @@
        MODAL: ORDER DETAILS & DISPATCH SLIP
        ========================================================================= -->
   <div id="modal-order-details" class="hud-modal-overlay" style="display: none;" onclick="if(event.target===this) closeOrderDetailsModal()">
-    <div class="hud-modal-box" style="max-width: 620px;">
+    <div class="hud-modal-box" style="max-width: 960px; width: 94vw; max-height: 90vh; overflow-y: auto;">
       <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
         <h3 data-i18n="modal_order_details_title" style="font-weight: 800; font-size: 1.15rem; color: var(--text-main);">Order Fulfillment & Dispatch Receipt</h3>
         <button onclick="closeOrderDetailsModal()" class="btn btn-ghost" style="font-size: 1.2rem; padding: 0.2rem 0.5rem;">✕</button>
@@ -14755,5 +15066,67 @@
     </div>
   </div>
 
-  </body>
+  
+  <!-- MODAL: CATEGORY MANAGER (SUPER ADMIN ONLY) -->
+  <div id="modal-stock-category-manager" class="hud-modal-overlay" style="display: none; z-index: 10001;" onclick="if(event.target===this) closeCategoryManagerModal()">
+    <div class="hud-modal-box" style="max-width: 540px; width: 92vw;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">⚙️ إدارة فئات المخزون (Super Admin)</h3>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">إضافة، تعديل وحذف تصنيفات المواد بالمستودع</p>
+        </div>
+        <button onclick="closeCategoryManagerModal()" class="btn btn-ghost" style="font-size: 1.2rem; padding: 0.2rem 0.5rem;">✕</button>
+      </div>
+
+      <!-- Add Category Form -->
+      <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
+        <input type="text" id="new-category-name" placeholder="اسم الفئة الجديدة (مثال: زي موحد / Uniforms)..." class="input-field" style="flex: 1; font-size: 0.82rem;">
+        <button type="button" onclick="handleAddCategory()" class="btn btn-primary" style="padding: 0.4rem 0.85rem; font-size: 0.8rem; white-space: nowrap;">
+          + إضافة فئة
+        </button>
+      </div>
+
+      <!-- Categories List -->
+      <div id="category-manager-list" style="max-height: 280px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.65rem;">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <button onclick="closeCategoryManagerModal()" class="btn btn-secondary">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: FALLBACK ICON MANAGER (SUPER ADMIN ONLY) -->
+  <div id="modal-stock-icon-manager" class="hud-modal-overlay" style="display: none; z-index: 10001;" onclick="if(event.target===this) closeIconManagerModal()">
+    <div class="hud-modal-box" style="max-width: 500px; width: 92vw;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+        <div>
+          <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">🎨 إدارة الأيقونات البديلة (Super Admin)</h3>
+          <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 2px;">إضافة رموز تعبيرية وأيقونات جديدة للمواد</p>
+        </div>
+        <button onclick="closeIconManagerModal()" class="btn btn-ghost" style="font-size: 1.2rem; padding: 0.2rem 0.5rem;">✕</button>
+      </div>
+
+      <!-- Add Icon Form -->
+      <div style="display: grid; grid-template-columns: 70px 1fr auto; gap: 0.5rem; margin-bottom: 1rem; align-items: center;">
+        <input type="text" id="new-icon-emoji" placeholder="🥾" class="input-field" style="text-align: center; font-size: 1.3rem; padding: 0.3rem;" maxlength="4">
+        <input type="text" id="new-icon-label" placeholder="الوصف (مثال: Safety Boots)..." class="input-field" style="font-size: 0.82rem;">
+        <button type="button" onclick="handleAddIcon()" class="btn btn-primary" style="padding: 0.4rem 0.75rem; font-size: 0.8rem; white-space: nowrap;">
+          + إضافة
+        </button>
+      </div>
+
+      <!-- Icons List -->
+      <div id="icon-manager-list" style="max-height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.5rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.65rem;">
+        <!-- Rendered dynamically -->
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; margin-top: 1rem;">
+        <button onclick="closeIconManagerModal()" class="btn btn-secondary">إغلاق</button>
+      </div>
+    </div>
+  </div>
+
+</body>
 </html>

@@ -1,7 +1,7 @@
 {
-  "version": "1.0.45",
-  "commit": "8e62177",
-  "buildTime": 1789584801417,
-  "releaseDate": "2026-09-16T18:53:21.418Z",
-  "message": "feat(orders): support dual-format excel templates with city, size, and quantity counting"
+  "version": "1.0.46",
+  "commit": "e13ca40",
+  "buildTime": 1789587665131,
+  "releaseDate": "2026-09-16T19:41:05.131Z",
+  "message": "feat(orders): add ability to delete cancelled orders individually and in bulk"
 }
