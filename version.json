@@ -1,7 +1,7 @@
 {
-  "version": "1.0.52",
-  "commit": "a8f92f3",
-  "buildTime": 1789599004724,
-  "releaseDate": "2026-09-16T22:50:04.724Z",
-  "message": "chore: bump build version to de440e1"
+  "version": "1.0.53",
+  "commit": "9cec96f",
+  "buildTime": 1789601105440,
+  "releaseDate": "2026-09-16T23:25:05.440Z",
+  "message": "fix: strict per-row project scoping in excel orders to count only explicit rows for nadec"
 }

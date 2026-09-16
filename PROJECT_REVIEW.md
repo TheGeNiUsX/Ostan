@@ -218,6 +218,10 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
       - Designated Project orders (e.g., `مشروع نادك (بلال محمد)` with 1 worker and 2 pieces).
       - Remaining city orders for unassigned rows (e.g., `مشروع الاحساء (بلال محمد / طلال طلعت)` with 4 workers and 8 pieces, and `مشروع الدمام` with 21 workers and 28 pieces).
     - **Executive Project Naming in City & Recipient Column:** When a project name exists in the Excel file, the order title dynamically displays **`مشروع [اسم المشروع]`** (e.g. `مشروع نادك (بلال محمد)`) accompanied by the regional city badge (`🏙️ الاحساء`).
+12. **Orders Persistence Integrity & Dynamic Cache Busting**:
+    - **Orders In-State Persistence:** Anchored `state.orders` directly in initial state loaded from `localStorage.getItem("ostan_orders")`. Integrated `ostan_orders` into `saveState()`, guaranteeing orders are never wiped or lost when editing other modules (such as staff, stock, settings, or categories) or reloading the browser.
+    - **Single Source of Truth Helpers (`getActiveOrders` & `persistOrders`):** Unified all reads and writes to orders through synchronized helpers in `orders-engine.js` that automatically mirror state to `localStorage` and trigger global UI updates.
+    - **Automated Cache Busting:** Bound `orders-engine.js?v={version}` in `index.html` to `update-build-version.mjs`, ensuring browsers immediately fetch the latest engine updates upon deployment without serving stale cached code.
 
 ---
 

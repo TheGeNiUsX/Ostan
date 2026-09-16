@@ -10,6 +10,31 @@
   let parsedOrdersBatchData = null;
   let manualOrderLineItems = [];
 
+  // Helper: Reliable single source of truth for orders in memory & persistence
+  function getActiveOrders() {
+    if (!window.state) window.state = {};
+    if (!window.state.orders || !Array.isArray(window.state.orders)) {
+      try {
+        const saved = localStorage.getItem("ostan_orders");
+        window.state.orders = saved ? JSON.parse(saved) : [];
+      } catch (e) {
+        window.state.orders = [];
+      }
+    }
+    return window.state.orders;
+  }
+
+  function persistOrders() {
+    if (!window.state) window.state = {};
+    const ords = window.state.orders || [];
+    try {
+      localStorage.setItem("ostan_orders", JSON.stringify(ords));
+    } catch (e) {}
+    if (typeof saveState === "function") {
+      try { saveState(); } catch (e) {}
+    }
+  }
+
   // Normalizes sizing strings (e.g. XXL -> 2XL, XXXL -> 3XL)
   function normalizeSizeName(rawSize) {
     if (!rawSize) return "Standard";
@@ -160,23 +185,24 @@
 
       netTotalQty += qty;
 
-      // 1. Group by City
+      // 1. Group by City (Neutral city telemetry)
       if (!countByCity[city]) {
-        countByCity[city] = { city: city, projectName: rowProj, totalWorkers: 0, totalQty: 0, sizes: {}, spvs: new Set() };
+        countByCity[city] = { city: city, totalWorkers: 0, totalQty: 0, sizes: {}, spvs: new Set() };
       }
       countByCity[city].totalWorkers++;
       countByCity[city].totalQty += qty;
       countByCity[city].sizes[size] = (countByCity[city].sizes[size] || 0) + qty;
       if (spv) countByCity[city].spvs.add(spv);
-      if (rowProj && !countByCity[city].projectName) countByCity[city].projectName = rowProj;
 
-      // 2. Group by Project
+      // 2. Group by Project & City (Smart Separation)
+      // Explicit project rows are scoped solely to their project (e.g. نادك).
+      // Rows without a project are grouped by city (e.g. مشروع الاحساء, مشروع الدمام).
       const projKey = rowProj ? rowProj : ("city_" + city);
       const displayTitle = rowProj ? ("مشروع " + rowProj) : ("مشروع " + city);
       if (!countByProject[projKey]) {
         countByProject[projKey] = {
           key: projKey,
-          projectName: rowProj,
+          projectName: rowProj || "",
           displayProjectName: displayTitle,
           cities: new Set(),
           citiesMap: {},
@@ -233,7 +259,7 @@
 
   // Helper: generate next sequential Order Number
   function getNextOrderNumber() {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const existing = orders.map(o => {
       const m = (o.orderNumber || "").match(/\d+/);
       return m ? parseInt(m[0], 10) : 0;
@@ -250,7 +276,7 @@
     if (!container) return;
 
     const lang = document.documentElement.getAttribute("lang") || "en";
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
 
     // Update KPI counters
     const elTotal = document.getElementById("stat-orders-total");
@@ -566,12 +592,9 @@
       createdAt: new Date().toISOString()
     };
 
-    window.state.orders = window.state.orders || [];
-    window.state.orders.unshift(newOrder);
-
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (err) {}
+    const orders = getActiveOrders();
+    orders.unshift(newOrder);
+    persistOrders();
 
     closeCreateOrderModal();
     renderOrders();
@@ -583,7 +606,7 @@
 
   // LIVE STOCK DEDUCTION WORKFLOW
   function setOrderStatus(orderId, newStatus) {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
@@ -638,9 +661,7 @@
       renderOrders();
       if (typeof updateCounts === "function") updateCounts();
 
-      try {
-        localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-      } catch (e) {}
+      persistOrders();
 
       if (window.OstanStyle) {
         window.OstanStyle.showToast("تم الصرف وخصم المخزون", `تم اكتمال الطلب ${order.orderNumber} وخصم الكميات من المستودع بنجاح!`);
@@ -681,9 +702,7 @@
     }
 
     order.status = newStatus;
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (e) {}
+    persistOrders();
 
     renderOrders();
     if (window.OstanStyle) {
@@ -693,7 +712,7 @@
 
   // Delete Cancelled or Completed Order (Completed restricted strictly to Super Admin)
   function deleteOrder(orderId) {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
@@ -746,10 +765,7 @@
     }
 
     window.state.orders = orders.filter(o => o.id !== orderId);
-
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (e) {}
+    persistOrders();
 
     closeOrderDetailsModal();
     renderOrders();
@@ -766,7 +782,7 @@
 
   // Delete All Cancelled Orders
   function deleteAllCancelledOrders() {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const cancelledOrders = orders.filter(o => o.status === "CANCELLED");
     if (cancelledOrders.length === 0) return;
 
@@ -778,10 +794,7 @@
     if (!confirm(confirmMsg)) return;
 
     window.state.orders = orders.filter(o => o.status !== "CANCELLED");
-
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (e) {}
+    persistOrders();
 
     renderOrders();
     if (typeof updateCounts === "function") updateCounts();
@@ -797,7 +810,7 @@
 
   // View Order Details Modal (with City Breakdown, Sizing Breakdown & Merchandiser Roster)
   function openOrderDetails(orderId) {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     const lang = document.documentElement.getAttribute("lang") || "en";
@@ -1122,12 +1135,9 @@
                 <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;">طريقة تسجيل أمر الصرف:</div>
                 <div style="display: flex; gap: 1rem; font-size: 0.78rem; flex-wrap: wrap;">
                   <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
-                    <input type="radio" name="orders_import_mode" value="PER_PROJECT" ${parsed.projectsList && parsed.projectsList.length > 1 ? 'checked' : ''}>
-                    <strong>أمر صرف منفصل لكل مشروع</strong> ${parsed.projectsList && parsed.projectsList.length > 1 ? '<span style="color: #2563eb; font-weight: 800;">(موصى به - تم اكتشاف ' + parsed.projectsList.length + ' مشاريع)</span>' : ''}
-                  </label>
-                  <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
-                    <input type="radio" name="orders_import_mode" value="PER_CITY" ${(!parsed.projectsList || parsed.projectsList.length <= 1) ? 'checked' : ''}>
-                    <strong>أمر صرف منفصل لكل مدينة</strong>
+                    <input type="radio" name="orders_import_mode" value="PER_PROJECT" checked>
+                    <strong>فصل أوامر الصرف حسب المشاريع والمدن (تلقائي ذكي)</strong>
+                    <span style="color: #2563eb; font-weight: 800;">(موصى به - ينشئ أمراً مستقلاً لكل مشروع ولكل مدينة)</span>
                   </label>
                   <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
                     <input type="radio" name="orders_import_mode" value="MASTER">
@@ -1151,7 +1161,7 @@
     const p = parsedOrdersBatchData || window.parsedOrdersBatchData;
     if (!p) return;
     const modeEl = document.querySelector('input[name="orders_import_mode"]:checked');
-    let mode = modeEl ? modeEl.value : (p.projectsList && p.projectsList.length > 1 ? "PER_PROJECT" : "MASTER");
+    let mode = modeEl ? modeEl.value : "PER_PROJECT";
     const stock = (window.state && window.state.stock) ? window.state.stock : [];
 
     function buildItemsFromSizes(sizesMap) {
@@ -1166,23 +1176,57 @@
       });
     }
 
-    window.state.orders = window.state.orders || [];
+    const currentOrders = getActiveOrders();
 
-    // Mode 1: PER_PROJECT (Default when multiple projects exist)
-    if (mode === "PER_PROJECT" || (p.projectsList && p.projectsList.length > 1 && mode !== "PER_CITY")) {
+    const existingNums = currentOrders.map(o => {
+      const m = (o.orderNumber || "").match(/\d+/);
+      return m ? parseInt(m[0], 10) : 0;
+    });
+    let curMaxNum = existingNums.length > 0 ? Math.max(...existingNums) : 1000;
+
+    if (mode === "MASTER") {
+      curMaxNum++;
+      const masterItems = buildItemsFromSizes(p.countBySize);
+      const singleProj = (p.distinctProjectNames && p.distinctProjectNames.length === 1) ? p.distinctProjectNames[0] : "";
+      const clientNameStr = singleProj
+        ? `مشروع ${singleProj} (${p.citiesList.slice(0, 3).join('، ')})`
+        : `توريد كادر الميدان (${p.citiesList.slice(0, 3).join('، ')}${p.citiesList.length > 3 ? '...' : ''})`;
+
+      const newOrder = {
+        id: "ord-" + Date.now(),
+        orderNumber: "ORD-" + curMaxNum,
+        projectName: singleProj,
+        clientName: clientNameStr,
+        city: p.citiesList.join("، "),
+        requester: "Excel Batch Import",
+        priority: "HIGH",
+        notes: `ملف: ${p.fileName || 'Excel'} | إجمالي ${p.netTotalQty} قطعة عبر ${p.citiesList.length} مدن (${p.totalRecords} كادر مسجل)`,
+        items: masterItems,
+        roster: p.roster.filter(r => r.quantity > 0),
+        countByCity: p.countByCity,
+        countBySize: p.countBySize,
+        netTotalQty: p.netTotalQty,
+        status: "PENDING",
+        stockDeducted: false,
+        createdAt: new Date().toISOString()
+      };
+      currentOrders.unshift(newOrder);
+    } else {
+      // Default: Separate each distinct project and each city roster
       Object.values(p.countByProject).forEach((projData, pIdx) => {
+        curMaxNum++;
         const projItems = buildItemsFromSizes(projData.sizes);
-        const cityList = Array.isArray(projData.cities) ? projData.cities : (projData.cities instanceof Set ? Array.from(projData.cities) : Object.keys(projData.citiesMap || {}));
+        const cityList = Array.isArray(projData.cities) ? projData.cities : Array.from(projData.cities || []);
         const cityNames = cityList.join("، ");
-        const spvList = Array.isArray(projData.spvs) ? projData.spvs : (projData.spvs instanceof Set ? Array.from(projData.spvs) : []);
+        const spvList = Array.isArray(projData.spvs) ? projData.spvs : Array.from(projData.spvs || []);
         const spvsNames = spvList.join(" / ") || "إشراف ميداني";
 
-        // Display title: "مشروع نادك (بلال محمد / طلال طلعت)"
+        // Display title: e.g. "مشروع نادك (بلال محمد)" or "مشروع الاحساء (بلال محمد / طلال طلعت)"
         const clientNameStr = `${projData.displayProjectName} (${spvsNames})`;
 
         const newOrder = {
           id: "ord-" + Date.now() + "-" + pIdx,
-          orderNumber: getNextOrderNumber(),
+          orderNumber: "ORD-" + curMaxNum,
           projectName: projData.projectName || "",
           clientName: clientNameStr,
           city: cityNames,
@@ -1198,69 +1242,11 @@
           stockDeducted: false,
           createdAt: new Date().toISOString()
         };
-        window.state.orders.unshift(newOrder);
+        currentOrders.unshift(newOrder);
       });
     }
-    // Mode 2: PER_CITY
-    else if (mode === "PER_CITY") {
-      Object.values(p.countByCity).forEach((cityData, cIdx) => {
-        const cityRoster = p.roster.filter(r => r.city === cityData.city && r.quantity > 0);
-        const cityItems = buildItemsFromSizes(cityData.sizes);
-        const spvsNames = Array.from(cityData.spvs).join(" / ") || "إشراف ميداني";
 
-        // If city has an associated project name (e.g. نادك), display "مشروع نادك" instead of "مشروع الاحساء"
-        const projTitle = cityData.projectName ? ("مشروع " + cityData.projectName) : ("مشروع " + cityData.city);
-        const clientNameStr = `${projTitle} (${spvsNames})`;
-
-        const newOrder = {
-          id: "ord-" + Date.now() + "-" + cIdx,
-          orderNumber: getNextOrderNumber(),
-          projectName: cityData.projectName || "",
-          clientName: clientNameStr,
-          city: cityData.city,
-          requester: Array.from(cityData.spvs)[0] || "مشرف المدينة",
-          priority: "NORMAL",
-          notes: `تم الاستيراد من ملف ${p.fileName || 'Excel'} - فرع ${cityData.city}`,
-          items: cityItems,
-          roster: cityRoster,
-          countByCity: { [cityData.city]: cityData },
-          countBySize: cityData.sizes,
-          netTotalQty: cityData.totalQty,
-          status: "PENDING",
-          stockDeducted: false,
-          createdAt: new Date().toISOString()
-        };
-        window.state.orders.unshift(newOrder);
-      });
-    }
-    // Mode 3: MASTER (Single combined order)
-    else {
-      const masterItems = buildItemsFromSizes(p.countBySize);
-      const singleProj = (p.distinctProjectNames && p.distinctProjectNames.length === 1) ? p.distinctProjectNames[0] : "";
-      const clientNameStr = singleProj
-        ? `مشروع ${singleProj} (${p.citiesList.slice(0, 3).join('، ')})`
-        : `توريد كادر الميدان (${p.citiesList.slice(0, 3).join('، ')}${p.citiesList.length > 3 ? '...' : ''})`;
-
-      const newOrder = {
-        id: "ord-" + Date.now(),
-        orderNumber: getNextOrderNumber(),
-        projectName: singleProj,
-        clientName: clientNameStr,
-        city: p.citiesList.join("، "),
-        requester: "Excel Batch Import",
-        priority: "HIGH",
-        notes: `ملف: ${p.fileName || 'Excel'} | إجمالي ${p.netTotalQty} قطعة عبر ${p.citiesList.length} مدن (${p.totalRecords} كادر مسجل)`,
-        items: masterItems,
-        roster: p.roster,
-        countByCity: p.countByCity,
-        countBySize: p.countBySize,
-        netTotalQty: p.netTotalQty,
-        status: "PENDING",
-        stockDeducted: false,
-        createdAt: new Date().toISOString()
-      };
-      window.state.orders.unshift(newOrder);
-    }
+    persistOrders();
 
     try {
       localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
@@ -1300,9 +1286,15 @@
   window.confirmOrdersExcelImport = confirmOrdersExcelImport;
   window.manualOrderLineItems = manualOrderLineItems;
 
+  // Populate window.state.orders immediately from persistent storage
+  try {
+    getActiveOrders();
+  } catch (e) {}
+
   // Initial render when orders view is accessed
   document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
+      getActiveOrders();
       if (window.state && window.state.activeModule === "orders") {
         renderOrders();
       }

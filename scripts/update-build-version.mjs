@@ -48,11 +48,10 @@ try {
     const newBuildStr = `window.OSTAN_BUILD = ${JSON.stringify(updatedVersion, null, 2)};`;
     if (regex.test(indexHtml)) {
       indexHtml = indexHtml.replace(regex, newBuildStr);
-      fs.writeFileSync(indexPath, indexHtml, 'utf8');
-      console.log(`[Version Tracker] ✅ Updated embedded window.OSTAN_BUILD in index.html`);
-    } else {
-      console.log(`[Version Tracker] ℹ️ window.OSTAN_BUILD not found in index.html, will be embedded upon script addition.`);
     }
+    indexHtml = indexHtml.replace(/orders-engine\.js\?v=[^"']*/g, `orders-engine.js?v=${newVer}`);
+    fs.writeFileSync(indexPath, indexHtml, 'utf8');
+    console.log(`[Version Tracker] ✅ Updated embedded window.OSTAN_BUILD and orders-engine.js?v=${newVer} in index.html`);
   }
 } catch (err) {
   console.error('[Version Tracker] ❌ Error updating build version:', err);

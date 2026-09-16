@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.0"></script>
+  <script src="orders-engine.js?v=1.0.53"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -4419,11 +4419,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.52",
-  "commit": "a8f92f3",
-  "buildTime": 1789599004724,
-  "releaseDate": "2026-09-16T22:50:04.724Z",
-  "message": "chore: bump build version to de440e1"
+  "version": "1.0.53",
+  "commit": "9cec96f",
+  "buildTime": 1789601105440,
+  "releaseDate": "2026-09-16T23:25:05.440Z",
+  "message": "fix: strict per-row project scoping in excel orders to count only explicit rows for nadec"
 };
 
     let _ostanUpdateTriggered = false;
@@ -4710,6 +4710,14 @@
       tasks: JSON.parse(localStorage.getItem("ostan_tasks") || "[]"),
       stock: JSON.parse(localStorage.getItem("ostan_stock") || JSON.stringify(defaultStock)),
       stockRequests: JSON.parse(localStorage.getItem("ostan_stock_requests") || "[]"),
+      orders: (() => {
+        try {
+          const saved = localStorage.getItem("ostan_orders");
+          return saved ? JSON.parse(saved) : [];
+        } catch(e) {
+          return [];
+        }
+      })(),
       messageTemplates: JSON.parse(localStorage.getItem("ostan_message_templates") || JSON.stringify(defaultTemplates)),
       messageDispatchLogs: JSON.parse(localStorage.getItem("ostan_message_logs") || "[]"),
       whatsappAuditRegistry: (() => {
@@ -4788,6 +4796,7 @@
       localStorage.setItem("ostan_tasks", JSON.stringify(state.tasks));
       localStorage.setItem("ostan_stock", JSON.stringify(state.stock));
       localStorage.setItem("ostan_stock_requests", JSON.stringify(state.stockRequests));
+      localStorage.setItem("ostan_orders", JSON.stringify(state.orders || []));
       localStorage.setItem("ostan_message_templates", JSON.stringify(state.messageTemplates));
       localStorage.setItem("ostan_message_logs", JSON.stringify(state.messageDispatchLogs));
       localStorage.setItem("ostan_user_wa_sessions", JSON.stringify(state.userWhatsAppSessions || {}));
