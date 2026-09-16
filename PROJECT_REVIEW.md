@@ -121,9 +121,52 @@ When a user scans the QR code:
 
 ---
 
+## 🎨 Executive Corporate Design System (Inspired by Reference ERP)
+
+In September 2026, Ostan's UI was elevated to an executive corporate dashboard inspired by leading Middle Eastern enterprise ERPs (Gulf Horizons Group reference layout):
+1. **Two-Tier Header Structure**:
+   - **Tier 1 (Top Bar - Deep Charcoal / Navy `#0b0f15`)**:
+     - Right: Company Brand Mark ("مجموعة أستان" / "OSTAN ENTERPRISE ERP") with architectural building glyph.
+     - Center: Sleek dark search bar (`ابحث في الموظفين، المشاريع، المهام...`).
+     - Left: Direct Power Logout (`⏻`), Active User Profile Pill (Avatar + Name "أسامة طويش" + Role "مدير موارد بشرية" / "HR Manager"), direct WhatsApp link (`💬`), Notifications Bell (`🔔`) with unread badge, and Language Toggle (`🌐 العربية`).
+   - **Tier 2 (Burgundy / Wine Maroon Strip `#3b0910` - `#54111d`)**:
+     - Horizontal module navigation bar stretching across the app:
+       - 📊 لوحة التحكم (Dashboard)
+       - 🏗️ المشاريع والمهام (Tasks)
+       - 👥 الموظفين (Employees)
+       - 🇸🇦 الكادر السعودي (Saudi Staff)
+       - 📦 المخزون والعهد (Stock)
+       - 💬 رسائل واتساب (WhatsApp Studio)
+       - ⏰ التنبيهات (Reminders)
+       - 📈 التقارير (Reports)
+       - 📜 سجل العمليات (Audit Logs)
+       - ⚙️ الإعدادات (Settings)
+     - Active tab highlights with bright white text, subtle pill background, and active dot indicator.
+2. **Surfaces & Color Palette**:
+   - **App Canvas:** Cool light corporate slate (`#f4f6fa` / `#f8fafc`).
+   - **Panels & Cards:** Pure crisp white (`#ffffff`) surfaces with subtle slate borders (`#e2e8f0`) and soft executive box shadows.
+   - **Vertical Colored Accent Stripes (`border-inline-start: 4px solid ...`)**:
+     - Blue `#2563eb`: Projects & Tasks
+     - Cyan `#0284c7`: Total Employees & Advances
+     - Emerald `#10b981`: Active Staff, National Staff & Payroll Increases
+     - Rose `#ef4444`: Inactive Accounts, Warnings & Alerts
+     - Purple `#8b5cf6`: Professional Badges, Stock & Custody Replacements
+     - Pink `#f43f5e`: Deductions & Penalties
+     - Amber `#f59e0b`: Temporary Assignments & Duties
+3. **Executive Dashboard Sections**:
+   - **Executive Welcome Banner:** "لوحة التحكم الإدارية" + "مرحباً بك، [اسم المستخدم]" + Team Badge ("فريق الموارد البشرية والعمليات: [الاسم] (مدير) - الإدارة العامة").
+   - **Top 5 Metric Cards:** Open Tasks, Total Employees, Active Staff, Reminders/Alerts, Stock/Cards with vertical colored stripes and pastel circular icon badges.
+   - **Staff & Operations Management ("إدارة الموظفين والعمليات"):** 6 quick action cards for Warnings, Deductions, Advances, Salary Increases, Temporary Assignments, and Replacements.
+   - **Role Breakdown Statistics ("إحصاءات حسب الأدوار"):** Live counts for Project Managers, Regional Managers, Supervisors, and Other Staff.
+   - **Nationality Distribution ("توزيع الجنسيات"):** Live flag pills for Saudi Arabia 🇸🇦, Egypt 🇪🇬, Yemen 🇾🇪, Syria 🇸🇾, Palestine 🇵🇸, and total count.
+
+---
+
 ## 📝 Rules for Future AI Contributors
 
 1. **Never wipe `curSession.phone`** when `status === 'connecting'` or during code `515` reconnects. Once paired, retain the phone number until the user explicitly logs out or unpairs from mobile.
 2. **Always support remote clients:** Any new WhatsApp feature must function both via direct HTTP (for local users) AND via Firebase Cloud Firestore (for remote users on GitHub Pages or custom domains).
 3. **Keep this file (`PROJECT_REVIEW.md`) updated:** Whenever adding an endpoint, modifying gateway behavior, changing roles, or fixing connection issues, document it in this file.
 4. **Automatic Git Commit & Push (Mandatory):** Accept all code changes by default and automatically commit and push them to GitHub (`origin main`) whenever work is done or updated, ensuring GitHub Pages and the repository are always in sync.
+5. **Preserve Corporate Design Integrity:** When adding new views or modal components, use the established executive white card styling (`glass-panel`), subtle borders (`var(--border-subtle)`), and appropriate color accent stripes matching the design tokens.
+

@@ -249,8 +249,8 @@
       localStorage.setItem("ostan_theme", theme);
     },
     toggleTheme: function () {
-      const cur = document.documentElement.getAttribute("data-theme") || "dark";
-      const next = cur === "dark" ? "light" : "dark";
+      const cur = document.documentElement.getAttribute("data-theme") || "corporate";
+      const next = cur === "dark" ? "corporate" : "dark";
       this.setTheme(next);
       return next;
     },
@@ -283,7 +283,7 @@
       }, 10000);
     },
     init: function () {
-      const savedTheme = localStorage.getItem("ostan_theme") || "dark";
+      const savedTheme = localStorage.getItem("ostan_theme") || "corporate";
       const savedLang = localStorage.getItem("ostan_locale") || "en";
       this.setTheme(savedTheme);
       this.setLanguage(savedLang);

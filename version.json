@@ -1,7 +1,7 @@
 {
-  "version": "1.0.37",
-  "commit": "67feaa3",
-  "buildTime": 1789240974399,
-  "releaseDate": "2026-09-12T19:22:54.399Z",
-  "message": "fix(whatsapp): eliminate rapid unlinking/linking loop, clear stale loggedOut flag, and deduplicate toasts"
+  "version": "1.0.38",
+  "commit": "9921066",
+  "buildTime": 1789573561491,
+  "releaseDate": "2026-09-16T15:46:01.491Z",
+  "message": "fix(auth): update provisioned credentials login URL to https://thegeniusx.github.io/Ostan/"
 }
