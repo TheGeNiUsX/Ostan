@@ -89,24 +89,6 @@
       return lk.includes("مشروع") || lk.includes("المشروع") || lk.includes("project") || lk.includes("client") || lk.includes("العميل");
     });
 
-    // Pass 1: Collect non-empty project names per city to resolve section/merged headers
-    const cityToProjectMap = {};
-    jsonRows.forEach(row => {
-      let city = getRowVal(row, ["City", "city", "المدينة", "مدينة", "الموقع", "Location"]);
-      if (!city) city = "المنطقة الرئيسية";
-      city = city.trim();
-
-      let pVal = "";
-      if (projectKey && row[projectKey] != null) pVal = String(row[projectKey]).trim();
-      if (!pVal) pVal = getRowVal(row, ["المشروع", "اسم المشروع", "مشروع", "Project", "Project Name", "Client", "العميل"]);
-      if (pVal) {
-        pVal = pVal.replace(/^مشروعs+/i, "").replace(/^Projects+/i, "").trim();
-        if (pVal && !cityToProjectMap[city]) {
-          cityToProjectMap[city] = pVal;
-        }
-      }
-    });
-
     const roster = [];
     const countByCity = {};
     const countBySize = {};
@@ -120,16 +102,12 @@
       if (!city) city = "المنطقة الرئيسية";
       city = city.trim();
 
-      // Project (المشروع)
+      // Project (المشروع) - strictly per row, no city-wide leakage
       let rowProj = "";
       if (projectKey && row[projectKey] != null) rowProj = String(row[projectKey]).trim();
       if (!rowProj) rowProj = getRowVal(row, ["المشروع", "اسم المشروع", "مشروع", "Project", "Project Name", "Client", "العميل"]);
       if (rowProj) {
-        rowProj = rowProj.replace(/^مشروعs+/i, "").replace(/^Projects+/i, "").trim();
-      }
-      // If row has no explicit project, inherit from city block if known
-      if (!rowProj && cityToProjectMap[city]) {
-        rowProj = cityToProjectMap[city];
+        rowProj = rowProj.replace(/^مشروع\s+/i, "").replace(/^Project\s+/i, "").trim();
       }
 
       // Supervisor (المشرف)

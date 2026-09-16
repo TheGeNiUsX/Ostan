@@ -112,11 +112,11 @@ assert(parsed.totalRecords === 26, `Total records = 26 (actual: ${parsed.totalRe
 assert(parsed.netTotalQty === 38, `Net total items = 38 (actual: ${parsed.netTotalQty})`);
 assert(parsed.distinctProjectNames.includes("نادك"), 'Project "نادك" recognized from "المشروع" column');
 
-// Verify Project Breakdown
+// Verify Project Breakdown: Strictly 1 worker and 2 pieces for Nadec as in the Excel sheet
 const projNadec = parsed.countByProject["نادك"];
 assert(projNadec !== undefined, 'countByProject contains "نادك"');
-assert(projNadec.totalWorkers === 5, `Project Nadec has 5 workers (actual: ${projNadec.totalWorkers})`);
-assert(projNadec.totalQty === 10, `Project Nadec has 10 pieces (actual: ${projNadec.totalQty})`);
+assert(projNadec.totalWorkers === 1, `Project Nadec has strictly 1 worker (actual: ${projNadec.totalWorkers})`);
+assert(projNadec.totalQty === 2, `Project Nadec has 2 pieces (actual: ${projNadec.totalQty})`);
 assert(projNadec.displayProjectName === "مشروع نادك", `Project Nadec display title is "مشروع نادك"`);
 
 // 2. Testing Order Creation & Separation
@@ -125,14 +125,20 @@ context.window.confirmOrdersExcelImport();
 
 const orders = context.window.state.orders;
 console.log(`Created ${orders.length} orders from the file.`);
-assert(orders.length === 2, `File was separated into 2 distinct orders (actual: ${orders.length})`);
+assert(orders.length === 3, `File was separated into 3 distinct orders: Nadec, Al-Ahsa, Dammam (actual: ${orders.length})`);
 
 const nadecOrder = orders.find(o => o.projectName === "نادك" || (o.clientName && o.clientName.includes("نادك")));
+const ahsaOrder = orders.find(o => o.city === "الاحساء" && o.projectName !== "نادك");
 const dammamOrder = orders.find(o => o.city && o.city.includes("الدمام"));
 
 assert(nadecOrder !== undefined, 'Order for Project Nadec exists');
-assert(nadecOrder.netTotalQty === 10, `Nadec order quantity = 10 (actual: ${nadecOrder.netTotalQty})`);
+assert(nadecOrder.roster.length === 1, `Nadec order has strictly 1 worker in roster (actual: ${nadecOrder.roster.length})`);
+assert(nadecOrder.netTotalQty === 2, `Nadec order quantity = 2 (actual: ${nadecOrder.netTotalQty})`);
+assert(ahsaOrder !== undefined, 'Order for Al-Ahsa exists');
+assert(ahsaOrder.roster.length === 4, `Al-Ahsa order has 4 workers (actual: ${ahsaOrder.roster.length})`);
+assert(ahsaOrder.netTotalQty === 8, `Al-Ahsa order quantity = 8 (actual: ${ahsaOrder.netTotalQty})`);
 assert(dammamOrder !== undefined, 'Order for Dammam exists');
+assert(dammamOrder.roster.length === 21, `Dammam order has 21 workers (actual: ${dammamOrder.roster.length})`);
 assert(dammamOrder.netTotalQty === 28, `Dammam order quantity = 28 (actual: ${dammamOrder.netTotalQty})`);
 
 // 3. Testing Red Marked Box Display: "مشروع نادك"
@@ -146,7 +152,8 @@ const tableContainer = context.document.getElementById('orders-table-container')
 const htmlOutput = tableContainer.innerHTML;
 
 assert(htmlOutput.includes('مشروع نادك'), 'Rendered table contains "مشروع نادك"');
-assert(htmlOutput.includes('بلال محمد / طلال طلعت'), 'Rendered table contains Nadec supervisors "بلال محمد / طلال طلعت"');
+assert(htmlOutput.includes('بلال محمد'), 'Rendered table contains Nadec supervisor "بلال محمد"');
+assert(htmlOutput.includes('مشروع الاحساء'), 'Rendered table contains "مشروع الاحساء" for remaining Ahsa items');
 assert(htmlOutput.includes('مشروع الدمام'), 'Rendered table contains "مشروع الدمام"');
 assert(htmlOutput.includes('عمرو محمد / عبدالعزيز جمعه / ايمن وافي'), 'Rendered table contains Dammam supervisors');
 

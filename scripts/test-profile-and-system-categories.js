@@ -67,7 +67,7 @@ assert(!html.includes('prompt('), 'Completely eliminated browser prompt() from i
 // 5. Stock Categories Synchronization with System Categories
 console.log('\n--- 5. Testing Single Source of Truth for Warehouse Categories ---');
 assert(html.includes('getStoredStockCategories'), 'getStoredStockCategories defined');
-assert(html.includes('getSystemWideCategories().filter'), 'getStoredStockCategories queries System-Wide Categories for stock section');
+assert(html.includes('getSystemWideCategories') && html.includes('c.section === "stock"'), 'getStoredStockCategories queries System-Wide Categories for stock section');
 assert(html.includes('renderCategoryOptions();') && html.includes('openStockHUD'), 'openStockHUD invokes renderCategoryOptions() on every open');
 assert(html.includes('renderCategoryOptions(s.category);') && html.includes('editStockById'), 'editStockById invokes renderCategoryOptions() with item category');
 
