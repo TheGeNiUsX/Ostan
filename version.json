@@ -1,7 +1,7 @@
 {
-  "version": "1.0.43",
-  "commit": "53365ee",
-  "buildTime": 1789580492078,
-  "releaseDate": "2026-09-16T17:41:32.078Z",
-  "message": "fix(nav): enable seamless toggling between Employees and Saudi Staff in top subnav and sidebar"
+  "version": "1.0.44",
+  "commit": "a18aca9",
+  "buildTime": 1789583237316,
+  "releaseDate": "2026-09-16T18:27:17.316Z",
+  "message": "feat(inventory): add orders section with manual creation, excel batch upload, and automated live stock deduction"
 }

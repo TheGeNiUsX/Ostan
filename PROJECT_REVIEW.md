@@ -178,7 +178,13 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
 7. **Inventory Orders & Automated Live Stock Deduction**:
    - Added dedicated Orders Section (`view-orders`) accessible via sidebar (`nav-orders`) and top burgundy subnav (`top-nav-orders`).
    - Manual Order Creator (`openCreateOrderModal`) with dynamic line items, item selector from live warehouse inventory (`state.stock`), and stock limit validation.
-   - Excel Batch Import Engine (`modal-orders-excel-import`) supporting `.xlsx`, `.xls`, `.csv` with auto-matching to warehouse items and downloadable sample template (`downloadOrdersExcelSample`).
+   - Excel Batch Import Engine (`modal-orders-excel-import`) supporting `.xlsx`, `.xls`, `.csv` with intelligent dual-format template detection:
+     - **Format 1 (English Uniform Dispatch):** Columns `City` | `SPV` | `Merchandiser Name` | `USER REF.#` | `T-shirt size` | `Quantity` | `Mobile`.
+     - **Format 2 (Arabic Tools & Gear Dispatch):** Columns `المدينة` | `المشرف` | `جوال المشرف` | `الاسم` | `المقاس` | `عمود1 (الكمية)` | `عمود2 (الأدوات/البيان)`.
+     - **Multi-Dimensional Counting & Aggregation Matrix:** Automatically breaks down every imported order by:
+       - **City (المدينة):** Total workers and total units per city (e.g., Dammam, Jubail, Khobar, Hafar Al-Batin, Al-Ahsa).
+       - **Size (المقاس):** Distribution matrix across sizes (`M`, `L`, `XL`, `2XL`, `3XL`, `4XL`, `5XL`, `Standard`) with size normalization (`XXL` ➔ `2XL`, `XXXL` ➔ `3XL`).
+       - **Quantity (الكمية):** Net total items to dispatch, correctly filtering out rows with `0` quantity while preserving line records.
    - Live Inventory Deduction Workflow: when an order is marked as `DONE`, items are automatically deducted from `state.stock`, warehouse views update live, and low stock threshold alerts trigger automatically. Includes automatic inventory rollback if a completed order is cancelled.
    - Order Details & Dispatch Receipt Modal (`modal-order-details`) with printable layout (`window.print()`).
 

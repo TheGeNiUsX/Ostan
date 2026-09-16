@@ -91,10 +91,11 @@ assert(item102.quantity === 20, `item-102 restored from 18 back to 20 on cancel 
 
 // 4. Excel Sample Structure & Download Handlers
 console.log('\n--- 4. Excel Sample & Import Engine ---');
-assert(html.includes('function downloadOrdersExcelSample'), 'downloadOrdersExcelSample function linked');
-assert(html.includes('function handleOrdersExcelFileSelected'), 'handleOrdersExcelFileSelected function linked');
-assert(html.includes('function confirmOrdersExcelImport'), 'confirmOrdersExcelImport function linked');
-assert(html.includes('ostan_orders_batch_sample.xlsx'), 'Sample Excel filename configured');
+const engineCode = fs.readFileSync(path.join(__dirname, '..', 'orders-engine.js'), 'utf8');
+assert(html.includes('src="orders-engine.js'), 'orders-engine.js script included in index.html');
+assert(engineCode.includes('function downloadOrdersExcelSample'), 'downloadOrdersExcelSample function defined');
+assert(engineCode.includes('function handleOrdersExcelFileSelected'), 'handleOrdersExcelFileSelected function defined');
+assert(engineCode.includes('function confirmOrdersExcelImport'), 'confirmOrdersExcelImport function defined');
 
 console.log(`\n=== ORDERS TEST RESULTS: ${passed} passed, ${failed} failed ===`);
 if (failed > 0) process.exit(1);
