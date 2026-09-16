@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr" data-theme="corporate">
+<html lang="en" dir="ltr" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
@@ -170,16 +170,20 @@
       font-family: 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
     }
 
-    /* Edge-to-Edge Grid Shell */
+        /* Edge-to-Edge Fluid Shell with Moveable Sidebar Interaction */
     .app-shell {
       display: grid;
       grid-template-columns: 280px 1fr;
       width: 100vw;
       height: 100vh;
       overflow: hidden;
+      transition: grid-template-columns 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    /* Left Navigation Sidebar */
+    .app-shell.sidebar-collapsed {
+      grid-template-columns: 0px 1fr;
+    }
+
     .app-sidebar {
       background: var(--bg-surface);
       border-inline-end: 1px solid var(--border-subtle);
@@ -188,91 +192,140 @@
       height: 100vh;
       overflow-y: auto;
       user-select: none;
+      width: 280px;
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      will-change: transform, width;
+      z-index: 30;
     }
 
-    .brand-header {
-      padding: 1.1rem 1.25rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--border-subtle);
+    .app-shell.sidebar-collapsed .app-sidebar {
+      width: 0;
+      min-width: 0;
+      opacity: 0;
+      pointer-events: none;
+      overflow: hidden;
+      border-inline-end: none;
     }
 
-    .brand-logo-box {
-      width: 38px;
-      height: 38px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      background: transparent;
-      filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));
+    [dir="ltr"] .app-shell.sidebar-collapsed .app-sidebar {
+      transform: translateX(-100%);
+    }
+    [dir="rtl"] .app-shell.sidebar-collapsed .app-sidebar {
+      transform: translateX(100%);
     }
 
-    .nav-sections-container {
-      flex: 1;
-      overflow-y: auto;
-      padding: 1rem 0.75rem;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    .nav-group-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-    }
-
-    .nav-section-title {
-      padding-inline: 0.75rem;
-      margin-bottom: 0.35rem;
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-faint);
-    }
-
-    .nav-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.55rem 0.75rem;
-      border-radius: var(--radius-md);
-      color: var(--text-muted);
-      font-size: 0.88rem;
-      font-weight: 500;
-      cursor: pointer;
-      text-decoration: none;
-      transition: all 0.15s ease;
-      border: 1px solid transparent;
-    }
-
-    .nav-item:hover {
-      background: var(--bg-surface-hover);
-      color: var(--text-main);
-    }
-
-    .nav-item.active {
-      background: linear-gradient(90deg, rgba(99, 102, 241, 0.18) 0%, rgba(99, 102, 241, 0.05) 100%);
-      color: #818cf8;
-      font-weight: 600;
-      border-inline-start: 3px solid #6366f1;
-    }
-
-    .nav-item.locked {
-      opacity: 0.75;
-    }
-
-    /* Main View Area */
     .main-wrapper {
       display: flex;
       flex-direction: column;
       height: 100vh;
       overflow: hidden;
       background: var(--bg-app);
+      min-width: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     }
+
+    /* Light Mode Complete Consistency Across Every View */
+    [data-theme="light"] {
+      --bg-app: #f4f6fa;
+      --bg-surface: #ffffff;
+      --bg-surface-elevated: #f8fafc;
+      --bg-surface-hover: #f1f5f9;
+      --border-subtle: #e2e8f0;
+      --border-strong: #cbd5e1;
+      --text-main: #0f172a;
+      --text-muted: #475569;
+      --text-faint: #94a3b8;
+      --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+      --card-shadow-hover: 0 8px 20px -4px rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="light"] .glass-panel {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
+      color: #0f172a !important;
+    }
+
+    [data-theme="light"] .app-sidebar {
+      background: #ffffff !important;
+      border-inline-end: 1px solid #e2e8f0 !important;
+    }
+
+    [data-theme="light"] .nav-section-title {
+      color: #64748b !important;
+    }
+
+    [data-theme="light"] .nav-item {
+      color: #475569 !important;
+    }
+
+    [data-theme="light"] .nav-item:hover {
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+
+    [data-theme="light"] .nav-item.active {
+      background: rgba(84, 17, 29, 0.08) !important;
+      color: #54111d !important;
+      border-inline-start: 3px solid #54111d !important;
+    }
+
+    [data-theme="light"] .input-field {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #0f172a !important;
+    }
+
+    [data-theme="light"] .input-field:focus {
+      border-color: #2563eb !important;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15) !important;
+    }
+
+    [data-theme="light"] .btn-secondary {
+      background: #ffffff !important;
+      border: 1px solid #cbd5e1 !important;
+      color: #1e293b !important;
+    }
+
+    [data-theme="light"] .btn-secondary:hover {
+      background: #f8fafc !important;
+      border-color: #94a3b8 !important;
+    }
+
+    [data-theme="light"] .btn-ghost {
+      color: #475569 !important;
+    }
+
+    [data-theme="light"] .btn-ghost:hover {
+      background: #f1f5f9 !important;
+      color: #0f172a !important;
+    }
+
+    [data-theme="light"] .hud-modal-box {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    [data-theme="light"] .matrix-table th {
+      background: #f8fafc !important;
+      color: #475569 !important;
+      border-bottom: 1px solid #e2e8f0 !important;
+    }
+
+    [data-theme="light"] .matrix-table td {
+      border-bottom: 1px solid #e2e8f0 !important;
+      color: #0f172a !important;
+    }
+
+    [data-theme="light"] #notif-bell-dropdown {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.12) !important;
+      color: #0f172a !important;
+    }
+
 
     .top-header {
       height: 60px;
@@ -1167,57 +1220,53 @@
     <div class="main-wrapper">
       <!-- Top Navigation Header Tier 1 (Dark Slate / Deep Navy #0b0f15) -->
       <header class="top-header">
-        <div style="display: flex; align-items: center; gap: 1rem;">
-          <!-- Mobile Menu Button -->
-          <button id="btn-mobile-menu-toggle" class="btn btn-secondary mobile-only" onclick="toggleMobileSidebar()" aria-label="Toggle Navigation Menu" style="padding: 0.45rem 0.65rem; font-size: 1.15rem; line-height: 1; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #fff;">
+        <div style="display: flex; align-items: center; gap: 0.85rem;">
+          <!-- 3 Slashes Settings/Sidebar Toggle Button -->
+          <button id="btn-mobile-menu-toggle" class="btn btn-ghost" onclick="toggleAppSidebar()" aria-label="Toggle Navigation Menu" title="Toggle Sidebar (تبديل القائمة الجانبية)" style="padding: 0.4rem 0.65rem; font-size: 1.25rem; line-height: 1; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15);">
             <span>☰</span>
           </button>
 
-          <!-- Executive Brand Logo & Name (Matching Gulf Horizons Reference Header) -->
+          <!-- Ostan Vector Brand Logo & Name (No Enterprise Text) -->
           <div style="display: flex; align-items: center; gap: 0.65rem; cursor: pointer;" onclick="setModule('dashboard')">
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #1e293b, #0f172a); border: 1px solid rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(0,0,0,0.4);">
-              <span style="font-size: 1.25rem;">🏢</span>
+            <div class="brand-logo-box" style="width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.6));">
+              <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="width: 100%; height: 100%;">
+                <path d="M 50 10 A 40 40 0 1 1 18 78 A 32 32 0 1 0 50 20 A 30 30 0 0 1 76 34 A 40 40 0 0 0 50 10 Z" fill="#38bdf8" />
+                <circle cx="50" cy="50" r="14" fill="none" stroke="#818cf8" stroke-width="2.5" />
+              </svg>
             </div>
-            <div style="line-height: 1.15;">
-              <div style="font-weight: 800; font-size: 1.05rem; letter-spacing: -0.01em; color: #ffffff;">
-                <span data-i18n="company_brand_title">مجموعة أستان</span>
-              </div>
-              <div style="font-size: 0.68rem; color: #94a3b8; letter-spacing: 0.02em;">
-                <span data-i18n="company_brand_subtitle">OSTAN ENTERPRISE ERP</span>
-              </div>
-            </div>
+            <span style="font-weight: 800; font-size: 1.35rem; letter-spacing: -0.02em; color: #ffffff;">Ostan</span>
           </div>
 
           <!-- Desktop Search Bar -->
-          <div class="desktop-search-bar" style="position: relative; max-width: 340px; width: 100%; margin-inline-start: 1.25rem;">
-            <input type="text" placeholder="ابحث في الموظفين، المشاريع، المهام..." data-i18n-placeholder="search_placeholder" class="input-field" style="padding-inline-start: 2.2rem; background: #131926; border-color: #243046; color: #f8fafc; font-size: 0.82rem; height: 38px; border-radius: 8px;">
-            <span style="position: absolute; inset-inline-start: 10px; top: 10px; color: #64748b; font-size: 0.85rem;">🔍</span>
+          <div class="desktop-search-bar" style="position: relative; max-width: 320px; width: 100%; margin-inline-start: 1rem;">
+            <input type="text" placeholder="Search across modules..." data-i18n-placeholder="search_placeholder" class="input-field" style="padding-inline-start: 2.2rem; background: #131926; border-color: #243046; color: #f8fafc; font-size: 0.82rem; height: 36px; border-radius: 8px;">
+            <span style="position: absolute; inset-inline-start: 10px; top: 9px; color: #64748b; font-size: 0.85rem;">🔍</span>
           </div>
         </div>
 
         <div style="display: flex; align-items: center; gap: 0.65rem; position: relative;">
-          <!-- Quick Power Sign Out Button -->
-          <button onclick="userLogout()" class="btn btn-ghost" style="color: #94a3b8; padding: 0.4rem 0.55rem; font-size: 1.05rem; border-radius: 8px;" title="تسجيل الخروج (Sign Out)">
-            <span>⏻</span>
-          </button>
-
-          <!-- Active User Profile Pill (Directly matching reference image) -->
-          <div id="top-header-user-pill" onclick="setModule('settings')" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0.75rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 9999px; cursor: pointer;" title="الحساب الشخصي والإعدادات">
-            <div id="top-header-user-avatar" class="user-avatar-circle" style="width: 32px; height: 32px; font-size: 0.85rem; font-weight: 800; background: linear-gradient(135deg, #2563eb, #7c3aed); border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 1px 4px rgba(0,0,0,0.3);">
+          <!-- Merged User Profile Pill with Door Exit Arrow Icon -->
+          <div id="top-header-user-pill" style="display: flex; align-items: center; gap: 0.55rem; padding: 0.25rem 0.45rem 0.25rem 0.75rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.14); border-radius: 9999px;">
+            <div id="top-header-user-avatar" class="user-avatar-circle" style="width: 30px; height: 30px; font-size: 0.82rem; font-weight: 800; background: linear-gradient(135deg, #2563eb, #7c3aed); border: 1.5px solid rgba(255,255,255,0.6); box-shadow: 0 1px 3px rgba(0,0,0,0.3); cursor: pointer;" onclick="setModule('settings')">
               O
             </div>
-            <div style="text-align: start; line-height: 1.2;">
-              <div id="top-header-user-name" style="font-weight: 700; font-size: 0.82rem; color: #ffffff; white-space: nowrap;">
-                أسامة طويش
-              </div>
-              <div id="top-header-user-role" style="font-size: 0.68rem; color: #94a3b8; font-weight: 500;">
-                مدير موارد بشرية
-              </div>
+            <div style="text-align: start; line-height: 1.2; cursor: pointer;" onclick="setModule('settings')">
+              <div id="top-header-user-name" style="font-weight: 700; font-size: 0.82rem; color: #ffffff; white-space: nowrap;">Osama</div>
+              <div id="top-header-user-role" style="font-size: 0.68rem; color: #94a3b8; font-weight: 500;">Admin</div>
             </div>
+            <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.2); margin-inline: 0.25rem;"></div>
+            <!-- Door Exit with Arrow Icon (Merged with Name) -->
+            <button onclick="userLogout()" class="btn btn-ghost" style="padding: 0.3rem 0.45rem; color: #f87171; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease;" title="Sign Out (تسجيل الخروج)">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                <polyline points="16 17 21 12 16 7"></polyline>
+                <line x1="21" y1="12" x2="9" y2="12"></line>
+              </svg>
+            </button>
           </div>
 
           <!-- Quick WhatsApp Link -->
-          <button onclick="setModule('messages')" class="btn btn-ghost" style="color: #22c55e; padding: 0.4rem 0.55rem; font-size: 1.05rem;" title="استوديو ربط واتساب (WhatsApp Studio)">
+          <button onclick="setModule('messages')" class="btn btn-ghost" style="color: #22c55e; padding: 0.4rem 0.55rem; font-size: 1.05rem;" title="WhatsApp Studio (استوديو واتساب)">
             <span>💬</span>
           </button>
 
@@ -1251,9 +1300,10 @@
             <span data-i18n="lang_toggle">🌐 العربية</span>
           </button>
 
-          <!-- Theme Toggle -->
-          <button class="btn btn-secondary" onclick="window.OstanStyle.toggleTheme()" style="padding: 0.4rem 0.65rem; font-size: 0.78rem; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); color: #fff;">
-            <span data-i18n="theme_toggle">🌓 Theme</span>
+          <!-- 3-State Theme Toggle (Light / Dark / System) with Dynamic Label -->
+          <button id="theme-toggle-btn" class="btn btn-secondary" onclick="window.OstanStyle.toggleTheme()" style="padding: 0.4rem 0.75rem; font-size: 0.78rem; background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.14); color: #fff; display: inline-flex; align-items: center; gap: 0.4rem;" title="Switch Theme: Light / Dark / System (تبديل الثيم)">
+            <span id="theme-btn-icon">☀️</span>
+            <span id="theme-btn-label">Light</span>
           </button>
         </div>
       </header>
@@ -1310,242 +1360,86 @@
              ===================================================================== -->
         <section id="view-dashboard" style="display: flex; flex-direction: column; gap: 1.5rem;">
           
-          <!-- Executive Welcome Header Banner (Matching Reference Layout) -->
+          <!-- Executive Welcome Header Banner -->
           <div class="glass-panel" style="padding: 1.5rem 1.75rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem; border-inline-start: 4px solid var(--primary-500);">
             <div>
               <div style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); letter-spacing: -0.02em;" data-i18n="dash_exec_title">
                 لوحة التحكم الإدارية
               </div>
               <div id="dash-greeting-text" style="font-size: 0.95rem; font-weight: 600; color: var(--text-muted); margin-top: 4px;">
-                مرحباً بك، أسامة طويش
+                Good afternoon, Osama
               </div>
             </div>
 
-            <!-- Team Operations Pill Badge (Reference: فريق الموارد البشرية) -->
-            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1rem; background: rgba(37, 99, 235, 0.08); border: 1px solid rgba(37, 99, 235, 0.2); border-radius: 9999px;">
-              <span style="font-size: 1rem;">👥</span>
-              <span id="dash-team-badge-text" style="font-size: 0.82rem; font-weight: 700; color: #2563eb;" data-i18n="dash_team_badge">
-                فريق الموارد البشرية: أسامة طويش (مدير) - الإدارة العامة
+            <!-- Operations Status Indicator -->
+            <div style="display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 1rem; background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 9999px;">
+              <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981;"></span>
+              <span style="font-size: 0.82rem; font-weight: 700; color: #10b981;" data-i18n="system_status_operational">
+                System Active & Operational
               </span>
             </div>
           </div>
 
-          <!-- Operation Metric Cards Grid (5 KPI Cards with Colored Vertical Accent Stripes) -->
-          <div id="dash-metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1rem;">
+          <!-- Operation Metric Cards Grid (4 Primary KPI Cards with Colored Accent Stripes) -->
+          <div id="dash-metrics-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem;">
             
-            <!-- Card 1: Projects / Tasks (Blue Stripe) -->
-            <div id="card-open-tasks" class="glass-panel card-hover accent-stripe-blue" style="padding: 1.25rem; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;" onclick="setModule('tasks')">
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                <div class="pastel-icon-circle pastel-blue">🏗️</div>
-                <div style="text-align: end;">
-                  <span id="label-stat-tasks" data-i18n="dash_open_tasks" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">إجمالي المشاريع والمهام</span>
-                  <div id="stat-open-tasks" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">0</div>
-                </div>
-              </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #2563eb; font-weight: 700;">
-                <span id="stat-sub-tasks" data-i18n="dash_all_tasks_completed" style="color: var(--text-faint); font-weight: 500;">All tasks up to date</span>
-                <span data-i18n="dash_view_all">عرض الكل ></span>
-              </div>
-            </div>
-
-            <!-- Card 2: Total Employees (Cyan Stripe) -->
+            <!-- Card 1: Total Employees -->
             <div id="card-total-employees" class="glass-panel card-hover accent-stripe-cyan" style="padding: 1.25rem; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;" onclick="setModule('employees')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
                 <div class="pastel-icon-circle pastel-cyan">👥</div>
                 <div style="text-align: end;">
-                  <span data-i18n="dash_total_employees" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">إجمالي الموظفين</span>
+                  <span data-i18n="dash_total_employees" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">Total Employees</span>
                   <div id="stat-total-employees" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">1</div>
                 </div>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #0284c7; font-weight: 700;">
                 <span id="stat-sub-employees" data-i18n="dash_active_on_duty" style="color: var(--text-faint); font-weight: 500;">1 Active on Duty</span>
-                <span data-i18n="dash_view_all">عرض الكل ></span>
+                <span data-i18n="dash_view_all">View All →</span>
               </div>
             </div>
 
-            <!-- Card 3: Active Staff / Saudi Staff (Emerald Stripe) -->
-            <div id="card-active-staff" class="glass-panel card-hover accent-stripe-emerald" style="padding: 1.25rem; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;" onclick="setModule('saudi-staff')">
+            <!-- Card 2: Open Tasks -->
+            <div id="card-open-tasks" class="glass-panel card-hover accent-stripe-blue" style="padding: 1.25rem; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;" onclick="setModule('tasks')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                <div class="pastel-icon-circle pastel-emerald">🇸🇦</div>
+                <div class="pastel-icon-circle pastel-blue">🏗️</div>
                 <div style="text-align: end;">
-                  <span data-i18n="dash_active_accounts" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">الحسابات النشطة والكادر</span>
-                  <div id="stat-active-staff" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">1</div>
+                  <span id="label-stat-tasks" data-i18n="dash_open_tasks" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">Open Tasks</span>
+                  <div id="stat-open-tasks" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">0</div>
                 </div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #10b981; font-weight: 700;">
-                <span style="color: var(--text-faint); font-weight: 500;" data-i18n="dash_active_verified">نشط وموثق</span>
-                <span data-i18n="dash_view_active">عرض النشطين ></span>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #2563eb; font-weight: 700;">
+                <span id="stat-sub-tasks" data-i18n="dash_all_tasks_completed" style="color: var(--text-faint); font-weight: 500;">All tasks up to date</span>
+                <span data-i18n="dash_view_all">View All →</span>
               </div>
             </div>
 
-            <!-- Card 4: Inactive Accounts & Alerts (Rose Stripe) -->
+            <!-- Card 3: Upcoming Reminders -->
             <div id="card-upcoming-reminders" class="glass-panel card-hover accent-stripe-rose" style="padding: 1.25rem; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;" onclick="setModule('reminders')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
                 <div class="pastel-icon-circle pastel-rose">⏰</div>
                 <div style="text-align: end;">
-                  <span data-i18n="dash_upcoming_reminders" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">الحسابات والتنبيهات</span>
+                  <span data-i18n="dash_upcoming_reminders" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">Upcoming Reminders</span>
                   <div id="stat-upcoming-reminders" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">0</div>
                 </div>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #ef4444; font-weight: 700;">
                 <span id="stat-sub-reminders" data-i18n="dash_no_reminders" style="color: var(--text-faint); font-weight: 500;">No pending alerts</span>
-                <span data-i18n="dash_view_alerts">عرض التنبيهات ></span>
+                <span data-i18n="dash_view_alerts">View Alerts →</span>
               </div>
             </div>
 
-            <!-- Card 5: Professional Data & Stock (Purple Stripe) -->
+            <!-- Card 4: Low Stock Items -->
             <div id="card-low-stock" class="glass-panel card-hover accent-stripe-purple" style="padding: 1.25rem; cursor: pointer; display: flex; flex-direction: column; justify-content: space-between;" onclick="setModule('stock')">
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                <div class="pastel-icon-circle pastel-purple">🪪</div>
+                <div class="pastel-icon-circle pastel-purple">📦</div>
                 <div style="text-align: end;">
-                  <span data-i18n="dash_low_stock_items" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">بيانات مهنية وبطاقات</span>
+                  <span data-i18n="dash_low_stock_items" style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">Low Stock Items</span>
                   <div id="stat-low-stock" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">0</div>
                 </div>
               </div>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #8b5cf6; font-weight: 700;">
                 <span id="stat-sub-stock" data-i18n="dash_stock_healthy" style="color: var(--text-faint); font-weight: 500;">Stock healthy</span>
-                <span data-i18n="dash_view_all">عرض الكل ></span>
-              </div>
-            </div>
-
-          </div>
-
-          <!-- Section 2: Staff & Operations Management (6 Cards Grid - Matching Reference) -->
-          <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <h2 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);" data-i18n="dash_staff_management">
-                إدارة الموظفين والعمليات
-              </h2>
-              <span class="badge badge-secondary" style="font-size: 0.75rem;">Ostan HR Hub</span>
-            </div>
-
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem;">
-              
-              <!-- Action 1: Warnings (Rose Stripe) -->
-              <div onclick="setModule('audit-logs')" class="glass-panel card-hover accent-stripe-rose" style="padding: 1.1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;">
-                <div class="pastel-icon-circle pastel-rose">⚠️</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);" data-i18n="dash_warnings">الإنذارات</div>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" data-i18n="dash_warnings_desc">عرض وإدارة جميع الإنذارات المسجلة</div>
-                </div>
-                <span style="color: var(--text-faint); font-weight: 700;">➜</span>
-              </div>
-
-              <!-- Action 2: Deductions (Pink Stripe) -->
-              <div onclick="setModule('saudi-staff')" class="glass-panel card-hover accent-stripe-pink" style="padding: 1.1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;">
-                <div class="pastel-icon-circle pastel-pink">🔻</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);" data-i18n="dash_deductions">الخصومات</div>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" data-i18n="dash_deductions_desc">عرض وإدارة الخصومات والجزاءات</div>
-                </div>
-                <span style="color: var(--text-faint); font-weight: 700;">➜</span>
-              </div>
-
-              <!-- Action 3: Advances / Loans (Cyan Stripe) -->
-              <div onclick="setModule('employees')" class="glass-panel card-hover accent-stripe-cyan" style="padding: 1.1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;">
-                <div class="pastel-icon-circle pastel-cyan">💵</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);" data-i18n="dash_advances">السلف</div>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" data-i18n="dash_advances_desc">عرض ومتابعة جميع السلف المسجلة</div>
-                </div>
-                <span style="color: var(--text-faint); font-weight: 700;">➜</span>
-              </div>
-
-              <!-- Action 4: Salary Increases / Payroll (Emerald Stripe) -->
-              <div onclick="setModule('saudi-staff')" class="glass-panel card-hover accent-stripe-emerald" style="padding: 1.1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;">
-                <div class="pastel-icon-circle pastel-emerald">📈</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);" data-i18n="dash_salary_raises">زيادات الرواتب</div>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" data-i18n="dash_salary_raises_desc">عرض جميع الزيادات ومسيرات الرواتب</div>
-                </div>
-                <span style="color: var(--text-faint); font-weight: 700;">➜</span>
-              </div>
-
-              <!-- Action 5: Temporary Assignments (Amber Stripe) -->
-              <div onclick="setModule('tasks')" class="glass-panel card-hover accent-stripe-amber" style="padding: 1.1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;">
-                <div class="pastel-icon-circle pastel-amber">📋</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);" data-i18n="dash_assignments">التكليفات المؤقتة</div>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" data-i18n="dash_assignments_desc">عرض جميع التكليفات والمهام الميدانية</div>
-                </div>
-                <span style="color: var(--text-faint); font-weight: 700;">➜</span>
-              </div>
-
-              <!-- Action 6: Replacements & Custody (Purple Stripe) -->
-              <div onclick="setModule('stock')" class="glass-panel card-hover accent-stripe-purple" style="padding: 1.1rem; display: flex; align-items: center; gap: 1rem; cursor: pointer;">
-                <div class="pastel-icon-circle pastel-purple">🔄</div>
-                <div style="flex: 1;">
-                  <div style="font-weight: 700; font-size: 0.95rem; color: var(--text-main);" data-i18n="dash_replacements">الاستبدالات والعهد</div>
-                  <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;" data-i18n="dash_replacements_desc">عرض جميع عمليات استبدال العهد</div>
-                </div>
-                <span style="color: var(--text-faint); font-weight: 700;">➜</span>
-              </div>
-
-            </div>
-          </div>
-
-          <!-- Section 3: Statistics by Role & Nationality Distribution (Matching Reference Layout) -->
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 1.25rem;">
-            
-            <!-- Role Statistics (إحصاءات حسب الأدوار) -->
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main);" data-i18n="dash_role_stats">
-                  إحصاءات حسب الأدوار
-                </h3>
-                <span class="badge badge-primary" style="font-size: 0.72rem;">Live Roles</span>
-              </div>
-
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center;">
-                <div style="background: var(--bg-surface-elevated); padding: 0.75rem 0.5rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                  <div id="stat-role-pm" style="font-size: 1.35rem; font-weight: 800; color: #2563eb;">2</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;" data-i18n="dash_role_pm">مدراء المشاريع</div>
-                </div>
-
-                <div style="background: var(--bg-surface-elevated); padding: 0.75rem 0.5rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                  <div id="stat-role-rm" style="font-size: 1.35rem; font-weight: 800; color: #0284c7;">1</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;" data-i18n="dash_role_rm">مدراء المناطق</div>
-                </div>
-
-                <div style="background: var(--bg-surface-elevated); padding: 0.75rem 0.5rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                  <div id="stat-role-sup" style="font-size: 1.35rem; font-weight: 800; color: #10b981;">1</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;" data-i18n="dash_role_sup">المشرفين</div>
-                </div>
-
-                <div style="background: var(--bg-surface-elevated); padding: 0.75rem 0.5rem; border-radius: 8px; border: 1px solid var(--border-subtle);">
-                  <div id="stat-role-oth" style="font-size: 1.35rem; font-weight: 800; color: #8b5cf6;">17</div>
-                  <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;" data-i18n="dash_role_oth">درجات أخرى</div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Nationality Distribution (توزيع الجنسيات) -->
-            <div class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h3 style="font-size: 1rem; font-weight: 800; color: var(--text-main);" data-i18n="dash_nat_distribution">
-                  توزيع الجنسيات
-                </h3>
-                <span id="stat-nat-total-badge" class="badge badge-emerald" style="font-size: 0.72rem;">
-                  5 جنسيات مسجلة
-                </span>
-              </div>
-
-              <div style="display: flex; flex-wrap: wrap; gap: 0.6rem; align-items: center;">
-                <div style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 0.8rem; font-weight: 600;">
-                  <span>🇸🇦</span> <span>سعودي</span> <span id="stat-nat-saudi" class="badge badge-primary" style="font-size: 0.68rem; padding: 1px 6px;">1</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 0.8rem; font-weight: 600;">
-                  <span>🇪🇬</span> <span>مصر</span> <span id="stat-nat-egypt" class="badge badge-primary" style="font-size: 0.68rem; padding: 1px 6px;">5</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 0.8rem; font-weight: 600;">
-                  <span>🇾🇪</span> <span>اليمن</span> <span id="stat-nat-yemen" class="badge badge-primary" style="font-size: 0.68rem; padding: 1px 6px;">4</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 0.8rem; font-weight: 600;">
-                  <span>🇸🇾</span> <span>سوريا</span> <span id="stat-nat-syria" class="badge badge-primary" style="font-size: 0.68rem; padding: 1px 6px;">4</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 0.4rem; padding: 0.4rem 0.75rem; background: var(--bg-surface-elevated); border: 1px solid var(--border-subtle); border-radius: 8px; font-size: 0.8rem; font-weight: 600;">
-                  <span>🇵🇸</span> <span>فلسطين</span> <span id="stat-nat-palestine" class="badge badge-primary" style="font-size: 0.68rem; padding: 1px 6px;">1</span>
-                </div>
+                <span data-i18n="dash_view_all">View All →</span>
               </div>
             </div>
 
@@ -1555,7 +1449,7 @@
           <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem;">
             <!-- Left: Quick Operations -->
             <div id="dash-quick-ops-card" class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-              <div data-i18n="quick_ops_title" style="font-weight: 700; font-size: 1rem;">⚡ Quick Operations</div>
+              <div data-i18n="quick_ops_title" style="font-weight: 700; font-size: 1rem; color: var(--text-main);">⚡ Quick Operations</div>
 
               <div style="display: flex; flex-direction: column; gap: 0.65rem;">
                 <div id="quick-op-tasks" onclick="setModule('tasks')" class="glass-panel card-hover" style="padding: 1rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer;">
@@ -1588,7 +1482,7 @@
             <!-- Right: Active Tasks (Named "Tasks") -->
             <div id="dash-tasks-panel" class="glass-panel" style="padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div data-i18n="dash_active_tasks_title" style="font-weight: 700; font-size: 1rem;">Tasks</div>
+                <div data-i18n="dash_active_tasks_title" style="font-weight: 700; font-size: 1rem; color: var(--text-main);">Tasks</div>
                 <button onclick="setModule('tasks')" class="btn btn-ghost" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">View All →</button>
               </div>
 
@@ -4125,11 +4019,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.38",
-  "commit": "9921066",
-  "buildTime": 1789573561491,
-  "releaseDate": "2026-09-16T15:46:01.491Z",
-  "message": "fix(auth): update provisioned credentials login URL to https://thegeniusx.github.io/Ostan/"
+  "version": "1.0.39",
+  "commit": "bef0039",
+  "buildTime": 1789576425743,
+  "releaseDate": "2026-09-16T16:33:45.743Z",
+  "message": "feat(ui): implement executive corporate theme with burgundy subnav and reference layout"
 };
 
     let _ostanUpdateTriggered = false;

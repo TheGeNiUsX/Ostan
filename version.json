@@ -1,7 +1,7 @@
 {
-  "version": "1.0.38",
-  "commit": "9921066",
-  "buildTime": 1789573561491,
-  "releaseDate": "2026-09-16T15:46:01.491Z",
-  "message": "fix(auth): update provisioned credentials login URL to https://thegeniusx.github.io/Ostan/"
+  "version": "1.0.39",
+  "commit": "bef0039",
+  "buildTime": 1789576425743,
+  "releaseDate": "2026-09-16T16:33:45.743Z",
+  "message": "feat(ui): implement executive corporate theme with burgundy subnav and reference layout"
 }

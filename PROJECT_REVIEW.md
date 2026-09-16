@@ -154,11 +154,21 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
      - Pink `#f43f5e`: Deductions & Penalties
      - Amber `#f59e0b`: Temporary Assignments & Duties
 3. **Executive Dashboard Sections**:
-   - **Executive Welcome Banner:** "لوحة التحكم الإدارية" + "مرحباً بك، [اسم المستخدم]" + Team Badge ("فريق الموارد البشرية والعمليات: [الاسم] (مدير) - الإدارة العامة").
-   - **Top 5 Metric Cards:** Open Tasks, Total Employees, Active Staff, Reminders/Alerts, Stock/Cards with vertical colored stripes and pastel circular icon badges.
-   - **Staff & Operations Management ("إدارة الموظفين والعمليات"):** 6 quick action cards for Warnings, Deductions, Advances, Salary Increases, Temporary Assignments, and Replacements.
-   - **Role Breakdown Statistics ("إحصاءات حسب الأدوار"):** Live counts for Project Managers, Regional Managers, Supervisors, and Other Staff.
-   - **Nationality Distribution ("توزيع الجنسيات"):** Live flag pills for Saudi Arabia 🇸🇦, Egypt 🇪🇬, Yemen 🇾🇪, Syria 🇸🇾, Palestine 🇵🇸, and total count.
+   - **Executive Welcome Banner:** "لوحة التحكم الإدارية" + "مرحباً بك، [اسم المستخدم]" + شارة حالة تشغيل النظام ("System Active & Operational").
+   - **Top 4 Primary Metric Cards:** Total Employees (Cyan `#0284c7`), Open Tasks (Blue `#2563eb`), Upcoming Reminders (Rose `#ef4444`), Low Stock Items (Purple `#8b5cf6`).
+   - **Quick Operations ("⚡ Quick Operations"):** Task Management, Reminders & Alarms, Warehouse & Stock Catalog.
+   - **Active Tasks Panel ("Tasks"):** Real-time list of assigned tasks and status toggles.
+   - *(Note: Cleaned up and removed unneeded sections as requested: Nationality Distribution, Staff Management action cards, and Role Statistics).*
+4. **Fluid Collapsible Navigation Sidebar**:
+   - 3-slashes toggle button (`☰`) in the top header.
+   - Controls `.sidebar-collapsed` with smooth CSS grid transition (`grid-template-columns: 280px 1fr` ➔ `0px 1fr`).
+   - Default state is collapsed to give full screen width; user preference remembered in `localStorage`.
+5. **Brand Mark & User Profile Pill**:
+   - Brand mark: Signature Ostan orbital vector mark + "Ostan" text only (removed "enterprise" and long titles).
+   - User profile pill: Merged with name, avatar, role, and Door Exit with Arrow SVG icon for direct sign out.
+6. **3-State Theme Management**:
+   - Interactive Theme Button with active state display: `☀️ Light`, `🌙 Dark`, `🖥️ System` (with Arabic translations: `☀️ فاتح`, `🌙 داكن`, `🖥️ النظام`).
+   - Cycles through modes on click, with complete Light Theme consistency across all views (white surfaces, subtle borders, slate typography).
 
 ---
 

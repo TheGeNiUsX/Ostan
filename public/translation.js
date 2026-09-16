@@ -5,6 +5,11 @@
 (function () {
   const dictionary = {
     en: {
+      theme_light: "Light",
+      theme_dark: "Dark",
+      theme_system: "System",
+      system_status_operational: "System Active & Operational",
+      auth_logout_door: "Sign Out",
       company_brand_title: "Ostan Group",
       company_brand_subtitle: "ENTERPRISE OPERATIONS ERP",
       dash_exec_title: "Executive Operations Dashboard",
@@ -399,6 +404,11 @@
     },
 
     ar: {
+      theme_light: "فاتح",
+      theme_dark: "داكن",
+      theme_system: "النظام",
+      system_status_operational: "النظام نشط ويعمل بكفاءة",
+      auth_logout_door: "تسجيل الخروج",
       company_brand_title: "مجموعة أستان",
       company_brand_subtitle: "نظام إدارة العمليات الشامل ERP",
       dash_exec_title: "لوحة التحكم الإدارية",
@@ -808,6 +818,7 @@
     document.documentElement.setAttribute("lang", targetLang);
     document.documentElement.setAttribute("dir", isRtl ? "rtl" : "ltr");
     localStorage.setItem("ostan_locale", targetLang);
+    if (typeof window.updateThemeButtonUI === "function") { window.updateThemeButtonUI(); }
 
     // Update all text elements with data-i18n
     document.querySelectorAll("[data-i18n]").forEach((el) => {

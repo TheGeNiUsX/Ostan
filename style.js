@@ -3,14 +3,12 @@
  */
 
 (function () {
-  // Web Audio Synthesizer for Reminder Alarm & Notification Chimes
   function playSoundChime(freq1 = 659.25, freq2 = 880) {
     try {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return;
       const ctx = new AudioCtx();
 
-      // Tone 1
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.type = "sine";
@@ -22,7 +20,6 @@
       osc1.start(ctx.currentTime);
       osc1.stop(ctx.currentTime + 0.5);
 
-      // Tone 2
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.type = "sine";
@@ -38,24 +35,72 @@
     }
   }
 
+  function getSystemTheme() {
+    if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+      return "dark";
+    }
+    return "light";
+  }
+
+  function updateThemeButtonUI() {
+    const btn = document.getElementById("theme-toggle-btn");
+    const iconEl = document.getElementById("theme-btn-icon");
+    const labelEl = document.getElementById("theme-btn-label");
+    if (!btn) return;
+
+    const mode = localStorage.getItem("ostan_theme") || "light";
+    const lang = document.documentElement.getAttribute("lang") || "en";
+
+    let icon = "☀️";
+    let text = lang === "ar" ? "فاتح" : "Light";
+
+    if (mode === "dark") {
+      icon = "🌙";
+      text = lang === "ar" ? "داكن" : "Dark";
+    } else if (mode === "system") {
+      icon = "🖥️";
+      text = lang === "ar" ? "النظام" : "System";
+    }
+
+    if (iconEl) iconEl.textContent = icon;
+    if (labelEl) labelEl.textContent = text;
+  }
+
+  function applyTheme(mode) {
+    const effective = (mode === "system") ? getSystemTheme() : mode;
+    document.documentElement.setAttribute("data-theme", effective);
+    document.documentElement.setAttribute("data-theme-mode", mode);
+    updateThemeButtonUI();
+  }
+
+  function toggleAppSidebar() {
+    const appShell = document.getElementById("app-shell-root") || document.querySelector(".app-shell");
+    if (!appShell) return;
+    appShell.classList.toggle("sidebar-collapsed");
+    const isCollapsed = appShell.classList.contains("sidebar-collapsed");
+    try {
+      localStorage.setItem("ostan_sidebar_collapsed", isCollapsed ? "true" : "false");
+    } catch(e) {}
+  }
+
   window.OstanStyle = {
     playChime: playSoundChime,
-    setTheme: function (theme) {
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem("ostan_theme", theme);
+    toggleAppSidebar: toggleAppSidebar,
+    updateThemeButtonUI: updateThemeButtonUI,
+    setTheme: function (mode) {
+      localStorage.setItem("ostan_theme", mode);
+      applyTheme(mode);
     },
     toggleTheme: function () {
-      const cur = document.documentElement.getAttribute("data-theme") || "corporate";
-      const next = cur === "dark" ? "corporate" : "dark";
+      const cur = localStorage.getItem("ostan_theme") || "light";
+      const next = cur === "light" ? "dark" : cur === "dark" ? "system" : "light";
       this.setTheme(next);
       return next;
     },
     showToast: function (title, body) {
       playSoundChime(587.33, 880);
-      // Remove any existing toast so only the latest toast remains
       document.querySelectorAll(".ostan-toast-alert").forEach(el => el.remove());
 
-      // Track notification history for the notification center bell
       window.systemNotificationHistory = window.systemNotificationHistory || [];
       try {
         if (!window.systemNotificationHistory.length) {
@@ -64,37 +109,12 @@
         }
       } catch(e) {}
 
-      const lowerTitle = (title || "").toLowerCase();
-      const lowerBody = (body || "").toLowerCase();
-      let notifType = "info";
-      let notifIcon = "⚡";
-
-      if (lowerTitle.includes("whatsapp") || lowerBody.includes("whatsapp")) {
-        notifType = "whatsapp";
-        notifIcon = "📱";
-      } else if (lowerTitle.includes("reminder") || lowerBody.includes("reminder")) {
-        notifType = "reminder";
-        notifIcon = "⏰";
-      } else if (lowerTitle.includes("task") || lowerBody.includes("task")) {
-        notifType = "task";
-        notifIcon = "☑️";
-      } else if (lowerTitle.includes("error") || lowerTitle.includes("denied") || lowerTitle.includes("failed") || lowerBody.includes("failed")) {
-        notifType = "error";
-        notifIcon = "❌";
-      } else if (lowerTitle.includes("warn") || lowerTitle.includes("alert") || lowerBody.includes("warn")) {
-        notifType = "warning";
-        notifIcon = "⚠️";
-      } else if (lowerTitle.includes("success") || lowerTitle.includes("saved") || lowerTitle.includes("done") || lowerTitle.includes("restarted") || lowerTitle.includes("complete")) {
-        notifType = "success";
-        notifIcon = "✅";
-      }
-
       const notifItem = {
         id: "notif-" + Date.now() + "-" + Math.random().toString(36).substr(2, 4),
         title: title || "System Notification",
         body: body || "",
-        type: notifType,
-        icon: notifIcon,
+        type: "info",
+        icon: "🔔",
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         date: new Date().toLocaleDateString(),
         timestamp: Date.now(),
@@ -102,15 +122,13 @@
       };
 
       window.systemNotificationHistory.unshift(notifItem);
-      if (window.systemNotificationHistory.length > 200) {
-        window.systemNotificationHistory.pop();
-      }
+      if (window.systemNotificationHistory.length > 200) window.systemNotificationHistory.pop();
       try {
         localStorage.setItem("ostan_notifications_log", JSON.stringify(window.systemNotificationHistory));
       } catch(e) {}
 
       if (typeof window.updateNotificationBellUI === "function") {
-        try { window.updateNotificationBellUI(); } catch (e) { console.error(e); }
+        try { window.updateNotificationBellUI(); } catch (e) {}
       }
 
       const toast = document.createElement("div");
@@ -120,25 +138,25 @@
         bottom: 24px;
         right: 24px;
         z-index: 10000;
-        background: linear-gradient(135deg, rgba(26, 34, 52, 0.95), rgba(15, 23, 42, 0.98));
-        border: 1px solid rgba(56, 189, 248, 0.35);
+        background: #0f172a;
+        border: 1px solid rgba(255, 255, 255, 0.15);
         border-radius: 12px;
-        padding: 1rem 1.25rem;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        padding: 0.9rem 1.2rem;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
         display: flex;
         align-items: center;
         gap: 0.85rem;
         max-width: 400px;
-        color: #f8fafc;
+        color: #ffffff;
         animation: fadeIn 0.25s ease-out;
       `;
       toast.innerHTML = `
-        <div style="font-size: 1.4rem; line-height: 1;">⚡</div>
+        <div style="font-size: 1.3rem; line-height: 1;">🔔</div>
         <div style="flex: 1;">
-          <div style="font-weight: 800; font-size: 0.92rem; color: #38bdf8;">${title}</div>
-          <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 2px;">${body}</div>
+          <div style="font-weight: 700; font-size: 0.9rem; color: #38bdf8;">${title}</div>
+          <div style="font-size: 0.78rem; color: #cbd5e1; margin-top: 2px;">${body}</div>
         </div>
-        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #64748b; cursor: pointer; font-size: 1.1rem; padding: 0 4px;">✕</button>
+        <button onclick="this.parentElement.remove()" style="background: none; border: none; color: #94a3b8; cursor: pointer; font-size: 1rem; padding: 0 4px;">✕</button>
       `;
       document.body.appendChild(toast);
       setTimeout(() => {
@@ -146,17 +164,28 @@
       }, 5000);
     },
     init: function () {
-      const savedTheme = localStorage.getItem("ostan_theme") || "corporate";
+      const savedTheme = localStorage.getItem("ostan_theme") || "light";
       this.setTheme(savedTheme);
-      try {
-        const saved = localStorage.getItem("ostan_notifications_log");
-        if (saved) window.systemNotificationHistory = JSON.parse(saved);
-        else window.systemNotificationHistory = [];
-      } catch(e) {
-        window.systemNotificationHistory = [];
+
+      // Restore or initialize sidebar collapse state
+      const savedCollapsed = localStorage.getItem("ostan_sidebar_collapsed");
+      const shouldCollapse = savedCollapsed === null ? true : (savedCollapsed === "true");
+      const appShell = document.getElementById("app-shell-root") || document.querySelector(".app-shell");
+      if (appShell && shouldCollapse) {
+        appShell.classList.add("sidebar-collapsed");
       }
-    },
+
+      if (window.matchMedia) {
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
+          if (localStorage.getItem("ostan_theme") === "system") {
+            applyTheme("system");
+          }
+        });
+      }
+    }
   };
 
+  window.toggleAppSidebar = toggleAppSidebar;
+  window.updateThemeButtonUI = updateThemeButtonUI;
   window.OstanStyle.init();
 })();
