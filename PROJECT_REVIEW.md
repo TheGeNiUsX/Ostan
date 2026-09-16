@@ -194,12 +194,20 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
     - Order Details & Dispatch Receipt Modal (`modal-order-details`) with printable layout (`window.print()`).
 8. **Inventory & Orders Architecture Upgrades**:
    - **Executive 1-Look UI Scaling:** Expanded modal widths (`#modal-orders-excel-import` ➔ `980px`, `#modal-order-details` ➔ `960px`, `#modal-stock` ➔ `680px`), converted batch Excel preview into a spacious 4-column telemetry dashboard with horizontal size badges and city cards, eliminating restrictive inner scrollbars so users see all telemetry at a glance without scrolling down.
-   - **Stock Requests for Organizations:** Reordered inventory navigation so `Stock Requests (Organizations)` is positioned directly under `Orders & Fulfillment` in both the primary sidebar and the top burgundy subnav bar (`#top-nav-stock-requests`).
+   - **Stock Requests Positioning:** Reordered inventory navigation so `Stock Requests` is positioned directly under `Orders & Fulfillment` in both the primary sidebar and the top burgundy subnav bar (`#top-nav-stock-requests`), removing the word "Organizations" for clean executive terminology.
    - **Project Name Association:** Added `Project Name / اسم المشروع` (`#stock-project`) inside the Add/Edit Inventory Item modal with automated persistence (`s.projectName`) and visual badge indicators (`🏗️ {projectName}`) on warehouse cards.
    - **Super Admin Category & Fallback Icon Management:**
      - Dynamic category and fallback icon registry (`state.stockCategories` & `state.stockIcons`) with localStorage persistence.
      - Dedicated Category Manager (`#modal-stock-category-manager`) for Super Admin to add, rename, and delete categories (with automated item reassignment to General).
      - Dedicated Icon Manager (`#modal-stock-icon-manager`) for Super Admin to add custom emoji icons and labels. Non-superadmin access is strictly blocked.
+9. **Super Admin System-Wide Category Governance & User Profile Experience**:
+   - **System-Wide Categories Management in Settings (`view-settings`):** Added a dedicated, Super Admin-exclusive central management portal (`#settings-categories-container`) to manage categories across all sections of the project:
+     - Clear section demarcation badges for `📦 المخزون والمستودع`, `📋 الطلبيات والتوريد`, `✅ المهام والعمليات`, `👥 الكادر والموارد البشرية`.
+     - Full CRUD capabilities: adding new categories with section selection and usage clarification, editing category names (with automated propagation to existing items), and deleting categories with safety fallback reassignment.
+     - Real-time linked items count computation per category.
+   - **Hidden User Profile Page (`view-profile`):** Built an executive personal profile portal hidden from main navigation menus and accessible exclusively by clicking on the user's name or avatar in the sidebar footer or top header:
+     - Displays comprehensive personnel, security clearance, account status, and session details.
+     - Includes in-place profile editor modal (`#modal-edit-user-profile`) to update display name, mobile number, and password with real-time UI synchronization.
 
 ---
 
