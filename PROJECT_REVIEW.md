@@ -186,6 +186,10 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
        - **Size (المقاس):** Distribution matrix across sizes (`M`, `L`, `XL`, `2XL`, `3XL`, `4XL`, `5XL`, `Standard`) with size normalization (`XXL` ➔ `2XL`, `XXXL` ➔ `3XL`).
        - **Quantity (الكمية):** Net total items to dispatch, correctly filtering out rows with `0` quantity while preserving line records.
    - Live Inventory Deduction Workflow: when an order is marked as `DONE`, items are automatically deducted from `state.stock`, warehouse views update live, and low stock threshold alerts trigger automatically. Includes automatic inventory rollback if a completed order is cancelled.
+   - Cancelled Order Deletion Management (`deleteOrder` & `deleteAllCancelledOrders`):
+     - Individual deletion directly from table row actions with red trash button (`🗑️ حذف`).
+     - In-modal deletion button inside the Order Details slip for cancelled orders.
+     - Bulk deletion banner when viewing the Cancelled filter (`Cancelled (ملغي)`) allowing single-click cleanup of all archived/cancelled orders with confirmation and live localStorage persistence.
    - Order Details & Dispatch Receipt Modal (`modal-order-details`) with printable layout (`window.print()`).
 
 ---
