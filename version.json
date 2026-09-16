@@ -1,7 +1,7 @@
 {
-  "version": "1.0.53",
-  "commit": "9cec96f",
-  "buildTime": 1789601105440,
-  "releaseDate": "2026-09-16T23:25:05.440Z",
-  "message": "fix: strict per-row project scoping in excel orders to count only explicit rows for nadec"
+  "version": "1.0.54",
+  "commit": "892b951",
+  "buildTime": 1789602619029,
+  "releaseDate": "2026-09-16T23:50:19.029Z",
+  "message": "fix: persist orders across app edits and reloads, and update orders engine cache buster"
 }

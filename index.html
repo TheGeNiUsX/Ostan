@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.53"></script>
+  <script src="orders-engine.js?v=1.0.54"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -3884,6 +3884,22 @@
             </select>
           </div>
           <div>
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted); display: block; margin-bottom: 4px;">Size / المقاس (للملابس والتيشيرت والزي)</label>
+            <select id="stock-size" class="input-field">
+              <option value="Standard">Standard / موحد (كافة المقاسات)</option>
+              <option value="S">S</option>
+              <option value="M">M</option>
+              <option value="L">L</option>
+              <option value="XL">XL</option>
+              <option value="2XL">2XL</option>
+              <option value="3XL">3XL</option>
+              <option value="4XL">4XL</option>
+              <option value="5XL">5XL</option>
+            </select>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+          <div>
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
               <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Fallback Icon / الأيقونة</label>
               <button type="button" id="btn-manage-icons" onclick="openIconManagerModal()" class="btn btn-ghost" style="padding: 1px 6px; font-size: 0.72rem; color: #2563eb; display: none;" title="Add Icon (Super Admin Only)">
@@ -4419,11 +4435,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.53",
-  "commit": "9cec96f",
-  "buildTime": 1789601105440,
-  "releaseDate": "2026-09-16T23:25:05.440Z",
-  "message": "fix: strict per-row project scoping in excel orders to count only explicit rows for nadec"
+  "version": "1.0.54",
+  "commit": "892b951",
+  "buildTime": 1789602619029,
+  "releaseDate": "2026-09-16T23:50:19.029Z",
+  "message": "fix: persist orders across app edits and reloads, and update orders engine cache buster"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9643,7 +9659,10 @@
               </div>
 
               <div style="font-weight: 700; font-size: 1rem; color: var(--text-main); margin-top: 0.75rem;">${s.name}</div>
-              ${s.projectName ? `<div style="font-size: 0.75rem; color: #2563eb; font-weight: 700; margin-top: 2px; display: flex; align-items: center; gap: 4px;"><span>🏗️</span> <span>${s.projectName}</span></div>` : ''}
+              <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; margin-top: 2px;">
+                ${s.projectName ? `<span class="badge badge-primary" style="font-size: 0.72rem;">🏗️ ${s.projectName}</span>` : ''}
+                ${s.size && s.size !== 'Standard' && s.size !== 'All' ? `<span class="badge badge-secondary" style="font-size: 0.72rem; background: rgba(37, 99, 235, 0.08); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.2);">📏 مقاس: ${s.size}</span>` : ''}
+              </div>
               <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
                 ${lang === 'ar' ? 'الكمية المتوفرة:' : 'Available Qty:'} <strong style="color: var(--text-main); font-size: 0.95rem;">${s.quantity}</strong>
                 <span style="opacity: 0.6; margin: 0 4px;">•</span>
@@ -9669,6 +9688,10 @@
       if (!s) return;
       document.getElementById("stock-edit-id").value = s.id;
       document.getElementById("stock-name").value = s.name;
+      const projInput = document.getElementById("stock-project");
+      if (projInput) projInput.value = s.projectName || "";
+      const sizeInput = document.getElementById("stock-size");
+      if (sizeInput) sizeInput.value = s.size || "Standard";
       renderCategoryOptions(s.category);
       renderIconOptions(s.icon || "📦");
       document.getElementById("stock-category").value = s.category || "General";
@@ -10825,6 +10848,8 @@
       document.getElementById("stock-threshold").value = "5";
       const projInput = document.getElementById("stock-project");
       if (projInput) projInput.value = "";
+      const sizeInput = document.getElementById("stock-size");
+      if (sizeInput) sizeInput.value = "Standard";
       removeStockImage();
       renderCategoryOptions();
       renderIconOptions();
@@ -11119,6 +11144,8 @@
       e.preventDefault();
       const editId = document.getElementById("stock-edit-id").value;
       const name = document.getElementById("stock-name").value.trim();
+      const projectName = document.getElementById("stock-project")?.value.trim() || "";
+      const size = document.getElementById("stock-size")?.value || "Standard";
       const category = document.getElementById("stock-category").value;
       const icon = document.getElementById("stock-icon").value;
       const imageUrl = document.getElementById("stock-image-data")?.value || "";
@@ -11133,6 +11160,8 @@
         const s = state.stock.find(x => x.id === editId);
         if (s) {
           s.name = name;
+          s.projectName = projectName;
+          s.size = size;
           s.category = category;
           s.icon = icon;
           s.imageUrl = imageUrl;
@@ -11145,7 +11174,7 @@
           alert("Permission denied: You do not have permission to add warehouse items.");
           return;
         }
-        const newItem = { id: "stock-" + Date.now(), name, projectName, category, icon, imageUrl, quantity, threshold };
+        const newItem = { id: "stock-" + Date.now(), name, projectName, size, category, icon, imageUrl, quantity, threshold };
         state.stock.unshift(newItem);
         syncStockItemToFirestore(newItem);
       }

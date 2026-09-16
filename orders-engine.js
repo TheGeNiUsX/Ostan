@@ -35,6 +35,74 @@
     }
   }
 
+  // Helper: Project-Aware and Size-Aware Stock Item Matcher
+  function findMatchingStockItem(stock, targetProject, targetSize, itemDesc) {
+    if (!stock || stock.length === 0) return null;
+    const proj = (targetProject || "").trim().toLowerCase();
+    const sz = (targetSize || "").trim().toUpperCase();
+    const desc = (itemDesc || "").trim().toLowerCase();
+
+    // If a project is designated for this order/line:
+    if (proj) {
+      // Priority 1: Item matches project explicitly AND matches size
+      let match = stock.find(s => {
+        const sProj = (s.projectName || "").trim().toLowerCase();
+        const sSize = (s.size || "").trim().toUpperCase();
+        const sName = (s.name || "").toLowerCase();
+        const projMatches = (sProj === proj || sProj.includes(proj) || sName.includes(proj));
+        const sizeMatches = (sSize === sz || sName.toUpperCase().includes(sz));
+        return projMatches && sizeMatches;
+      });
+      if (match) return match;
+
+      // Priority 2: Item matches project explicitly AND is wearable/T-Shirt/Uniform
+      match = stock.find(s => {
+        const sProj = (s.projectName || "").trim().toLowerCase();
+        const sName = (s.name || "").toLowerCase();
+        const sCat = (s.category || "").toLowerCase();
+        const projMatches = (sProj === proj || sProj.includes(proj) || sName.includes(proj));
+        const isClothing = (sCat.includes("t-shirt") || sCat.includes("تيشيرت") || sCat.includes("uniform") || sCat.includes("زي") || sName.includes("بلوز") || sName.includes("تيشيرت"));
+        return projMatches && isClothing;
+      });
+      if (match) return match;
+
+      // Priority 3: Any item belonging to this project
+      match = stock.find(s => {
+        const sProj = (s.projectName || "").trim().toLowerCase();
+        const sName = (s.name || "").toLowerCase();
+        return (sProj === proj || sProj.includes(proj) || sName.includes(proj));
+      });
+      if (match) return match;
+
+      // STRICT PROTECTION: If this order is for project "نادك", DO NOT match items of another project (like "سدافكو")!
+      return null;
+    }
+
+    // For general non-project orders (e.g. city general dispatches):
+    // Only search items that have NO project assigned, or where project matches city
+    const availableStock = stock.filter(s => !s.projectName || s.projectName.trim() === "");
+
+    // 1. Match size
+    if (sz && sz !== "STANDARD") {
+      let match = availableStock.find(s => {
+        const sSize = (s.size || "").trim().toUpperCase();
+        const sName = (s.name || "").toUpperCase();
+        return sSize === sz || sName.includes(sz);
+      });
+      if (match) return match;
+    }
+
+    // 2. Match general clothing/tools
+    let match = availableStock.find(s => {
+      const sCat = (s.category || "").toLowerCase();
+      const sName = (s.name || "").toLowerCase();
+      return (sCat.includes("t-shirt") || sCat.includes("تيشيرت") || sCat.includes("tools") || sCat.includes("أدوات") || sName.includes("تيشيرت") || sName.includes("أدوات"));
+    });
+    if (match) return match;
+
+    return availableStock[0] || null;
+  }
+
   // Normalizes sizing strings (e.g. XXL -> 2XL, XXXL -> 3XL)
   function normalizeSizeName(rawSize) {
     if (!rawSize) return "Standard";
@@ -613,39 +681,63 @@
     const lang = document.documentElement.getAttribute("lang") || "en";
 
     if (newStatus === "DONE") {
-      const itemSummary = (order.items || []).map(i => `• ${i.itemName}: ${i.quantity}`).join("\n");
+      const stock = (window.state && window.state.stock) ? window.state.stock : [];
+      const deductionsPlan = [];
+
+      (order.items || []).forEach(it => {
+        let stockItem = null;
+        if (it.stockId) {
+          stockItem = stock.find(s => s.id === it.stockId);
+        }
+        // Project Mismatch Guard: If stockItem belongs to a DIFFERENT project than this order, discard it!
+        if (stockItem && order.projectName && stockItem.projectName) {
+          const sProj = stockItem.projectName.trim().toLowerCase();
+          const oProj = order.projectName.trim().toLowerCase();
+          if (sProj !== oProj && !sProj.includes(oProj) && !oProj.includes(sProj)) {
+            stockItem = null;
+          }
+        }
+
+        // If not found or had a mismatch, match cleanly using findMatchingStockItem
+        if (!stockItem) {
+          stockItem = findMatchingStockItem(stock, order.projectName, it.size, it.itemName);
+        }
+
+        if (stockItem) {
+          it.stockId = stockItem.id;
+          it.itemName = (stockItem.size && stockItem.size === it.size) ? stockItem.name : `${stockItem.name} (مقاس ${it.size || 'Standard'})`;
+        }
+
+        deductionsPlan.push({
+          item: it,
+          stockItem: stockItem,
+          displayName: stockItem ? `${stockItem.name}${it.size && it.size !== 'Standard' ? ' (مقاس ' + it.size + ')' : ''}` : it.itemName,
+          qty: Number(it.quantity) || 1
+        });
+      });
+
+      const itemSummary = deductionsPlan.map(d => {
+        if (d.stockItem) {
+          return `• ${d.displayName}: ${d.qty} قطعة (المتوفر بالمستودع: ${d.stockItem.quantity})`;
+        } else {
+          return `• ${d.displayName}: ${d.qty} قطعة [⚠️ تنبيه: غير متوفر بالمستودع لهذا المشروع!]`;
+        }
+      }).join("\n");
+
       const confirmMsg = lang === "ar"
         ? `هل أنت متأكد من تسليم أمر الصرف (${order.orderNumber}) وخصم المواد التالية من المخزون؟\n\n${itemSummary}`
         : `Confirm completion of order ${order.orderNumber} and deduct items from warehouse inventory?\n\n${itemSummary}`;
 
       if (!confirm(confirmMsg)) return;
 
-      // Perform live deduction from state.stock
-      const stock = window.state.stock || [];
-      (order.items || []).forEach(it => {
-        let stockItem = null;
-        if (it.stockId) {
-          stockItem = stock.find(s => s.id === it.stockId);
-        }
-        if (!stockItem && it.itemName) {
-          stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
-        }
-        if (!stockItem && it.size) {
-          stockItem = stock.find(s => {
-            const sn = s.name.toUpperCase();
-            return sn.includes("مقاس " + it.size) || sn.includes("SIZE " + it.size) || sn.endsWith(" " + it.size);
-          });
-        }
-        if (!stockItem && stock.length > 0) {
-          stockItem = stock[0];
-        }
+      // Apply deductions only to confirmed matching stock items
+      deductionsPlan.forEach(d => {
+        if (d.stockItem) {
+          d.stockItem.quantity = Math.max(0, d.stockItem.quantity - d.qty);
 
-        if (stockItem) {
-          stockItem.quantity = Math.max(0, stockItem.quantity - Number(it.quantity));
-
-          if (stockItem.quantity <= (stockItem.threshold || 5)) {
+          if (d.stockItem.quantity <= (d.stockItem.threshold || 5)) {
             if (window.OstanStyle) {
-              window.OstanStyle.showToast("⚠️ تنبيه نقص المخزون", `الصنف ${stockItem.name} وصل للحد الأدنى (${stockItem.quantity} متبقي)!`, "warning");
+              window.OstanStyle.showToast("⚠️ تنبيه نقص المخزون", `الصنف ${d.stockItem.name} وصل للحد الأدنى (${d.stockItem.quantity} متبقي)!`, "warning");
             }
           }
         }
@@ -1164,12 +1256,20 @@
     let mode = modeEl ? modeEl.value : "PER_PROJECT";
     const stock = (window.state && window.state.stock) ? window.state.stock : [];
 
-    function buildItemsFromSizes(sizesMap) {
+    function buildItemsFromSizes(sizesMap, projName) {
       return Object.entries(sizesMap).map(([sz, qty]) => {
-        const matchedStock = stock.find(s => s.name.toLowerCase().includes(sz.toLowerCase())) || stock[0];
+        const matchedStock = findMatchingStockItem(stock, projName, sz, "تيشيرت");
+        let displayName = "";
+        if (matchedStock) {
+          displayName = (matchedStock.size && matchedStock.size === sz) ? matchedStock.name : `${matchedStock.name} (مقاس ${sz})`;
+        } else if (projName) {
+          displayName = `بلوزة / تيشيرت ${projName} (مقاس ${sz})`;
+        } else {
+          displayName = `زي موحد / تيشيرت (مقاس ${sz})`;
+        }
         return {
           stockId: matchedStock ? matchedStock.id : "",
-          itemName: matchedStock ? `${matchedStock.name} (مقاس ${sz})` : `زي موحد / تيشيرت (مقاس ${sz})`,
+          itemName: displayName,
           size: sz,
           quantity: qty
         };
@@ -1186,8 +1286,8 @@
 
     if (mode === "MASTER") {
       curMaxNum++;
-      const masterItems = buildItemsFromSizes(p.countBySize);
       const singleProj = (p.distinctProjectNames && p.distinctProjectNames.length === 1) ? p.distinctProjectNames[0] : "";
+      const masterItems = buildItemsFromSizes(p.countBySize, singleProj);
       const clientNameStr = singleProj
         ? `مشروع ${singleProj} (${p.citiesList.slice(0, 3).join('، ')})`
         : `توريد كادر الميدان (${p.citiesList.slice(0, 3).join('، ')}${p.citiesList.length > 3 ? '...' : ''})`;
@@ -1215,7 +1315,7 @@
       // Default: Separate each distinct project and each city roster
       Object.values(p.countByProject).forEach((projData, pIdx) => {
         curMaxNum++;
-        const projItems = buildItemsFromSizes(projData.sizes);
+        const projItems = buildItemsFromSizes(projData.sizes, projData.projectName);
         const cityList = Array.isArray(projData.cities) ? projData.cities : Array.from(projData.cities || []);
         const cityNames = cityList.join("، ");
         const spvList = Array.isArray(projData.spvs) ? projData.spvs : Array.from(projData.spvs || []);
@@ -1247,10 +1347,6 @@
     }
 
     persistOrders();
-
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (e) {}
 
     const totalItems = p.netTotalQty;
     parsedOrdersBatchData = null;
