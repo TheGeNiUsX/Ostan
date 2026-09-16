@@ -164,15 +164,34 @@
       }, 5000);
     },
     init: function () {
-      const savedTheme = localStorage.getItem("ostan_theme") || "light";
+      // Force default to light corporate theme on first load of this design version
+      const versionKey = "ostan_theme_v2";
+      let savedTheme = localStorage.getItem("ostan_theme");
+      if (!localStorage.getItem(versionKey)) {
+        savedTheme = "light";
+        localStorage.setItem("ostan_theme", "light");
+        localStorage.setItem(versionKey, "true");
+      } else if (!savedTheme) {
+        savedTheme = "light";
+      }
+
       this.setTheme(savedTheme);
 
-      // Restore or initialize sidebar collapse state
-      const savedCollapsed = localStorage.getItem("ostan_sidebar_collapsed");
-      const shouldCollapse = savedCollapsed === null ? true : (savedCollapsed === "true");
-      const appShell = document.getElementById("app-shell-root") || document.querySelector(".app-shell");
-      if (appShell && shouldCollapse) {
-        appShell.classList.add("sidebar-collapsed");
+      const onDomReady = () => {
+        updateThemeButtonUI();
+        // Default sidebar to collapsed so it gives a clean full-screen dashboard
+        const savedCollapsed = localStorage.getItem("ostan_sidebar_collapsed");
+        const shouldCollapse = savedCollapsed === null ? true : (savedCollapsed === "true");
+        const appShell = document.getElementById("app-shell-root") || document.querySelector(".app-shell");
+        if (appShell && shouldCollapse) {
+          appShell.classList.add("sidebar-collapsed");
+        }
+      };
+
+      if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", onDomReady);
+      } else {
+        onDomReady();
       }
 
       if (window.matchMedia) {

@@ -169,6 +169,9 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
 6. **3-State Theme Management**:
    - Interactive Theme Button with active state display: `☀️ Light`, `🌙 Dark`, `🖥️ System` (with Arabic translations: `☀️ فاتح`, `🌙 داكن`, `🖥️ النظام`).
    - Cycles through modes on click, with complete Light Theme consistency across all views (white surfaces, subtle borders, slate typography).
+   - Sidebar collapse eliminates content jamming: when `.sidebar-collapsed` is active, `.app-sidebar` applies `width: 0 !important; visibility: hidden !important; overflow: hidden !important;` so no text or floating icons bleed through, and `.main-wrapper` smoothly expands full width.
+   - Fixed `.brand-logo-box` dimension clamping (`32px` width/height) to prevent SVG blowout.
+   - Implemented `ostan_theme_v2` migration so existing browsers automatically default to the executive Light Theme on initial visit.
 
 ---
 

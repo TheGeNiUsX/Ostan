@@ -1,7 +1,7 @@
 {
-  "version": "1.0.39",
-  "commit": "bef0039",
-  "buildTime": 1789576425743,
-  "releaseDate": "2026-09-16T16:33:45.743Z",
-  "message": "feat(ui): implement executive corporate theme with burgundy subnav and reference layout"
+  "version": "1.0.40",
+  "commit": "43fc659",
+  "buildTime": 1789577114488,
+  "releaseDate": "2026-09-16T16:45:14.488Z",
+  "message": "feat(design): implement collapsible sidebar with 3 slashes, clean dashboard, 3-state theme button, and merged user profile pill"
 }

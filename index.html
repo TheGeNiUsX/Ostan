@@ -177,11 +177,11 @@
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      transition: grid-template-columns 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: grid-template-columns 0.28s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .app-shell.sidebar-collapsed {
-      grid-template-columns: 0px 1fr;
+      grid-template-columns: 0px 1fr !important;
     }
 
     .app-sidebar {
@@ -191,27 +191,26 @@
       flex-direction: column;
       height: 100vh;
       overflow-y: auto;
+      overflow-x: hidden;
       user-select: none;
       width: 280px;
-      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.22s ease, width 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      will-change: transform, width;
+      min-width: 0;
+      transition: width 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.28s;
+      will-change: width, opacity;
       z-index: 30;
     }
 
     .app-shell.sidebar-collapsed .app-sidebar {
-      width: 0;
-      min-width: 0;
-      opacity: 0;
-      pointer-events: none;
-      overflow: hidden;
-      border-inline-end: none;
-    }
-
-    [dir="ltr"] .app-shell.sidebar-collapsed .app-sidebar {
-      transform: translateX(-100%);
-    }
-    [dir="rtl"] .app-shell.sidebar-collapsed .app-sidebar {
-      transform: translateX(100%);
+      width: 0 !important;
+      min-width: 0 !important;
+      max-width: 0 !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      overflow: hidden !important;
+      visibility: hidden !important;
+      border: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
     }
 
     .main-wrapper {
@@ -221,7 +220,25 @@
       overflow: hidden;
       background: var(--bg-app);
       min-width: 0;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Fixed size for all brand logo containers to prevent SVG blowout */
+    .brand-logo-box {
+      width: 32px !important;
+      height: 32px !important;
+      min-width: 32px !important;
+      min-height: 32px !important;
+      max-width: 32px !important;
+      max-height: 32px !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-shrink: 0 !important;
+    }
+    .brand-logo-box svg {
+      width: 100% !important;
+      height: 100% !important;
     }
 
     /* Light Mode Complete Consistency Across Every View */
@@ -4019,11 +4036,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.39",
-  "commit": "bef0039",
-  "buildTime": 1789576425743,
-  "releaseDate": "2026-09-16T16:33:45.743Z",
-  "message": "feat(ui): implement executive corporate theme with burgundy subnav and reference layout"
+  "version": "1.0.40",
+  "commit": "43fc659",
+  "buildTime": 1789577114488,
+  "releaseDate": "2026-09-16T16:45:14.488Z",
+  "message": "feat(design): implement collapsible sidebar with 3 slashes, clean dashboard, 3-state theme button, and merged user profile pill"
 };
 
     let _ostanUpdateTriggered = false;
