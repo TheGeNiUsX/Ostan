@@ -175,6 +175,12 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
    - Restored full sidebar navigation layout styles (`.nav-item`, `.nav-sections-container`, `.nav-group-wrapper`, `.nav-section-title`): all items now stack vertically with proper margins, icons, and hover states, preventing inline wrapping.
    - Merged sidebar footer profile and sign-out button into a unified executive card featuring the user's avatar, name, badge, and a Door Exit with Arrow SVG logout button.
    - Fixed navigation toggle between Employees and Saudi Staff: `setModule(mod, subTab)` now automatically activates the requested sub-tab (defaulting to `'all'` when selecting Employees). Synchronized both top burgundy bar items (`top-nav-employees`, `top-nav-saudi-staff`) and sidebar items (`nav-employees`, `nav-saudi-staff`) inside `setEmployeeViewTab`, ensuring instant toggling between All Employees and Saudi Staff.
+7. **Inventory Orders & Automated Live Stock Deduction**:
+   - Added dedicated Orders Section (`view-orders`) accessible via sidebar (`nav-orders`) and top burgundy subnav (`top-nav-orders`).
+   - Manual Order Creator (`openCreateOrderModal`) with dynamic line items, item selector from live warehouse inventory (`state.stock`), and stock limit validation.
+   - Excel Batch Import Engine (`modal-orders-excel-import`) supporting `.xlsx`, `.xls`, `.csv` with auto-matching to warehouse items and downloadable sample template (`downloadOrdersExcelSample`).
+   - Live Inventory Deduction Workflow: when an order is marked as `DONE`, items are automatically deducted from `state.stock`, warehouse views update live, and low stock threshold alerts trigger automatically. Includes automatic inventory rollback if a completed order is cancelled.
+   - Order Details & Dispatch Receipt Modal (`modal-order-details`) with printable layout (`window.print()`).
 
 ---
 

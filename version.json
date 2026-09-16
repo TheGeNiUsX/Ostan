@@ -1,7 +1,7 @@
 {
-  "version": "1.0.42",
-  "commit": "7fae2e0",
-  "buildTime": 1789579320403,
-  "releaseDate": "2026-09-16T17:22:00.403Z",
-  "message": "fix(ui): restore sidebar nav vertical layout styles and merge footer profile with door exit icon"
+  "version": "1.0.43",
+  "commit": "53365ee",
+  "buildTime": 1789580492078,
+  "releaseDate": "2026-09-16T17:41:32.078Z",
+  "message": "fix(nav): enable seamless toggling between Employees and Saudi Staff in top subnav and sidebar"
 }
