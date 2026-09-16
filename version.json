@@ -1,7 +1,7 @@
 {
-  "version": "1.0.47",
-  "commit": "356f2b1",
-  "buildTime": 1789594627661,
-  "releaseDate": "2026-09-16T21:37:07.661Z",
-  "message": "feat: super admin controls, inventory project name, stock requests reorganization, and 1-look UI scaling"
+  "version": "1.0.48",
+  "commit": "528928b",
+  "buildTime": 1789595935307,
+  "releaseDate": "2026-09-16T21:58:55.307Z",
+  "message": "feat: system-wide category management, user profile page on name click, and clean stock requests naming"
 }

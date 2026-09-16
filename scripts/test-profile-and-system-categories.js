@@ -14,18 +14,20 @@ function assert(condition, message) {
   }
 }
 
-console.log('=== RUNNING TESTS: PROFILE PAGE, SYSTEM CATEGORIES & WORD REMOVAL ===\n');
+console.log('=== RUNNING TESTS: PROFILE PAGE, SYSTEM CATEGORIES & SUBMIT REQUESTS ===\n');
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
 const trans = fs.readFileSync(path.join(__dirname, '..', 'translation.js'), 'utf8');
 
-// 1. Organization Word Removal
-console.log('--- 1. Testing Removal of "Organization" Word ---');
+// 1. Submit Requests & Organization Word Removal
+console.log('--- 1. Testing Naming: "Submit Requests" (No Organizations) ---');
 assert(!html.includes('Stock Requests (Organizations)'), 'No "Stock Requests (Organizations)" in index.html');
 assert(!html.includes('طلبات الصرف (للمؤسسات)'), 'No "طلبات الصرف (للمؤسسات)" in index.html');
-assert(html.includes('<span data-i18n="nav_stock_requests">Stock Requests</span>'), 'Sidebar has clean "Stock Requests"');
-assert(trans.includes('nav_stock_requests: "Stock Requests",'), 'Translation en has "Stock Requests"');
-assert(trans.includes('nav_stock_requests: "طلبات الصرف",'), 'Translation ar has "طلبات الصرف"');
+assert(html.includes('<span data-i18n="nav_stock_requests">Submit Requests</span>'), 'Sidebar has clean "Submit Requests"');
+assert(trans.includes('nav_stock_requests: "Submit Requests",'), 'Translation en has "Submit Requests"');
+assert(trans.includes('nav_stock_requests: "تقديم طلبات الصرف",'), 'Translation ar has "تقديم طلبات الصرف"');
+assert(trans.includes('requests_section_title: "Submit Requests",'), 'Translation en requests_section_title is "Submit Requests"');
+assert(trans.includes('requests_section_title: "تقديم طلبات الصرف",'), 'Translation ar requests_section_title is "تقديم طلبات الصرف"');
 
 // 2. Hidden Profile Page Accessible via Pressing on Name
 console.log('\n--- 2. Testing Hidden Profile Page Access ---');
@@ -51,6 +53,23 @@ assert(html.includes('function filterSystemCategories'), 'filterSystemCategories
 assert(html.includes('function openSystemCategoryAddDialog'), 'openSystemCategoryAddDialog defined');
 assert(html.includes('function editSystemCategory'), 'editSystemCategory defined');
 assert(html.includes('function deleteSystemCategory'), 'deleteSystemCategory defined');
+
+// 4. Executive Modal Form for System Category (Replacing Browser Prompt)
+console.log('\n--- 4. Testing Executive Category Modal Form (No Browser prompt) ---');
+assert(html.includes('id="modal-system-category-form"'), 'Executive modal #modal-system-category-form exists');
+assert(html.includes('name="syscat_section_radio"'), 'Choice cards with radio options exist for target section selection');
+assert(html.includes('id="syscat-name-input"'), 'Category name input field exists');
+assert(html.includes('id="syscat-clarification-input"'), 'Category clarification textarea exists');
+assert(html.includes('function handleSaveSystemCategoryForm'), 'handleSaveSystemCategoryForm defined');
+assert(html.includes('function setSysCatSelectedSection'), 'setSysCatSelectedSection defined');
+assert(!html.includes('prompt('), 'Completely eliminated browser prompt() from index.html');
+
+// 5. Stock Categories Synchronization with System Categories
+console.log('\n--- 5. Testing Single Source of Truth for Warehouse Categories ---');
+assert(html.includes('getStoredStockCategories'), 'getStoredStockCategories defined');
+assert(html.includes('getSystemWideCategories().filter'), 'getStoredStockCategories queries System-Wide Categories for stock section');
+assert(html.includes('renderCategoryOptions();') && html.includes('openStockHUD'), 'openStockHUD invokes renderCategoryOptions() on every open');
+assert(html.includes('renderCategoryOptions(s.category);') && html.includes('editStockById'), 'editStockById invokes renderCategoryOptions() with item category');
 
 // Check sections coverage
 assert(html.includes('sectionName: "📦 المخزون والمستودع"'), 'Stock & Warehouse section category included');

@@ -208,6 +208,10 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
    - **Hidden User Profile Page (`view-profile`):** Built an executive personal profile portal hidden from main navigation menus and accessible exclusively by clicking on the user's name or avatar in the sidebar footer or top header:
      - Displays comprehensive personnel, security clearance, account status, and session details.
      - Includes in-place profile editor modal (`#modal-edit-user-profile`) to update display name, mobile number, and password with real-time UI synchronization.
+10. **Executive Category Modal UI, Single-Source Category Sync & "Submit Requests" Renaming**:
+    - **Executive Category Form Modal (`#modal-system-category-form`):** Completely eradicated browser `prompt()` popup dialogs for category creation and editing. Implemented a modern modal dialog featuring 4 visual interactive radio cards for target module selection (`📦 المخزون والمستودع`, `📋 الطلبيات والتوريد`, `✅ المهام والعمليات`, `👥 الكادر والموارد البشرية`), category name text input, and clarification/scope textarea.
+    - **Single Source of Truth for Warehouse Categories:** Unified `getStoredStockCategories()` to query directly from `getSystemWideCategories().filter(c => c.section === "stock")`. Automated dynamic option rendering in `openStockHUD()` and `editStockById()`, ensuring any category created in Whole Project Categories (e.g., `T-Shirt (تيشيرت)`) instantly appears in the Add/Edit Inventory Item modal (`#stock-category` select).
+    - **Strict "Submit Requests" Section Naming:** Renamed the sidebar item, top subnav item, view heading, and localization keys (`nav_stock_requests`, `requests_section_title`) from "Stock Requests (Organizations)" strictly to **"Submit Requests"** (Arabic: **"تقديم طلبات الصرف"**), removing the word "Organizations" completely while maintaining its structural position under `Orders & Fulfillment`.
 
 ---
 

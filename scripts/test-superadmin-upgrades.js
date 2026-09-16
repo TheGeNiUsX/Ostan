@@ -84,7 +84,7 @@ const navStockReqIdx = html.indexOf('id="nav-stock-requests"');
 
 assert(navStockIdx < navOrdersIdx, 'nav-stock precedes nav-orders');
 assert(navOrdersIdx < navStockReqIdx, 'nav-orders precedes nav-stock-requests (Stock Requests is UNDER Orders)');
-assert(html.includes('data-i18n="nav_stock_requests">Stock Requests</span>'), 'nav-stock-requests label is clean Stock Requests without Organizations');
+assert(html.includes('data-i18n="nav_stock_requests">Submit Requests</span>'), 'nav-stock-requests label is Submit Requests without Organizations');
 assert(html.includes('id="top-nav-stock-requests"'), 'top-nav-stock-requests present in top burgundy bar');
 
 // 4. Project Name Field in Add/Edit Inventory Item
