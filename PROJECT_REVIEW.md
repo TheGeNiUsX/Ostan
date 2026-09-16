@@ -172,6 +172,8 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
    - Sidebar collapse eliminates content jamming: when `.sidebar-collapsed` is active, `.app-sidebar` applies `width: 0 !important; visibility: hidden !important; overflow: hidden !important;` so no text or floating icons bleed through, and `.main-wrapper` smoothly expands full width.
    - Fixed `.brand-logo-box` dimension clamping (`32px` width/height) to prevent SVG blowout.
    - Implemented `ostan_theme_v2` migration so existing browsers automatically default to the executive Light Theme on initial visit.
+   - Restored full sidebar navigation layout styles (`.nav-item`, `.nav-sections-container`, `.nav-group-wrapper`, `.nav-section-title`): all items now stack vertically with proper margins, icons, and hover states, preventing inline wrapping.
+   - Merged sidebar footer profile and sign-out button into a unified executive card featuring the user's avatar, name, badge, and a Door Exit with Arrow SVG logout button.
 
 ---
 

@@ -1,7 +1,7 @@
 {
-  "version": "1.0.40",
-  "commit": "43fc659",
-  "buildTime": 1789577114488,
-  "releaseDate": "2026-09-16T16:45:14.488Z",
-  "message": "feat(design): implement collapsible sidebar with 3 slashes, clean dashboard, 3-state theme button, and merged user profile pill"
+  "version": "1.0.41",
+  "commit": "cc29857",
+  "buildTime": 1789578276806,
+  "releaseDate": "2026-09-16T17:04:36.806Z",
+  "message": "fix(ui): eliminate sidebar squish, enforce brand logo sizing, and set v2 light theme default"
 }
