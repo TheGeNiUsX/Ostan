@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.54"></script>
+  <script src="orders-engine.js?v=1.0.55"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -4435,11 +4435,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.54",
-  "commit": "892b951",
-  "buildTime": 1789602619029,
-  "releaseDate": "2026-09-16T23:50:19.029Z",
-  "message": "fix: persist orders across app edits and reloads, and update orders engine cache buster"
+  "version": "1.0.55",
+  "commit": "90eda4f",
+  "buildTime": 1789627208315,
+  "releaseDate": "2026-09-17T06:40:08.315Z",
+  "message": "fix: add size field to stock items and project-aware warehouse deduction matching"
 };
 
     let _ostanUpdateTriggered = false;
@@ -4801,6 +4801,35 @@
     };
     window.state = state;
 
+    function getStockItemProject(s) {
+      if (!s) return "";
+      if (s.projectName && typeof s.projectName === "string" && s.projectName.trim()) {
+        return s.projectName.trim();
+      }
+      if (s.name && typeof s.name === "string") {
+        const parts = s.name.split(/[-–—]/);
+        if (parts.length > 1) {
+          const candidate = parts[parts.length - 1].trim();
+          if (candidate.length >= 2 && !/^\d+$/.test(candidate)) {
+            return candidate;
+          }
+        }
+      }
+      return "";
+    }
+    window.getStockItemProject = getStockItemProject;
+
+    // Normalize initial stock items with project recognition and default sizing
+    if (state.stock && Array.isArray(state.stock)) {
+      state.stock.forEach(s => {
+        if (!s.projectName) {
+          const p = getStockItemProject(s);
+          if (p) s.projectName = p;
+        }
+        if (!s.size) s.size = "Standard";
+      });
+    }
+
     function saveState() {
       if (state.currentUserId) {
         localStorage.setItem("ostan_current_user_id", state.currentUserId);
@@ -4973,7 +5002,19 @@
     function syncStockItemToFirestore(item) {
       if (!window.fbDb || !item || !item.id) return;
       try {
-        window.fbDb.collection("inventory").doc(item.id).set(item, { merge: true });
+        const cleanItem = {
+          id: String(item.id),
+          name: item.name || "",
+          projectName: item.projectName || getStockItemProject(item) || "",
+          size: item.size || "Standard",
+          category: item.category || "General",
+          icon: item.icon || "📦",
+          imageUrl: item.imageUrl || "",
+          quantity: typeof item.quantity === "number" ? item.quantity : (parseInt(item.quantity) || 0),
+          threshold: typeof item.threshold === "number" ? item.threshold : (parseInt(item.threshold) || 5)
+        };
+        window.fbDb.collection("inventory").doc(item.id).set(cleanItem, { merge: true })
+          .catch(err => console.warn("Firestore stock sync error:", err));
       } catch (e) {
         console.warn("Firestore stock sync error:", e);
       }
@@ -9659,11 +9700,24 @@
               </div>
 
               <div style="font-weight: 700; font-size: 1rem; color: var(--text-main); margin-top: 0.75rem;">${s.name}</div>
-              <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; margin-top: 2px;">
-                ${s.projectName ? `<span class="badge badge-primary" style="font-size: 0.72rem;">🏗️ ${s.projectName}</span>` : ''}
-                ${s.size && s.size !== 'Standard' && s.size !== 'All' ? `<span class="badge badge-secondary" style="font-size: 0.72rem; background: rgba(37, 99, 235, 0.08); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.2);">📏 مقاس: ${s.size}</span>` : ''}
+              
+              <!-- Dedicated Project & Sizing Badges -->
+              <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; margin-top: 6px;">
+                ${(s.projectName || getStockItemProject(s)) ? `
+                  <span class="badge" style="font-size: 0.74rem; font-weight: 700; background: rgba(99, 102, 241, 0.12); color: #6366f1; border: 1px solid rgba(99, 102, 241, 0.28); display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px;">
+                    🏗️ مشروع: ${escapeHtml(s.projectName || getStockItemProject(s))}
+                  </span>` : `
+                  <span class="badge" style="font-size: 0.7rem; opacity: 0.55; border: 1px dashed var(--border-subtle); padding: 2px 6px;">
+                    🏗️ عام (بدون مشروع)
+                  </span>`
+                }
+                ${(s.size && s.size !== 'All') ? `
+                  <span class="badge badge-secondary" style="font-size: 0.74rem; font-weight: 600; background: rgba(37, 99, 235, 0.1); color: #2563eb; border: 1px solid rgba(37, 99, 235, 0.25); display: inline-flex; align-items: center; gap: 4px; padding: 2px 7px;">
+                    📏 مقاس: ${escapeHtml(s.size)}
+                  </span>` : ''
+                }
               </div>
-              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 4px;">
+              <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 6px;">
                 ${lang === 'ar' ? 'الكمية المتوفرة:' : 'Available Qty:'} <strong style="color: var(--text-main); font-size: 0.95rem;">${s.quantity}</strong>
                 <span style="opacity: 0.6; margin: 0 4px;">•</span>
                 ${lang === 'ar' ? 'الحد الأدنى:' : 'Min Alert:'} ${s.threshold || 5}
@@ -9689,7 +9743,7 @@
       document.getElementById("stock-edit-id").value = s.id;
       document.getElementById("stock-name").value = s.name;
       const projInput = document.getElementById("stock-project");
-      if (projInput) projInput.value = s.projectName || "";
+      if (projInput) projInput.value = s.projectName || getStockItemProject(s) || "";
       const sizeInput = document.getElementById("stock-size");
       if (sizeInput) sizeInput.value = s.size || "Standard";
       renderCategoryOptions(s.category);
@@ -11144,7 +11198,10 @@
       e.preventDefault();
       const editId = document.getElementById("stock-edit-id").value;
       const name = document.getElementById("stock-name").value.trim();
-      const projectName = document.getElementById("stock-project")?.value.trim() || "";
+      let projectName = document.getElementById("stock-project")?.value.trim() || "";
+      if (!projectName && name) {
+        projectName = getStockItemProject({ name });
+      }
       const size = document.getElementById("stock-size")?.value || "Standard";
       const category = document.getElementById("stock-category").value;
       const icon = document.getElementById("stock-icon").value;
@@ -11157,7 +11214,10 @@
           alert("Permission denied: You do not have permission to edit warehouse items.");
           return;
         }
-        const s = state.stock.find(x => x.id === editId);
+        let s = state.stock.find(x => x.id === editId);
+        if (!s && name) {
+          s = state.stock.find(x => x.name && x.name.trim().toLowerCase() === name.toLowerCase());
+        }
         if (s) {
           s.name = name;
           s.projectName = projectName;
@@ -15199,15 +15259,32 @@
           const curUser = getCurrentUser();
           if (curUser && isMasterSuperAdmin(curUser) && state.stock.length > 0) {
             state.stock.forEach(item => {
-              window.fbDb.collection("inventory").doc(item.id).set(item, { merge: true });
+              syncStockItemToFirestore(item);
             });
           }
           return;
         }
 
+        const currentLocalStock = state.stock || [];
         const items = [];
         snapshot.forEach(doc => {
-          items.push(doc.data());
+          const d = doc.data() || {};
+          const itemId = String(d.id || doc.id);
+          d.id = itemId;
+
+          // Merge with local state to protect against cloud stripping of recently added fields (projectName, size)
+          const localItem = currentLocalStock.find(s => s.id === itemId || (s.name && d.name && s.name.trim() === d.name.trim()));
+          if (localItem) {
+            if (!d.projectName && localItem.projectName) d.projectName = localItem.projectName;
+            if (!d.size && localItem.size) d.size = localItem.size;
+          }
+          if (!d.projectName) {
+            const inferred = getStockItemProject(d);
+            if (inferred) d.projectName = inferred;
+          }
+          if (!d.size) d.size = "Standard";
+
+          items.push(d);
         });
 
         state.stock = items;
