@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.65"></script>
+  <script src="orders-engine.js?v=1.0.66"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -2335,8 +2335,37 @@
             </div>
           </div>
 
-          <!-- The Main Warehouse Grid (Balanced Responsive UI - Fits 5+ Per Line, Never Oversized) -->
-          <div id="warehouse-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.75rem;"></div>
+          <style>
+            .warehouse-5col-grid {
+              display: grid !important;
+              grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+              gap: 0.75rem !important;
+              width: 100% !important;
+            }
+            @media (max-width: 1200px) {
+              .warehouse-5col-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+              }
+            }
+            @media (max-width: 992px) {
+              .warehouse-5col-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+              }
+            }
+            @media (max-width: 768px) {
+              .warehouse-5col-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+              }
+            }
+            @media (max-width: 480px) {
+              .warehouse-5col-grid {
+                grid-template-columns: 1fr !important;
+              }
+            }
+          </style>
+
+          <!-- The Main Warehouse Grid (Dedicated 5-Column Responsive Layout - Fits 5 Across) -->
+          <div id="warehouse-grid" class="warehouse-5col-grid" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.75rem; width: 100%;"></div>
         </section>
 
         <!-- =====================================================================
@@ -4664,11 +4693,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.65",
-  "commit": "d7c8453",
-  "buildTime": 1789656244982,
-  "releaseDate": "2026-09-17T14:44:04.982Z",
-  "message": "fix(warehouse): expand cards to fill width with auto-fit and fix Min Alert overflow"
+  "version": "1.0.66",
+  "commit": "10a1a42",
+  "buildTime": 1789656427352,
+  "releaseDate": "2026-09-17T14:47:07.352Z",
+  "message": "fix(warehouse): size cards to fit 5+ per row without becoming oversized"
 };
 
     let _ostanUpdateTriggered = false;
@@ -10474,7 +10503,7 @@
         const progressPercent = Math.min(100, Math.max(6, Math.round((curQty / Math.max(1, thresh * 2.5)) * 100)));
 
         return `
-          <div class="glass-panel card-hover" style="padding: 0.8rem 0.9rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.5rem; border-radius: var(--radius-md); border: ${isLow ? '1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.08);' : '1px solid var(--border-subtle); box-shadow: 0 2px 8px rgba(0,0,0,0.02);'};">
+          <div class="glass-panel card-hover" style="width: 100%; box-sizing: border-box; padding: 0.75rem 0.8rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.45rem; border-radius: var(--radius-md); border: ${isLow ? '1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.08);' : '1px solid var(--border-subtle); box-shadow: 0 2px 8px rgba(0,0,0,0.02);'};">
             <div>
               <!-- Header with Compact Avatar & Status Badges -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.4rem;">

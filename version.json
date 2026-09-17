@@ -1,7 +1,7 @@
 {
-  "version": "1.0.65",
-  "commit": "d7c8453",
-  "buildTime": 1789656244982,
-  "releaseDate": "2026-09-17T14:44:04.982Z",
-  "message": "fix(warehouse): expand cards to fill width with auto-fit and fix Min Alert overflow"
+  "version": "1.0.66",
+  "commit": "10a1a42",
+  "buildTime": 1789656427352,
+  "releaseDate": "2026-09-17T14:47:07.352Z",
+  "message": "fix(warehouse): size cards to fit 5+ per row without becoming oversized"
 }
