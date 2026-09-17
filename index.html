@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.56"></script>
+  <script src="orders-engine.js?v=1.0.57"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -91,6 +91,12 @@
       d.ar.stock_size_label = "المقاس";
       d.en.stock_project_label = "Project Name";
       d.ar.stock_project_label = "اسم المشروع";
+      d.en.orders_demand_title = "Total Required Materials & Sizing Breakdown";
+      d.ar.orders_demand_title = "إجمالي الاحتياج والمقاسات المطلوبة لكافة الطلبيات";
+      d.en.orders_demand_copy_btn = "📋 Copy Breakdown";
+      d.ar.orders_demand_copy_btn = "📋 نسخ تقرير المقاسات";
+      d.en.orders_demand_total_units = "Total Units Needed";
+      d.ar.orders_demand_total_units = "إجمالي القطع المطلوبة";
       d.en.nav_menu = "Menu";
       d.ar.nav_menu = "القائمة";
     })();
@@ -2272,6 +2278,9 @@
               <div class="pastel-icon-circle pastel-emerald">🚀</div>
             </div>
           </div>
+
+          <!-- Orders Total Demand & Sizing Breakdown Matrix -->
+          <div id="orders-demand-summary-container"></div>
 
           <!-- Orders Filters & Search Bar -->
           <div class="glass-panel" style="padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
@@ -4505,11 +4514,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.56",
-  "commit": "69238fb",
-  "buildTime": 1789628971513,
-  "releaseDate": "2026-09-17T07:09:31.513Z",
-  "message": "fix: display project badge on warehouse cards and protect project name from cloud resets"
+  "version": "1.0.57",
+  "commit": "2a0ed5d",
+  "buildTime": 1789629783924,
+  "releaseDate": "2026-09-17T07:23:03.924Z",
+  "message": "feat(orders): stock rollback on delete, strict size isolation, dropdown size badges, bilingual dict & granular permissions"
 };
 
     let _ostanUpdateTriggered = false;

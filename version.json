@@ -1,7 +1,7 @@
 {
-  "version": "1.0.56",
-  "commit": "69238fb",
-  "buildTime": 1789628971513,
-  "releaseDate": "2026-09-17T07:09:31.513Z",
-  "message": "fix: display project badge on warehouse cards and protect project name from cloud resets"
+  "version": "1.0.57",
+  "commit": "2a0ed5d",
+  "buildTime": 1789629783924,
+  "releaseDate": "2026-09-17T07:23:03.924Z",
+  "message": "feat(orders): stock rollback on delete, strict size isolation, dropdown size badges, bilingual dict & granular permissions"
 }

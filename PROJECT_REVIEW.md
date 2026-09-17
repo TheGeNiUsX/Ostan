@@ -246,6 +246,14 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
       - Added the dedicated 11th permissions module card `📋 Orders & Material Fulfillment` under "Departments & Access Control".
       - Provides 7 independent checkboxes: View Orders (`view`), Create Orders (`create`), Import Excel (`excel`), Approve Orders (`approve`), Complete & Deduct (`done`), Cancel Orders (`cancel`), Delete Orders (`delete`).
       - Governed at runtime through `hasUserPermission("orders", action, user)` across all UI buttons, modal launchers, and engine workflows.
+16. **Orders Demand & Sizing Aggregation Matrix (`renderOrdersDemandSummary` & `computeOrdersDemand`)**:
+    - **Total Needed per Item Type & Size:** Implemented an executive demand aggregation panel (`#orders-demand-summary-container`) located right above the orders filter and table view.
+    - **Item & Project Categorization:** Automatically aggregates total required units grouped by distinct item types and projects (e.g. `بلوزة - نادك`, `تيشيرت - Khobar`), eliminating the need to manually compute totals across scattered city rows.
+    - **Logical Size Progression:** Sizing is automatically sorted in natural progression (`M` ➔ `L` ➔ `XL` ➔ `2XL` ➔ `3XL` ➔ `4XL` ➔ `5XL`) with prominent badge cards showing individual size requirements.
+    - **Live Warehouse Inventory Health Comparison:** Cross-references each required size against available live warehouse stock (`state.stock`), displaying green indicators (`✓ متوفر`) or red shortage alerts (`⚠️ عجز: -X`) so operators immediately know if stock is sufficient before approving dispatches.
+    - **Combined Grand Sizes Ribbon & KPI Telemetry:** Displays total units needed across all orders, total active orders, distinct types, and a master sizing breakdown ribbon.
+    - **Multi-Scope Flexibility:** Operators can toggle between `⚡ Active Demand (Pending + Approved)`, `🔍 Current View Filter`, and `🌐 All Orders`.
+    - **Instant Copy & Collapse Controls:** Includes a single-click `📋 Copy Breakdown` button to copy a formatted report directly to the clipboard (ideal for sharing via WhatsApp with suppliers and team leads), plus collapsible state persistence (`ostan_orders_demand_collapsed`).
 
 ---
 

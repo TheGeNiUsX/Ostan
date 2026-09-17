@@ -363,6 +363,459 @@
     return "ORD-" + (maxNum + 1);
   }
 
+  // Sizing ordering rank for natural clothing progression
+  const SIZE_ORDER_RANK = {
+    "STANDARD": 0,
+    "موحد": 0,
+    "ALL": 0,
+    "عام": 0,
+    "XXS": 1,
+    "XS": 2,
+    "S": 3,
+    "M": 4,
+    "L": 5,
+    "XL": 6,
+    "2XL": 7,
+    "3XL": 8,
+    "4XL": 9,
+    "5XL": 10,
+    "6XL": 11,
+    "7XL": 12
+  };
+
+  function sortSizesList(sizesArray) {
+    return (sizesArray || []).slice().sort((a, b) => {
+      const rankA = SIZE_ORDER_RANK[String(a).toUpperCase().trim()] ?? 99;
+      const rankB = SIZE_ORDER_RANK[String(b).toUpperCase().trim()] ?? 99;
+      if (rankA !== rankB) return rankA - rankB;
+      return String(a).localeCompare(String(b));
+    });
+  }
+
+  let ordersDemandScope = "ACTIVE"; // "ACTIVE" (Pending+Approved), "FILTERED", "ALL"
+
+  function setOrdersDemandScope(newScope) {
+    ordersDemandScope = newScope;
+    renderOrders();
+  }
+
+  function toggleOrdersDemandCollapse() {
+    let cur = false;
+    try {
+      if (typeof localStorage !== "undefined") {
+        cur = localStorage.getItem("ostan_orders_demand_collapsed") === "true";
+        localStorage.setItem("ostan_orders_demand_collapsed", cur ? "false" : "true");
+      }
+    } catch (e) {}
+    renderOrders();
+  }
+
+  function computeOrdersDemand(targetOrders) {
+    const stock = (window.state && window.state.stock) ? window.state.stock : [];
+    const typeMap = {};
+    const grandSizes = {};
+    let grandTotalQty = 0;
+
+    targetOrders.forEach(o => {
+      if (Array.isArray(o.items) && o.items.length > 0) {
+        o.items.forEach(it => {
+          const qty = Number(it.quantity) || 0;
+          if (qty <= 0) return;
+
+          const rawSize = it.size || "Standard";
+          const sz = normalizeSizeName(rawSize);
+
+          let baseName = (it.itemName || "").trim();
+          baseName = baseName.replace(/\s*[\(\[](?:مقاس|size)[:\s]*[^)\]]+[\)\]]/gi, "").trim();
+          if (!baseName) baseName = "زي موحد / تيشيرت";
+
+          let proj = (it.projectName || o.projectName || "").trim();
+          if (!proj && typeof getStockItemProject === "function") {
+            proj = getStockItemProject(it) || "";
+          }
+
+          const stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : findMatchingStockItem(stock, proj, sz, baseName);
+          if (stockItem && stockItem.name) {
+            const cleanStockName = stockItem.name.replace(/\s*[\(\[](?:مقاس|size)[:\s]*[^)\]]+[\)\]]/gi, "").trim();
+            if (cleanStockName) baseName = cleanStockName;
+            if (!proj && stockItem.projectName) proj = stockItem.projectName;
+          }
+
+          const groupKey = (baseName + "___" + proj).toLowerCase();
+          if (!typeMap[groupKey]) {
+            typeMap[groupKey] = {
+              baseName: baseName,
+              projectName: proj,
+              totalQty: 0,
+              sizes: {},
+              orderNumbers: new Set()
+            };
+          }
+
+          typeMap[groupKey].totalQty += qty;
+          typeMap[groupKey].sizes[sz] = (typeMap[groupKey].sizes[sz] || 0) + qty;
+          typeMap[groupKey].orderNumbers.add(o.orderNumber || o.id);
+
+          grandSizes[sz] = (grandSizes[sz] || 0) + qty;
+          grandTotalQty += qty;
+        });
+      } else if (o.countBySize && Object.keys(o.countBySize).length > 0) {
+        const proj = (o.projectName || "").trim();
+        let baseName = proj ? (`بلوزة / تيشيرت - ${proj}`) : "تيشيرت / زي موحد";
+        const groupKey = (baseName + "___" + proj).toLowerCase();
+
+        if (!typeMap[groupKey]) {
+          typeMap[groupKey] = {
+            baseName: baseName,
+            projectName: proj,
+            totalQty: 0,
+            sizes: {},
+            orderNumbers: new Set()
+          };
+        }
+
+        Object.entries(o.countBySize).forEach(([rawSz, rawQty]) => {
+          const qty = Number(rawQty) || 0;
+          if (qty <= 0) return;
+          const sz = normalizeSizeName(rawSz);
+
+          typeMap[groupKey].totalQty += qty;
+          typeMap[groupKey].sizes[sz] = (typeMap[groupKey].sizes[sz] || 0) + qty;
+          typeMap[groupKey].orderNumbers.add(o.orderNumber || o.id);
+
+          grandSizes[sz] = (grandSizes[sz] || 0) + qty;
+          grandTotalQty += qty;
+        });
+      }
+    });
+
+    return {
+      types: Object.values(typeMap),
+      grandSizes: grandSizes,
+      grandTotalQty: grandTotalQty,
+      ordersCount: targetOrders.length
+    };
+  }
+
+  function copyOrdersDemandSummary() {
+    const allOrders = getActiveOrders();
+    const activeOrders = allOrders.filter(o => o.status === "PENDING" || o.status === "APPROVED");
+    let targetOrders = [];
+    if (ordersDemandScope === "ACTIVE") {
+      targetOrders = activeOrders;
+    } else if (ordersDemandScope === "ALL") {
+      targetOrders = allOrders.filter(o => o.status !== "CANCELLED");
+    } else {
+      targetOrders = allOrders.filter(o => {
+        if (currentOrdersFilterStatus !== "ALL" && o.status !== currentOrdersFilterStatus) return false;
+        if (currentOrdersSearchQuery) {
+          const q = currentOrdersSearchQuery;
+          const matchNum = (o.orderNumber || "").toLowerCase().includes(q);
+          const matchClient = (o.clientName || "").toLowerCase().includes(q);
+          const matchCity = (o.city || "").toLowerCase().includes(q);
+          const matchItem = (o.items || []).some(i => (i.itemName || "").toLowerCase().includes(q));
+          if (!matchNum && !matchClient && !matchCity && !matchItem) return false;
+        }
+        return true;
+      });
+    }
+
+    const demand = computeOrdersDemand(targetOrders);
+    const lang = document.documentElement.getAttribute("lang") || "en";
+
+    let text = lang === "ar"
+      ? `📊 كشف حصر إجمالي الاحتياج والمقاسات المطلوبة (${demand.ordersCount} طلبات):\n`
+      : `📊 Total Required Demand & Sizing Summary (${demand.ordersCount} orders):\n`;
+
+    demand.types.forEach(t => {
+      const projStr = t.projectName ? ` [مشروع: ${t.projectName}]` : "";
+      text += `\n📦 ${t.baseName}${projStr}\n`;
+      text += `   ${lang === 'ar' ? 'إجمالي المطلوب:' : 'Total Required:'} ${t.totalQty} ${lang === 'ar' ? 'قطعة' : 'pcs'}\n`;
+      text += `   ${lang === 'ar' ? 'تفصيل المقاسات:' : 'Sizes Breakdown:'}\n`;
+      const sorted = sortSizesList(Object.keys(t.sizes));
+      sorted.forEach(sz => {
+        text += `   • ${sz}: ${t.sizes[sz]} ${lang === 'ar' ? 'قطعة' : 'pcs'}\n`;
+      });
+    });
+
+    text += `\n========================================\n`;
+    text += `${lang === 'ar' ? 'الإجمالي العام لكافة الأصناف:' : 'Grand Total:'} ${demand.grandTotalQty} ${lang === 'ar' ? 'قطعة' : 'pcs'}\n`;
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        if (window.OstanStyle) {
+          window.OstanStyle.showToast(
+            lang === "ar" ? "تم النسخ بنجاح" : "Copied to Clipboard",
+            lang === "ar" ? "تم نسخ كشف المقاسات والكميات بنجاح!" : "Demand breakdown copied to clipboard!"
+          );
+        } else {
+          alert(lang === "ar" ? "تم نسخ الكشف بنجاح!" : "Demand summary copied!");
+        }
+      });
+    }
+  }
+
+  function renderOrdersDemandSummary(allOrders, filteredOrders) {
+    const container = document.getElementById("orders-demand-summary-container");
+    if (!container) return;
+
+    if (!allOrders || allOrders.length === 0) {
+      container.innerHTML = "";
+      return;
+    }
+
+    const lang = document.documentElement.getAttribute("lang") || "en";
+    const stock = (window.state && window.state.stock) ? window.state.stock : [];
+
+    const activeOrders = allOrders.filter(o => o.status === "PENDING" || o.status === "APPROVED");
+    let targetOrders = [];
+    if (ordersDemandScope === "ACTIVE") {
+      targetOrders = activeOrders;
+    } else if (ordersDemandScope === "ALL") {
+      targetOrders = allOrders.filter(o => o.status !== "CANCELLED");
+    } else {
+      // FILTERED
+      targetOrders = filteredOrders.filter(o => o.status !== "CANCELLED");
+    }
+
+    let isCollapsed = false;
+    try {
+      if (typeof localStorage !== "undefined") {
+        isCollapsed = localStorage.getItem("ostan_orders_demand_collapsed") === "true";
+      }
+    } catch (e) {}
+    const demand = computeOrdersDemand(targetOrders);
+    const sortedGrandSizes = sortSizesList(Object.keys(demand.grandSizes));
+
+    const scopeLabelActive = lang === 'ar' ? 'الاحتياج النشط (معلق + معتمد)' : 'Active Demand';
+    const scopeLabelFiltered = lang === 'ar' ? 'التصفية الحالية' : 'Current View';
+    const scopeLabelAll = lang === 'ar' ? 'كافة الطلبيات' : 'All Orders';
+
+    if (isCollapsed) {
+      container.innerHTML = `
+        <div class="glass-panel accent-stripe-indigo" style="margin-bottom: 1rem; padding: 0.75rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; border: 1px solid rgba(99, 102, 241, 0.25); background: linear-gradient(180deg, rgba(99, 102, 241, 0.03) 0%, var(--bg-surface) 100%);">
+          <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+            <span style="font-size: 1.15rem;">📦</span>
+            <span style="font-weight: 800; font-size: 0.92rem; color: var(--text-main);">
+              ${lang === 'ar' ? 'حصر إجمالي الاحتياج والمقاسات المطلوبة:' : 'Total Required Materials & Sizing:'}
+            </span>
+            <span class="badge badge-primary" style="font-size: 0.8rem; font-weight: 800; padding: 0.2rem 0.65rem;">
+              ${demand.grandTotalQty} ${lang === 'ar' ? 'قطعة مطلوبة' : 'pcs needed'}
+            </span>
+            <span style="font-size: 0.78rem; color: var(--text-muted);">
+              (${demand.ordersCount} ${lang === 'ar' ? 'طلب' : 'orders'} • ${sortedGrandSizes.length} ${lang === 'ar' ? 'مقاسات' : 'sizes'})
+            </span>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <button onclick="copyOrdersDemandSummary()" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" title="${lang === 'ar' ? 'نسخ كشف الاحتياج والمقاسات' : 'Copy Demand Report'}">
+              📋 ${lang === 'ar' ? 'نسخ الكشف' : 'Copy'}
+            </button>
+            <button onclick="toggleOrdersDemandCollapse()" class="btn btn-ghost" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; color: #6366f1; font-weight: 700;">
+              ${lang === 'ar' ? 'توسيع التفاصيل ▼' : 'Expand Details ▼'}
+            </button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Expanded view
+    container.innerHTML = `
+      <div class="glass-panel accent-stripe-indigo" style="margin-bottom: 1.15rem; padding: 1.15rem 1.4rem; border: 1px solid rgba(99, 102, 241, 0.25); background: linear-gradient(180deg, rgba(99, 102, 241, 0.03) 0%, var(--bg-surface) 100%);">
+        
+        <!-- Header & Top Controls -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid rgba(99, 102, 241, 0.15); padding-bottom: 0.85rem;">
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.6rem;">
+              <span style="font-size: 1.3rem;">📦</span>
+              <h3 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                ${lang === 'ar' ? 'إجمالي الاحتياج والمقاسات المطلوبة لكافة الطلبيات' : 'Total Required Materials & Sizing Breakdown'}
+              </h3>
+            </div>
+            <p style="font-size: 0.78rem; color: var(--text-muted); margin: 3px 0 0 0;">
+              ${lang === 'ar' ? 'حصر وتجميع إجمالي الكميات والمقاسات المطلوبة لتجهيز وتوريد الطلبيات مع مقارنة رصيد المستودع.' : 'Aggregated total quantities and sizes needed across orders with live warehouse inventory comparison.'}
+            </p>
+          </div>
+
+          <!-- Scope and Action Buttons -->
+          <div style="display: flex; align-items: center; gap: 0.45rem; flex-wrap: wrap;">
+            <div style="display: inline-flex; background: rgba(0,0,0,0.04); padding: 2px; border-radius: 6px; gap: 2px;">
+              <button onclick="setOrdersDemandScope('ACTIVE')" class="btn ${ordersDemandScope === 'ACTIVE' ? 'btn-primary' : 'btn-ghost'}" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; ${ordersDemandScope === 'ACTIVE' ? '' : 'color: var(--text-muted);'}">
+                ⚡ ${scopeLabelActive} (${activeOrders.length})
+              </button>
+              <button onclick="setOrdersDemandScope('FILTERED')" class="btn ${ordersDemandScope === 'FILTERED' ? 'btn-primary' : 'btn-ghost'}" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; ${ordersDemandScope === 'FILTERED' ? '' : 'color: var(--text-muted);'}">
+                🔍 ${scopeLabelFiltered} (${filteredOrders.length})
+              </button>
+              <button onclick="setOrdersDemandScope('ALL')" class="btn ${ordersDemandScope === 'ALL' ? 'btn-primary' : 'btn-ghost'}" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; ${ordersDemandScope === 'ALL' ? '' : 'color: var(--text-muted);'}">
+                🌐 ${scopeLabelAll} (${allOrders.length})
+              </button>
+            </div>
+
+            <button onclick="copyOrdersDemandSummary()" class="btn btn-secondary" style="padding: 0.28rem 0.75rem; font-size: 0.75rem;" title="${lang === 'ar' ? 'نسخ كشف الاحتياج والمقاسات للحافظة' : 'Copy demand report to clipboard'}">
+              📋 ${lang === 'ar' ? 'نسخ الكشف' : 'Copy'}
+            </button>
+
+            <button onclick="toggleOrdersDemandCollapse()" class="btn btn-ghost" style="padding: 0.28rem 0.55rem; font-size: 0.75rem; color: var(--text-muted);" title="${lang === 'ar' ? 'طي هذه اللوحة' : 'Collapse panel'}">
+              ${lang === 'ar' ? 'طي ▲' : 'Collapse ▲'}
+            </button>
+          </div>
+        </div>
+
+        ${demand.types.length === 0 ? `
+          <div style="padding: 1.5rem 1rem; text-align: center; color: var(--text-muted); font-size: 0.85rem;">
+            ${lang === 'ar' ? 'لا توجد طلبيات تتطلب الصرف ضمن النطاق المحدد.' : 'No active orders requiring fulfillment in this selected scope.'}
+          </div>
+        ` : `
+          <!-- KPI Metrics Row -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.75rem; margin-top: 1rem;">
+            <div style="padding: 0.75rem 1rem; background: #fff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">
+                ${lang === 'ar' ? 'إجمالي القطع المطلوبة' : 'Total Units Needed'}
+              </div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: #4338ca; margin-top: 2px;">
+                ${demand.grandTotalQty} <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">${lang === 'ar' ? 'قطعة' : 'pcs'}</span>
+              </div>
+            </div>
+
+            <div style="padding: 0.75rem 1rem; background: #fff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">
+                ${lang === 'ar' ? 'عدد الطلبيات المشمولة' : 'Orders Included'}
+              </div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: #0284c7; margin-top: 2px;">
+                ${demand.ordersCount} <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">${lang === 'ar' ? 'طلب' : 'orders'}</span>
+              </div>
+            </div>
+
+            <div style="padding: 0.75rem 1rem; background: #fff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">
+                ${lang === 'ar' ? 'عدد الأصناف والمشاريع' : 'Distinct Item Types'}
+              </div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: #d97706; margin-top: 2px;">
+                ${demand.types.length} <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">${lang === 'ar' ? 'صنف' : 'types'}</span>
+              </div>
+            </div>
+
+            <div style="padding: 0.75rem 1rem; background: #fff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 700;">
+                ${lang === 'ar' ? 'المقاسات المطلوبة' : 'Sizes in Demand'}
+              </div>
+              <div style="font-size: 1.5rem; font-weight: 800; color: #059669; margin-top: 2px;">
+                ${sortedGrandSizes.length} <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">${lang === 'ar' ? 'مقاسات' : 'sizes'}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Combined Grand Sizes Ribbon -->
+          <div style="margin-top: 0.85rem; padding: 0.75rem 1rem; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+              <span style="font-size: 1rem;">🏷️</span>
+              <span style="font-size: 0.82rem; font-weight: 700; color: #4338ca;">
+                ${lang === 'ar' ? 'إجمالي المقاسات المجمعة لكافة الطلبيات:' : 'Total Combined Sizing Breakdown:'}
+              </span>
+            </div>
+
+            <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+              ${sortedGrandSizes.map(sz => {
+                const q = demand.grandSizes[sz];
+                return `
+                  <div style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; background: #ffffff; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
+                    <span style="font-size: 0.78rem; font-weight: 800; color: #6366f1;">${sz}:</span>
+                    <span style="font-size: 0.88rem; font-weight: 900; color: #1e1b4b;">${q}</span>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+
+          <!-- Types Breakdown Cards -->
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+            ${demand.types.map(t => {
+              const sortedTypeSizes = sortSizesList(Object.keys(t.sizes));
+              const projBadge = t.projectName ? `
+                <span style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 2px 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 4px; font-size: 0.75rem; color: #b45309; font-weight: 700;">
+                  🏗️ ${lang === 'ar' ? 'مشروع:' : 'Project:'} ${t.projectName}
+                </span>` : '';
+
+              return `
+                <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.9rem 1.15rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                  
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; border-bottom: 1px dashed var(--border-subtle); padding-bottom: 0.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                      <span style="font-weight: 800; font-size: 0.95rem; color: var(--text-main);">
+                        👕 ${t.baseName}
+                      </span>
+                      ${projBadge}
+                      <span style="font-size: 0.75rem; color: var(--text-muted);">
+                        (${t.orderNumbers.size} ${lang === 'ar' ? 'طلبيات' : 'orders'})
+                      </span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">
+                        ${lang === 'ar' ? 'إجمالي الصنف:' : 'Item Total:'}
+                      </span>
+                      <span class="badge badge-primary" style="font-size: 0.85rem; font-weight: 800; padding: 0.25rem 0.75rem;">
+                        ${t.totalQty} ${lang === 'ar' ? 'قطعة' : 'pcs'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <!-- Sizes Cards Grid for this Item -->
+                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 0.5rem;">
+                    ${sortedTypeSizes.map(sz => {
+                      const reqQty = t.sizes[sz];
+                      const matchedStock = findMatchingStockItem(stock, t.projectName, sz, t.baseName);
+                      let stockIndicator = "";
+
+                      if (matchedStock) {
+                        const inStock = Number(matchedStock.quantity) || 0;
+                        const diff = inStock - reqQty;
+                        if (diff >= 0) {
+                          stockIndicator = `
+                            <div style="font-size: 0.7rem; color: #059669; font-weight: 700; margin-top: 3px; display: flex; align-items: center; justify-content: space-between;">
+                              <span>${lang === 'ar' ? 'المخزون:' : 'Stock:'} ${inStock}</span>
+                              <span>✓ ${lang === 'ar' ? 'متوفر' : 'OK'}</span>
+                            </div>`;
+                        } else {
+                          stockIndicator = `
+                            <div style="font-size: 0.7rem; color: #e11d48; font-weight: 800; margin-top: 3px; background: rgba(225, 29, 72, 0.08); padding: 1px 4px; border-radius: 3px; display: flex; align-items: center; justify-content: space-between;">
+                              <span>${lang === 'ar' ? 'المتوفر:' : 'Stock:'} ${inStock}</span>
+                              <span>⚠️ -${Math.abs(diff)}</span>
+                            </div>`;
+                        }
+                      } else {
+                        stockIndicator = `
+                          <div style="font-size: 0.68rem; color: var(--text-faint); margin-top: 3px;">
+                            ${lang === 'ar' ? 'غير مسجل بالمستودع' : 'No stock item'}
+                          </div>`;
+                      }
+
+                      return `
+                        <div style="background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.5rem 0.65rem;">
+                          <div style="display: flex; justify-content: space-between; align-items: baseline;">
+                            <span style="font-size: 0.78rem; font-weight: 800; color: #4338ca;">
+                              ${sz}
+                            </span>
+                            <span style="font-size: 1rem; font-weight: 900; color: var(--text-main);">
+                              ${reqQty}
+                            </span>
+                          </div>
+                          ${stockIndicator}
+                        </div>
+                      `;
+                    }).join("")}
+                  </div>
+
+                </div>
+              `;
+            }).join("")}
+          </div>
+        `}
+      </div>
+    `;
+  }
+
   function renderOrders(filterStatus, searchQuery) {
     if (filterStatus) currentOrdersFilterStatus = filterStatus;
     if (typeof searchQuery === "string") currentOrdersSearchQuery = searchQuery.toLowerCase().trim();
@@ -409,6 +862,9 @@
       }
       return true;
     });
+
+    // Render Total Demand & Sizing Breakdown Matrix
+    renderOrdersDemandSummary(orders, filtered);
 
     if (filtered.length === 0) {
       container.innerHTML = `
@@ -1531,6 +1987,10 @@
   window.handleOrdersExcelFileSelected = handleOrdersExcelFileSelected;
   window.confirmOrdersExcelImport = confirmOrdersExcelImport;
   window.manualOrderLineItems = manualOrderLineItems;
+  window.renderOrdersDemandSummary = renderOrdersDemandSummary;
+  window.setOrdersDemandScope = setOrdersDemandScope;
+  window.toggleOrdersDemandCollapse = toggleOrdersDemandCollapse;
+  window.copyOrdersDemandSummary = copyOrdersDemandSummary;
 
   // Populate window.state.orders immediately from persistent storage
   try {
