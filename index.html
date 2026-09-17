@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.60"></script>
+  <script src="orders-engine.js?v=1.0.61"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -2297,10 +2297,19 @@
             <div id="stock-low-items-container"></div>
           </div>
 
+          <!-- Active Multi-Filter Rules Ribbon for Stock -->
+          <div id="stock-active-filter-chips" style="display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; padding: 0.65rem 1.15rem; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.22); border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span style="font-size: 0.78rem; font-weight: 800; color: #4338ca;">🏷️ <span data-i18n="filter_active_rules">Active Filter Rules:</span></span>
+              <div id="stock-chips-list" style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;"></div>
+            </div>
+            <button type="button" onclick="clearAllStockFilters()" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.74rem; color: #ef4444; font-weight: 800;" data-i18n="filter_clear_all_rules">Clear All Filters ✕</button>
+          </div>
+
           <!-- Search & Filter Controls Toolbar -->
           <div class="glass-panel" style="padding: 0.85rem 1.15rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
             <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; flex: 1; min-width: 260px;">
-              <div style="position: relative; flex: 1; max-width: 360px;">
+              <div style="position: relative; flex: 1; max-width: 340px;">
                 <input type="text" id="stock-search-input" oninput="handleStockSearch(this.value)" class="input-field" placeholder="Search item name, project, size, category..." style="width: 100%; padding: 0.45rem 0.85rem; font-size: 0.82rem; border-radius: var(--radius-md);" />
               </div>
               <div style="display: inline-flex; background: rgba(0,0,0,0.04); padding: 3px; border-radius: 8px; gap: 3px;">
@@ -2313,12 +2322,15 @@
               </div>
             </div>
 
-            <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-              <select id="stock-project-filter-select" onchange="setStockProjectFilter(this.value)" class="input-field" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; min-width: 150px; border-radius: var(--radius-md);">
+            <div style="display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap;">
+              <select id="stock-project-filter-select" onchange="setStockProjectFilter(this.value)" class="input-field" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; min-width: 135px; border-radius: var(--radius-md);" title="Filter by Project">
                 <option value="ALL">All Projects / كافة المشاريع</option>
               </select>
-              <select id="stock-category-filter-select" onchange="setStockCategoryFilter(this.value)" class="input-field" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; min-width: 140px; border-radius: var(--radius-md);">
+              <select id="stock-category-filter-select" onchange="setStockCategoryFilter(this.value)" class="input-field" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; min-width: 130px; border-radius: var(--radius-md);" title="Filter by Category">
                 <option value="ALL">All Categories / التصنيفات</option>
+              </select>
+              <select id="stock-size-filter-select" onchange="setStockSizeFilter(this.value)" class="input-field" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; min-width: 120px; border-radius: var(--radius-md);" title="Filter by Size">
+                <option value="ALL">All Sizes / كافة المقاسات</option>
               </select>
             </div>
           </div>
@@ -2391,19 +2403,48 @@
           <!-- Orders Total Demand & Sizing Breakdown Matrix -->
           <div id="orders-demand-summary-container"></div>
 
-          <!-- Orders Filters & Search Bar -->
-          <div class="glass-panel" style="padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="orders-status-filters">
-              <button onclick="filterOrdersByStatus('ALL')" class="btn btn-primary" id="order-filter-btn-ALL" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_all">All Orders</button>
-              <button onclick="filterOrdersByStatus('PENDING')" class="btn btn-secondary" id="order-filter-btn-PENDING" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_pending">Pending</button>
-              <button onclick="filterOrdersByStatus('APPROVED')" class="btn btn-secondary" id="order-filter-btn-APPROVED" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_approved">Approved</button>
-              <button onclick="filterOrdersByStatus('DONE')" class="btn btn-secondary" id="order-filter-btn-DONE" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_done">Done (Completed)</button>
-              <button onclick="filterOrdersByStatus('CANCELLED')" class="btn btn-secondary" id="order-filter-btn-CANCELLED" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_cancelled">Cancelled</button>
+          <!-- Active Multi-Filter Rules Ribbon for Orders -->
+          <div id="orders-active-filter-chips" style="display: none; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem; padding: 0.65rem 1.15rem; background: rgba(99, 102, 241, 0.06); border: 1px solid rgba(99, 102, 241, 0.22); border-radius: var(--radius-md);">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+              <span style="font-size: 0.78rem; font-weight: 800; color: #4338ca;">🏷️ <span data-i18n="filter_active_rules">Active Filter Rules:</span></span>
+              <div id="orders-chips-list" style="display: flex; gap: 0.4rem; flex-wrap: wrap; align-items: center;"></div>
+            </div>
+            <button type="button" onclick="clearAllOrdersFilters()" class="btn btn-ghost" style="padding: 0.25rem 0.65rem; font-size: 0.74rem; color: #ef4444; font-weight: 800;" data-i18n="filter_clear_all_rules">Clear All Filters ✕</button>
+          </div>
+
+          <!-- Orders Filters & Search Bar (Compound Multi-Filter Rule System) -->
+          <div class="glass-panel" style="padding: 0.85rem 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+              <!-- Status Filter Buttons -->
+              <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="orders-status-filters">
+                <button onclick="filterOrdersByStatus('ALL')" class="btn btn-primary" id="order-filter-btn-ALL" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_all">All Orders</button>
+                <button onclick="filterOrdersByStatus('PENDING')" class="btn btn-secondary" id="order-filter-btn-PENDING" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_pending">Pending</button>
+                <button onclick="filterOrdersByStatus('APPROVED')" class="btn btn-secondary" id="order-filter-btn-APPROVED" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_approved">Approved</button>
+                <button onclick="filterOrdersByStatus('DONE')" class="btn btn-secondary" id="order-filter-btn-DONE" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_done">Done (Completed)</button>
+                <button onclick="filterOrdersByStatus('CANCELLED')" class="btn btn-secondary" id="order-filter-btn-CANCELLED" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_cancelled">Cancelled</button>
+              </div>
+
+              <!-- Search Query Input -->
+              <div style="position: relative; min-width: 240px; flex: 1; max-width: 360px;">
+                <input type="text" id="orders-search-input" oninput="handleOrdersSearch(this.value)" placeholder="Search by Order #, Client, Project, or Item..." data-i18n-placeholder="orders_search_placeholder" class="input-field" style="height: 36px; font-size: 0.82rem; padding-inline-start: 2rem;">
+                <span style="position: absolute; inset-inline-start: 10px; top: 9px; color: var(--text-faint); font-size: 0.85rem;">🔍</span>
+              </div>
             </div>
 
-            <div style="position: relative; min-width: 240px; flex: 1; max-width: 380px;">
-              <input type="text" id="orders-search-input" oninput="handleOrdersSearch(this.value)" placeholder="Search by Order #, Client, Project, or Item..." data-i18n-placeholder="orders_search_placeholder" class="input-field" style="height: 36px; font-size: 0.82rem; padding-inline-start: 2rem;">
-              <span style="position: absolute; inset-inline-start: 10px; top: 9px; color: var(--text-faint); font-size: 0.85rem;">🔍</span>
+            <!-- Additional Filter Rules (Project, City, Size) -->
+            <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; border-top: 1px dashed var(--border-subtle); padding-top: 0.65rem;">
+              <span style="font-size: 0.76rem; font-weight: 700; color: var(--text-muted);">
+                ➕ <span data-i18n="filter_add_rule_btn">Add Filter Rules:</span>
+              </span>
+              <select id="orders-project-filter-select" onchange="setOrdersProjectFilter(this.value)" class="input-field" style="height: 32px; padding: 0.2rem 0.65rem; font-size: 0.76rem; min-width: 140px; border-radius: var(--radius-md);" title="Filter by Project">
+                <option value="ALL">All Projects / كافة المشاريع</option>
+              </select>
+              <select id="orders-city-filter-select" onchange="setOrdersCityFilter(this.value)" class="input-field" style="height: 32px; padding: 0.2rem 0.65rem; font-size: 0.76rem; min-width: 130px; border-radius: var(--radius-md);" title="Filter by City">
+                <option value="ALL">All Cities / كافة المدن</option>
+              </select>
+              <select id="orders-size-filter-select" onchange="setOrdersSizeFilter(this.value)" class="input-field" style="height: 32px; padding: 0.2rem 0.65rem; font-size: 0.76rem; min-width: 125px; border-radius: var(--radius-md);" title="Filter by Size">
+                <option value="ALL">All Sizes / كافة المقاسات</option>
+              </select>
             </div>
           </div>
 
@@ -4623,11 +4664,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.60",
-  "commit": "4bdceef",
-  "buildTime": 1789631396639,
-  "releaseDate": "2026-09-17T07:49:56.639Z",
-  "message": "feat(stock & orders): add Rule 6, unbroken 2XL size isolation, wider demand chart, and executive stock command center with live project tracking & low stock alerts"
+  "version": "1.0.61",
+  "commit": "16f5fc1",
+  "buildTime": 1789631969549,
+  "releaseDate": "2026-09-17T07:59:29.549Z",
+  "message": "feat(stock-ui): enlarge and widen warehouse inventory cards with executive telemetry and health progress bars"
 };
 
     let _ostanUpdateTriggered = false;
@@ -9908,6 +9949,7 @@
     let _stockStatusFilter = "ALL"; // ALL or LOW
     let _stockProjectFilter = "ALL"; // ALL or project name
     let _stockCategoryFilter = "ALL"; // ALL or category name
+    let _stockSizeFilter = "ALL"; // ALL or size
     let _stockSearchQuery = "";
 
     function setStockStatusFilter(filter) {
@@ -9948,6 +9990,47 @@
       renderWarehouse();
     }
     window.setStockCategoryFilter = setStockCategoryFilter;
+
+    function setStockSizeFilter(sz) {
+      _stockSizeFilter = sz;
+      const select = document.getElementById("stock-size-filter-select");
+      if (select) select.value = sz;
+      renderWarehouse();
+    }
+    window.setStockSizeFilter = setStockSizeFilter;
+
+    function clearStockFilterRule(ruleName) {
+      if (ruleName === "status") setStockStatusFilter("ALL");
+      if (ruleName === "project") setStockProjectFilter("ALL");
+      if (ruleName === "category") setStockCategoryFilter("ALL");
+      if (ruleName === "size") setStockSizeFilter("ALL");
+      if (ruleName === "search") {
+        _stockSearchQuery = "";
+        const sInput = document.getElementById("stock-search-input");
+        if (sInput) sInput.value = "";
+        renderWarehouse();
+      }
+    }
+    window.clearStockFilterRule = clearStockFilterRule;
+
+    function clearAllStockFilters() {
+      _stockStatusFilter = "ALL";
+      _stockProjectFilter = "ALL";
+      _stockCategoryFilter = "ALL";
+      _stockSizeFilter = "ALL";
+      _stockSearchQuery = "";
+      const sInput = document.getElementById("stock-search-input");
+      if (sInput) sInput.value = "";
+      const btnAll = document.getElementById("btn-stock-filter-all");
+      const btnLow = document.getElementById("btn-stock-filter-low");
+      if (btnAll && btnLow) {
+        btnAll.className = "btn btn-primary";
+        btnLow.className = "btn btn-ghost";
+        btnLow.style.color = "#e11d48";
+      }
+      renderWarehouse();
+    }
+    window.clearAllStockFilters = clearAllStockFilters;
 
     function handleStockSearch(val) {
       _stockSearchQuery = (val || "").trim().toLowerCase();
@@ -10224,15 +10307,97 @@
           Array.from(categoriesSet).map(c => `<option value="${escapeHtml(c)}" ${curVal === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join("");
       }
 
-      // 8. Filter stock items for the Main Warehouse Grid
+      // 8. Update Size Filter Select Options
+      const sizesSet = new Set();
+      stock.forEach(s => {
+        if (s.size && s.size.trim() && s.size !== "All") sizesSet.add(s.size.trim());
+      });
+      const sizesList = typeof sortSizesList === "function" ? sortSizesList(Array.from(sizesSet)) : Array.from(sizesSet).sort();
+
+      const sizeSelect = document.getElementById("stock-size-filter-select");
+      if (sizeSelect) {
+        const curVal = _stockSizeFilter;
+        sizeSelect.innerHTML = `<option value="ALL">${isAr ? 'كافة المقاسات' : 'All Sizes'}</option>` +
+          sizesList.map(sz => `<option value="${escapeHtml(sz)}" ${curVal === sz ? 'selected' : ''}>${escapeHtml(sz)}</option>`).join("");
+      }
+
+      // 9. Render Active Multi-Filter Rules Bar
+      const chipsContainer = document.getElementById("stock-active-filter-chips");
+      const chipsList = document.getElementById("stock-chips-list");
+      const hasStatusRule = _stockStatusFilter === "LOW";
+      const hasProjRule = _stockProjectFilter !== "ALL";
+      const hasCatRule = _stockCategoryFilter !== "ALL";
+      const hasSizeRule = _stockSizeFilter !== "ALL";
+      const hasSearchRule = Boolean(_stockSearchQuery);
+
+      const activeRulesCount = (hasStatusRule ? 1 : 0) + (hasProjRule ? 1 : 0) + (hasCatRule ? 1 : 0) + (hasSizeRule ? 1 : 0) + (hasSearchRule ? 1 : 0);
+
+      if (chipsContainer && chipsList) {
+        if (activeRulesCount > 0) {
+          chipsContainer.style.display = "flex";
+          const chipsHtml = [];
+
+          if (hasStatusRule) {
+            chipsHtml.push(`
+              <span class="badge badge-rose" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; border-radius: 99px;">
+                ⚠️ ${isAr ? 'الرصيد:' : 'Stock:'} ${isAr ? 'منخفض فقط' : 'Low Stock Only'}
+                <button type="button" onclick="clearStockFilterRule('status')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+              </span>
+            `);
+          }
+
+          if (hasProjRule) {
+            chipsHtml.push(`
+              <span class="badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; background: rgba(99, 102, 241, 0.15); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 99px;">
+                🏗️ ${isAr ? 'المشروع:' : 'Project:'} ${escapeHtml(_stockProjectFilter)}
+                <button type="button" onclick="clearStockFilterRule('project')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+              </span>
+            `);
+          }
+
+          if (hasCatRule) {
+            chipsHtml.push(`
+              <span class="badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 99px;">
+                🏷️ ${isAr ? 'التصنيف:' : 'Category:'} ${escapeHtml(_stockCategoryFilter)}
+                <button type="button" onclick="clearStockFilterRule('category')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+              </span>
+            `);
+          }
+
+          if (hasSizeRule) {
+            chipsHtml.push(`
+              <span class="badge badge-secondary" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; background: rgba(37, 99, 235, 0.12); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, 0.3); border-radius: 99px;">
+                📏 ${isAr ? 'المقاس:' : 'Size:'} <bdi dir="ltr" style="unicode-bidi: isolate;">${escapeHtml(_stockSizeFilter)}</bdi>
+                <button type="button" onclick="clearStockFilterRule('size')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+              </span>
+            `);
+          }
+
+          if (hasSearchRule) {
+            chipsHtml.push(`
+              <span class="badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; background: rgba(100, 116, 139, 0.15); color: #334155; border: 1px solid rgba(100, 116, 139, 0.3); border-radius: 99px;">
+                🔍 "${escapeHtml(_stockSearchQuery)}"
+                <button type="button" onclick="clearStockFilterRule('search')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+              </span>
+            `);
+          }
+
+          chipsList.innerHTML = chipsHtml.join("");
+        } else {
+          chipsContainer.style.display = "none";
+          chipsList.innerHTML = "";
+        }
+      }
+
+      // 10. Filter stock items with Compound Multi-Rules (AND operation across all active rules)
       let filteredStock = stock.slice();
 
-      // Filter by Low Stock
+      // Rule 1: Filter by Low Stock
       if (_stockStatusFilter === "LOW") {
         filteredStock = filteredStock.filter(s => (Number(s.quantity) || 0) <= (s.threshold || 5));
       }
 
-      // Filter by Project
+      // Rule 2: Filter by Project
       if (_stockProjectFilter !== "ALL") {
         filteredStock = filteredStock.filter(s => {
           const p = (s.projectName || getStockItemProject(s) || (isAr ? 'عام (بدون مشروع)' : 'General')).trim();
@@ -10240,12 +10405,17 @@
         });
       }
 
-      // Filter by Category
+      // Rule 3: Filter by Category
       if (_stockCategoryFilter !== "ALL") {
         filteredStock = filteredStock.filter(s => (s.category || "General").trim().toLowerCase() === _stockCategoryFilter.toLowerCase());
       }
 
-      // Filter by Search Query
+      // Rule 4: Filter by Size
+      if (_stockSizeFilter !== "ALL") {
+        filteredStock = filteredStock.filter(s => (s.size || "").toLowerCase() === _stockSizeFilter.toLowerCase());
+      }
+
+      // Rule 5: Filter by Search Query
       if (_stockSearchQuery) {
         filteredStock = filteredStock.filter(s => {
           const name = (s.name || "").toLowerCase();

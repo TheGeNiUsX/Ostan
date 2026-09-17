@@ -3,9 +3,11 @@
  * Dual-Format Excel Importer (English Uniform & Arabic Tools Forms)
  * City, Size & Quantity Counting & Analytics
  */
-
 (function () {
   let currentOrdersFilterStatus = "ALL";
+  let currentOrdersFilterProject = "ALL";
+  let currentOrdersFilterCity = "ALL";
+  let currentOrdersFilterSize = "ALL";
   let currentOrdersSearchQuery = "";
   let parsedOrdersBatchData = null;
   let manualOrderLineItems = [];
@@ -863,10 +865,141 @@
     const activeBtn = document.getElementById("order-filter-btn-" + currentOrdersFilterStatus);
     if (activeBtn) activeBtn.className = "btn btn-primary";
 
-    // Filter list
+    // 1. Populate dynamic filter dropdowns (Projects, Cities, Sizes)
+    const isAr = lang === "ar";
+    const projectsSet = new Set();
+    const citiesSet = new Set();
+    const sizesSet = new Set();
+
+    orders.forEach(o => {
+      const p = (o.projectName || o.clientName || "").trim();
+      if (p) projectsSet.add(p);
+      const c = (o.city || "").trim();
+      if (c) citiesSet.add(c);
+      (o.roster || []).forEach(r => {
+        if (r.city && r.city.trim()) citiesSet.add(r.city.trim());
+        if (r.size && r.size.trim()) sizesSet.add(r.size.trim());
+      });
+      (o.items || []).forEach(i => {
+        if (i.size && i.size.trim()) sizesSet.add(i.size.trim());
+      });
+    });
+
+    const sortedProjects = Array.from(projectsSet).sort();
+    const sortedCities = Array.from(citiesSet).sort();
+    const sortedSizes = sortSizesList(Array.from(sizesSet));
+
+    const projSelect = document.getElementById("orders-project-filter-select");
+    if (projSelect) {
+      projSelect.innerHTML = `<option value="ALL">${isAr ? 'كافة المشاريع' : 'All Projects'}</option>` +
+        sortedProjects.map(p => `<option value="${escapeHtml(p)}" ${currentOrdersFilterProject === p ? 'selected' : ''}>${escapeHtml(p)}</option>`).join("");
+    }
+
+    const citySelect = document.getElementById("orders-city-filter-select");
+    if (citySelect) {
+      citySelect.innerHTML = `<option value="ALL">${isAr ? 'كافة المدن' : 'All Cities'}</option>` +
+        sortedCities.map(c => `<option value="${escapeHtml(c)}" ${currentOrdersFilterCity === c ? 'selected' : ''}>${escapeHtml(c)}</option>`).join("");
+    }
+
+    const sizeSelect = document.getElementById("orders-size-filter-select");
+    if (sizeSelect) {
+      sizeSelect.innerHTML = `<option value="ALL">${isAr ? 'كافة المقاسات' : 'All Sizes'}</option>` +
+        sortedSizes.map(sz => `<option value="${escapeHtml(sz)}" ${currentOrdersFilterSize === sz ? 'selected' : ''}>${escapeHtml(sz)}</option>`).join("");
+    }
+
+    // 2. Render Active Multi-Filter Rules Bar
+    const chipsContainer = document.getElementById("orders-active-filter-chips");
+    const chipsList = document.getElementById("orders-chips-list");
+    const hasStatusRule = currentOrdersFilterStatus !== "ALL";
+    const hasProjRule = currentOrdersFilterProject !== "ALL";
+    const hasCityRule = currentOrdersFilterCity !== "ALL";
+    const hasSizeRule = currentOrdersFilterSize !== "ALL";
+    const hasSearchRule = Boolean(currentOrdersSearchQuery);
+
+    const activeRulesCount = (hasStatusRule ? 1 : 0) + (hasProjRule ? 1 : 0) + (hasCityRule ? 1 : 0) + (hasSizeRule ? 1 : 0) + (hasSearchRule ? 1 : 0);
+
+    if (chipsContainer && chipsList) {
+      if (activeRulesCount > 0) {
+        chipsContainer.style.display = "flex";
+        const chipsHtml = [];
+
+        if (hasStatusRule) {
+          const statusTxt = currentOrdersFilterStatus === "PENDING" ? (isAr ? 'معلق' : 'Pending') :
+            currentOrdersFilterStatus === "APPROVED" ? (isAr ? 'معتمد' : 'Approved') :
+            currentOrdersFilterStatus === "DONE" ? (isAr ? 'مكتمل' : 'Done') : (isAr ? 'ملغي' : 'Cancelled');
+          chipsHtml.push(`
+            <span class="badge badge-primary" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; border-radius: 99px;">
+              🏷️ ${isAr ? 'الحالة:' : 'Status:'} ${statusTxt}
+              <button type="button" onclick="clearOrdersFilterRule('status')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+            </span>
+          `);
+        }
+
+        if (hasProjRule) {
+          chipsHtml.push(`
+            <span class="badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; background: rgba(99, 102, 241, 0.15); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 99px;">
+              🏗️ ${isAr ? 'المشروع:' : 'Project:'} ${escapeHtml(currentOrdersFilterProject)}
+              <button type="button" onclick="clearOrdersFilterRule('project')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+            </span>
+          `);
+        }
+
+        if (hasCityRule) {
+          chipsHtml.push(`
+            <span class="badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; background: rgba(14, 165, 233, 0.15); color: #0284c7; border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 99px;">
+              🏙️ ${isAr ? 'المدينة:' : 'City:'} ${escapeHtml(currentOrdersFilterCity)}
+              <button type="button" onclick="clearOrdersFilterRule('city')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+            </span>
+          `);
+        }
+
+        if (hasSizeRule) {
+          chipsHtml.push(`
+            <span class="badge badge-secondary" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; background: rgba(37, 99, 235, 0.12); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, 0.3); border-radius: 99px;">
+              📏 ${isAr ? 'المقاس:' : 'Size:'} <bdi dir="ltr" style="unicode-bidi: isolate;">${escapeHtml(currentOrdersFilterSize)}</bdi>
+              <button type="button" onclick="clearOrdersFilterRule('size')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+            </span>
+          `);
+        }
+
+        if (hasSearchRule) {
+          chipsHtml.push(`
+            <span class="badge" style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; font-size: 0.78rem; font-weight: 800; background: rgba(100, 116, 139, 0.15); color: #334155; border: 1px solid rgba(100, 116, 139, 0.3); border-radius: 99px;">
+              🔍 "${escapeHtml(currentOrdersSearchQuery)}"
+              <button type="button" onclick="clearOrdersFilterRule('search')" style="background: none; border: none; color: inherit; cursor: pointer; padding: 0; font-size: 0.85rem; line-height: 1;" title="Remove">✕</button>
+            </span>
+          `);
+        }
+
+        chipsList.innerHTML = chipsHtml.join("");
+      } else {
+        chipsContainer.style.display = "none";
+        chipsList.innerHTML = "";
+      }
+    }
+
+    // 3. Multi-Rule Compound Filtering Logic (AND operation across all active rules)
     let filtered = orders.filter(o => {
-      if (currentOrdersFilterStatus !== "ALL" && o.status !== currentOrdersFilterStatus) return false;
-      if (currentOrdersSearchQuery) {
+      if (hasStatusRule && o.status !== currentOrdersFilterStatus) return false;
+      
+      if (hasProjRule) {
+        const p = (o.projectName || o.clientName || "").toLowerCase();
+        if (!p.includes(currentOrdersFilterProject.toLowerCase())) return false;
+      }
+
+      if (hasCityRule) {
+        const c = (o.city || "").toLowerCase();
+        const inRoster = (o.roster || []).some(r => (r.city || "").toLowerCase() === currentOrdersFilterCity.toLowerCase());
+        if (!c.includes(currentOrdersFilterCity.toLowerCase()) && !inRoster) return false;
+      }
+
+      if (hasSizeRule) {
+        const inItems = (o.items || []).some(i => (i.size || "").toLowerCase() === currentOrdersFilterSize.toLowerCase());
+        const inRoster = (o.roster || []).some(r => (r.size || "").toLowerCase() === currentOrdersFilterSize.toLowerCase());
+        if (!inItems && !inRoster) return false;
+      }
+
+      if (hasSearchRule) {
         const matchNum = (o.orderNumber || "").toLowerCase().includes(currentOrdersSearchQuery);
         const matchClient = (o.clientName || "").toLowerCase().includes(currentOrdersSearchQuery);
         const matchCity = (o.city || "").toLowerCase().includes(currentOrdersSearchQuery);
@@ -1055,7 +1188,47 @@
   }
 
   function filterOrdersByStatus(status) {
-    renderOrders(status, currentOrdersSearchQuery);
+    currentOrdersFilterStatus = status || "ALL";
+    renderOrders();
+  }
+
+  function setOrdersProjectFilter(proj) {
+    currentOrdersFilterProject = proj || "ALL";
+    renderOrders();
+  }
+
+  function setOrdersCityFilter(city) {
+    currentOrdersFilterCity = city || "ALL";
+    renderOrders();
+  }
+
+  function setOrdersSizeFilter(sz) {
+    currentOrdersFilterSize = sz || "ALL";
+    renderOrders();
+  }
+
+  function clearOrdersFilterRule(ruleName) {
+    if (ruleName === "status") currentOrdersFilterStatus = "ALL";
+    if (ruleName === "project") currentOrdersFilterProject = "ALL";
+    if (ruleName === "city") currentOrdersFilterCity = "ALL";
+    if (ruleName === "size") currentOrdersFilterSize = "ALL";
+    if (ruleName === "search") {
+      currentOrdersSearchQuery = "";
+      const sInput = document.getElementById("orders-search-input");
+      if (sInput) sInput.value = "";
+    }
+    renderOrders();
+  }
+
+  function clearAllOrdersFilters() {
+    currentOrdersFilterStatus = "ALL";
+    currentOrdersFilterProject = "ALL";
+    currentOrdersFilterCity = "ALL";
+    currentOrdersFilterSize = "ALL";
+    currentOrdersSearchQuery = "";
+    const sInput = document.getElementById("orders-search-input");
+    if (sInput) sInput.value = "";
+    renderOrders();
   }
 
   function handleOrdersSearch(val) {
@@ -2235,6 +2408,12 @@
   window.copyOrdersDemandSummary = copyOrdersDemandSummary;
   window.openOrderFulfillConfirmModal = openOrderFulfillConfirmModal;
   window.closeOrderFulfillConfirmModal = closeOrderFulfillConfirmModal;
+  window.setOrdersStatusFilter = filterOrdersByStatus;
+  window.setOrdersProjectFilter = setOrdersProjectFilter;
+  window.setOrdersCityFilter = setOrdersCityFilter;
+  window.setOrdersSizeFilter = setOrdersSizeFilter;
+  window.clearOrdersFilterRule = clearOrdersFilterRule;
+  window.clearAllOrdersFilters = clearAllOrdersFilters;
 
   // Populate window.state.orders immediately from persistent storage
   try {

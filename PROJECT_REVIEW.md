@@ -277,6 +277,15 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
       - Includes `📋 نسخ كشف النواقص / Copy Shortage List` to instantly copy a supplier-ready shortage report to clipboard for direct WhatsApp transmission.
       - Displays a healthy green confirmation state (`✅ كافة الأصناف بالمستودع ضمن الحدود الآمنة والمثالية`) when all stock levels are sufficient.
     - **Instant Quick Restock Modal / In-line Restock (`quickRestockStockItem`):** Operators can immediately add incoming units directly from the low-stock center or item cards without needing to open the full edit dialog.
+19. **Universal Compound Multi-Filter Rule System (2+ Simultaneous Rules Across Modules)**:
+    - **Multi-Rule Filtering Stacking:** Eradicated single-rule limitations where applying one filter wiped or restricted other dimensions. Operators can now stack 2, 3, or more rules simultaneously using compound `AND` logic:
+      - **In Orders & Fulfillment (`#view-orders`):** Filter by Status (`Pending`, `Approved`, etc.) + Project (`نادك`, `سدافكو`) + City (`الدمام`, `الاحساء`) + Size (`2XL`, `L`, `M`) + Search.
+      - **In Stock & Inventory (`#view-stock`):** Filter by Status (`Low Stock Only`) + Project (`نادك`) + Category (`T-Shirt`) + Size (`2XL`) + Search.
+    - **Executive Active Filter Rules Ribbon (`Active Filter Chips`):**
+      - Displays dynamic pill badges for each currently active rule: e.g. `[🏷️ الحالة: معلق ✕] [🏗️ المشروع: نادك ✕] [📏 المقاس: 2XL ✕]`.
+      - Single-click removal button (`✕`) per chip to remove any individual rule while preserving the remaining criteria.
+      - Includes quick one-click `Clear All Filters / مسح كافة الفلاتر` reset.
+    - **Real-Time Cross-Module Sync:** Both the Orders Demand Breakdown Matrix and Warehouse Item Grid update dynamically based on the compound rules.
 
 ---
 
@@ -291,5 +300,6 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
    - Maintain complete bilingual English (`en`) and Arabic (`ar`) translations in `translation.js` proactively without needing user reminders.
    - Ensure full visual layout and directional support for both RTL (`dir="rtl"`, Arabic) and LTR (`dir="ltr"`, English).
    - Whenever displaying clothing/item sizes (e.g. `2XL`, `3XL`, `2 XL`), alphanumeric codes, phone numbers, or order IDs in Arabic RTL text, **ALWAYS** wrap them with `<bdi dir="ltr">` or `<span dir="ltr">` with `unicode-bidi: isolate; display: inline-block;` so numbers never separate or invert (e.g. `2` becoming detached from `XL`).
+7. **Universal Multi-Filter Compound Rules Support:** In all data-driven modules (Orders, Stock & Warehouse, Staff, Operations), never restrict the operator to a single mutually exclusive filter. Always allow combining 2 or more filter rules simultaneously (e.g. Status + Project + City + Category + Size) using compound `AND` logic, accompanied by an interactive Active Filter Rules ribbon (`Active Chips`) with individual rule removal (`✕`) and a 'Clear All' reset.
 
 
