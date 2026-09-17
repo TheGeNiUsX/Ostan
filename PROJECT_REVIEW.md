@@ -230,7 +230,22 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
     - **Prominent Project Badge on Warehouse Cards:** Added prominent badge indicators on each warehouse item card (`🏗️ مشروع: [اسم المشروع]` e.g. `🏗️ مشروع: نادك` or `🏗️ مشروع: سدافكو`, or fallback `🏗️ عام (بدون مشروع)`) alongside the size badge (`📏 مقاس: [المقاس]`).
     - **Intelligent Project Name Inference (`getStockItemProject`):** Automatically extracts project designation from the item title if not explicitly set (e.g., `بلوزة - نادك` ➔ `نادك`, `بلوزة - سدافكو` ➔ `سدافكو`), ensuring existing inventory immediately gains project association without manual re-entry.
     - **Cloud Snapshot Local Merge Protection:** Overcame Firestore `onSnapshot` cloud-wipe where incoming documents lacking recent properties (`projectName` or `size`) wiped local state. The sync listener now intelligently merges cloud telemetry with local records, preserving client and size mappings permanently across browser refreshes and cloud updates.
-    - **Sanitized Firestore Write Core:** `syncStockItemToFirestore` now enforces explicit serialization, stripping `undefined` fields and handling promise rejections to guarantee Firestore write acceptance.
+15. **Orders Stock Rollback, Strict Size Isolation, Bilingual Dictionary & Dedicated Permissions**:
+    - **Stock Rollback on Deleting Completed Orders (`deleteOrder` & `deleteAllCancelledOrders`):**
+      - When an order that has already deducted inventory (`order.stockDeducted === true`, whether marked `DONE` or `CANCELLED`) is permanently deleted by the Super Admin, all deducted quantities are automatically and reliably refunded back to available warehouse stock.
+      - Stock levels are immediately re-synchronized live with Cloud Firestore (`syncStockItemToFirestore`), `state.stock` is persisted, and warehouse and dashboard views refresh dynamically.
+    - **Strict Size Matching & Deduction Isolation (`findMatchingStockItem` & `setOrderStatus("DONE")`):**
+      - Strictly isolates sizing so an order specifying Size `L` (e.g., `بلوزة - نادك (L)`) will **NEVER** deduct inventory from Size `2XL` (or any other size).
+      - If exact size (e.g. `L`) is not available in warehouse stock for that project, the system raises a clear mismatch/out-of-stock warning rather than stealing units from adjacent sizes.
+    - **Item Size & Project Badges in Order Creation Dropdown (`renderOrderLineItemRows`):**
+      - In `#modal-create-order`, the warehouse item selector dropdown now explicitly displays size and project badges for each item: e.g. `بلوزة - نادك [مقاس: 2XL] [مشروع: نادك] (المتوفر بالمستودع: 8)` and `بلوزة - نادك [مقاس: L] [مشروع: نادك] (المتوفر بالمستودع: 10)`.
+      - Selecting an item accurately binds both `size` and `projectName` to the order line items.
+    - **Full Bilingual English/Arabic Dictionary (`translation.js`):**
+      - Complete English & Arabic translation dictionaries for orders filters (`orders_filter_all`, `orders_filter_pending`, `orders_filter_approved`, `orders_filter_done`, `orders_filter_cancelled`), search placeholder, bulk delete banner, table headers, stock size labels, rollback notices, and permissions.
+    - **Dedicated Granular Orders Permissions Card in Access Control (`index.html`):**
+      - Added the dedicated 11th permissions module card `📋 Orders & Material Fulfillment` under "Departments & Access Control".
+      - Provides 7 independent checkboxes: View Orders (`view`), Create Orders (`create`), Import Excel (`excel`), Approve Orders (`approve`), Complete & Deduct (`done`), Cancel Orders (`cancel`), Delete Orders (`delete`).
+      - Governed at runtime through `hasUserPermission("orders", action, user)` across all UI buttons, modal launchers, and engine workflows.
 
 ---
 

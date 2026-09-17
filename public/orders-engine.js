@@ -10,6 +10,126 @@
   let parsedOrdersBatchData = null;
   let manualOrderLineItems = [];
 
+  // Helper: Reliable single source of truth for orders in memory & persistence
+  function getActiveOrders() {
+    if (!window.state) window.state = {};
+    if (!window.state.orders || !Array.isArray(window.state.orders)) {
+      try {
+        const saved = localStorage.getItem("ostan_orders");
+        window.state.orders = saved ? JSON.parse(saved) : [];
+      } catch (e) {
+        window.state.orders = [];
+      }
+    }
+    return window.state.orders;
+  }
+
+  function persistOrders() {
+    if (!window.state) window.state = {};
+    const ords = window.state.orders || [];
+    try {
+      localStorage.setItem("ostan_orders", JSON.stringify(ords));
+    } catch (e) {}
+    if (typeof saveState === "function") {
+      try { saveState(); } catch (e) {}
+    }
+  }
+
+  // Helper: Project-Aware and Size-Aware Stock Item Matcher
+  function findMatchingStockItem(stock, targetProject, targetSize, itemDesc) {
+    if (!stock || stock.length === 0) return null;
+    const proj = (targetProject || "").trim().toLowerCase();
+    const sz = (targetSize || "").trim().toUpperCase();
+    const desc = (itemDesc || "").trim().toLowerCase();
+
+    const getProj = (s) => (s.projectName || (typeof getStockItemProject === "function" ? getStockItemProject(s) : "") || "").trim().toLowerCase();
+
+    // If a project is designated for this order/line:
+    if (proj) {
+      // Priority 1: Exact project match AND exact size match
+      let match = stock.find(s => {
+        const sProj = getProj(s);
+        const sSize = (s.size || "").trim().toUpperCase();
+        const sName = (s.name || "").toLowerCase();
+        const projMatches = (sProj === proj || sProj.includes(proj) || sName.includes(proj));
+        const sizeMatches = sz ? (sSize === sz || sName.toUpperCase().includes(sz)) : true;
+        return projMatches && sizeMatches;
+      });
+      if (match) return match;
+
+      // Priority 2: If target size is specified, check if there's a "Standard" (generic un-sized) item for this project
+      if (sz && sz !== "STANDARD") {
+        match = stock.find(s => {
+          const sProj = getProj(s);
+          const sSize = (s.size || "").trim().toUpperCase();
+          const sName = (s.name || "").toLowerCase();
+          const projMatches = (sProj === proj || sProj.includes(proj) || sName.includes(proj));
+          const isStandard = (!sSize || sSize === "STANDARD" || sSize === "ALL");
+          return projMatches && isStandard;
+        });
+        if (match) return match;
+
+        // STRICT SIZE ISOLATION:
+        // If order requested size (e.g. "L"), NEVER steal from a conflicting specific size (e.g. "2XL")!
+        return null;
+      }
+
+      // Priority 3: If no size was specified, match any wearable/item of this project
+      match = stock.find(s => {
+        const sProj = getProj(s);
+        const sName = (s.name || "").toLowerCase();
+        const sCat = (s.category || "").toLowerCase();
+        const projMatches = (sProj === proj || sProj.includes(proj) || sName.includes(proj));
+        const isClothing = (sCat.includes("t-shirt") || sCat.includes("تيشيرت") || sCat.includes("uniform") || sCat.includes("زي") || sName.includes("بلوز") || sName.includes("تيشيرت"));
+        return projMatches && isClothing;
+      });
+      if (match) return match;
+
+      match = stock.find(s => {
+        const sProj = getProj(s);
+        const sName = (s.name || "").toLowerCase();
+        return (sProj === proj || sProj.includes(proj) || sName.includes(proj));
+      });
+      if (match) return match;
+
+      // STRICT PROTECTION: If this order is for project "نادك", DO NOT match items of another project (like "سدافكو")!
+      return null;
+    }
+
+    // For general non-project orders (e.g. city general dispatches):
+    // Only search items that have NO project assigned
+    const availableStock = stock.filter(s => !getProj(s));
+
+    // 1. Match size
+    if (sz && sz !== "STANDARD") {
+      let match = availableStock.find(s => {
+        const sSize = (s.size || "").trim().toUpperCase();
+        const sName = (s.name || "").toUpperCase();
+        return sSize === sz || sName.includes(sz);
+      });
+      if (match) return match;
+
+      // Check standard size fallback
+      match = availableStock.find(s => {
+        const sSize = (s.size || "").trim().toUpperCase();
+        return !sSize || sSize === "STANDARD" || sSize === "ALL";
+      });
+      if (match) return match;
+
+      return null; // Do not cross-steal different specific size
+    }
+
+    // 2. Match general clothing/tools
+    let match = availableStock.find(s => {
+      const sCat = (s.category || "").toLowerCase();
+      const sName = (s.name || "").toLowerCase();
+      return (sCat.includes("t-shirt") || sCat.includes("تيشيرت") || sCat.includes("tools") || sCat.includes("أدوات") || sName.includes("تيشيرت") || sName.includes("أدوات"));
+    });
+    if (match) return match;
+
+    return availableStock[0] || null;
+  }
+
   // Normalizes sizing strings (e.g. XXL -> 2XL, XXXL -> 3XL)
   function normalizeSizeName(rawSize) {
     if (!rawSize) return "Standard";
@@ -83,9 +203,16 @@
       return lk.includes("size") || lk.includes("مقاس") || lk.includes("t-shirt");
     });
 
+    // Detect Project column (المشروع / اسم المشروع / Project)
+    const projectKey = rowKeys.find(k => {
+      const lk = k.toLowerCase().trim();
+      return lk.includes("مشروع") || lk.includes("المشروع") || lk.includes("project") || lk.includes("client") || lk.includes("العميل");
+    });
+
     const roster = [];
     const countByCity = {};
     const countBySize = {};
+    const countByProject = {};
     let netTotalQty = 0;
     let zeroQtyCount = 0;
 
@@ -94,6 +221,14 @@
       let city = getRowVal(row, ["City", "city", "المدينة", "مدينة", "الموقع", "Location"]);
       if (!city) city = "المنطقة الرئيسية";
       city = city.trim();
+
+      // Project (المشروع) - strictly per row, no city-wide leakage
+      let rowProj = "";
+      if (projectKey && row[projectKey] != null) rowProj = String(row[projectKey]).trim();
+      if (!rowProj) rowProj = getRowVal(row, ["المشروع", "اسم المشروع", "مشروع", "Project", "Project Name", "Client", "العميل"]);
+      if (rowProj) {
+        rowProj = rowProj.replace(/^مشروع\s+/i, "").replace(/^Project\s+/i, "").trim();
+      }
 
       // Supervisor (المشرف)
       const spv = getRowVal(row, ["SPV", "Supervisor", "المشرف", "مشرف", "اسم المشرف", "Team", "الفريق"]);
@@ -122,10 +257,11 @@
       // Mobile (الجوال)
       const mobile = getRowVal(row, ["Mobile", "Mobile Number", "الجوال", "الهاتف", "Phone", "رقم الجوال"]);
 
-      // Record merchandiser entry
-      roster.push({
+      // Record entry
+      const rosterEntry = {
         index: idx + 1,
         city: city,
+        projectName: rowProj,
         supervisor: spv,
         supervisorPhone: spvPhone,
         name: name,
@@ -134,7 +270,8 @@
         quantity: qty,
         itemDesc: itemDesc,
         mobile: mobile
-      });
+      };
+      roster.push(rosterEntry);
 
       if (qty <= 0) {
         zeroQtyCount++;
@@ -143,7 +280,7 @@
 
       netTotalQty += qty;
 
-      // Group by City
+      // 1. Group by City (Neutral city telemetry)
       if (!countByCity[city]) {
         countByCity[city] = { city: city, totalWorkers: 0, totalQty: 0, sizes: {}, spvs: new Set() };
       }
@@ -152,14 +289,61 @@
       countByCity[city].sizes[size] = (countByCity[city].sizes[size] || 0) + qty;
       if (spv) countByCity[city].spvs.add(spv);
 
-      // Group by Size
+      // 2. Group by Project & City (Smart Separation)
+      // Explicit project rows are scoped solely to their project (e.g. نادك).
+      // Rows without a project are grouped by city (e.g. مشروع الاحساء, مشروع الدمام).
+      const projKey = rowProj ? rowProj : ("city_" + city);
+      const displayTitle = rowProj ? ("مشروع " + rowProj) : ("مشروع " + city);
+      if (!countByProject[projKey]) {
+        countByProject[projKey] = {
+          key: projKey,
+          projectName: rowProj || "",
+          displayProjectName: displayTitle,
+          cities: new Set(),
+          citiesMap: {},
+          totalWorkers: 0,
+          totalQty: 0,
+          sizes: {},
+          spvs: new Set(),
+          roster: []
+        };
+      }
+      countByProject[projKey].totalWorkers++;
+      countByProject[projKey].totalQty += qty;
+      countByProject[projKey].cities.add(city);
+      countByProject[projKey].sizes[size] = (countByProject[projKey].sizes[size] || 0) + qty;
+      if (spv) countByProject[projKey].spvs.add(spv);
+      countByProject[projKey].roster.push(rosterEntry);
+
+      if (!countByProject[projKey].citiesMap[city]) {
+        countByProject[projKey].citiesMap[city] = { city: city, totalWorkers: 0, totalQty: 0, sizes: {} };
+      }
+      countByProject[projKey].citiesMap[city].totalWorkers++;
+      countByProject[projKey].citiesMap[city].totalQty += qty;
+      countByProject[projKey].citiesMap[city].sizes[size] = (countByProject[projKey].citiesMap[city].sizes[size] || 0) + qty;
+
+      // 3. Group by Size
       countBySize[size] = (countBySize[size] || 0) + qty;
     });
+
+    // Convert Sets to Arrays for clean serialization and iteration
+    Object.values(countByProject).forEach(p => {
+      p.cities = Array.from(p.cities);
+      p.spvs = Array.from(p.spvs);
+    });
+    Object.values(countByCity).forEach(c => {
+      c.spvs = Array.from(c.spvs);
+    });
+
+    const distinctProjectNames = Array.from(new Set(Object.values(countByProject).map(p => p.projectName).filter(Boolean)));
 
     return {
       roster: roster,
       countByCity: countByCity,
       countBySize: countBySize,
+      countByProject: countByProject,
+      projectsList: Object.keys(countByProject),
+      distinctProjectNames: distinctProjectNames,
       netTotalQty: netTotalQty,
       totalRecords: roster.length,
       zeroQtyCount: zeroQtyCount,
@@ -170,7 +354,7 @@
 
   // Helper: generate next sequential Order Number
   function getNextOrderNumber() {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const existing = orders.map(o => {
       const m = (o.orderNumber || "").match(/\d+/);
       return m ? parseInt(m[0], 10) : 0;
@@ -187,7 +371,7 @@
     if (!container) return;
 
     const lang = document.documentElement.getAttribute("lang") || "en";
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
 
     // Update KPI counters
     const elTotal = document.getElementById("stat-orders-total");
@@ -268,18 +452,18 @@
             ${filtered.map(o => {
               const totalQty = o.netTotalQty || (o.items || []).reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
               const priorityBadge = o.priority === "URGENT" 
-                ? '<span class="badge badge-rose">عاجل جداً</span>'
+                ? `<span class="badge badge-rose">${lang === 'ar' ? 'عاجل جداً' : 'Urgent'}</span>`
                 : o.priority === "HIGH"
-                ? '<span class="badge badge-amber">عالي</span>'
-                : '<span class="badge badge-secondary">عادي</span>';
+                ? `<span class="badge badge-amber">${lang === 'ar' ? 'عالي' : 'High'}</span>`
+                : `<span class="badge badge-secondary">${lang === 'ar' ? 'عادي' : 'Normal'}</span>`;
 
               const statusBadge = o.status === "DONE"
-                ? '<span class="badge badge-emerald">✓ تم الصرف والخصم</span>'
+                ? `<span class="badge badge-emerald">${lang === 'ar' ? '✓ تم الصرف والخصم' : '✓ Completed'}</span>`
                 : o.status === "APPROVED"
-                ? '<span class="badge badge-cyan">معتمد للتجهيز</span>'
+                ? `<span class="badge badge-cyan">${lang === 'ar' ? 'معتمد للتجهيز' : 'Approved'}</span>`
                 : o.status === "CANCELLED"
-                ? '<span class="badge badge-rose">ملغي</span>'
-                : '<span class="badge badge-amber">قيد المراجعة</span>';
+                ? `<span class="badge badge-rose">${lang === 'ar' ? 'ملغي' : 'Cancelled'}</span>`
+                : `<span class="badge badge-amber">${lang === 'ar' ? 'قيد المراجعة' : 'Pending'}</span>`;
 
               // Size pills
               let sizePills = "";
@@ -298,19 +482,43 @@
               }
 
               // City badge
-              const cityTag = o.city ? `<span class="badge badge-cyan" style="font-size: 0.65rem; padding: 1px 6px;">🏙️ ${o.city}</span>` : '';
+              const cityTag = o.city ? `<span class="badge badge-secondary" style="font-size: 0.72rem;">🏙️ ${o.city}</span>` : '';
+
+              const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+              const canApprove = typeof hasUserPermission === "function" ? hasUserPermission("orders", "approve", curUser) : true;
+              const canDone = typeof hasUserPermission === "function" ? hasUserPermission("orders", "done", curUser) : true;
+              const canCancel = typeof hasUserPermission === "function" ? hasUserPermission("orders", "cancel", curUser) : true;
+              const canDelete = typeof hasUserPermission === "function" ? hasUserPermission("orders", "delete", curUser) : true;
+              const isSuper = typeof isMasterSuperAdmin === "function" ? isMasterSuperAdmin(curUser) : false;
 
               return `
                 <tr>
-                  <td style="font-weight: 800; color: #2563eb;">${o.orderNumber || o.id}</td>
+                  <td>
+                    <strong style="color: var(--primary-500); font-family: monospace; font-size: 0.85rem;">
+                      ${o.orderNumber || o.id}
+                    </strong>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+                      ${new Date(o.createdAt || Date.now()).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}
+                    </div>
+                  </td>
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
-                      <strong style="color: var(--text-main);">${o.clientName || "طلب كادر الميدان"}</strong>
+                      <strong style="color: var(--text-main); font-size: 0.9rem;">
+                        ${(() => {
+                          if (o.projectName) {
+                            const pName = o.projectName.startsWith("مشروع") ? o.projectName : ((lang === 'ar' ? "مشروع " : "Project ") + o.projectName);
+                            const parenIdx = (o.clientName || "").indexOf("(");
+                            const spvsPart = parenIdx !== -1 ? (" " + o.clientName.substring(parenIdx)) : "";
+                            return pName + spvsPart;
+                          }
+                          return o.clientName || (lang === 'ar' ? "طلب كادر الميدان" : "Field Staff Request");
+                        })()}
+                      </strong>
                       ${cityTag}
                     </div>
                     ${o.roster && o.roster.length > 0 ? `
                       <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
-                        👥 يشمل ${o.roster.length} موظف ميداني مسجل
+                        👥 ${lang === 'ar' ? `يشمل ${o.roster.length} موظف ميداني مسجل` : `Includes ${o.roster.length} field staff`}
                       </div>
                     ` : ''}
                   </td>
@@ -320,47 +528,51 @@
                     </div>
                   </td>
                   <td>
-                    <strong style="font-size: 0.95rem; color: #10b981;">${totalQty}</strong> <span style="font-size: 0.72rem; color: var(--text-muted);">قطعة</span>
+                    <strong style="font-size: 0.95rem; color: #10b981;">${totalQty}</strong> <span style="font-size: 0.72rem; color: var(--text-muted);">${lang === 'ar' ? 'قطعة' : 'pcs'}</span>
                   </td>
                   <td>${priorityBadge}</td>
                   <td>
                     ${statusBadge}
-                    ${o.stockDeducted ? '<div style="font-size: 0.65rem; color: #10b981; margin-top: 2px;">✓ تم خصم المخزون</div>' : ''}
+                    ${o.stockDeducted ? `<div style="font-size: 0.65rem; color: #10b981; margin-top: 2px;">${lang === 'ar' ? '✓ تم خصم المخزون' : '✓ Stock Deducted'}</div>` : ''}
                   </td>
                   <td style="text-align: end;">
                     <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
-                      ${o.status === "PENDING" ? `
-                        <button onclick="setOrderStatus('${o.id}', 'APPROVED')" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.72rem; color: #0284c7;" title="Approve Order">
-                          ✓ اعتماد
+                      ${(o.status === "PENDING" && canApprove) ? `
+                        <button onclick="setOrderStatus('${o.id}', 'APPROVED')" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.72rem; color: #0284c7;" title="${lang === 'ar' ? 'اعتماد الطلب' : 'Approve Order'}">
+                          ✓ ${lang === 'ar' ? 'اعتماد' : 'Approve'}
                         </button>
-                        <button onclick="setOrderStatus('${o.id}', 'CANCELLED')" class="btn btn-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="Cancel Order">
-                          ✕ إلغاء
+                      ` : ''}
+                      ${(o.status === "PENDING" && canCancel) ? `
+                        <button onclick="setOrderStatus('${o.id}', 'CANCELLED')" class="btn btn-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="${lang === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}">
+                          ✕ ${lang === 'ar' ? 'إلغاء' : 'Cancel'}
                         </button>
                       ` : ''}
 
-                      ${o.status === "APPROVED" ? `
-                        <button onclick="setOrderStatus('${o.id}', 'DONE')" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; background: #059669;" title="Fulfill order and deduct items from warehouse inventory">
-                          📦 صرف واكتمال
+                      ${(o.status === "APPROVED" && canDone) ? `
+                        <button onclick="setOrderStatus('${o.id}', 'DONE')" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; background: #059669;" title="${lang === 'ar' ? 'صرف واكتمال وخصم المستودع' : 'Fulfill order and deduct stock'}">
+                          📦 ${lang === 'ar' ? 'صرف واكتمال' : 'Fulfill'}
                         </button>
-                        <button onclick="setOrderStatus('${o.id}', 'CANCELLED')" class="btn btn-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="Cancel Order">
-                          ✕ إلغاء
+                      ` : ''}
+                      ${(o.status === "APPROVED" && canCancel) ? `
+                        <button onclick="setOrderStatus('${o.id}', 'CANCELLED')" class="btn btn-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="${lang === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}">
+                          ✕ ${lang === 'ar' ? 'إلغاء' : 'Cancel'}
                         </button>
                       ` : ''}
 
-                      ${o.status === "CANCELLED" ? `
+                      ${(o.status === "CANCELLED" && canDelete) ? `
                         <button onclick="deleteOrder('${o.id}')" class="btn btn-ghost" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); background: rgba(239, 68, 68, 0.06); font-weight: 700;" title="${lang === 'ar' ? 'حذف الطلب الملغي نهائياً' : 'Delete Cancelled Order'}">
                           🗑️ ${lang === 'ar' ? 'حذف' : 'Delete'}
                         </button>
                       ` : ''}
 
-                      ${o.status === "DONE" && (typeof isMasterSuperAdmin === "function" && isMasterSuperAdmin(typeof getCurrentUser === "function" ? getCurrentUser() : null)) ? `
-                        <button onclick="deleteOrder('${o.id}')" class="btn btn-ghost" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); background: rgba(239, 68, 68, 0.06); font-weight: 700;" title="${lang === 'ar' ? 'حذف الطلب المكتمل (صلاحية المدير العام)' : 'Delete Completed Order (Super Admin)'}">
+                      ${(o.status === "DONE" && canDelete && isSuper) ? `
+                        <button onclick="deleteOrder('${o.id}')" class="btn btn-ghost" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); background: rgba(239, 68, 68, 0.06); font-weight: 700;" title="${lang === 'ar' ? 'حذف الطلب المكتمل واسترجاع المخزون (صلاحية المدير العام)' : 'Delete Completed Order & Restore Stock (Super Admin)'}">
                           🗑️ ${lang === 'ar' ? 'حذف' : 'Delete'}
                         </button>
                       ` : ''}
 
-                      <button onclick="openOrderDetails('${o.id}')" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" title="View Details / Print Slip">
-                        👁️ سند
+                      <button onclick="openOrderDetails('${o.id}')" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" title="${lang === 'ar' ? 'عرض السند والتفاصيل' : 'View Slip & Details'}">
+                        👁️ ${lang === 'ar' ? 'سند' : 'Slip'}
                       </button>
                     </div>
                   </td>
@@ -381,6 +593,15 @@
   }
 
   function openCreateOrderModal() {
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+    const lang = document.documentElement.getAttribute("lang") || "en";
+    if (typeof hasUserPermission === "function" && !hasUserPermission("orders", "create", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لإنشاء طلبات صرف جديدة." : "Permission denied: You do not have permission to create orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+
     const numInput = document.getElementById("order-input-number");
     const clientInput = document.getElementById("order-input-client");
     const reqInput = document.getElementById("order-input-requester");
@@ -426,16 +647,22 @@
     const container = document.getElementById("order-line-items-container");
     if (!container) return;
     const stock = (window.state && window.state.stock) ? window.state.stock : [];
+    const lang = document.documentElement.getAttribute("lang") || "en";
 
     container.innerHTML = manualOrderLineItems.map((item, idx) => `
       <div style="display: flex; gap: 0.5rem; align-items: center;">
         <select class="input-field" style="flex: 2; font-size: 0.82rem;" onchange="window.manualOrderLineItems[${idx}].stockId = this.value; window.validateOrderStockLimit(${idx}, this.value)">
-          <option value="">-- اختر مادة من المخزون --</option>
-          ${stock.map(s => `
-            <option value="${s.id}" ${item.stockId === s.id ? 'selected' : ''}>
-              ${s.name} (المتوفر بالمستودع: ${s.quantity})
-            </option>
-          `).join("")}
+          <option value="">${lang === 'ar' ? '-- اختر مادة من المخزون --' : '-- Select warehouse item --'}</option>
+          ${stock.map(s => {
+            const sizeBadge = (s.size && s.size !== 'All') ? ` [${lang === 'ar' ? 'مقاس: ' : 'Size: '}${s.size}]` : '';
+            const projName = s.projectName || (typeof getStockItemProject === 'function' ? getStockItemProject(s) : '');
+            const projBadge = projName ? ` [${lang === 'ar' ? 'مشروع: ' : 'Project: '}${projName}]` : '';
+            return `
+              <option value="${s.id}" ${item.stockId === s.id ? 'selected' : ''}>
+                ${s.name}${sizeBadge}${projBadge} (${lang === 'ar' ? 'المتوفر بالمستودع:' : 'In Stock:'} ${s.quantity})
+              </option>
+            `;
+          }).join("")}
         </select>
 
         <input type="number" min="1" class="input-field" style="width: 90px; font-size: 0.82rem;" value="${item.quantity || 1}" onchange="window.manualOrderLineItems[${idx}].quantity = parseInt(this.value, 10) || 1">
@@ -470,6 +697,8 @@
         validItems.push({
           stockId: line.stockId,
           itemName: s ? s.name : "مادة غير محددة",
+          size: s ? s.size : undefined,
+          projectName: s ? (s.projectName || (typeof getStockItemProject === "function" ? getStockItemProject(s) : undefined)) : undefined,
           quantity: Math.max(1, parseInt(line.quantity, 10) || 1)
         });
       }
@@ -484,6 +713,7 @@
       id: "ord-" + Date.now(),
       orderNumber: num,
       clientName: client,
+      projectName: client,
       requester: requester,
       priority: priority,
       notes: notes,
@@ -493,12 +723,9 @@
       createdAt: new Date().toISOString()
     };
 
-    window.state.orders = window.state.orders || [];
-    window.state.orders.unshift(newOrder);
-
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (err) {}
+    const orders = getActiveOrders();
+    orders.unshift(newOrder);
+    persistOrders();
 
     closeCreateOrderModal();
     renderOrders();
@@ -510,46 +737,103 @@
 
   // LIVE STOCK DEDUCTION WORKFLOW
   function setOrderStatus(orderId, newStatus) {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
     const lang = document.documentElement.getAttribute("lang") || "en";
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+
+    if (newStatus === "APPROVED" && typeof hasUserPermission === "function" && !hasUserPermission("orders", "approve", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لاعتماد الطلبيات." : "Permission denied: You do not have permission to approve orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+    if (newStatus === "DONE" && typeof hasUserPermission === "function" && !hasUserPermission("orders", "done", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لتسليم وصرف الطلبيات من المخزون." : "Permission denied: You do not have permission to complete orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+    if (newStatus === "CANCELLED" && typeof hasUserPermission === "function" && !hasUserPermission("orders", "cancel", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لإلغاء الطلبيات." : "Permission denied: You do not have permission to cancel orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
 
     if (newStatus === "DONE") {
-      const itemSummary = (order.items || []).map(i => `• ${i.itemName}: ${i.quantity}`).join("\n");
+      const stock = (window.state && window.state.stock) ? window.state.stock : [];
+      const deductionsPlan = [];
+
+      (order.items || []).forEach(it => {
+        let stockItem = null;
+        if (it.stockId) {
+          stockItem = stock.find(s => s.id === it.stockId);
+        }
+
+        // Project Mismatch Guard: If stockItem belongs to a DIFFERENT project than this order, discard it!
+        if (stockItem && order.projectName) {
+          const sProj = (stockItem.projectName || (typeof getStockItemProject === "function" ? getStockItemProject(stockItem) : "") || "").trim().toLowerCase();
+          const oProj = order.projectName.trim().toLowerCase();
+          if (sProj && oProj && sProj !== oProj && !sProj.includes(oProj) && !oProj.includes(sProj)) {
+            stockItem = null;
+          }
+        }
+
+        // Size Mismatch Guard: If it.size is specified, stockItem MUST match that size or be Standard!
+        if (stockItem && it.size && it.size !== "Standard" && it.size !== "All") {
+          const sSize = (stockItem.size || "").trim().toUpperCase();
+          const reqSize = it.size.trim().toUpperCase();
+          if (sSize && sSize !== "STANDARD" && sSize !== "ALL" && sSize !== reqSize) {
+            stockItem = null; // Discard! Must not take from 2XL if order requested L!
+          }
+        }
+
+        // If not found or had a mismatch, match cleanly using findMatchingStockItem
+        if (!stockItem) {
+          stockItem = findMatchingStockItem(stock, order.projectName, it.size, it.itemName);
+        }
+
+        if (stockItem) {
+          it.stockId = stockItem.id;
+          it.itemName = (stockItem.size && stockItem.size === it.size) ? stockItem.name : `${stockItem.name}${it.size && it.size !== 'Standard' ? ' (مقاس ' + it.size + ')' : ''}`;
+        }
+
+        deductionsPlan.push({
+          item: it,
+          stockItem: stockItem,
+          displayName: stockItem ? `${stockItem.name}${it.size && it.size !== 'Standard' ? ' (مقاس ' + it.size + ')' : ''}` : (it.itemName || it.name),
+          qty: Number(it.quantity) || 1
+        });
+      });
+
+      const itemSummary = deductionsPlan.map(d => {
+        if (d.stockItem) {
+          return `• ${d.displayName}: ${d.qty} ${lang === 'ar' ? 'قطعة (المتوفر بالمستودع:' : 'pcs (In stock:'} ${d.stockItem.quantity})`;
+        } else {
+          return `• ${d.displayName}: ${d.qty} ${lang === 'ar' ? 'قطعة [⚠️ تنبيه: غير متوفر بالمستودع لهذا المقاس/المشروع!]' : 'pcs [⚠️ Warning: Not available in warehouse for this size/project!]'}`;
+        }
+      }).join("\n");
+
       const confirmMsg = lang === "ar"
         ? `هل أنت متأكد من تسليم أمر الصرف (${order.orderNumber}) وخصم المواد التالية من المخزون؟\n\n${itemSummary}`
         : `Confirm completion of order ${order.orderNumber} and deduct items from warehouse inventory?\n\n${itemSummary}`;
 
       if (!confirm(confirmMsg)) return;
 
-      // Perform live deduction from state.stock
-      const stock = window.state.stock || [];
-      (order.items || []).forEach(it => {
-        let stockItem = null;
-        if (it.stockId) {
-          stockItem = stock.find(s => s.id === it.stockId);
-        }
-        if (!stockItem && it.itemName) {
-          stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
-        }
-        if (!stockItem && it.size) {
-          stockItem = stock.find(s => {
-            const sn = s.name.toUpperCase();
-            return sn.includes("مقاس " + it.size) || sn.includes("SIZE " + it.size) || sn.endsWith(" " + it.size);
-          });
-        }
-        if (!stockItem && stock.length > 0) {
-          stockItem = stock[0];
-        }
+      // Apply deductions only to confirmed matching stock items
+      deductionsPlan.forEach(d => {
+        if (d.stockItem) {
+          d.stockItem.quantity = Math.max(0, d.stockItem.quantity - d.qty);
+          if (typeof syncStockItemToFirestore === "function") {
+            syncStockItemToFirestore(d.stockItem);
+          }
 
-        if (stockItem) {
-          stockItem.quantity = Math.max(0, stockItem.quantity - Number(it.quantity));
-
-          if (stockItem.quantity <= (stockItem.threshold || 5)) {
+          if (d.stockItem.quantity <= (d.stockItem.threshold || 5)) {
             if (window.OstanStyle) {
-              window.OstanStyle.showToast("⚠️ تنبيه نقص المخزون", `الصنف ${stockItem.name} وصل للحد الأدنى (${stockItem.quantity} متبقي)!`, "warning");
+              window.OstanStyle.showToast("⚠️ تنبيه نقص المخزون", `الصنف ${d.stockItem.name} وصل للحد الأدنى (${d.stockItem.quantity} متبقي)!`, "warning");
             }
           }
         }
@@ -565,12 +849,10 @@
       renderOrders();
       if (typeof updateCounts === "function") updateCounts();
 
-      try {
-        localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-      } catch (e) {}
+      persistOrders();
 
       if (window.OstanStyle) {
-        window.OstanStyle.showToast("تم الصرف وخصم المخزون", `تم اكتمال الطلب ${order.orderNumber} وخصم الكميات من المستودع بنجاح!`);
+        window.OstanStyle.showToast(lang === 'ar' ? "تم الصرف وخصم المخزون" : "Fulfillment Complete", `تم اكتمال الطلب ${order.orderNumber} وخصم الكميات من المستودع بنجاح!`);
       }
       return;
     }
@@ -608,9 +890,7 @@
     }
 
     order.status = newStatus;
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (e) {}
+    persistOrders();
 
     renderOrders();
     if (window.OstanStyle) {
@@ -620,13 +900,20 @@
 
   // Delete Cancelled or Completed Order (Completed restricted strictly to Super Admin)
   function deleteOrder(orderId) {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
 
     const lang = document.documentElement.getAttribute("lang") || "en";
     const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
     const isSuper = typeof isMasterSuperAdmin === "function" ? isMasterSuperAdmin(curUser) : (curUser && (curUser.role === "SUPER_ADMIN" || curUser.role === "superadmin"));
+
+    if (typeof hasUserPermission === "function" && !hasUserPermission("orders", "delete", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لحذف الطلبيات." : "Permission denied: You do not have permission to delete orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
 
     // Business Rule: Completed orders (DONE) can ONLY be deleted by Super Admin!
     if (order.status === "DONE") {
@@ -640,8 +927,8 @@
       }
 
       const confirmMsg = lang === "ar"
-        ? `⚠️ تنبيه المدير العام:\nطلب الصرف رقم (${order.orderNumber || order.id}) مكتمل وتم صرف كمياته من المخزون مسبقاً.\n\nهل أنت متأكد من حذف هذا السجل نهائياً؟\nهذا الإجراء لا يمكن التراجع عنه.`
-        : `⚠️ Super Admin Notice:\nOrder (${order.orderNumber || order.id}) is COMPLETED and items were already deducted from inventory.\n\nAre you sure you want to permanently delete this order record?\nThis action cannot be undone.`;
+        ? `⚠️ تنبيه المدير العام:\nطلب الصرف رقم (${order.orderNumber || order.id}) مكتمل وتم صرف كمياته من المخزون مسبقاً.\n\nهل أنت متأكد من حذف هذا السجل نهائياً؟\nسيتم إعادة كافة الكميات المصروفة تلقائياً إلى رصيد المستودع المتوفر.`
+        : `⚠️ Super Admin Notice:\nOrder (${order.orderNumber || order.id}) is COMPLETED and items were already deducted from inventory.\n\nAre you sure you want to permanently delete this order record?\nAll deducted item quantities will be automatically restored back to available warehouse stock.`;
 
       if (!confirm(confirmMsg)) return;
     } else if (order.status === "CANCELLED") {
@@ -659,72 +946,104 @@
       return;
     }
 
-    // Safety rollback if cancelled order had stock marked deducted
-    if (order.stockDeducted && order.status === "CANCELLED") {
+    // Automatic Stock Rollback: If order had items deducted (DONE or CANCELLED), restore them to available warehouse stock!
+    if (order.stockDeducted) {
       const stock = window.state.stock || [];
       (order.items || []).forEach(it => {
         let stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : null;
-        if (!stockItem && it.itemName) stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
-        if (stockItem) stockItem.quantity += Number(it.quantity) || 0;
+        if (!stockItem && it.itemName) {
+          stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
+        }
+        if (stockItem) {
+          stockItem.quantity += Number(it.quantity) || 0;
+          if (typeof syncStockItemToFirestore === "function") {
+            syncStockItemToFirestore(stockItem);
+          }
+        }
       });
       order.stockDeducted = false;
       if (typeof saveState === "function") saveState();
       if (typeof renderWarehouse === "function") renderWarehouse();
+      if (typeof renderDashboard === "function") renderDashboard();
     }
 
     window.state.orders = orders.filter(o => o.id !== orderId);
-
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (e) {}
+    persistOrders();
 
     closeOrderDetailsModal();
     renderOrders();
     if (typeof updateCounts === "function") updateCounts();
 
     const successMsg = lang === "ar"
-      ? `تم حذف الطلب (${order.orderNumber || order.id}) بنجاح.`
-      : `Order (${order.orderNumber || order.id}) has been deleted successfully.`;
+      ? `تم حذف الطلب (${order.orderNumber || order.id}) بنجاح وإعادة رصيد المواد إلى المستودع.`
+      : `Order (${order.orderNumber || order.id}) has been deleted successfully and items returned to stock.`;
 
     if (window.OstanStyle) {
-      window.OstanStyle.showToast(lang === "ar" ? "تم الحذف" : "Deleted", successMsg);
+      window.OstanStyle.showToast(lang === "ar" ? "تم الحذف واسترجاع المخزون" : "Deleted & Stock Restored", successMsg);
     }
   }
 
   // Delete All Cancelled Orders
   function deleteAllCancelledOrders() {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const cancelledOrders = orders.filter(o => o.status === "CANCELLED");
     if (cancelledOrders.length === 0) return;
 
     const lang = document.documentElement.getAttribute("lang") || "en";
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+
+    if (typeof hasUserPermission === "function" && !hasUserPermission("orders", "delete", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لحذف الطلبيات." : "Permission denied: You do not have permission to delete orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+
     const confirmMsg = lang === "ar"
       ? `هل أنت متأكد من حذف كافة الطلبيات الملغية (${cancelledOrders.length} طلب) نهائياً من النظام؟`
       : `Are you sure you want to permanently delete all ${cancelledOrders.length} cancelled orders?`;
 
     if (!confirm(confirmMsg)) return;
 
+    // Rollback any stock on cancelled orders
+    cancelledOrders.forEach(o => {
+      if (o.stockDeducted) {
+        const stock = window.state.stock || [];
+        (o.items || []).forEach(it => {
+          let stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : null;
+          if (!stockItem && it.itemName) {
+            stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
+          }
+          if (stockItem) {
+            stockItem.quantity += Number(it.quantity) || 0;
+            if (typeof syncStockItemToFirestore === "function") {
+              syncStockItemToFirestore(stockItem);
+            }
+          }
+        });
+        o.stockDeducted = false;
+      }
+    });
+
     window.state.orders = orders.filter(o => o.status !== "CANCELLED");
+    persistOrders();
 
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (e) {}
-
+    if (typeof saveState === "function") saveState();
+    if (typeof renderWarehouse === "function") renderWarehouse();
     renderOrders();
     if (typeof updateCounts === "function") updateCounts();
 
-    const successMsg = lang === "ar"
-      ? `تم حذف ${cancelledOrders.length} طلب ملغي نهائياً.`
-      : `Successfully deleted ${cancelledOrders.length} cancelled orders.`;
-
     if (window.OstanStyle) {
-      window.OstanStyle.showToast(lang === "ar" ? "تم الحذف" : "Deleted", successMsg);
+      window.OstanStyle.showToast(
+        lang === "ar" ? "تم الحذف" : "Deleted",
+        lang === "ar" ? `تم حذف ${cancelledOrders.length} طلب ملغي بنجاح.` : `Deleted ${cancelledOrders.length} cancelled orders successfully.`
+      );
     }
   }
 
   // View Order Details Modal (with City Breakdown, Sizing Breakdown & Merchandiser Roster)
   function openOrderDetails(orderId) {
-    const orders = (window.state && window.state.orders) ? window.state.orders : [];
+    const orders = getActiveOrders();
     const order = orders.find(o => o.id === orderId);
     if (!order) return;
     const lang = document.documentElement.getAttribute("lang") || "en";
@@ -874,7 +1193,7 @@
     }
 
     const sampleUniformData = [
-      { "City": "JUBAIL", "SPV": "Mohamed Hasona Hassan Jubail Team", "Merchandiser Name": "Abdo Abdalla Alraad JUBAIL Eshhar", "USER REF.#": "nadec.131", "T-shirt size": "XXL", "Quantity": 1, "Mobile": "593532219" },
+      { "City": "JUBAIL", "SPV": "Mohamed Hasona Hassan Jubail Team", "Merchandiser Name": "Abdo Abdalla Alraad JUBAIL Eshhar", "USER REF.#": "nadec.131", "T-shirt size": "XXL", "Quantity": 1, "Mobile": "593532219", "المشروع": "نادك" },
       { "City": "JUBAIL", "SPV": "Mohamed Hasona Hassan Jubail Team", "Merchandiser Name": "Mohammad Mahmod Ali Jubail Eshhar", "USER REF.#": "nadec.047", "T-shirt size": "XXL", "Quantity": 2, "Mobile": "500756008" },
       { "City": "JUBAIL", "SPV": "Mohamed Hasona Hassan Jubail Team", "Merchandiser Name": "Youssef Abdelqawi Abdullah JUBAIL Eshhar", "USER REF.#": "nadec.061", "T-shirt size": "XL", "Quantity": 2, "Mobile": "531501204" },
       { "City": "JUBAIL", "SPV": "Mohamed Hasona Hassan Jubail Team", "Merchandiser Name": "Hamza Zafer Iqbal JUBAIL Eshhar", "USER REF.#": "nadec.067", "T-shirt size": "M", "Quantity": 1, "Mobile": "571270235" },
@@ -892,6 +1211,15 @@
   }
 
   function openOrdersExcelImportModal() {
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+    const lang = document.documentElement.getAttribute("lang") || "en";
+    if (typeof hasUserPermission === "function" && !hasUserPermission("orders", "excel", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لاستيراد الطلبيات عبر إكسل." : "Permission denied: You do not have permission to import orders via Excel.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+
     parsedOrdersBatchData = null;
     const label = document.getElementById("orders-excel-dropzone-label");
     const btn = document.getElementById("btn-confirm-orders-import");
@@ -999,7 +1327,30 @@
                 </div>
               </div>
 
-              <!-- 2. COUNT BY CITY (Compact horizontal grid) -->
+              <!-- 2. COUNT BY PROJECT (Displayed when projects exist) -->
+              ${parsed.distinctProjectNames && parsed.distinctProjectNames.length > 0 ? `
+                <div style="background: var(--bg-surface); border: 1.5px solid rgba(37, 99, 235, 0.25); border-radius: var(--radius-md); padding: 0.85rem;">
+                  <div style="font-weight: 800; font-size: 0.88rem; color: #2563eb; margin-bottom: 0.5rem; display: flex; justify-content: space-between; align-items: center;">
+                    <span>🏗️ المشاريع المكتشفة في الملف (Detected Projects):</span>
+                    <span class="badge badge-primary" style="font-size: 0.72rem;">${parsed.projectsList.length} مشاريع</span>
+                  </div>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 0.5rem;">
+                    ${Object.values(parsed.countByProject).map(p => `
+                      <div style="padding: 0.55rem 0.75rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                          <strong style="color: var(--text-main); font-size: 0.88rem;">${p.displayProjectName}</strong>
+                          <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
+                            المدن: ${Array.from(p.cities).join('، ')} • ${p.totalWorkers} كادر
+                          </div>
+                        </div>
+                        <span class="badge badge-emerald" style="font-size: 0.85rem; font-weight: 800;">${p.totalQty} قطعة</span>
+                      </div>
+                    `).join("")}
+                  </div>
+                </div>
+              ` : ''}
+
+              <!-- 3. COUNT BY CITY (Compact horizontal grid) -->
               <div style="background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.85rem;">
                 <div style="font-weight: 800; font-size: 0.88rem; color: var(--text-main); margin-bottom: 0.5rem;">
                   🏙️ توزيع المدن والكميات (Count by City):
@@ -1011,6 +1362,7 @@
                       <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0.75rem; background: var(--bg-surface-elevated); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); font-size: 0.8rem;">
                         <div>
                           <strong style="color: var(--text-main); font-size: 0.85rem;">${c.city}</strong>
+                          ${c.projectName ? `<span class="badge badge-primary" style="font-size: 0.65rem; margin-inline-start: 4px;">${c.projectName}</span>` : ''}
                           <div style="color: var(--text-muted); font-size: 0.72rem; margin-top: 1px;">${c.totalWorkers} موظف • ${sizesStr}</div>
                         </div>
                         <strong style="color: #10b981; font-size: 0.95rem; white-space: nowrap;">${c.totalQty} قطعة</strong>
@@ -1023,14 +1375,15 @@
               <!-- Import Mode Selector -->
               <div style="padding: 0.65rem; background: var(--bg-surface); border-radius: var(--radius-sm); border: 1px solid var(--border-subtle);">
                 <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.35rem;">طريقة تسجيل أمر الصرف:</div>
-                <div style="display: flex; gap: 1rem; font-size: 0.78rem;">
+                <div style="display: flex; gap: 1rem; font-size: 0.78rem; flex-wrap: wrap;">
                   <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
-                    <input type="radio" name="orders_import_mode" value="MASTER" checked>
-                    <strong>أمر صرف مجمع شامل للمدن</strong> (مع سجل تفصيلي لكل كادر ومقاس)
+                    <input type="radio" name="orders_import_mode" value="PER_PROJECT" checked>
+                    <strong>فصل أوامر الصرف حسب المشاريع والمدن (تلقائي ذكي)</strong>
+                    <span style="color: #2563eb; font-weight: 800;">(موصى به - ينشئ أمراً مستقلاً لكل مشروع ولكل مدينة)</span>
                   </label>
                   <label style="display: flex; align-items: center; gap: 0.35rem; cursor: pointer;">
-                    <input type="radio" name="orders_import_mode" value="PER_CITY">
-                    <strong>أمر صرف منفصل لكل مدينة</strong>
+                    <input type="radio" name="orders_import_mode" value="MASTER">
+                    <strong>أمر صرف مجمع شامل للملف بالكامل</strong>
                   </label>
                 </div>
               </div>
@@ -1047,62 +1400,59 @@
   }
 
   function confirmOrdersExcelImport() {
-    if (!parsedOrdersBatchData) return;
-
-    const p = parsedOrdersBatchData;
-    const mode = document.querySelector('input[name="orders_import_mode"]:checked')?.value || "MASTER";
+    const p = parsedOrdersBatchData || window.parsedOrdersBatchData;
+    if (!p) return;
+    const modeEl = document.querySelector('input[name="orders_import_mode"]:checked');
+    let mode = modeEl ? modeEl.value : "PER_PROJECT";
     const stock = (window.state && window.state.stock) ? window.state.stock : [];
 
-    function buildItemsFromSizes(sizesMap) {
+    function buildItemsFromSizes(sizesMap, projName) {
       return Object.entries(sizesMap).map(([sz, qty]) => {
-        const matchedStock = stock.find(s => s.name.toLowerCase().includes(sz.toLowerCase())) || stock[0];
+        const matchedStock = findMatchingStockItem(stock, projName, sz, "تيشيرت");
+        let displayName = "";
+        if (matchedStock) {
+          displayName = (matchedStock.size && matchedStock.size === sz) ? matchedStock.name : `${matchedStock.name} (مقاس ${sz})`;
+        } else if (projName) {
+          displayName = `بلوزة / تيشيرت ${projName} (مقاس ${sz})`;
+        } else {
+          displayName = `زي موحد / تيشيرت (مقاس ${sz})`;
+        }
         return {
           stockId: matchedStock ? matchedStock.id : "",
-          itemName: matchedStock ? `${matchedStock.name} (مقاس ${sz})` : `زي موحد / تيشيرت (مقاس ${sz})`,
+          itemName: displayName,
           size: sz,
           quantity: qty
         };
       });
     }
 
-    window.state.orders = window.state.orders || [];
+    const currentOrders = getActiveOrders();
 
-    if (mode === "PER_CITY") {
-      Object.values(p.countByCity).forEach((cityData, cIdx) => {
-        const cityRoster = p.roster.filter(r => r.city === cityData.city && r.quantity > 0);
-        const cityItems = buildItemsFromSizes(cityData.sizes);
+    const existingNums = currentOrders.map(o => {
+      const m = (o.orderNumber || "").match(/\d+/);
+      return m ? parseInt(m[0], 10) : 0;
+    });
+    let curMaxNum = existingNums.length > 0 ? Math.max(...existingNums) : 1000;
 
-        const newOrder = {
-          id: "ord-" + Date.now() + "-" + cIdx,
-          orderNumber: getNextOrderNumber(),
-          clientName: `مشروع ${cityData.city} (${Array.from(cityData.spvs).join(' / ') || 'إشراف ميداني'})`,
-          city: cityData.city,
-          requester: Array.from(cityData.spvs)[0] || "مشرف المدينة",
-          priority: "NORMAL",
-          notes: `تم الاستيراد من ملف ${p.fileName || 'Excel'} - فرع ${cityData.city}`,
-          items: cityItems,
-          roster: cityRoster,
-          countByCity: { [cityData.city]: cityData },
-          countBySize: cityData.sizes,
-          netTotalQty: cityData.totalQty,
-          status: "PENDING",
-          stockDeducted: false,
-          createdAt: new Date().toISOString()
-        };
-        window.state.orders.unshift(newOrder);
-      });
-    } else {
-      const masterItems = buildItemsFromSizes(p.countBySize);
+    if (mode === "MASTER") {
+      curMaxNum++;
+      const singleProj = (p.distinctProjectNames && p.distinctProjectNames.length === 1) ? p.distinctProjectNames[0] : "";
+      const masterItems = buildItemsFromSizes(p.countBySize, singleProj);
+      const clientNameStr = singleProj
+        ? `مشروع ${singleProj} (${p.citiesList.slice(0, 3).join('، ')})`
+        : `توريد كادر الميدان (${p.citiesList.slice(0, 3).join('، ')}${p.citiesList.length > 3 ? '...' : ''})`;
+
       const newOrder = {
         id: "ord-" + Date.now(),
-        orderNumber: getNextOrderNumber(),
-        clientName: `توريد كادر الميدان (${p.citiesList.slice(0, 3).join('، ')}${p.citiesList.length > 3 ? '...' : ''})`,
+        orderNumber: "ORD-" + curMaxNum,
+        projectName: singleProj,
+        clientName: clientNameStr,
         city: p.citiesList.join("، "),
         requester: "Excel Batch Import",
         priority: "HIGH",
         notes: `ملف: ${p.fileName || 'Excel'} | إجمالي ${p.netTotalQty} قطعة عبر ${p.citiesList.length} مدن (${p.totalRecords} كادر مسجل)`,
         items: masterItems,
-        roster: p.roster,
+        roster: p.roster.filter(r => r.quantity > 0),
         countByCity: p.countByCity,
         countBySize: p.countBySize,
         netTotalQty: p.netTotalQty,
@@ -1110,12 +1460,43 @@
         stockDeducted: false,
         createdAt: new Date().toISOString()
       };
-      window.state.orders.unshift(newOrder);
+      currentOrders.unshift(newOrder);
+    } else {
+      // Default: Separate each distinct project and each city roster
+      Object.values(p.countByProject).forEach((projData, pIdx) => {
+        curMaxNum++;
+        const projItems = buildItemsFromSizes(projData.sizes, projData.projectName);
+        const cityList = Array.isArray(projData.cities) ? projData.cities : Array.from(projData.cities || []);
+        const cityNames = cityList.join("، ");
+        const spvList = Array.isArray(projData.spvs) ? projData.spvs : Array.from(projData.spvs || []);
+        const spvsNames = spvList.join(" / ") || "إشراف ميداني";
+
+        // Display title: e.g. "مشروع نادك (بلال محمد)" or "مشروع الاحساء (بلال محمد / طلال طلعت)"
+        const clientNameStr = `${projData.displayProjectName} (${spvsNames})`;
+
+        const newOrder = {
+          id: "ord-" + Date.now() + "-" + pIdx,
+          orderNumber: "ORD-" + curMaxNum,
+          projectName: projData.projectName || "",
+          clientName: clientNameStr,
+          city: cityNames,
+          requester: spvList[0] || "مشرف المشروع",
+          priority: "NORMAL",
+          notes: `تم الاستيراد من ملف ${p.fileName || 'Excel'} - ${projData.displayProjectName}`,
+          items: projItems,
+          roster: projData.roster,
+          countByCity: projData.citiesMap,
+          countBySize: projData.sizes,
+          netTotalQty: projData.totalQty,
+          status: "PENDING",
+          stockDeducted: false,
+          createdAt: new Date().toISOString()
+        };
+        currentOrders.unshift(newOrder);
+      });
     }
 
-    try {
-      localStorage.setItem("ostan_orders", JSON.stringify(window.state.orders));
-    } catch (e) {}
+    persistOrders();
 
     const totalItems = p.netTotalQty;
     parsedOrdersBatchData = null;
@@ -1123,7 +1504,7 @@
     renderOrders();
 
     if (window.OstanStyle) {
-      window.OstanStyle.showToast("تم اعتماد الاستيراد بنجاح", `تم تسجيل أمر الصرف وحساب المقاسات والمدن بإجمالي ${totalItems} قطعة.`);
+      window.OstanStyle.showToast("تم اعتماد الاستيراد بنجاح", `تم تسجيل أوامر الصرف للمشاريع والمدن بإجمالي ${totalItems} قطعة.`);
     }
   }
 
@@ -1151,9 +1532,15 @@
   window.confirmOrdersExcelImport = confirmOrdersExcelImport;
   window.manualOrderLineItems = manualOrderLineItems;
 
+  // Populate window.state.orders immediately from persistent storage
+  try {
+    getActiveOrders();
+  } catch (e) {}
+
   // Initial render when orders view is accessed
   document.addEventListener("DOMContentLoaded", () => {
     setTimeout(() => {
+      getActiveOrders();
       if (window.state && window.state.activeModule === "orders") {
         renderOrders();
       }

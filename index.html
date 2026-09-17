@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.55"></script>
+  <script src="orders-engine.js?v=1.0.56"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -59,6 +59,38 @@
       d.ar.perm_saudi_delete = "حذف موظف سعودي";
       d.en.perm_saudi_excel = "Excel Batch Import / Export (📥 استيراد وتصدير إكسل)";
       d.ar.perm_saudi_excel = "استيراد وتصدير إكسل";
+      d.en.perm_sec_orders = "📋 Orders & Material Fulfillment";
+      d.ar.perm_sec_orders = "📋 طلبيات التوريد وصرف المخزون";
+      d.en.perm_orders_view = "View Orders (استعراض وقراءة الطلبيات)";
+      d.ar.perm_orders_view = "استعراض ورؤية الطلبيات";
+      d.en.perm_orders_create = "Create Orders (+ إنشاء طلبية يدوياً)";
+      d.ar.perm_orders_create = "إنشاء طلبية يدوياً (+)";
+      d.en.perm_orders_excel = "Import Excel (📥 استيراد ملف إكسل)";
+      d.ar.perm_orders_excel = "استيراد ملف إكسل (📥)";
+      d.en.perm_orders_approve = "Approve Orders (✓ اعتماد الطلبيات)";
+      d.ar.perm_orders_approve = "اعتماد وتجهيز الطلبيات (✓)";
+      d.en.perm_orders_done = "Complete & Deduct (📦 صرف واكتمال المخزون)";
+      d.ar.perm_orders_done = "صرف واكتمال وخصم المستودع (📦)";
+      d.en.perm_orders_cancel = "Cancel Orders (✕ إلغاء الطلبية)";
+      d.ar.perm_orders_cancel = "إلغاء الطلبية (✕)";
+      d.en.perm_orders_delete = "Delete Orders (🗑️ حذف الطلبيات)";
+      d.ar.perm_orders_delete = "حذف الطلبيات (🗑️)";
+      d.en.orders_filter_all = "All Orders";
+      d.ar.orders_filter_all = "كافة الطلبيات";
+      d.en.orders_filter_pending = "Pending";
+      d.ar.orders_filter_pending = "معلق (قيد المراجعة)";
+      d.en.orders_filter_approved = "Approved";
+      d.ar.orders_filter_approved = "معتمد للتجهيز";
+      d.en.orders_filter_done = "Done (Completed)";
+      d.ar.orders_filter_done = "مكتمل / تم الصرف";
+      d.en.orders_filter_cancelled = "Cancelled";
+      d.ar.orders_filter_cancelled = "ملغي";
+      d.en.orders_search_placeholder = "Search by Order #, Client, Project, or Item...";
+      d.ar.orders_search_placeholder = "بحث برقم الطلب، العميل، المدينة، أو الصنف...";
+      d.en.stock_size_label = "Size";
+      d.ar.stock_size_label = "المقاس";
+      d.en.stock_project_label = "Project Name";
+      d.ar.stock_project_label = "اسم المشروع";
       d.en.nav_menu = "Menu";
       d.ar.nav_menu = "القائمة";
     })();
@@ -1917,6 +1949,44 @@
                 </div>
               </div>
 
+              <!-- 2.1 Orders & Material Fulfillment Section -->
+              <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; border: 1px solid rgba(59, 130, 246, 0.35); background: linear-gradient(180deg, rgba(59, 130, 246, 0.04) 0%, var(--bg-surface) 100%);">
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(59, 130, 246, 0.25); padding-bottom: 0.5rem;">
+                  <span data-i18n="perm_sec_orders" style="font-weight: 700; font-size: 0.95rem; color: #3b82f6;">📋 Orders & Material Fulfillment</span>
+                  <span class="badge badge-primary">Module</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-orders-view">
+                    <span data-i18n="perm_orders_view" style="font-size: 0.82rem; font-weight: 700; color: #3b82f6;">View Orders (استعراض وقراءة الطلبيات)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-orders-create">
+                    <span data-i18n="perm_orders_create" style="font-size: 0.82rem;">Create Orders (+ إنشاء طلبية يدوياً)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-orders-excel">
+                    <span data-i18n="perm_orders_excel" style="font-size: 0.82rem; color: #34d399;">Import Excel (📥 استيراد ملف إكسل)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-orders-approve">
+                    <span data-i18n="perm_orders_approve" style="font-size: 0.82rem; color: #0284c7;">Approve Orders (✓ اعتماد الطلبيات)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-orders-done">
+                    <span data-i18n="perm_orders_done" style="font-size: 0.82rem; color: #10b981;">Complete & Deduct (📦 صرف واكتمال المخزون)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-orders-cancel">
+                    <span data-i18n="perm_orders_cancel" style="font-size: 0.82rem; color: #f59e0b;">Cancel Orders (✕ إلغاء الطلبية)</span>
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer;">
+                    <input type="checkbox" id="chk-perm-orders-delete">
+                    <span data-i18n="perm_orders_delete" style="font-size: 0.82rem; color: #fb7185;">Delete Orders (🗑️ حذف الطلبيات)</span>
+                  </label>
+                </div>
+              </div>
+
               <!-- 3. Tasks Section -->
               <div class="glass-panel" style="padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem;">
@@ -2206,15 +2276,15 @@
           <!-- Orders Filters & Search Bar -->
           <div class="glass-panel" style="padding: 0.85rem 1.25rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
             <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;" id="orders-status-filters">
-              <button onclick="filterOrdersByStatus('ALL')" class="btn btn-primary" id="order-filter-btn-ALL" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">All Orders</button>
-              <button onclick="filterOrdersByStatus('PENDING')" class="btn btn-secondary" id="order-filter-btn-PENDING" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Pending (معلق)</button>
-              <button onclick="filterOrdersByStatus('APPROVED')" class="btn btn-secondary" id="order-filter-btn-APPROVED" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Approved (معتمد)</button>
-              <button onclick="filterOrdersByStatus('DONE')" class="btn btn-secondary" id="order-filter-btn-DONE" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Done (مكتمل / مصروف)</button>
-              <button onclick="filterOrdersByStatus('CANCELLED')" class="btn btn-secondary" id="order-filter-btn-CANCELLED" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;">Cancelled (ملغي)</button>
+              <button onclick="filterOrdersByStatus('ALL')" class="btn btn-primary" id="order-filter-btn-ALL" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_all">All Orders</button>
+              <button onclick="filterOrdersByStatus('PENDING')" class="btn btn-secondary" id="order-filter-btn-PENDING" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_pending">Pending</button>
+              <button onclick="filterOrdersByStatus('APPROVED')" class="btn btn-secondary" id="order-filter-btn-APPROVED" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_approved">Approved</button>
+              <button onclick="filterOrdersByStatus('DONE')" class="btn btn-secondary" id="order-filter-btn-DONE" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_done">Done (Completed)</button>
+              <button onclick="filterOrdersByStatus('CANCELLED')" class="btn btn-secondary" id="order-filter-btn-CANCELLED" style="padding: 0.35rem 0.75rem; font-size: 0.78rem;" data-i18n="orders_filter_cancelled">Cancelled</button>
             </div>
 
             <div style="position: relative; min-width: 240px; flex: 1; max-width: 380px;">
-              <input type="text" id="orders-search-input" oninput="handleOrdersSearch(this.value)" placeholder="Search by Order #, Client, Project, or Item..." class="input-field" style="height: 36px; font-size: 0.82rem; padding-inline-start: 2rem;">
+              <input type="text" id="orders-search-input" oninput="handleOrdersSearch(this.value)" placeholder="Search by Order #, Client, Project, or Item..." data-i18n-placeholder="orders_search_placeholder" class="input-field" style="height: 36px; font-size: 0.82rem; padding-inline-start: 2rem;">
               <span style="position: absolute; inset-inline-start: 10px; top: 9px; color: var(--text-faint); font-size: 0.85rem;">🔍</span>
             </div>
           </div>
@@ -4435,11 +4505,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.55",
-  "commit": "90eda4f",
-  "buildTime": 1789627208315,
-  "releaseDate": "2026-09-17T06:40:08.315Z",
-  "message": "fix: add size field to stock items and project-aware warehouse deduction matching"
+  "version": "1.0.56",
+  "commit": "69238fb",
+  "buildTime": 1789628971513,
+  "releaseDate": "2026-09-17T07:09:31.513Z",
+  "message": "fix: display project badge on warehouse cards and protect project name from cloud resets"
 };
 
     let _ostanUpdateTriggered = false;
@@ -5082,11 +5152,21 @@
 
       // 3. Fallback to standard role capabilities if granular hasn't been set yet
       if (action === "view") return true;
-      if (action === "create" || action === "edit" || action === "delete") {
+      if (action === "create" || action === "edit") {
         return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || (normKey === "stock" && user.role === "STOCK_MANAGER");
+      }
+      if (action === "delete") {
+        if (normKey === "orders") return user.role === "SUPER_ADMIN" || user.role === "ADMIN";
+        return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER";
       }
       if (action === "excel") {
         return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER";
+      }
+      if (action === "approve" || action === "cancel") {
+        return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER";
+      }
+      if (action === "done") {
+        return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER";
       }
       if (action === "approve_requests") {
         return user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER";
@@ -5112,6 +5192,9 @@
 
       // 2. If user has granular permissions configured, view/action flags govern visibility
       if (user.permissions) {
+        if (normMod === "orders" && user.permissions.orders) {
+          return user.permissions.orders.view ? "accessible" : "hidden";
+        }
         if (normMod === "stock-requests" && user.permissions.stock) {
           return (user.permissions.stock.request || user.permissions.stock.approve_requests) ? "accessible" : "hidden";
         }
@@ -5160,6 +5243,9 @@
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER") ? "accessible" : "hidden";
       }
       if (normMod === "stock") {
+        return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER") ? "accessible" : "hidden";
+      }
+      if (normMod === "orders") {
         return (user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER") ? "accessible" : "hidden";
       }
       if (normMod === "stock-requests") {
@@ -6299,6 +6385,7 @@
         "tasks": "nav-tasks",
         "reminders": "nav-reminders",
         "stock": "nav-stock",
+        "orders": "nav-orders",
         "stock-requests": "nav-stock-requests",
         "reports": "nav-reports",
         "audit-logs": "nav-audit-logs",
@@ -6325,7 +6412,7 @@
       const groups = [
         { id: "group-organization", items: ["nav-employees", "nav-saudi-staff", "nav-departments"] },
         { id: "group-operations", items: ["nav-tasks", "nav-reminders"] },
-        { id: "group-inventory", items: ["nav-stock", "nav-stock-requests"] },
+        { id: "group-inventory", items: ["nav-stock", "nav-orders", "nav-stock-requests"] },
         { id: "group-security", items: ["nav-reports", "nav-audit-logs"] },
         { id: "group-system", items: ["nav-messages", "nav-settings"] },
       ];
@@ -6355,6 +6442,11 @@
       if (bnavTasks) {
         const tkA = getSectionAccess("tasks", user);
         bnavTasks.style.display = (tkA === "hidden") ? "none" : "flex";
+      }
+      const topOrders = document.getElementById("top-nav-orders");
+      if (topOrders) {
+        const ordA = getSectionAccess("orders", user);
+        topOrders.style.display = (ordA === "hidden") ? "none" : "flex";
       }
 
       // Feature Access Flags (ONLY 'accessible' means visible on the dashboard! If locked or hidden, hide from dashboard!)
@@ -8730,6 +8822,15 @@
         request: user.sectionAccess ? (user.sectionAccess["stock-requests"] === "accessible") : false,
         approve_requests: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "STOCK_MANAGER"
       };
+      const ordersP = p.orders || {
+        view: getSectionAccess("orders", user) === "accessible",
+        create: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
+        excel: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
+        approve: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
+        done: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER" || user.role === "STOCK_MANAGER",
+        cancel: user.role === "SUPER_ADMIN" || user.role === "ADMIN" || user.role === "MANAGER",
+        delete: user.role === "SUPER_ADMIN"
+      };
       const taskP = p.tasks || {
         view: getSectionAccess("tasks", user) === "accessible",
         create: user.role !== "EMPLOYEE",
@@ -8785,6 +8886,14 @@
       setChecked("chk-perm-stock-delete", stockP.delete);
       setChecked("chk-perm-stock-request", stockP.request);
       setChecked("chk-perm-stock-approve_requests", stockP.approve_requests);
+
+      setChecked("chk-perm-orders-view", ordersP.view);
+      setChecked("chk-perm-orders-create", ordersP.create);
+      setChecked("chk-perm-orders-excel", ordersP.excel);
+      setChecked("chk-perm-orders-approve", ordersP.approve);
+      setChecked("chk-perm-orders-done", ordersP.done);
+      setChecked("chk-perm-orders-cancel", ordersP.cancel);
+      setChecked("chk-perm-orders-delete", ordersP.delete);
 
       setChecked("chk-perm-tasks-view", taskP.view);
       setChecked("chk-perm-tasks-create", taskP.create);
@@ -8859,6 +8968,7 @@
 
       const saudiView = getChecked("chk-perm-saudi-view");
       const stockView = getChecked("chk-perm-stock-view");
+      const ordersView = getChecked("chk-perm-orders-view");
       const stockReqPerm = getChecked("chk-perm-stock-request");
       const stockApprovePerm = getChecked("chk-perm-stock-approve_requests");
       const tasksView = getChecked("chk-perm-tasks-view");
@@ -8898,6 +9008,15 @@
           request: stockReqPerm,
           approve_requests: stockApprovePerm
         },
+        orders: {
+          view: ordersView,
+          create: getChecked("chk-perm-orders-create"),
+          excel: getChecked("chk-perm-orders-excel"),
+          approve: getChecked("chk-perm-orders-approve"),
+          done: getChecked("chk-perm-orders-done"),
+          cancel: getChecked("chk-perm-orders-cancel"),
+          delete: getChecked("chk-perm-orders-delete")
+        },
         tasks: {
           view: tasksView,
           create: getChecked("chk-perm-tasks-create"),
@@ -8926,6 +9045,7 @@
       user.sectionAccess.departments = deptView ? "accessible" : "hidden";
       user.sectionAccess["saudi-staff"] = saudiView ? "accessible" : "hidden";
       user.sectionAccess.stock = stockView ? "accessible" : "hidden";
+      user.sectionAccess.orders = ordersView ? "accessible" : "hidden";
       user.sectionAccess["stock-requests"] = (stockReqPerm || stockApprovePerm) ? "accessible" : "hidden";
       user.sectionAccess.tasks = tasksView ? "accessible" : "hidden";
       user.sectionAccess.reminders = remView ? "accessible" : "hidden";
@@ -8949,6 +9069,7 @@
       applyModuleVisibility();
       renderSaudiWorkers();
       renderWarehouse();
+      if (typeof renderOrders === "function") renderOrders();
       renderTasks();
       renderReminders();
       renderStockRequests();

@@ -42,22 +42,41 @@
     const sz = (targetSize || "").trim().toUpperCase();
     const desc = (itemDesc || "").trim().toLowerCase();
 
+    const getProj = (s) => (s.projectName || (typeof getStockItemProject === "function" ? getStockItemProject(s) : "") || "").trim().toLowerCase();
+
     // If a project is designated for this order/line:
     if (proj) {
-      // Priority 1: Item matches project explicitly AND matches size
+      // Priority 1: Exact project match AND exact size match
       let match = stock.find(s => {
-        const sProj = (s.projectName || "").trim().toLowerCase();
+        const sProj = getProj(s);
         const sSize = (s.size || "").trim().toUpperCase();
         const sName = (s.name || "").toLowerCase();
         const projMatches = (sProj === proj || sProj.includes(proj) || sName.includes(proj));
-        const sizeMatches = (sSize === sz || sName.toUpperCase().includes(sz));
+        const sizeMatches = sz ? (sSize === sz || sName.toUpperCase().includes(sz)) : true;
         return projMatches && sizeMatches;
       });
       if (match) return match;
 
-      // Priority 2: Item matches project explicitly AND is wearable/T-Shirt/Uniform
+      // Priority 2: If target size is specified, check if there's a "Standard" (generic un-sized) item for this project
+      if (sz && sz !== "STANDARD") {
+        match = stock.find(s => {
+          const sProj = getProj(s);
+          const sSize = (s.size || "").trim().toUpperCase();
+          const sName = (s.name || "").toLowerCase();
+          const projMatches = (sProj === proj || sProj.includes(proj) || sName.includes(proj));
+          const isStandard = (!sSize || sSize === "STANDARD" || sSize === "ALL");
+          return projMatches && isStandard;
+        });
+        if (match) return match;
+
+        // STRICT SIZE ISOLATION:
+        // If order requested size (e.g. "L"), NEVER steal from a conflicting specific size (e.g. "2XL")!
+        return null;
+      }
+
+      // Priority 3: If no size was specified, match any wearable/item of this project
       match = stock.find(s => {
-        const sProj = (s.projectName || "").trim().toLowerCase();
+        const sProj = getProj(s);
         const sName = (s.name || "").toLowerCase();
         const sCat = (s.category || "").toLowerCase();
         const projMatches = (sProj === proj || sProj.includes(proj) || sName.includes(proj));
@@ -66,9 +85,8 @@
       });
       if (match) return match;
 
-      // Priority 3: Any item belonging to this project
       match = stock.find(s => {
-        const sProj = (s.projectName || "").trim().toLowerCase();
+        const sProj = getProj(s);
         const sName = (s.name || "").toLowerCase();
         return (sProj === proj || sProj.includes(proj) || sName.includes(proj));
       });
@@ -79,8 +97,8 @@
     }
 
     // For general non-project orders (e.g. city general dispatches):
-    // Only search items that have NO project assigned, or where project matches city
-    const availableStock = stock.filter(s => !s.projectName || s.projectName.trim() === "");
+    // Only search items that have NO project assigned
+    const availableStock = stock.filter(s => !getProj(s));
 
     // 1. Match size
     if (sz && sz !== "STANDARD") {
@@ -90,6 +108,15 @@
         return sSize === sz || sName.includes(sz);
       });
       if (match) return match;
+
+      // Check standard size fallback
+      match = availableStock.find(s => {
+        const sSize = (s.size || "").trim().toUpperCase();
+        return !sSize || sSize === "STANDARD" || sSize === "ALL";
+      });
+      if (match) return match;
+
+      return null; // Do not cross-steal different specific size
     }
 
     // 2. Match general clothing/tools
@@ -425,18 +452,18 @@
             ${filtered.map(o => {
               const totalQty = o.netTotalQty || (o.items || []).reduce((sum, it) => sum + (Number(it.quantity) || 0), 0);
               const priorityBadge = o.priority === "URGENT" 
-                ? '<span class="badge badge-rose">عاجل جداً</span>'
+                ? `<span class="badge badge-rose">${lang === 'ar' ? 'عاجل جداً' : 'Urgent'}</span>`
                 : o.priority === "HIGH"
-                ? '<span class="badge badge-amber">عالي</span>'
-                : '<span class="badge badge-secondary">عادي</span>';
+                ? `<span class="badge badge-amber">${lang === 'ar' ? 'عالي' : 'High'}</span>`
+                : `<span class="badge badge-secondary">${lang === 'ar' ? 'عادي' : 'Normal'}</span>`;
 
               const statusBadge = o.status === "DONE"
-                ? '<span class="badge badge-emerald">✓ تم الصرف والخصم</span>'
+                ? `<span class="badge badge-emerald">${lang === 'ar' ? '✓ تم الصرف والخصم' : '✓ Completed'}</span>`
                 : o.status === "APPROVED"
-                ? '<span class="badge badge-cyan">معتمد للتجهيز</span>'
+                ? `<span class="badge badge-cyan">${lang === 'ar' ? 'معتمد للتجهيز' : 'Approved'}</span>`
                 : o.status === "CANCELLED"
-                ? '<span class="badge badge-rose">ملغي</span>'
-                : '<span class="badge badge-amber">قيد المراجعة</span>';
+                ? `<span class="badge badge-rose">${lang === 'ar' ? 'ملغي' : 'Cancelled'}</span>`
+                : `<span class="badge badge-amber">${lang === 'ar' ? 'قيد المراجعة' : 'Pending'}</span>`;
 
               // Size pills
               let sizePills = "";
@@ -455,29 +482,43 @@
               }
 
               // City badge
-              const cityTag = o.city ? `<span class="badge badge-cyan" style="font-size: 0.65rem; padding: 1px 6px;">🏙️ ${o.city}</span>` : '';
+              const cityTag = o.city ? `<span class="badge badge-secondary" style="font-size: 0.72rem;">🏙️ ${o.city}</span>` : '';
+
+              const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+              const canApprove = typeof hasUserPermission === "function" ? hasUserPermission("orders", "approve", curUser) : true;
+              const canDone = typeof hasUserPermission === "function" ? hasUserPermission("orders", "done", curUser) : true;
+              const canCancel = typeof hasUserPermission === "function" ? hasUserPermission("orders", "cancel", curUser) : true;
+              const canDelete = typeof hasUserPermission === "function" ? hasUserPermission("orders", "delete", curUser) : true;
+              const isSuper = typeof isMasterSuperAdmin === "function" ? isMasterSuperAdmin(curUser) : false;
 
               return `
                 <tr>
-                  <td style="font-weight: 800; color: #2563eb;">${o.orderNumber || o.id}</td>
+                  <td>
+                    <strong style="color: var(--primary-500); font-family: monospace; font-size: 0.85rem;">
+                      ${o.orderNumber || o.id}
+                    </strong>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
+                      ${new Date(o.createdAt || Date.now()).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}
+                    </div>
+                  </td>
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
                       <strong style="color: var(--text-main); font-size: 0.9rem;">
                         ${(() => {
                           if (o.projectName) {
-                            const pName = o.projectName.startsWith("مشروع") ? o.projectName : ("مشروع " + o.projectName);
+                            const pName = o.projectName.startsWith("مشروع") ? o.projectName : ((lang === 'ar' ? "مشروع " : "Project ") + o.projectName);
                             const parenIdx = (o.clientName || "").indexOf("(");
                             const spvsPart = parenIdx !== -1 ? (" " + o.clientName.substring(parenIdx)) : "";
                             return pName + spvsPart;
                           }
-                          return o.clientName || "طلب كادر الميدان";
+                          return o.clientName || (lang === 'ar' ? "طلب كادر الميدان" : "Field Staff Request");
                         })()}
                       </strong>
                       ${cityTag}
                     </div>
                     ${o.roster && o.roster.length > 0 ? `
                       <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 2px;">
-                        👥 يشمل ${o.roster.length} موظف ميداني مسجل
+                        👥 ${lang === 'ar' ? `يشمل ${o.roster.length} موظف ميداني مسجل` : `Includes ${o.roster.length} field staff`}
                       </div>
                     ` : ''}
                   </td>
@@ -487,47 +528,51 @@
                     </div>
                   </td>
                   <td>
-                    <strong style="font-size: 0.95rem; color: #10b981;">${totalQty}</strong> <span style="font-size: 0.72rem; color: var(--text-muted);">قطعة</span>
+                    <strong style="font-size: 0.95rem; color: #10b981;">${totalQty}</strong> <span style="font-size: 0.72rem; color: var(--text-muted);">${lang === 'ar' ? 'قطعة' : 'pcs'}</span>
                   </td>
                   <td>${priorityBadge}</td>
                   <td>
                     ${statusBadge}
-                    ${o.stockDeducted ? '<div style="font-size: 0.65rem; color: #10b981; margin-top: 2px;">✓ تم خصم المخزون</div>' : ''}
+                    ${o.stockDeducted ? `<div style="font-size: 0.65rem; color: #10b981; margin-top: 2px;">${lang === 'ar' ? '✓ تم خصم المخزون' : '✓ Stock Deducted'}</div>` : ''}
                   </td>
                   <td style="text-align: end;">
                     <div style="display: inline-flex; align-items: center; gap: 0.35rem;">
-                      ${o.status === "PENDING" ? `
-                        <button onclick="setOrderStatus('${o.id}', 'APPROVED')" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.72rem; color: #0284c7;" title="Approve Order">
-                          ✓ اعتماد
+                      ${(o.status === "PENDING" && canApprove) ? `
+                        <button onclick="setOrderStatus('${o.id}', 'APPROVED')" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.72rem; color: #0284c7;" title="${lang === 'ar' ? 'اعتماد الطلب' : 'Approve Order'}">
+                          ✓ ${lang === 'ar' ? 'اعتماد' : 'Approve'}
                         </button>
-                        <button onclick="setOrderStatus('${o.id}', 'CANCELLED')" class="btn btn-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="Cancel Order">
-                          ✕ إلغاء
+                      ` : ''}
+                      ${(o.status === "PENDING" && canCancel) ? `
+                        <button onclick="setOrderStatus('${o.id}', 'CANCELLED')" class="btn btn-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="${lang === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}">
+                          ✕ ${lang === 'ar' ? 'إلغاء' : 'Cancel'}
                         </button>
                       ` : ''}
 
-                      ${o.status === "APPROVED" ? `
-                        <button onclick="setOrderStatus('${o.id}', 'DONE')" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; background: #059669;" title="Fulfill order and deduct items from warehouse inventory">
-                          📦 صرف واكتمال
+                      ${(o.status === "APPROVED" && canDone) ? `
+                        <button onclick="setOrderStatus('${o.id}', 'DONE')" class="btn btn-primary" style="padding: 0.25rem 0.65rem; font-size: 0.72rem; background: #059669;" title="${lang === 'ar' ? 'صرف واكتمال وخصم المستودع' : 'Fulfill order and deduct stock'}">
+                          📦 ${lang === 'ar' ? 'صرف واكتمال' : 'Fulfill'}
                         </button>
-                        <button onclick="setOrderStatus('${o.id}', 'CANCELLED')" class="btn btn-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="Cancel Order">
-                          ✕ إلغاء
+                      ` : ''}
+                      ${(o.status === "APPROVED" && canCancel) ? `
+                        <button onclick="setOrderStatus('${o.id}', 'CANCELLED')" class="btn btn-ghost" style="padding: 0.25rem 0.5rem; font-size: 0.72rem; color: #ef4444;" title="${lang === 'ar' ? 'إلغاء الطلب' : 'Cancel Order'}">
+                          ✕ ${lang === 'ar' ? 'إلغاء' : 'Cancel'}
                         </button>
                       ` : ''}
 
-                      ${o.status === "CANCELLED" ? `
+                      ${(o.status === "CANCELLED" && canDelete) ? `
                         <button onclick="deleteOrder('${o.id}')" class="btn btn-ghost" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); background: rgba(239, 68, 68, 0.06); font-weight: 700;" title="${lang === 'ar' ? 'حذف الطلب الملغي نهائياً' : 'Delete Cancelled Order'}">
                           🗑️ ${lang === 'ar' ? 'حذف' : 'Delete'}
                         </button>
                       ` : ''}
 
-                      ${o.status === "DONE" && (typeof isMasterSuperAdmin === "function" && isMasterSuperAdmin(typeof getCurrentUser === "function" ? getCurrentUser() : null)) ? `
-                        <button onclick="deleteOrder('${o.id}')" class="btn btn-ghost" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); background: rgba(239, 68, 68, 0.06); font-weight: 700;" title="${lang === 'ar' ? 'حذف الطلب المكتمل (صلاحية المدير العام)' : 'Delete Completed Order (Super Admin)'}">
+                      ${(o.status === "DONE" && canDelete && isSuper) ? `
+                        <button onclick="deleteOrder('${o.id}')" class="btn btn-ghost" style="padding: 0.25rem 0.55rem; font-size: 0.72rem; color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); background: rgba(239, 68, 68, 0.06); font-weight: 700;" title="${lang === 'ar' ? 'حذف الطلب المكتمل واسترجاع المخزون (صلاحية المدير العام)' : 'Delete Completed Order & Restore Stock (Super Admin)'}">
                           🗑️ ${lang === 'ar' ? 'حذف' : 'Delete'}
                         </button>
                       ` : ''}
 
-                      <button onclick="openOrderDetails('${o.id}')" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" title="View Details / Print Slip">
-                        👁️ سند
+                      <button onclick="openOrderDetails('${o.id}')" class="btn btn-secondary" style="padding: 0.25rem 0.55rem; font-size: 0.72rem;" title="${lang === 'ar' ? 'عرض السند والتفاصيل' : 'View Slip & Details'}">
+                        👁️ ${lang === 'ar' ? 'سند' : 'Slip'}
                       </button>
                     </div>
                   </td>
@@ -548,6 +593,15 @@
   }
 
   function openCreateOrderModal() {
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+    const lang = document.documentElement.getAttribute("lang") || "en";
+    if (typeof hasUserPermission === "function" && !hasUserPermission("orders", "create", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لإنشاء طلبات صرف جديدة." : "Permission denied: You do not have permission to create orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+
     const numInput = document.getElementById("order-input-number");
     const clientInput = document.getElementById("order-input-client");
     const reqInput = document.getElementById("order-input-requester");
@@ -593,16 +647,22 @@
     const container = document.getElementById("order-line-items-container");
     if (!container) return;
     const stock = (window.state && window.state.stock) ? window.state.stock : [];
+    const lang = document.documentElement.getAttribute("lang") || "en";
 
     container.innerHTML = manualOrderLineItems.map((item, idx) => `
       <div style="display: flex; gap: 0.5rem; align-items: center;">
         <select class="input-field" style="flex: 2; font-size: 0.82rem;" onchange="window.manualOrderLineItems[${idx}].stockId = this.value; window.validateOrderStockLimit(${idx}, this.value)">
-          <option value="">-- اختر مادة من المخزون --</option>
-          ${stock.map(s => `
-            <option value="${s.id}" ${item.stockId === s.id ? 'selected' : ''}>
-              ${s.name} (المتوفر بالمستودع: ${s.quantity})
-            </option>
-          `).join("")}
+          <option value="">${lang === 'ar' ? '-- اختر مادة من المخزون --' : '-- Select warehouse item --'}</option>
+          ${stock.map(s => {
+            const sizeBadge = (s.size && s.size !== 'All') ? ` [${lang === 'ar' ? 'مقاس: ' : 'Size: '}${s.size}]` : '';
+            const projName = s.projectName || (typeof getStockItemProject === 'function' ? getStockItemProject(s) : '');
+            const projBadge = projName ? ` [${lang === 'ar' ? 'مشروع: ' : 'Project: '}${projName}]` : '';
+            return `
+              <option value="${s.id}" ${item.stockId === s.id ? 'selected' : ''}>
+                ${s.name}${sizeBadge}${projBadge} (${lang === 'ar' ? 'المتوفر بالمستودع:' : 'In Stock:'} ${s.quantity})
+              </option>
+            `;
+          }).join("")}
         </select>
 
         <input type="number" min="1" class="input-field" style="width: 90px; font-size: 0.82rem;" value="${item.quantity || 1}" onchange="window.manualOrderLineItems[${idx}].quantity = parseInt(this.value, 10) || 1">
@@ -637,6 +697,8 @@
         validItems.push({
           stockId: line.stockId,
           itemName: s ? s.name : "مادة غير محددة",
+          size: s ? s.size : undefined,
+          projectName: s ? (s.projectName || (typeof getStockItemProject === "function" ? getStockItemProject(s) : undefined)) : undefined,
           quantity: Math.max(1, parseInt(line.quantity, 10) || 1)
         });
       }
@@ -651,6 +713,7 @@
       id: "ord-" + Date.now(),
       orderNumber: num,
       clientName: client,
+      projectName: client,
       requester: requester,
       priority: priority,
       notes: notes,
@@ -679,6 +742,26 @@
     if (!order) return;
 
     const lang = document.documentElement.getAttribute("lang") || "en";
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+
+    if (newStatus === "APPROVED" && typeof hasUserPermission === "function" && !hasUserPermission("orders", "approve", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لاعتماد الطلبيات." : "Permission denied: You do not have permission to approve orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+    if (newStatus === "DONE" && typeof hasUserPermission === "function" && !hasUserPermission("orders", "done", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لتسليم وصرف الطلبيات من المخزون." : "Permission denied: You do not have permission to complete orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+    if (newStatus === "CANCELLED" && typeof hasUserPermission === "function" && !hasUserPermission("orders", "cancel", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لإلغاء الطلبيات." : "Permission denied: You do not have permission to cancel orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
 
     if (newStatus === "DONE") {
       const stock = (window.state && window.state.stock) ? window.state.stock : [];
@@ -689,12 +772,22 @@
         if (it.stockId) {
           stockItem = stock.find(s => s.id === it.stockId);
         }
+
         // Project Mismatch Guard: If stockItem belongs to a DIFFERENT project than this order, discard it!
-        if (stockItem && order.projectName && stockItem.projectName) {
-          const sProj = stockItem.projectName.trim().toLowerCase();
+        if (stockItem && order.projectName) {
+          const sProj = (stockItem.projectName || (typeof getStockItemProject === "function" ? getStockItemProject(stockItem) : "") || "").trim().toLowerCase();
           const oProj = order.projectName.trim().toLowerCase();
-          if (sProj !== oProj && !sProj.includes(oProj) && !oProj.includes(sProj)) {
+          if (sProj && oProj && sProj !== oProj && !sProj.includes(oProj) && !oProj.includes(sProj)) {
             stockItem = null;
+          }
+        }
+
+        // Size Mismatch Guard: If it.size is specified, stockItem MUST match that size or be Standard!
+        if (stockItem && it.size && it.size !== "Standard" && it.size !== "All") {
+          const sSize = (stockItem.size || "").trim().toUpperCase();
+          const reqSize = it.size.trim().toUpperCase();
+          if (sSize && sSize !== "STANDARD" && sSize !== "ALL" && sSize !== reqSize) {
+            stockItem = null; // Discard! Must not take from 2XL if order requested L!
           }
         }
 
@@ -705,22 +798,22 @@
 
         if (stockItem) {
           it.stockId = stockItem.id;
-          it.itemName = (stockItem.size && stockItem.size === it.size) ? stockItem.name : `${stockItem.name} (مقاس ${it.size || 'Standard'})`;
+          it.itemName = (stockItem.size && stockItem.size === it.size) ? stockItem.name : `${stockItem.name}${it.size && it.size !== 'Standard' ? ' (مقاس ' + it.size + ')' : ''}`;
         }
 
         deductionsPlan.push({
           item: it,
           stockItem: stockItem,
-          displayName: stockItem ? `${stockItem.name}${it.size && it.size !== 'Standard' ? ' (مقاس ' + it.size + ')' : ''}` : it.itemName,
+          displayName: stockItem ? `${stockItem.name}${it.size && it.size !== 'Standard' ? ' (مقاس ' + it.size + ')' : ''}` : (it.itemName || it.name),
           qty: Number(it.quantity) || 1
         });
       });
 
       const itemSummary = deductionsPlan.map(d => {
         if (d.stockItem) {
-          return `• ${d.displayName}: ${d.qty} قطعة (المتوفر بالمستودع: ${d.stockItem.quantity})`;
+          return `• ${d.displayName}: ${d.qty} ${lang === 'ar' ? 'قطعة (المتوفر بالمستودع:' : 'pcs (In stock:'} ${d.stockItem.quantity})`;
         } else {
-          return `• ${d.displayName}: ${d.qty} قطعة [⚠️ تنبيه: غير متوفر بالمستودع لهذا المشروع!]`;
+          return `• ${d.displayName}: ${d.qty} ${lang === 'ar' ? 'قطعة [⚠️ تنبيه: غير متوفر بالمستودع لهذا المقاس/المشروع!]' : 'pcs [⚠️ Warning: Not available in warehouse for this size/project!]'}`;
         }
       }).join("\n");
 
@@ -734,6 +827,9 @@
       deductionsPlan.forEach(d => {
         if (d.stockItem) {
           d.stockItem.quantity = Math.max(0, d.stockItem.quantity - d.qty);
+          if (typeof syncStockItemToFirestore === "function") {
+            syncStockItemToFirestore(d.stockItem);
+          }
 
           if (d.stockItem.quantity <= (d.stockItem.threshold || 5)) {
             if (window.OstanStyle) {
@@ -756,7 +852,7 @@
       persistOrders();
 
       if (window.OstanStyle) {
-        window.OstanStyle.showToast("تم الصرف وخصم المخزون", `تم اكتمال الطلب ${order.orderNumber} وخصم الكميات من المستودع بنجاح!`);
+        window.OstanStyle.showToast(lang === 'ar' ? "تم الصرف وخصم المخزون" : "Fulfillment Complete", `تم اكتمال الطلب ${order.orderNumber} وخصم الكميات من المستودع بنجاح!`);
       }
       return;
     }
@@ -812,6 +908,13 @@
     const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
     const isSuper = typeof isMasterSuperAdmin === "function" ? isMasterSuperAdmin(curUser) : (curUser && (curUser.role === "SUPER_ADMIN" || curUser.role === "superadmin"));
 
+    if (typeof hasUserPermission === "function" && !hasUserPermission("orders", "delete", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لحذف الطلبيات." : "Permission denied: You do not have permission to delete orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+
     // Business Rule: Completed orders (DONE) can ONLY be deleted by Super Admin!
     if (order.status === "DONE") {
       if (!isSuper) {
@@ -824,8 +927,8 @@
       }
 
       const confirmMsg = lang === "ar"
-        ? `⚠️ تنبيه المدير العام:\nطلب الصرف رقم (${order.orderNumber || order.id}) مكتمل وتم صرف كمياته من المخزون مسبقاً.\n\nهل أنت متأكد من حذف هذا السجل نهائياً؟\nهذا الإجراء لا يمكن التراجع عنه.`
-        : `⚠️ Super Admin Notice:\nOrder (${order.orderNumber || order.id}) is COMPLETED and items were already deducted from inventory.\n\nAre you sure you want to permanently delete this order record?\nThis action cannot be undone.`;
+        ? `⚠️ تنبيه المدير العام:\nطلب الصرف رقم (${order.orderNumber || order.id}) مكتمل وتم صرف كمياته من المخزون مسبقاً.\n\nهل أنت متأكد من حذف هذا السجل نهائياً؟\nسيتم إعادة كافة الكميات المصروفة تلقائياً إلى رصيد المستودع المتوفر.`
+        : `⚠️ Super Admin Notice:\nOrder (${order.orderNumber || order.id}) is COMPLETED and items were already deducted from inventory.\n\nAre you sure you want to permanently delete this order record?\nAll deducted item quantities will be automatically restored back to available warehouse stock.`;
 
       if (!confirm(confirmMsg)) return;
     } else if (order.status === "CANCELLED") {
@@ -843,17 +946,25 @@
       return;
     }
 
-    // Safety rollback if cancelled order had stock marked deducted
-    if (order.stockDeducted && order.status === "CANCELLED") {
+    // Automatic Stock Rollback: If order had items deducted (DONE or CANCELLED), restore them to available warehouse stock!
+    if (order.stockDeducted) {
       const stock = window.state.stock || [];
       (order.items || []).forEach(it => {
         let stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : null;
-        if (!stockItem && it.itemName) stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
-        if (stockItem) stockItem.quantity += Number(it.quantity) || 0;
+        if (!stockItem && it.itemName) {
+          stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
+        }
+        if (stockItem) {
+          stockItem.quantity += Number(it.quantity) || 0;
+          if (typeof syncStockItemToFirestore === "function") {
+            syncStockItemToFirestore(stockItem);
+          }
+        }
       });
       order.stockDeducted = false;
       if (typeof saveState === "function") saveState();
       if (typeof renderWarehouse === "function") renderWarehouse();
+      if (typeof renderDashboard === "function") renderDashboard();
     }
 
     window.state.orders = orders.filter(o => o.id !== orderId);
@@ -864,11 +975,11 @@
     if (typeof updateCounts === "function") updateCounts();
 
     const successMsg = lang === "ar"
-      ? `تم حذف الطلب (${order.orderNumber || order.id}) بنجاح.`
-      : `Order (${order.orderNumber || order.id}) has been deleted successfully.`;
+      ? `تم حذف الطلب (${order.orderNumber || order.id}) بنجاح وإعادة رصيد المواد إلى المستودع.`
+      : `Order (${order.orderNumber || order.id}) has been deleted successfully and items returned to stock.`;
 
     if (window.OstanStyle) {
-      window.OstanStyle.showToast(lang === "ar" ? "تم الحذف" : "Deleted", successMsg);
+      window.OstanStyle.showToast(lang === "ar" ? "تم الحذف واسترجاع المخزون" : "Deleted & Stock Restored", successMsg);
     }
   }
 
@@ -879,24 +990,54 @@
     if (cancelledOrders.length === 0) return;
 
     const lang = document.documentElement.getAttribute("lang") || "en";
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+
+    if (typeof hasUserPermission === "function" && !hasUserPermission("orders", "delete", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لحذف الطلبيات." : "Permission denied: You do not have permission to delete orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+
     const confirmMsg = lang === "ar"
       ? `هل أنت متأكد من حذف كافة الطلبيات الملغية (${cancelledOrders.length} طلب) نهائياً من النظام؟`
       : `Are you sure you want to permanently delete all ${cancelledOrders.length} cancelled orders?`;
 
     if (!confirm(confirmMsg)) return;
 
+    // Rollback any stock on cancelled orders
+    cancelledOrders.forEach(o => {
+      if (o.stockDeducted) {
+        const stock = window.state.stock || [];
+        (o.items || []).forEach(it => {
+          let stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : null;
+          if (!stockItem && it.itemName) {
+            stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
+          }
+          if (stockItem) {
+            stockItem.quantity += Number(it.quantity) || 0;
+            if (typeof syncStockItemToFirestore === "function") {
+              syncStockItemToFirestore(stockItem);
+            }
+          }
+        });
+        o.stockDeducted = false;
+      }
+    });
+
     window.state.orders = orders.filter(o => o.status !== "CANCELLED");
     persistOrders();
 
+    if (typeof saveState === "function") saveState();
+    if (typeof renderWarehouse === "function") renderWarehouse();
     renderOrders();
     if (typeof updateCounts === "function") updateCounts();
 
-    const successMsg = lang === "ar"
-      ? `تم حذف ${cancelledOrders.length} طلب ملغي نهائياً.`
-      : `Successfully deleted ${cancelledOrders.length} cancelled orders.`;
-
     if (window.OstanStyle) {
-      window.OstanStyle.showToast(lang === "ar" ? "تم الحذف" : "Deleted", successMsg);
+      window.OstanStyle.showToast(
+        lang === "ar" ? "تم الحذف" : "Deleted",
+        lang === "ar" ? `تم حذف ${cancelledOrders.length} طلب ملغي بنجاح.` : `Deleted ${cancelledOrders.length} cancelled orders successfully.`
+      );
     }
   }
 
@@ -1070,6 +1211,15 @@
   }
 
   function openOrdersExcelImportModal() {
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+    const lang = document.documentElement.getAttribute("lang") || "en";
+    if (typeof hasUserPermission === "function" && !hasUserPermission("orders", "excel", curUser)) {
+      const msg = lang === "ar" ? "عذراً، ليس لديك صلاحية لاستيراد الطلبيات عبر إكسل." : "Permission denied: You do not have permission to import orders via Excel.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
+
     parsedOrdersBatchData = null;
     const label = document.getElementById("orders-excel-dropzone-label");
     const btn = document.getElementById("btn-confirm-orders-import");

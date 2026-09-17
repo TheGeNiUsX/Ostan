@@ -1,7 +1,7 @@
 {
-  "version": "1.0.55",
-  "commit": "90eda4f",
-  "buildTime": 1789627208315,
-  "releaseDate": "2026-09-17T06:40:08.315Z",
-  "message": "fix: add size field to stock items and project-aware warehouse deduction matching"
+  "version": "1.0.56",
+  "commit": "69238fb",
+  "buildTime": 1789628971513,
+  "releaseDate": "2026-09-17T07:09:31.513Z",
+  "message": "fix: display project badge on warehouse cards and protect project name from cloud resets"
 }
