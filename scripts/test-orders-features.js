@@ -290,8 +290,8 @@ window.renderOrders();
 
 console.log("Checking rendered demand summary...");
 assert(renderedDemandHTML.includes("73"), "Demand summary must report grand total of 73 pieces!");
-assert(renderedDemandHTML.includes("M:"), "Demand summary must contain M size!");
-assert(renderedDemandHTML.includes("5XL:"), "Demand summary must contain 5XL size!");
+assert(renderedDemandHTML.includes(">M<") || renderedDemandHTML.includes("M:"), "Demand summary must contain M size!");
+assert(renderedDemandHTML.includes(">5XL<") || renderedDemandHTML.includes("5XL:"), "Demand summary must contain 5XL size!");
 assert(renderedDemandHTML.includes("Khobar"), "Demand summary must list Khobar project/type!");
 assert(renderedDemandHTML.includes("Hafar Al Batin"), "Demand summary must list Hafar Al Batin project/type!");
 console.log("✓ HTML Demand Summary rendering verified with accurate 73 pcs total & all sizes!");

@@ -1,7 +1,7 @@
 {
-  "version": "1.0.58",
-  "commit": "0cdc9be",
-  "buildTime": 1789630577290,
-  "releaseDate": "2026-09-17T07:36:17.290Z",
-  "message": "feat(orders): add Total Required Materials & Sizing Demand Matrix with stock comparison and copy report"
+  "version": "1.0.59",
+  "commit": "63cbe5a",
+  "buildTime": 1789631167133,
+  "releaseDate": "2026-09-17T07:46:07.133Z",
+  "message": "feat: replace browser confirm popups with professional UI modal for order fulfillment and deletions (v1.0.58)"
 }

@@ -715,92 +715,106 @@
               </span>
             </div>
 
-            <div style="display: flex; gap: 0.45rem; flex-wrap: wrap;">
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
               ${sortedGrandSizes.map(sz => {
                 const q = demand.grandSizes[sz];
                 return `
-                  <div style="display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.7rem; background: #ffffff; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 6px; box-shadow: 0 1px 2px rgba(0,0,0,0.04);">
-                    <span style="font-size: 0.78rem; font-weight: 800; color: #6366f1;">${sz}:</span>
-                    <span style="font-size: 0.88rem; font-weight: 900; color: #1e1b4b;">${q}</span>
+                  <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0.85rem; background: #ffffff; border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                    <span style="font-size: 0.85rem; font-weight: 800; color: #4f46e5;"><bdi dir="ltr" style="unicode-bidi: isolate;">${sz}</bdi>:</span>
+                    <span style="font-size: 1.05rem; font-weight: 900; color: #1e1b4b;">${q}</span>
                   </div>
                 `;
               }).join("")}
             </div>
           </div>
 
-          <!-- Types Breakdown Cards -->
-          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem;">
+          <!-- Types Breakdown Cards (Wider & Larger UI) -->
+          <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1.15rem;">
             ${demand.types.map(t => {
               const sortedTypeSizes = sortSizesList(Object.keys(t.sizes));
               const projBadge = t.projectName ? `
-                <span style="display: inline-flex; align-items: center; gap: 0.3rem; padding: 2px 8px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 4px; font-size: 0.75rem; color: #b45309; font-weight: 700;">
+                <span style="display: inline-flex; align-items: center; gap: 0.35rem; padding: 3px 10px; background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.35); border-radius: 6px; font-size: 0.78rem; color: #b45309; font-weight: 700;">
                   🏗️ ${lang === 'ar' ? 'مشروع:' : 'Project:'} ${t.projectName}
                 </span>` : '';
 
               return `
-                <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 0.9rem 1.15rem; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+                <div style="background: #ffffff; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 1.15rem 1.4rem; box-shadow: 0 2px 8px rgba(0,0,0,0.03);">
                   
-                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; border-bottom: 1px dashed var(--border-subtle); padding-bottom: 0.5rem;">
-                    <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
-                      <span style="font-weight: 800; font-size: 0.95rem; color: var(--text-main);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 1rem; border-bottom: 1px dashed var(--border-subtle); padding-bottom: 0.75rem;">
+                    <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                      <span style="font-weight: 800; font-size: 1.05rem; color: var(--text-main);">
                         👕 ${t.baseName}
                       </span>
                       ${projBadge}
-                      <span style="font-size: 0.75rem; color: var(--text-muted);">
-                        (${t.orderNumbers.size} ${lang === 'ar' ? 'طلبيات' : 'orders'})
+                      <span style="font-size: 0.8rem; color: var(--text-muted);">
+                        (${t.orderNumbers.size} ${lang === 'ar' ? 'طلبيات مشمولة' : 'orders included'})
                       </span>
                     </div>
 
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                      <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">
-                        ${lang === 'ar' ? 'إجمالي الصنف:' : 'Item Total:'}
+                    <div style="display: flex; align-items: center; gap: 0.6rem;">
+                      <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 700;">
+                        ${lang === 'ar' ? 'إجمالي المطلوب لهذا الصنف:' : 'Item Total Demand:'}
                       </span>
-                      <span class="badge badge-primary" style="font-size: 0.85rem; font-weight: 800; padding: 0.25rem 0.75rem;">
+                      <span class="badge badge-primary" style="font-size: 0.95rem; font-weight: 900; padding: 0.35rem 0.9rem; border-radius: 8px;">
                         ${t.totalQty} ${lang === 'ar' ? 'قطعة' : 'pcs'}
                       </span>
                     </div>
                   </div>
 
-                  <!-- Sizes Cards Grid for this Item -->
-                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(135px, 1fr)); gap: 0.5rem;">
+                  <!-- Sizes Cards Grid for this Item (Wider & Larger Cards) -->
+                  <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 0.75rem;">
                     ${sortedTypeSizes.map(sz => {
                       const reqQty = t.sizes[sz];
                       const matchedStock = findMatchingStockItem(stock, t.projectName, sz, t.baseName);
                       let stockIndicator = "";
+                      let progressBar = "";
 
                       if (matchedStock) {
                         const inStock = Number(matchedStock.quantity) || 0;
                         const diff = inStock - reqQty;
+                        const pct = Math.min(100, Math.round((inStock / Math.max(1, reqQty)) * 100));
+
                         if (diff >= 0) {
                           stockIndicator = `
-                            <div style="font-size: 0.7rem; color: #059669; font-weight: 700; margin-top: 3px; display: flex; align-items: center; justify-content: space-between;">
-                              <span>${lang === 'ar' ? 'المخزون:' : 'Stock:'} ${inStock}</span>
-                              <span>✓ ${lang === 'ar' ? 'متوفر' : 'OK'}</span>
+                            <div style="font-size: 0.74rem; color: #059669; font-weight: 700; margin-top: 5px; display: flex; align-items: center; justify-content: space-between;">
+                              <span>${lang === 'ar' ? 'المخزون:' : 'Stock:'} <strong>${inStock}</strong></span>
+                              <span style="background: rgba(5, 150, 105, 0.1); padding: 1px 6px; border-radius: 4px;">✓ ${lang === 'ar' ? 'متوفر' : 'OK'}</span>
+                            </div>`;
+                          progressBar = `
+                            <div style="width: 100%; height: 4px; background: rgba(5, 150, 105, 0.15); border-radius: 2px; margin-top: 6px; overflow: hidden;">
+                              <div style="width: 100%; height: 100%; background: #059669;"></div>
                             </div>`;
                         } else {
                           stockIndicator = `
-                            <div style="font-size: 0.7rem; color: #e11d48; font-weight: 800; margin-top: 3px; background: rgba(225, 29, 72, 0.08); padding: 1px 4px; border-radius: 3px; display: flex; align-items: center; justify-content: space-between;">
-                              <span>${lang === 'ar' ? 'المتوفر:' : 'Stock:'} ${inStock}</span>
+                            <div style="font-size: 0.74rem; color: #e11d48; font-weight: 800; margin-top: 5px; background: rgba(225, 29, 72, 0.08); padding: 2px 6px; border-radius: 4px; display: flex; align-items: center; justify-content: space-between;">
+                              <span>${lang === 'ar' ? 'المتوفر:' : 'Stock:'} <strong>${inStock}</strong></span>
                               <span>⚠️ -${Math.abs(diff)}</span>
+                            </div>`;
+                          progressBar = `
+                            <div style="width: 100%; height: 4px; background: rgba(225, 29, 72, 0.15); border-radius: 2px; margin-top: 6px; overflow: hidden;">
+                              <div style="width: ${pct}%; height: 100%; background: #e11d48;"></div>
                             </div>`;
                         }
                       } else {
                         stockIndicator = `
-                          <div style="font-size: 0.68rem; color: var(--text-faint); margin-top: 3px;">
-                            ${lang === 'ar' ? 'غير مسجل بالمستودع' : 'No stock item'}
+                          <div style="font-size: 0.72rem; color: var(--text-faint); margin-top: 5px; font-style: italic;">
+                            ${lang === 'ar' ? '⚠️ غير مسجل بالمستودع' : '⚠️ No warehouse SKU'}
                           </div>`;
+                        progressBar = `
+                          <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.06); border-radius: 2px; margin-top: 6px;"></div>`;
                       }
 
                       return `
-                        <div style="background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 0.5rem 0.65rem;">
+                        <div style="background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.7rem 0.85rem; transition: transform 0.15s ease, box-shadow 0.15s ease;">
                           <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                            <span style="font-size: 0.78rem; font-weight: 800; color: #4338ca;">
-                              ${sz}
+                            <span style="font-size: 0.92rem; font-weight: 800; color: #4338ca;">
+                              <bdi dir="ltr" style="unicode-bidi: isolate;">${sz}</bdi>
                             </span>
-                            <span style="font-size: 1rem; font-weight: 900; color: var(--text-main);">
+                            <span style="font-size: 1.25rem; font-weight: 900; color: var(--text-main);">
                               ${reqQty}
                             </span>
                           </div>
+                          ${progressBar}
                           ${stockIndicator}
                         </div>
                       `;

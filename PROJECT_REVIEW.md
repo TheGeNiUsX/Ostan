@@ -263,7 +263,20 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
       - If all items are in stock, displays a sleek emerald theme with `📦 تأكيد واكتمال الصرف / Confirm & Deduct Stock`.
     - **Universal Delete Modal Integration for Orders (`window.openConfirmDeleteModal`):**
       - Connected single-order deletions and bulk cancelled-orders deletions directly to the universal 2-step deletion modal.
-      - Explicitly informs Super Admins that deleting completed orders will automatically restore all deducted stock back to the live warehouse inventory.
+18. **Executive Stock & Inventory Command Center with Live Project Tracking & Dedicated Low Stock Center**:
+    - **Unbroken Alphanumeric Size Isolation (`2XL`, `2 XL`, `3XL`):** Completely solved the Arabic RTL bidirectional punctuation and digit reversal bug (`\ مقاس: 2` with `XL` flipped or separated). Every size badge across warehouse item cards, order dropdowns, demand summaries, and stock tables is now wrapped with `<bdi dir="ltr" style="unicode-bidi: isolate; font-weight: 800; display: inline-block;">${size}</bdi>`, guaranteeing `2XL` and `2 XL` render as a solid, unbroken left-to-right token without separation.
+    - **Wider & Larger UI for Demand Breakdown Matrix:** Upgraded `#orders-demand-summary-container` to feature a spacious responsive grid (`minmax(170px, 1fr)`), high-visibility typography, interactive scope toggles, and visual inventory sufficiency progress meters.
+    - **Executive Stock Telemetry Dashboard:** Introduced 4 top-level KPI telemetry summary cards (`#stat-stock-total-units`, `#stat-stock-total-items`, `#stat-stock-projects-count`, `#stat-stock-low-count`) displaying real-time aggregated warehouse metrics.
+    - **Live Projects Tracking Panel (`#stock-projects-tracking-panel`):**
+      - Tracks real-time stock balances grouped by individual projects (e.g. `نادك`, `سدافكو`, `الدمام`, `General`).
+      - Interactive project filter pills and overview cards detailing total units, item count, and low-stock indicators per project.
+      - Clicking any project pill or card instantly filters the inventory grid.
+    - **Dedicated Low Stock Command Center (`#stock-low-command-center`):**
+      - Whole dedicated part highlighting items requiring immediate attention and replenishment.
+      - When inventory drops to or below threshold (`quantity <= threshold`), prominent amber/rose alert cards display the exact deficit (`نقص: X قطع`), current stock vs minimum limit, and a single-click Quick Restock button (`+ إضافة رصيد`).
+      - Includes `📋 نسخ كشف النواقص / Copy Shortage List` to instantly copy a supplier-ready shortage report to clipboard for direct WhatsApp transmission.
+      - Displays a healthy green confirmation state (`✅ كافة الأصناف بالمستودع ضمن الحدود الآمنة والمثالية`) when all stock levels are sufficient.
+    - **Instant Quick Restock Modal / In-line Restock (`quickRestockStockItem`):** Operators can immediately add incoming units directly from the low-stock center or item cards without needing to open the full edit dialog.
 
 ---
 
@@ -274,4 +287,9 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
 3. **Keep this file (`PROJECT_REVIEW.md`) updated:** Whenever adding an endpoint, modifying gateway behavior, changing roles, or fixing connection issues, document it in this file.
 4. **Automatic Git Commit & Push (Mandatory):** Accept all code changes by default and automatically commit and push them to GitHub (`origin main`) whenever work is done or updated, ensuring GitHub Pages and the repository are always in sync.
 5. **Preserve Corporate Design Integrity:** When adding new views or modal components, use the established executive white card styling (`glass-panel`), subtle borders (`var(--border-subtle)`), and appropriate color accent stripes matching the design tokens.
+6. **Mandatory Bilingual English/Arabic Dictionary & Universal RTL/LTR Support:** For every new feature, view, modal, button, table column, telemetry metric, badge, or notification created or updated:
+   - Maintain complete bilingual English (`en`) and Arabic (`ar`) translations in `translation.js` proactively without needing user reminders.
+   - Ensure full visual layout and directional support for both RTL (`dir="rtl"`, Arabic) and LTR (`dir="ltr"`, English).
+   - Whenever displaying clothing/item sizes (e.g. `2XL`, `3XL`, `2 XL`), alphanumeric codes, phone numbers, or order IDs in Arabic RTL text, **ALWAYS** wrap them with `<bdi dir="ltr">` or `<span dir="ltr">` with `unicode-bidi: isolate; display: inline-block;` so numbers never separate or invert (e.g. `2` becoming detached from `XL`).
+
 
