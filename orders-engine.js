@@ -26,7 +26,7 @@
     return window.state.orders;
   }
 
-  function persistOrders() {
+  function persistOrders(specificOrder, isDelete) {
     if (!window.state) window.state = {};
     const ords = window.state.orders || [];
     try {
@@ -34,6 +34,18 @@
     } catch (e) {}
     if (typeof saveState === "function") {
       try { saveState(); } catch (e) {}
+    }
+    // Real-Time Cloud Firestore Sync (Shared across all authorized users)
+    if (isDelete && specificOrder) {
+      if (typeof deleteOrderFromFirestore === "function") {
+        deleteOrderFromFirestore(specificOrder.id || specificOrder);
+      }
+    } else if (specificOrder && specificOrder.id) {
+      if (typeof syncOrderToFirestore === "function") {
+        syncOrderToFirestore(specificOrder);
+      }
+    } else if (typeof syncOrderToFirestore === "function") {
+      ords.forEach(o => syncOrderToFirestore(o));
     }
   }
 
@@ -806,6 +818,28 @@
                           <div style="width: 100%; height: 4px; background: rgba(0,0,0,0.06); border-radius: 2px; margin-top: 6px;"></div>`;
                       }
 
+                      // Find orders contributing to this specific size of this item
+                      const relatedOrders = targetOrders.filter(o => {
+                        const inItems = (o.items || []).some(i => {
+                          const iName = (i.itemName || "").toLowerCase();
+                          const bName = (t.baseName || "").toLowerCase();
+                          const matchName = iName.includes(bName) || bName.includes(iName);
+                          const matchSize = (i.size || "Standard").toUpperCase() === sz.toUpperCase();
+                          return matchName && matchSize;
+                        });
+                        const inRoster = (o.roster || []).some(r => {
+                          const matchSize = (r.size || "Standard").toUpperCase() === sz.toUpperCase();
+                          const oProj = (o.projectName || o.clientName || "").toLowerCase();
+                          const tProj = (t.projectName || "").toLowerCase();
+                          const matchProj = !tProj || oProj.includes(tProj) || tProj.includes(oProj);
+                          return matchSize && matchProj;
+                        });
+                        return inItems || inRoster;
+                      });
+
+                      const creators = Array.from(new Set(relatedOrders.map(o => o.createdByName || o.creatorName || o.createdByEmail || o.requester || (lang === 'ar' ? 'المسؤول' : 'Admin')).filter(Boolean)));
+                      const creatorsDisplay = creators.length > 0 ? creators.join("، ") : (lang === 'ar' ? 'المسؤول' : 'Admin');
+
                       return `
                         <div style="background: var(--bg-surface-elevated, #f8fafc); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 0.7rem 0.85rem; transition: transform 0.15s ease, box-shadow 0.15s ease;">
                           <div style="display: flex; justify-content: space-between; align-items: baseline;">
@@ -818,6 +852,15 @@
                           </div>
                           ${progressBar}
                           ${stockIndicator}
+                          <!-- Clarification pointing to the user who made the order -->
+                          <div style="font-size: 0.68rem; color: var(--text-muted); margin-top: 6px; padding-top: 4px; border-top: 1px dashed rgba(0,0,0,0.06); display: flex; align-items: center; justify-content: space-between; gap: 4px;" title="${lang === 'ar' ? 'المستخدم الذي أنشأ وقدم هذا الطلب' : 'User who made the order for this demand'}">
+                            <span style="display: inline-flex; align-items: center; gap: 2px;">
+                              👤 <span style="font-weight: 700; color: var(--text-main);">${lang === 'ar' ? 'مقدم الطلب:' : 'By:'}</span>
+                            </span>
+                            <span style="color: #4f46e5; font-weight: 800; max-width: 95px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                              ${escapeHtml(creatorsDisplay)}
+                            </span>
+                          </div>
                         </div>
                       `;
                     }).join("")}
@@ -1103,6 +1146,11 @@
                     <div style="font-size: 0.7rem; color: var(--text-muted); margin-top: 2px;">
                       ${new Date(o.createdAt || Date.now()).toLocaleDateString(lang === "ar" ? "ar-SA" : "en-US")}
                     </div>
+                    <!-- Clarification pointing to the user who made the order -->
+                    <div style="display: inline-flex; align-items: center; gap: 4px; margin-top: 4px; padding: 2px 6px; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2); border-radius: 4px; font-size: 0.7rem; color: #4338ca; font-weight: 700;" title="${lang === 'ar' ? 'المستخدم الذي قام بإنشاء هذا الطلب' : 'User who created this order'}">
+                      <span>👤 ${lang === 'ar' ? 'مقدم الطلب:' : 'By:'}</span>
+                      <span style="color: #1e1b4b; font-weight: 800;">${escapeHtml(o.createdByName || o.creatorName || o.createdByEmail || o.requester || (lang === 'ar' ? 'المسؤول' : 'Admin'))}</span>
+                    </div>
                   </td>
                   <td>
                     <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
@@ -1352,12 +1400,21 @@
       return;
     }
 
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+    const creatorName = (curUser && curUser.name) ? curUser.name : (requester || "Admin");
+    const creatorEmail = curUser ? (curUser.email || "") : "";
+    const creatorId = curUser ? (curUser.id || "") : "";
+
     const newOrder = {
       id: "ord-" + Date.now(),
       orderNumber: num,
       clientName: client,
       projectName: client,
-      requester: requester,
+      requester: requester || creatorName,
+      createdById: creatorId,
+      createdByEmail: creatorEmail,
+      createdByName: creatorName,
+      creatorName: creatorName,
       priority: priority,
       notes: notes,
       items: validItems,
@@ -1368,7 +1425,7 @@
 
     const orders = getActiveOrders();
     orders.unshift(newOrder);
-    persistOrders();
+    persistOrders(newOrder);
 
     closeCreateOrderModal();
     renderOrders();
@@ -1657,7 +1714,7 @@
         renderOrders();
         if (typeof updateCounts === "function") updateCounts();
 
-        persistOrders();
+        persistOrders(order);
 
         if (window.OstanStyle) {
           window.OstanStyle.showToast(lang === 'ar' ? "تم الصرف وخصم المخزون" : "Fulfillment Complete", `تم اكتمال الطلب ${order.orderNumber} وخصم الكميات من المستودع بنجاح!`);
@@ -1721,7 +1778,7 @@
     }
 
     order.status = newStatus;
-    persistOrders();
+    persistOrders(order);
 
     renderOrders();
     if (window.OstanStyle) {
@@ -1788,7 +1845,7 @@
       }
 
       window.state.orders = orders.filter(o => o.id !== orderId);
-      persistOrders();
+      persistOrders(order, true);
 
       closeOrderDetailsModal();
       renderOrders();
@@ -1873,6 +1930,11 @@
         }
       });
 
+      cancelledOrders.forEach(o => {
+        if (typeof deleteOrderFromFirestore === "function") {
+          deleteOrderFromFirestore(o.id);
+        }
+      });
       window.state.orders = orders.filter(o => o.status !== "CANCELLED");
       persistOrders();
 
@@ -2305,6 +2367,11 @@
     });
     let curMaxNum = existingNums.length > 0 ? Math.max(...existingNums) : 1000;
 
+    const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+    const creatorName = (curUser && curUser.name) ? curUser.name : "Admin";
+    const creatorEmail = curUser ? (curUser.email || "") : "";
+    const creatorId = curUser ? (curUser.id || "") : "";
+
     if (mode === "MASTER") {
       curMaxNum++;
       const singleProj = (p.distinctProjectNames && p.distinctProjectNames.length === 1) ? p.distinctProjectNames[0] : "";
@@ -2319,7 +2386,11 @@
         projectName: singleProj,
         clientName: clientNameStr,
         city: p.citiesList.join("، "),
-        requester: "Excel Batch Import",
+        requester: `Excel Batch Import (${creatorName})`,
+        createdById: creatorId,
+        createdByEmail: creatorEmail,
+        createdByName: creatorName,
+        creatorName: creatorName,
         priority: "HIGH",
         notes: `ملف: ${p.fileName || 'Excel'} | إجمالي ${p.netTotalQty} قطعة عبر ${p.citiesList.length} مدن (${p.totalRecords} كادر مسجل)`,
         items: masterItems,
@@ -2351,7 +2422,11 @@
           projectName: projData.projectName || "",
           clientName: clientNameStr,
           city: cityNames,
-          requester: spvList[0] || "مشرف المشروع",
+          requester: spvList[0] || `مشرف المشروع (${creatorName})`,
+          createdById: creatorId,
+          createdByEmail: creatorEmail,
+          createdByName: creatorName,
+          creatorName: creatorName,
           priority: "NORMAL",
           notes: `تم الاستيراد من ملف ${p.fileName || 'Excel'} - ${projData.displayProjectName}`,
           items: projItems,

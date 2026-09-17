@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.62"></script>
+  <script src="orders-engine.js?v=1.0.63"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -4664,11 +4664,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.62",
-  "commit": "335f15a",
-  "buildTime": 1789632168128,
-  "releaseDate": "2026-09-17T08:02:48.128Z",
-  "message": "feat(filters): implement universal multi-filter compound rules system with active chips ribbon and Rule 7 in PROJECT_REVIEW.md"
+  "version": "1.0.63",
+  "commit": "ade0c7f",
+  "buildTime": 1789654321186,
+  "releaseDate": "2026-09-17T14:12:01.186Z",
+  "message": "feat: compact landscape stock cards and high-density grid fitting 5+ per row"
 };
 
     let _ostanUpdateTriggered = false;
@@ -5259,6 +5259,29 @@
       }
     }
     window.deleteStockItemFromFirestore = deleteStockItemFromFirestore;
+
+    function syncOrderToFirestore(order) {
+      if (!window.fbDb || !order || !order.id) return;
+      try {
+        const cleanOrder = JSON.parse(JSON.stringify(order));
+        window.fbDb.collection("orders").doc(String(order.id)).set(cleanOrder, { merge: true })
+          .catch(err => console.warn("Firestore order sync error:", err));
+      } catch (e) {
+        console.warn("Firestore order sync error:", e);
+      }
+    }
+    window.syncOrderToFirestore = syncOrderToFirestore;
+
+    function deleteOrderFromFirestore(id) {
+      if (!window.fbDb || !id) return;
+      try {
+        window.fbDb.collection("orders").doc(String(id)).delete()
+          .catch(err => console.warn("Firestore order delete error:", err));
+      } catch (e) {
+        console.warn("Firestore order delete error:", e);
+      }
+    }
+    window.deleteOrderFromFirestore = deleteOrderFromFirestore;
 
     function syncTaskToFirestore(task) {
       if (!window.fbDb || !task || !task.id) return;
@@ -10502,6 +10525,44 @@
                 <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.06); border-radius: 99px; overflow: hidden; margin-top: 5px;">
                   <div style="width: ${progressPercent}%; height: 100%; background: ${isLow ? 'linear-gradient(90deg, #f43f5e, #fb7185)' : 'linear-gradient(90deg, #10b981, #059669)'}; border-radius: 99px; transition: width 0.3s ease;"></div>
                 </div>
+
+                ${(() => {
+                  const allOrds = (window.state && window.state.orders) ? window.state.orders : [];
+                  const activeOrds = allOrds.filter(o => o.status === "PENDING" || o.status === "APPROVED");
+                  const sProj = (s.projectName || getStockItemProject(s) || "").trim().toLowerCase();
+                  const sSize = (s.size || "").trim().toLowerCase();
+                  const sName = (s.name || "").trim().toLowerCase();
+
+                  const matchingOrds = activeOrds.filter(o => {
+                    const oProj = (o.projectName || o.clientName || "").trim().toLowerCase();
+                    const projMatch = sProj ? (oProj === sProj || oProj.includes(sProj) || sProj.includes(oProj)) : true;
+                    const sizeMatch = (o.items || []).some(it => {
+                      const iSize = (it.size || "").trim().toLowerCase();
+                      const iName = (it.itemName || "").trim().toLowerCase();
+                      return (!sSize || sSize === "standard" || iSize === sSize) && (iName.includes(sName) || sName.includes(iName) || projMatch);
+                    }) || (o.roster || []).some(r => {
+                      const rSize = (r.size || "").trim().toLowerCase();
+                      return (!sSize || sSize === "standard" || rSize === sSize) && projMatch;
+                    });
+                    return projMatch && sizeMatch;
+                  });
+
+                  if (matchingOrds.length > 0) {
+                    const creators = Array.from(new Set(matchingOrds.map(o => o.createdByName || o.creatorName || o.createdByEmail || o.requester || (isAr ? 'المسؤول' : 'Admin')).filter(Boolean)));
+                    const label = isAr ? 'طلب بواسطة:' : 'Ordered by:';
+                    return `
+                      <div style="font-size: 0.65rem; color: #4338ca; margin-top: 5px; padding-top: 4px; border-top: 1px dashed rgba(99, 102, 241, 0.2); display: flex; align-items: center; justify-content: space-between; gap: 4px;" title="${isAr ? 'طلبيات نشطة قيد التجهيز مسجلة بواسطة:' : 'Active orders placed by:'} ${escapeHtml(creators.join(', '))}">
+                        <span style="display: inline-flex; align-items: center; gap: 3px; font-weight: 700;">
+                          👤 ${label}
+                        </span>
+                        <span style="font-weight: 800; color: #1e1b4b; max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                          ${escapeHtml(creators.slice(0, 2).join('، '))}${creators.length > 2 ? ' +' + (creators.length - 2) : ''}
+                        </span>
+                      </div>
+                    `;
+                  }
+                  return '';
+                })()}
               </div>
             </div>
 
@@ -16098,6 +16159,31 @@
         updateCounts();
       }, err => {
         console.warn("Firestore stockRequests onSnapshot notice:", err);
+      });
+
+      // Real-Time Live Cloud Firestore Sync for Orders (Shared Across All Authorized Users)
+      window.fbDb.collection("orders").onSnapshot((snapshot) => {
+        if (snapshot.empty) {
+          // If Firestore orders collection is empty, seed from current local state
+          const curUser = typeof getCurrentUser === "function" ? getCurrentUser() : null;
+          if (curUser && state.orders && state.orders.length > 0) {
+            state.orders.forEach(ord => syncOrderToFirestore(ord));
+          }
+          return;
+        }
+        const ordersList = [];
+        snapshot.forEach(doc => {
+          const d = doc.data() || {};
+          d.id = String(d.id || doc.id);
+          ordersList.push(d);
+        });
+        ordersList.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+        state.orders = ordersList;
+        localStorage.setItem("ostan_orders", JSON.stringify(state.orders));
+        if (typeof renderOrders === "function") renderOrders();
+        if (typeof updateCounts === "function") updateCounts();
+      }, err => {
+        console.warn("Firestore orders onSnapshot notice:", err);
       });
 
       // Real-Time Live Cloud Firestore Sync for Tasks

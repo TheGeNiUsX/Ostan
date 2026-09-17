@@ -291,6 +291,14 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
     - **Reduced Vertical Height ("In Length"):** Compressed vertical card height by over 50% (~180px down from ~380px), transitioning the card from an elongated vertical pillar into a sleek, wide-aspect landscape UI.
     - **Horizontal Telemetry & Full-Width Chart:** Streamlined stock quantity and minimum threshold into a single horizontal row, with the sufficiency progress bar chart expanding full-width to the right edge.
     - **Compact Controls & Badges:** Integrated a 44px thumbnail, single-line project and size tags with RTL/LTR isolation, and compact restock/edit/delete buttons.
+21. **Universal Real-Time Cloud Firestore Shared Orders & Order Creator Clarification Under Charts**:
+    - **Eradication of Local Browser Silos:** Integrated `collection("orders")` with real-time bidirectional Cloud Firestore listeners (`onSnapshot`, `syncOrderToFirestore`, `deleteOrderFromFirestore`). Orders are no longer trapped in a single user's local browser storage and are instantly synchronized across all devices and authorized users in real time.
+    - **Granular Multi-User Visibility:** Any user granted `orders.view` permission (or having Admin / Super Admin role) has full shared access to view and track all company orders seamlessly.
+    - **Persistent Order Creator Identity:** All manual orders and Excel batch imports automatically capture and record the creator's identity (`createdByName`, `createdByEmail`, `createdById`, `creatorName`).
+    - **Clarification Pointing to the Creator Under Charts:**
+      - **Orders Demand & Sizing Summary Matrix:** Embedded under each size's stock sufficiency progress bar chart a clarification showing who placed the orders (`👤 مقدم الطلب: [الاسم]` / `👤 By: [Name]`).
+      - **Orders Table:** Embedded in the order number column a prominent badge displaying the creator.
+      - **Warehouse Stock Inventory Cards:** Embedded under the stock sufficiency progress bar chart an active demand indicator (`👤 طلب بواسطة: [الاسم]`) whenever active orders exist for that SKU.
 
 ---
 

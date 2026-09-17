@@ -1,7 +1,7 @@
 {
-  "version": "1.0.62",
-  "commit": "335f15a",
-  "buildTime": 1789632168128,
-  "releaseDate": "2026-09-17T08:02:48.128Z",
-  "message": "feat(filters): implement universal multi-filter compound rules system with active chips ribbon and Rule 7 in PROJECT_REVIEW.md"
+  "version": "1.0.63",
+  "commit": "ade0c7f",
+  "buildTime": 1789654321186,
+  "releaseDate": "2026-09-17T14:12:01.186Z",
+  "message": "feat: compact landscape stock cards and high-density grid fitting 5+ per row"
 }
