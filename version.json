@@ -1,7 +1,7 @@
 {
-  "version": "1.0.61",
-  "commit": "16f5fc1",
-  "buildTime": 1789631969549,
-  "releaseDate": "2026-09-17T07:59:29.549Z",
-  "message": "feat(stock-ui): enlarge and widen warehouse inventory cards with executive telemetry and health progress bars"
+  "version": "1.0.62",
+  "commit": "335f15a",
+  "buildTime": 1789632168128,
+  "releaseDate": "2026-09-17T08:02:48.128Z",
+  "message": "feat(filters): implement universal multi-filter compound rules system with active chips ribbon and Rule 7 in PROJECT_REVIEW.md"
 }

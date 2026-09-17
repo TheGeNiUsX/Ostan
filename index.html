@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.61"></script>
+  <script src="orders-engine.js?v=1.0.62"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -2335,8 +2335,8 @@
             </div>
           </div>
 
-          <!-- The Main Warehouse Grid (Larger & Wider Executive UI) -->
-          <div id="warehouse-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 1.4rem;"></div>
+          <!-- The Main Warehouse Grid (Wide Landscape Responsive UI - Fits 5+ Per Line) -->
+          <div id="warehouse-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.65rem;"></div>
         </section>
 
         <!-- =====================================================================
@@ -4664,11 +4664,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.61",
-  "commit": "16f5fc1",
-  "buildTime": 1789631969549,
-  "releaseDate": "2026-09-17T07:59:29.549Z",
-  "message": "feat(stock-ui): enlarge and widen warehouse inventory cards with executive telemetry and health progress bars"
+  "version": "1.0.62",
+  "commit": "335f15a",
+  "buildTime": 1789632168128,
+  "releaseDate": "2026-09-17T08:02:48.128Z",
+  "message": "feat(filters): implement universal multi-filter compound rules system with active chips ribbon and Rule 7 in PROJECT_REVIEW.md"
 };
 
     let _ostanUpdateTriggered = false;
@@ -10443,84 +10443,76 @@
         const catBadgeClass = s.category === "Equipment" ? "badge-primary" : s.category === "Tools" ? "badge-amber" : s.category === "Consumables" ? "badge-rose" : "badge-cyan";
 
         const photoHtml = s.imageUrl
-          ? `<img src="${s.imageUrl}" alt="${s.name}" style="width: 72px; height: 72px; object-fit: cover; border-radius: var(--radius-lg); border: 1px solid var(--border-strong); box-shadow: 0 6px 16px rgba(0,0,0,0.12);">`
-          : `<div style="width: 72px; height: 72px; border-radius: var(--radius-lg); background: var(--bg-surface); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; font-size: 2.3rem; box-shadow: 0 4px 12px rgba(0,0,0,0.04);">${s.icon || '📦'}</div>`;
+          ? `<img src="${s.imageUrl}" alt="${escapeHtml(s.name)}" style="width: 44px; height: 44px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border-strong); box-shadow: 0 2px 8px rgba(0,0,0,0.08); flex-shrink: 0;">`
+          : `<div style="width: 44px; height: 44px; border-radius: var(--radius-md); background: var(--bg-surface); border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; box-shadow: 0 2px 6px rgba(0,0,0,0.03); flex-shrink: 0;">${s.icon || '📦'}</div>`;
 
         const curQty = Number(s.quantity) || 0;
         const thresh = s.threshold || 5;
         const progressPercent = Math.min(100, Math.max(6, Math.round((curQty / Math.max(1, thresh * 2.5)) * 100)));
 
         return `
-          <div class="glass-panel card-hover" style="padding: 1.45rem 1.6rem; display: flex; flex-direction: column; justify-content: space-between; gap: 1.25rem; border-radius: var(--radius-lg); border: ${isLow ? '1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 6px 20px rgba(244, 63, 94, 0.08);' : '1px solid var(--border-subtle); box-shadow: 0 4px 16px rgba(0,0,0,0.03);'};">
+          <div class="glass-panel card-hover" style="padding: 0.8rem 0.9rem; display: flex; flex-direction: column; justify-content: space-between; gap: 0.5rem; border-radius: var(--radius-md); border: ${isLow ? '1px solid rgba(244, 63, 94, 0.45); box-shadow: 0 4px 12px rgba(244, 63, 94, 0.08);' : '1px solid var(--border-subtle); box-shadow: 0 2px 8px rgba(0,0,0,0.02);'};">
             <div>
-              <!-- Header with Large Avatar & Status Badges -->
-              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem;">
+              <!-- Header with Compact Avatar & Status Badges -->
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.4rem;">
                 ${photoHtml}
-                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.45rem;">
-                  <span class="badge ${catBadgeClass}" style="font-size: 0.8rem; font-weight: 800; padding: 4px 10px; border-radius: 6px;">${s.category || 'General'}</span>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem;">
+                  <span class="badge ${catBadgeClass}" style="font-size: 0.68rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">${s.category || 'General'}</span>
                   ${isLow 
-                    ? `<span class="badge badge-rose" style="font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px;">⚠️ ${isAr ? 'منخفض' : 'LOW STOCK'}</span>` 
-                    : `<span class="badge badge-emerald" style="font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 6px;">${isAr ? 'متوفر' : 'IN STOCK'}</span>`
+                    ? `<span class="badge badge-rose" style="font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">⚠️ ${isAr ? 'منخفض' : 'LOW STOCK'}</span>` 
+                    : `<span class="badge badge-emerald" style="font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; white-space: nowrap;">${isAr ? 'متوفر' : 'IN STOCK'}</span>`
                   }
                 </div>
               </div>
 
-              <!-- Item Title (Larger & Prominent) -->
-              <div style="font-weight: 800; font-size: 1.22rem; color: var(--text-main); margin-top: 1rem; line-height: 1.35;">${escapeHtml(s.name)}</div>
+              <!-- Item Title (Compact & Sleek) -->
+              <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-main); margin-top: 0.45rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.3;" title="${escapeHtml(s.name)}">${escapeHtml(s.name)}</div>
               
               <!-- Dedicated Project & Sizing Badges (Unbroken Size Isolation) -->
-              <div style="display: flex; gap: 0.45rem; align-items: center; flex-wrap: wrap; margin-top: 8px;">
+              <div style="display: flex; gap: 0.35rem; align-items: center; flex-wrap: wrap; margin-top: 0.35rem;">
                 ${(s.projectName || getStockItemProject(s)) ? `
-                  <span class="badge" style="font-size: 0.8rem; font-weight: 800; background: rgba(99, 102, 241, 0.12); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.28); display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 6px;">
+                  <span class="badge" style="font-size: 0.68rem; font-weight: 700; background: rgba(99, 102, 241, 0.1); color: #4f46e5; border: 1px solid rgba(99, 102, 241, 0.25); display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 4px; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                     🏗️ ${isAr ? 'مشروع:' : 'Project:'} ${escapeHtml(s.projectName || getStockItemProject(s))}
                   </span>` : `
-                  <span class="badge" style="font-size: 0.75rem; opacity: 0.6; border: 1px dashed var(--border-subtle); padding: 3px 8px; border-radius: 6px;">
+                  <span class="badge" style="font-size: 0.65rem; opacity: 0.6; border: 1px dashed var(--border-subtle); padding: 2px 5px; border-radius: 4px;">
                     🏗️ ${isAr ? 'عام (بدون مشروع)' : 'General (No Project)'}
                   </span>`
                 }
                 ${(s.size && s.size !== 'All') ? `
-                  <span class="badge badge-secondary" style="font-size: 0.8rem; font-weight: 800; background: rgba(37, 99, 235, 0.1); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, 0.28); display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 6px;">
+                  <span class="badge badge-secondary" style="font-size: 0.68rem; font-weight: 800; background: rgba(37, 99, 235, 0.1); color: #1d4ed8; border: 1px solid rgba(37, 99, 235, 0.25); display: inline-flex; align-items: center; gap: 3px; padding: 2px 6px; border-radius: 4px;">
                     <span style="margin-inline-end: 2px;">📏 ${isAr ? 'مقاس:' : 'Size:'}</span><bdi dir="ltr" style="font-weight: 800; unicode-bidi: isolate; display: inline-block;">${escapeHtml(s.size)}</bdi>
                   </span>` : ''
                 }
               </div>
 
-              <!-- Executive Telemetry & Stock Health Progress Card -->
-              <div style="margin-top: 1rem; padding: 0.85rem 1.15rem; background: ${isLow ? 'rgba(244, 63, 94, 0.05)' : 'var(--bg-surface-elevated, #f8fafc)'}; border: 1px solid ${isLow ? 'rgba(244, 63, 94, 0.25)' : 'var(--border-subtle)'}; border-radius: var(--radius-md);">
-                <div style="display: flex; justify-content: space-between; align-items: baseline;">
-                  <div>
-                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px;">
-                      ${isAr ? 'الكمية المتوفرة بالمستودع:' : 'Available Stock:'}
-                    </div>
-                    <div style="font-size: 1.65rem; font-weight: 900; color: ${isLow ? '#be123c' : 'var(--text-main)'}; margin-top: 2px; line-height: 1.15;">
-                      ${curQty.toLocaleString()} <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-muted);">${isAr ? 'قطعة' : 'units'}</span>
-                    </div>
+              <!-- Executive Telemetry & Wide Stock Health Progress Bar Chart -->
+              <div style="margin-top: 0.5rem; padding: 0.45rem 0.65rem; background: ${isLow ? 'rgba(244, 63, 94, 0.05)' : 'var(--bg-surface-elevated, #f8fafc)'}; border: 1px solid ${isLow ? 'rgba(244, 63, 94, 0.2)' : 'var(--border-subtle)'}; border-radius: var(--radius-md);">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem;">
+                  <div style="display: flex; align-items: baseline; gap: 4px;">
+                    <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">${isAr ? 'الرصيد:' : 'Stock:'}</span>
+                    <span style="font-size: 1.15rem; font-weight: 900; color: ${isLow ? '#be123c' : 'var(--text-main)'}; line-height: 1;">${curQty.toLocaleString()}</span>
+                    <span style="font-size: 0.65rem; font-weight: 600; color: var(--text-muted);">${isAr ? 'قطعة' : 'units'}</span>
                   </div>
-                  <div style="text-align: ${isAr ? 'left' : 'right'};">
-                    <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600;">
-                      ${isAr ? 'حد التنبيه الأدنى:' : 'Min Alert:'}
-                    </div>
-                    <div style="font-size: 1.1rem; font-weight: 800; color: var(--text-muted); margin-top: 2px;">
-                      ${thresh} <span style="font-size: 0.72rem; font-weight: 500;">${isAr ? 'قطعة' : 'pcs'}</span>
-                    </div>
+                  <div style="text-align: ${isAr ? 'left' : 'right'}; font-size: 0.68rem; color: var(--text-muted); font-weight: 600; white-space: nowrap;">
+                    ${isAr ? 'حد التنبيه:' : 'Min Alert:'} <strong style="font-weight: 800;">${thresh}</strong> ${isAr ? 'قطعة' : 'pcs'}
                   </div>
                 </div>
 
-                <!-- Stock Sufficiency Progress Bar -->
-                <div style="width: 100%; height: 7px; background: rgba(0,0,0,0.06); border-radius: 99px; overflow: hidden; margin-top: 8px;">
-                  <div style="width: ${progressPercent}%; height: 100%; background: ${isLow ? 'linear-gradient(90deg, #f43f5e, #fb7185)' : 'linear-gradient(90deg, #10b981, #059669)'}; border-radius: 99px;"></div>
+                <!-- Wide Stock Chart Progress Bar extending across the full width to the right -->
+                <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.06); border-radius: 99px; overflow: hidden; margin-top: 5px;">
+                  <div style="width: ${progressPercent}%; height: 100%; background: ${isLow ? 'linear-gradient(90deg, #f43f5e, #fb7185)' : 'linear-gradient(90deg, #10b981, #059669)'}; border-radius: 99px; transition: width 0.3s ease;"></div>
                 </div>
               </div>
             </div>
 
-            <!-- Footer Action Controls (Larger Buttons) -->
-            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.95rem; margin-top: 0.25rem;">
-              <button type="button" onclick="quickRestockStockItem('${s.id}')" class="btn btn-secondary" style="padding: 0.45rem 1.15rem; font-size: 0.82rem; font-weight: 800; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px;" title="${isAr ? 'إضافة رصيد سريع لهذا الصنف' : 'Quick Restock'}">
+            <!-- Footer Action Controls (Compact Landscape Buttons) -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-subtle); padding-top: 0.45rem; margin-top: 0.35rem;">
+              <button type="button" onclick="quickRestockStockItem('${s.id}')" class="btn btn-secondary" style="padding: 0.28rem 0.7rem; font-size: 0.72rem; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; gap: 4px;" title="${isAr ? 'إضافة رصيد سريع لهذا الصنف' : 'Quick Restock'}">
                 <span>➕</span> <span>${isAr ? 'إضافة رصيد' : 'Restock'}</span>
               </button>
-              <div style="display: flex; gap: 0.45rem;">
-                ${canEdit ? `<button onclick="editStockById('${s.id}')" class="btn btn-ghost" style="padding: 0.45rem 0.75rem; font-size: 0.9rem; border-radius: 8px;" title="Edit">✏️</button>` : ''}
-                ${canDelete ? `<button onclick="deleteStockById('${s.id}')" class="btn btn-ghost" style="padding: 0.45rem 0.75rem; color: #fb7185; font-size: 0.9rem; border-radius: 8px;" title="Delete">🗑️</button>` : ''}
+              <div style="display: flex; gap: 0.25rem;">
+                ${canEdit ? `<button onclick="editStockById('${s.id}')" class="btn btn-ghost" style="padding: 0.28rem 0.45rem; font-size: 0.8rem; border-radius: 6px;" title="Edit">✏️</button>` : ''}
+                ${canDelete ? `<button onclick="deleteStockById('${s.id}')" class="btn btn-ghost" style="padding: 0.28rem 0.45rem; color: #fb7185; font-size: 0.8rem; border-radius: 6px;" title="Delete">🗑️</button>` : ''}
               </div>
             </div>
           </div>
