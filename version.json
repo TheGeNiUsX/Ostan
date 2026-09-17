@@ -1,7 +1,7 @@
 {
-  "version": "1.0.57",
-  "commit": "2a0ed5d",
-  "buildTime": 1789629783924,
-  "releaseDate": "2026-09-17T07:23:03.924Z",
-  "message": "feat(orders): stock rollback on delete, strict size isolation, dropdown size badges, bilingual dict & granular permissions"
+  "version": "1.0.58",
+  "commit": "0cdc9be",
+  "buildTime": 1789630577290,
+  "releaseDate": "2026-09-17T07:36:17.290Z",
+  "message": "feat(orders): add Total Required Materials & Sizing Demand Matrix with stock comparison and copy report"
 }

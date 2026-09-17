@@ -1191,6 +1191,184 @@
     }
   }
 
+  // Helper for safe HTML insertion
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  // =========================================================================
+  // MODAL: ORDER FULFILLMENT & DEDUCTION CONFIRMATION (PROFESSIONAL UI)
+  // =========================================================================
+  let pendingFulfillAction = null;
+
+  function closeOrderFulfillConfirmModal() {
+    const modal = document.getElementById("modal-order-fulfill-confirm");
+    if (modal) modal.style.display = "none";
+    pendingFulfillAction = null;
+  }
+
+  function openOrderFulfillConfirmModal({ order, deductionsPlan, onConfirm }) {
+    pendingFulfillAction = onConfirm;
+    const modal = (typeof document !== "undefined" && document.getElementById) ? document.getElementById("modal-order-fulfill-confirm") : null;
+    if (!modal || modal.nodeType !== 1) {
+      // Fallback if modal DOM element is not present (e.g. headless unit testing)
+      if (typeof onConfirm === "function") onConfirm();
+      return;
+    }
+
+    const lang = document.documentElement.getAttribute("lang") || "en";
+    const isAr = lang === "ar";
+
+    // Detect inventory shortages or unlinked stock items
+    const shortages = deductionsPlan.filter(d => !d.stockItem || d.stockItem.quantity < d.qty);
+    const hasShortage = shortages.length > 0;
+
+    // Elements
+    const iconBox = document.getElementById("fulfill-confirm-icon-box");
+    const titleEl = document.getElementById("fulfill-confirm-title");
+    const subTitleEl = document.getElementById("fulfill-confirm-subtitle");
+    const warningBanner = document.getElementById("fulfill-confirm-warning-banner");
+    const orderMeta = document.getElementById("fulfill-confirm-order-meta");
+    const itemsList = document.getElementById("fulfill-confirm-items-list");
+    const btnCancel = document.getElementById("btn-fulfill-confirm-cancel");
+    const btnExecute = document.getElementById("btn-fulfill-confirm-execute");
+    const box = document.getElementById("fulfill-confirm-box");
+
+    // Styling based on shortages
+    if (hasShortage) {
+      if (box) box.style.borderColor = "rgba(245, 158, 11, 0.4)";
+      if (iconBox) {
+        iconBox.innerHTML = "⚠️";
+        iconBox.style.background = "rgba(245, 158, 11, 0.15)";
+        iconBox.style.borderColor = "rgba(245, 158, 11, 0.4)";
+      }
+      if (titleEl) {
+        titleEl.textContent = isAr 
+          ? `تأكيد صرف الطلب (${order.orderNumber || order.id}) مع وجود نقص بالمخزون`
+          : `Confirm Order Fulfillment (${order.orderNumber || order.id}) - Stock Shortage Detected`;
+      }
+      if (subTitleEl) {
+        subTitleEl.textContent = isAr
+          ? "تنبيه: بعض الأصناف المطلوبة غير متوفرة بالكامل أو غير مسجلة في مستودع هذا المشروع."
+          : "Notice: Some requested items are not fully available or not linked to this project's warehouse.";
+      }
+      if (warningBanner) {
+        warningBanner.style.display = "block";
+        warningBanner.innerHTML = isAr
+          ? `<strong>⚠️ تحذير عجز المخزون:</strong> يوجد عدد <strong>(${shortages.length})</strong> صنف غير متوفر بالكمية المطلوبة في المستودع لهذا المقاس/المشروع. في حال المتابعة، سيتم خصم الكميات المتوفرة فقط وتحديد الطلب كمكتمل.`
+          : `<strong>⚠️ Inventory Shortage Warning:</strong> There are <strong>(${shortages.length})</strong> items with insufficient warehouse stock for this size/project. If you proceed, only available stock will be deducted and the order marked as completed.`;
+      }
+      if (btnExecute) {
+        btnExecute.style.background = "#d97706";
+        btnExecute.style.borderColor = "#d97706";
+        btnExecute.innerHTML = isAr ? "⚠️ تأكيد الصرف والمتابعة" : "⚠️ Confirm & Proceed Anyway";
+      }
+    } else {
+      if (box) box.style.borderColor = "rgba(16, 185, 129, 0.35)";
+      if (iconBox) {
+        iconBox.innerHTML = "📦";
+        iconBox.style.background = "rgba(16, 185, 129, 0.12)";
+        iconBox.style.borderColor = "rgba(16, 185, 129, 0.3)";
+      }
+      if (titleEl) {
+        titleEl.textContent = isAr
+          ? `تأكيد تسليم وصرف أمر الطلب (${order.orderNumber || order.id})`
+          : `Confirm Order Fulfillment (${order.orderNumber || order.id})`;
+      }
+      if (subTitleEl) {
+        subTitleEl.textContent = isAr
+          ? "كافة المواد متوفرة في المستودع وجاهزة للخصم الفوري من الرصيد."
+          : "All items are in stock and ready to be deducted from live inventory.";
+      }
+      if (warningBanner) {
+        warningBanner.style.display = "none";
+      }
+      if (btnExecute) {
+        btnExecute.style.background = "#059669";
+        btnExecute.style.borderColor = "#059669";
+        btnExecute.innerHTML = isAr ? "📦 تأكيد واكتمال الصرف" : "📦 Confirm & Deduct Stock";
+      }
+    }
+
+    if (btnCancel) {
+      btnCancel.textContent = isAr ? "إلغاء" : "Cancel";
+    }
+
+    // Render Order Metadata Bar
+    if (orderMeta) {
+      orderMeta.innerHTML = `
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="color:var(--text-muted); font-weight:600;">${isAr ? "العميل / المشروع:" : "Client / Project:"}</span>
+          <strong>${escapeHtml(order.clientName || "-")} ${order.projectName ? `<span class="badge badge-subtle" style="font-size:0.75rem;">${escapeHtml(order.projectName)}</span>` : ""}</strong>
+        </div>
+        <div style="display:flex; align-items:center; gap:6px;">
+          <span style="color:var(--text-muted); font-weight:600;">${isAr ? "إجمالي المواد:" : "Total Items:"}</span>
+          <span class="badge badge-primary" style="font-weight:700;">${order.items ? order.items.reduce((s, i) => s + (Number(i.quantity) || 1), 0) : 0} ${isAr ? "قطعة" : "pcs"}</span>
+        </div>
+      `;
+    }
+
+    // Render Items Breakdown List
+    if (itemsList) {
+      itemsList.innerHTML = deductionsPlan.map(d => {
+        const isMissing = !d.stockItem;
+        const isShortage = isMissing || d.stockItem.quantity < d.qty;
+        const availableQty = d.stockItem ? d.stockItem.quantity : 0;
+        const bg = isShortage ? "rgba(244, 63, 94, 0.06)" : "var(--bg-surface-elevated, #f8fafc)";
+        const border = isShortage ? "rgba(244, 63, 94, 0.3)" : "var(--border-subtle)";
+
+        let statusBadge = "";
+        if (isMissing) {
+          statusBadge = `<span class="badge" style="background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; font-size:0.72rem; font-weight:700;">
+            ⚠️ ${isAr ? "غير متوفر بالمستودع لهذا المقاس/المشروع" : "Not available in warehouse for this size/project"}
+          </span>`;
+        } else if (d.stockItem.quantity < d.qty) {
+          statusBadge = `<span class="badge" style="background:#fffbeb; color:#b45309; border:1px solid #fde68a; font-size:0.72rem; font-weight:700;">
+            ⚠️ ${isAr ? `المتوفر بالمستودع: ${availableQty} (عجز: ${d.qty - availableQty})` : `Available: ${availableQty} (Shortage: ${d.qty - availableQty})`}
+          </span>`;
+        } else {
+          statusBadge = `<span class="badge" style="background:#ecfdf5; color:#047857; border:1px solid #a7f3d0; font-size:0.72rem; font-weight:700;">
+            ✓ ${isAr ? `متوفر بالمستودع (${availableQty})` : `In Stock (${availableQty})`}
+          </span>`;
+        }
+
+        return `
+          <div style="background:${bg}; border:1px solid ${border}; border-radius:var(--radius-md); padding:0.65rem 0.85rem; display:flex; justify-content:space-between; align-items:center; gap:0.75rem; flex-wrap:wrap;">
+            <div style="display:flex; flex-direction:column; gap:2px; min-width:180px; flex:1;">
+              <div style="font-weight:700; font-size:0.85rem; color:var(--text-main);">
+                ${escapeHtml(d.displayName)}
+              </div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">
+                ${d.item && d.item.size && d.item.size !== 'Standard' ? `<span style="display:inline-block; margin-right:4px; font-weight:600; color:var(--primary);">${isAr ? 'المقاس:' : 'Size:'} ${escapeHtml(d.item.size)}</span> • ` : ''}
+                ${isAr ? 'الكمية المطلوبة للصرف:' : 'Requested Qty:'} <strong>${d.qty}</strong> ${isAr ? 'قطعة' : 'pcs'}
+              </div>
+            </div>
+            <div>
+              ${statusBadge}
+            </div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    // Bind execute button click
+    if (btnExecute) {
+      btnExecute.onclick = () => {
+        const action = pendingFulfillAction;
+        closeOrderFulfillConfirmModal();
+        if (typeof action === "function") action();
+      };
+    }
+
+    modal.style.display = "flex";
+  }
+
   // LIVE STOCK DEDUCTION WORKFLOW
   function setOrderStatus(orderId, newStatus) {
     const orders = getActiveOrders();
@@ -1265,50 +1443,60 @@
         });
       });
 
-      const itemSummary = deductionsPlan.map(d => {
-        if (d.stockItem) {
-          return `• ${d.displayName}: ${d.qty} ${lang === 'ar' ? 'قطعة (المتوفر بالمستودع:' : 'pcs (In stock:'} ${d.stockItem.quantity})`;
-        } else {
-          return `• ${d.displayName}: ${d.qty} ${lang === 'ar' ? 'قطعة [⚠️ تنبيه: غير متوفر بالمستودع لهذا المقاس/المشروع!]' : 'pcs [⚠️ Warning: Not available in warehouse for this size/project!]'}`;
-        }
-      }).join("\n");
+      const executeFulfillment = () => {
+        // Apply deductions only to confirmed matching stock items
+        deductionsPlan.forEach(d => {
+          if (d.stockItem) {
+            d.stockItem.quantity = Math.max(0, d.stockItem.quantity - d.qty);
+            if (typeof syncStockItemToFirestore === "function") {
+              syncStockItemToFirestore(d.stockItem);
+            }
 
-      const confirmMsg = lang === "ar"
-        ? `هل أنت متأكد من تسليم أمر الصرف (${order.orderNumber}) وخصم المواد التالية من المخزون؟\n\n${itemSummary}`
-        : `Confirm completion of order ${order.orderNumber} and deduct items from warehouse inventory?\n\n${itemSummary}`;
-
-      if (!confirm(confirmMsg)) return;
-
-      // Apply deductions only to confirmed matching stock items
-      deductionsPlan.forEach(d => {
-        if (d.stockItem) {
-          d.stockItem.quantity = Math.max(0, d.stockItem.quantity - d.qty);
-          if (typeof syncStockItemToFirestore === "function") {
-            syncStockItemToFirestore(d.stockItem);
-          }
-
-          if (d.stockItem.quantity <= (d.stockItem.threshold || 5)) {
-            if (window.OstanStyle) {
-              window.OstanStyle.showToast("⚠️ تنبيه نقص المخزون", `الصنف ${d.stockItem.name} وصل للحد الأدنى (${d.stockItem.quantity} متبقي)!`, "warning");
+            if (d.stockItem.quantity <= (d.stockItem.threshold || 5)) {
+              if (window.OstanStyle) {
+                window.OstanStyle.showToast("⚠️ تنبيه نقص المخزون", `الصنف ${d.stockItem.name} وصل للحد الأدنى (${d.stockItem.quantity} متبقي)!`, "warning");
+              }
             }
           }
+        });
+
+        order.status = "DONE";
+        order.stockDeducted = true;
+        order.completedAt = new Date().toISOString();
+
+        if (typeof saveState === "function") saveState();
+        if (typeof renderWarehouse === "function") renderWarehouse();
+        if (typeof renderDashboard === "function") renderDashboard();
+        renderOrders();
+        if (typeof updateCounts === "function") updateCounts();
+
+        persistOrders();
+
+        if (window.OstanStyle) {
+          window.OstanStyle.showToast(lang === 'ar' ? "تم الصرف وخصم المخزون" : "Fulfillment Complete", `تم اكتمال الطلب ${order.orderNumber} وخصم الكميات من المستودع بنجاح!`);
         }
-      });
+      };
 
-      order.status = "DONE";
-      order.stockDeducted = true;
-      order.completedAt = new Date().toISOString();
-
-      if (typeof saveState === "function") saveState();
-      if (typeof renderWarehouse === "function") renderWarehouse();
-      if (typeof renderDashboard === "function") renderDashboard();
-      renderOrders();
-      if (typeof updateCounts === "function") updateCounts();
-
-      persistOrders();
-
-      if (window.OstanStyle) {
-        window.OstanStyle.showToast(lang === 'ar' ? "تم الصرف وخصم المخزون" : "Fulfillment Complete", `تم اكتمال الطلب ${order.orderNumber} وخصم الكميات من المستودع بنجاح!`);
+      const modalEl = typeof document !== "undefined" ? document.getElementById("modal-order-fulfill-confirm") : null;
+      if (modalEl && modalEl.nodeType === 1) {
+        openOrderFulfillConfirmModal({ order, deductionsPlan, onConfirm: executeFulfillment });
+      } else if (typeof confirm === "function") {
+        // Fallback for headless environments without DOM modal
+        const itemSummary = deductionsPlan.map(d => {
+          if (d.stockItem) {
+            return `• ${d.displayName}: ${d.qty} ${lang === 'ar' ? 'قطعة (المتوفر بالمستودع:' : 'pcs (In stock:'} ${d.stockItem.quantity})`;
+          } else {
+            return `• ${d.displayName}: ${d.qty} ${lang === 'ar' ? 'قطعة [⚠️ تنبيه: غير متوفر بالمستودع لهذا المقاس/المشروع!]' : 'pcs [⚠️ Warning: Not available in warehouse for this size/project!]'}`;
+          }
+        }).join("\n");
+        const confirmMsg = lang === "ar"
+          ? `هل أنت متأكد من تسليم أمر الصرف (${order.orderNumber}) وخصم المواد التالية من المخزون؟\n\n${itemSummary}`
+          : `Confirm completion of order ${order.orderNumber} and deduct items from warehouse inventory?\n\n${itemSummary}`;
+        if (confirm(confirmMsg)) {
+          executeFulfillment();
+        }
+      } else {
+        executeFulfillment();
       }
       return;
     }
@@ -1372,28 +1560,16 @@
     }
 
     // Business Rule: Completed orders (DONE) can ONLY be deleted by Super Admin!
-    if (order.status === "DONE") {
-      if (!isSuper) {
-        const msg = lang === "ar"
-          ? "عذراً، صلاحية حذف الطلبات المكتملة والمصروفة محصورة فقط بالمدير العام (Super Admin) لضمان سلامة المخزون والتدقيق المالي."
-          : "Permission denied: Only Super Admin can delete completed orders.";
-        if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
-        else alert(msg);
-        return;
-      }
+    if (order.status === "DONE" && !isSuper) {
+      const msg = lang === "ar"
+        ? "عذراً، صلاحية حذف الطلبات المكتملة والمصروفة محصورة فقط بالمدير العام (Super Admin) لضمان سلامة المخزون والتدقيق المالي."
+        : "Permission denied: Only Super Admin can delete completed orders.";
+      if (window.OstanStyle) window.OstanStyle.showToast("صلاحية محظورة", msg, "warning");
+      else alert(msg);
+      return;
+    }
 
-      const confirmMsg = lang === "ar"
-        ? `⚠️ تنبيه المدير العام:\nطلب الصرف رقم (${order.orderNumber || order.id}) مكتمل وتم صرف كمياته من المخزون مسبقاً.\n\nهل أنت متأكد من حذف هذا السجل نهائياً؟\nسيتم إعادة كافة الكميات المصروفة تلقائياً إلى رصيد المستودع المتوفر.`
-        : `⚠️ Super Admin Notice:\nOrder (${order.orderNumber || order.id}) is COMPLETED and items were already deducted from inventory.\n\nAre you sure you want to permanently delete this order record?\nAll deducted item quantities will be automatically restored back to available warehouse stock.`;
-
-      if (!confirm(confirmMsg)) return;
-    } else if (order.status === "CANCELLED") {
-      const confirmMsg = lang === "ar"
-        ? `هل أنت متأكد من حذف الطلب الملغي (${order.orderNumber || order.id}) نهائياً من النظام؟\nهذا الإجراء لا يمكن التراجع عنه.`
-        : `Are you sure you want to permanently delete cancelled order (${order.orderNumber || order.id})?\nThis action cannot be undone.`;
-
-      if (!confirm(confirmMsg)) return;
-    } else {
+    if (order.status !== "DONE" && order.status !== "CANCELLED") {
       const msg = lang === "ar"
         ? "لا يمكن حذف الطلب وهو نشط! يرجى إلغاء الطلب أولاً قبل حذفه."
         : "Cannot delete an active order! Please cancel the order before deleting it.";
@@ -1402,40 +1578,74 @@
       return;
     }
 
-    // Automatic Stock Rollback: If order had items deducted (DONE or CANCELLED), restore them to available warehouse stock!
-    if (order.stockDeducted) {
-      const stock = window.state.stock || [];
-      (order.items || []).forEach(it => {
-        let stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : null;
-        if (!stockItem && it.itemName) {
-          stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
-        }
-        if (stockItem) {
-          stockItem.quantity += Number(it.quantity) || 0;
-          if (typeof syncStockItemToFirestore === "function") {
-            syncStockItemToFirestore(stockItem);
+    const performDelete = () => {
+      // Automatic Stock Rollback: If order had items deducted (DONE or CANCELLED), restore them to available warehouse stock!
+      if (order.stockDeducted) {
+        const stock = window.state.stock || [];
+        (order.items || []).forEach(it => {
+          let stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : null;
+          if (!stockItem && it.itemName) {
+            stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
           }
-        }
-      });
-      order.stockDeducted = false;
-      if (typeof saveState === "function") saveState();
-      if (typeof renderWarehouse === "function") renderWarehouse();
-      if (typeof renderDashboard === "function") renderDashboard();
+          if (stockItem) {
+            stockItem.quantity += Number(it.quantity) || 0;
+            if (typeof syncStockItemToFirestore === "function") {
+              syncStockItemToFirestore(stockItem);
+            }
+          }
+        });
+        order.stockDeducted = false;
+        if (typeof saveState === "function") saveState();
+        if (typeof renderWarehouse === "function") renderWarehouse();
+        if (typeof renderDashboard === "function") renderDashboard();
+      }
+
+      window.state.orders = orders.filter(o => o.id !== orderId);
+      persistOrders();
+
+      closeOrderDetailsModal();
+      renderOrders();
+      if (typeof updateCounts === "function") updateCounts();
+
+      const successMsg = lang === "ar"
+        ? `تم حذف الطلب (${order.orderNumber || order.id}) بنجاح وإعادة رصيد المواد إلى المستودع.`
+        : `Order (${order.orderNumber || order.id}) has been deleted successfully and items returned to stock.`;
+
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast(lang === "ar" ? "تم الحذف واسترجاع المخزون" : "Deleted & Stock Restored", successMsg);
+      }
+    };
+
+    let title = "";
+    let desc = "";
+    let targetName = `${order.orderNumber || order.id} (${order.clientName || ""})`;
+
+    if (order.status === "DONE") {
+      title = lang === "ar" ? "⚠️ تأكيد حذف أمر صرف مكتمل (صلاحية المدير العام)" : "⚠️ Confirm Deletion of Completed Order (Super Admin)";
+      desc = lang === "ar"
+        ? `طلب الصرف رقم (${order.orderNumber || order.id}) مكتمل وتم صرف كمياته من المخزون مسبقاً.\n\nسيتم حذف هذا السجل نهائياً وإعادة كافة الكميات المصروفة تلقائياً إلى رصيد المستودع المتوفر.`
+        : `Order (${order.orderNumber || order.id}) is COMPLETED and items were already deducted from inventory.\n\nAre you sure you want to permanently delete this order record?\nAll deducted item quantities will be automatically restored back to available warehouse stock.`;
+    } else {
+      title = lang === "ar" ? "تأكيد حذف الطلب الملغي" : "Confirm Deletion of Cancelled Order";
+      desc = lang === "ar"
+        ? `هل أنت متأكد من حذف الطلب الملغي (${order.orderNumber || order.id}) نهائياً من النظام؟ هذا الإجراء لا يمكن التراجع عنه.`
+        : `Are you sure you want to permanently delete cancelled order (${order.orderNumber || order.id})? This action cannot be undone.`;
     }
 
-    window.state.orders = orders.filter(o => o.id !== orderId);
-    persistOrders();
-
-    closeOrderDetailsModal();
-    renderOrders();
-    if (typeof updateCounts === "function") updateCounts();
-
-    const successMsg = lang === "ar"
-      ? `تم حذف الطلب (${order.orderNumber || order.id}) بنجاح وإعادة رصيد المواد إلى المستودع.`
-      : `Order (${order.orderNumber || order.id}) has been deleted successfully and items returned to stock.`;
-
-    if (window.OstanStyle) {
-      window.OstanStyle.showToast(lang === "ar" ? "تم الحذف واسترجاع المخزون" : "Deleted & Stock Restored", successMsg);
+    if (typeof window !== "undefined" && typeof window.openConfirmDeleteModal === "function") {
+      window.openConfirmDeleteModal({
+        title,
+        targetName,
+        desc,
+        isPermanent: true,
+        onConfirm: performDelete
+      });
+    } else if (typeof confirm === "function") {
+      if (confirm(`${title}\n\n${targetName}\n\n${desc}`)) {
+        performDelete();
+      }
+    } else {
+      performDelete();
     }
   }
 
@@ -1455,45 +1665,63 @@
       return;
     }
 
-    const confirmMsg = lang === "ar"
-      ? `هل أنت متأكد من حذف كافة الطلبيات الملغية (${cancelledOrders.length} طلب) نهائياً من النظام؟`
-      : `Are you sure you want to permanently delete all ${cancelledOrders.length} cancelled orders?`;
-
-    if (!confirm(confirmMsg)) return;
-
-    // Rollback any stock on cancelled orders
-    cancelledOrders.forEach(o => {
-      if (o.stockDeducted) {
-        const stock = window.state.stock || [];
-        (o.items || []).forEach(it => {
-          let stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : null;
-          if (!stockItem && it.itemName) {
-            stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
-          }
-          if (stockItem) {
-            stockItem.quantity += Number(it.quantity) || 0;
-            if (typeof syncStockItemToFirestore === "function") {
-              syncStockItemToFirestore(stockItem);
+    const performBulkDelete = () => {
+      // Rollback any stock on cancelled orders
+      cancelledOrders.forEach(o => {
+        if (o.stockDeducted) {
+          const stock = window.state.stock || [];
+          (o.items || []).forEach(it => {
+            let stockItem = it.stockId ? stock.find(s => s.id === it.stockId) : null;
+            if (!stockItem && it.itemName) {
+              stockItem = stock.find(s => s.name.trim().toLowerCase() === it.itemName.trim().toLowerCase());
             }
-          }
-        });
-        o.stockDeducted = false;
+            if (stockItem) {
+              stockItem.quantity += Number(it.quantity) || 0;
+              if (typeof syncStockItemToFirestore === "function") {
+                syncStockItemToFirestore(stockItem);
+              }
+            }
+          });
+          o.stockDeducted = false;
+        }
+      });
+
+      window.state.orders = orders.filter(o => o.status !== "CANCELLED");
+      persistOrders();
+
+      if (typeof saveState === "function") saveState();
+      if (typeof renderWarehouse === "function") renderWarehouse();
+      renderOrders();
+      if (typeof updateCounts === "function") updateCounts();
+
+      if (window.OstanStyle) {
+        window.OstanStyle.showToast(
+          lang === "ar" ? "تم الحذف" : "Deleted",
+          lang === "ar" ? `تم حذف ${cancelledOrders.length} طلب ملغي بنجاح.` : `Deleted ${cancelledOrders.length} cancelled orders successfully.`
+        );
       }
-    });
+    };
 
-    window.state.orders = orders.filter(o => o.status !== "CANCELLED");
-    persistOrders();
+    const title = lang === "ar" ? "حذف كافة الطلبيات الملغية" : "Delete All Cancelled Orders";
+    const targetName = lang === "ar" ? `${cancelledOrders.length} طلبية ملغية` : `${cancelledOrders.length} cancelled orders`;
+    const desc = lang === "ar"
+      ? `هل أنت متأكد من حذف كافة الطلبيات الملغية (${cancelledOrders.length} طلب) نهائياً من النظام؟ لا يمكن التراجع عن هذه الخطوة.`
+      : `Are you sure you want to permanently delete all ${cancelledOrders.length} cancelled orders? This action cannot be undone.`;
 
-    if (typeof saveState === "function") saveState();
-    if (typeof renderWarehouse === "function") renderWarehouse();
-    renderOrders();
-    if (typeof updateCounts === "function") updateCounts();
-
-    if (window.OstanStyle) {
-      window.OstanStyle.showToast(
-        lang === "ar" ? "تم الحذف" : "Deleted",
-        lang === "ar" ? `تم حذف ${cancelledOrders.length} طلب ملغي بنجاح.` : `Deleted ${cancelledOrders.length} cancelled orders successfully.`
-      );
+    if (typeof window !== "undefined" && typeof window.openConfirmDeleteModal === "function") {
+      window.openConfirmDeleteModal({
+        title,
+        targetName,
+        desc,
+        isPermanent: true,
+        onConfirm: performBulkDelete
+      });
+    } else if (typeof confirm === "function") {
+      if (confirm(`${title}\n\n${targetName}\n\n${desc}`)) {
+        performBulkDelete();
+      }
+    } else {
+      performBulkDelete();
     }
   }
 
@@ -1991,6 +2219,8 @@
   window.setOrdersDemandScope = setOrdersDemandScope;
   window.toggleOrdersDemandCollapse = toggleOrdersDemandCollapse;
   window.copyOrdersDemandSummary = copyOrdersDemandSummary;
+  window.openOrderFulfillConfirmModal = openOrderFulfillConfirmModal;
+  window.closeOrderFulfillConfirmModal = closeOrderFulfillConfirmModal;
 
   // Populate window.state.orders immediately from persistent storage
   try {

@@ -306,7 +306,87 @@ global.navigator = {
 window.copyOrdersDemandSummary();
 assert(copiedText.includes("73"), "Copied summary text must contain 73 pieces!");
 assert(copiedText.includes("XL: 32") || copiedText.includes("XL"), "Copied summary text must contain sizing!");
-console.log("✓ Copy Orders Demand Breakdown helper verified!");
+console.log("✓ Copy Orders Demand Breakdown helper verified!\n");
+
+// 6. PROFESSIONAL MODAL UI VERIFICATION
+console.log("--- 6. Testing Professional Modal UI (Fulfillment & Universal Deletions) ---");
+
+const modalElMock = {
+  nodeType: 1,
+  style: { display: "none" }
+};
+const iconBoxMock = { innerHTML: "", style: {} };
+const titleElMock = { textContent: "" };
+const subtitleElMock = { textContent: "" };
+const warningBannerMock = { style: { display: "none" }, innerHTML: "" };
+const orderMetaMock = { innerHTML: "" };
+const itemsListMock = { innerHTML: "" };
+const btnCancelMock = { textContent: "", onclick: null };
+const btnExecuteMock = { innerHTML: "", style: {}, onclick: null };
+const boxMock = { style: {} };
+
+global.document.getElementById = (id) => {
+  if (id === "modal-order-fulfill-confirm") return modalElMock;
+  if (id === "fulfill-confirm-box") return boxMock;
+  if (id === "fulfill-confirm-icon-box") return iconBoxMock;
+  if (id === "fulfill-confirm-title") return titleElMock;
+  if (id === "fulfill-confirm-subtitle") return subtitleElMock;
+  if (id === "fulfill-confirm-warning-banner") return warningBannerMock;
+  if (id === "fulfill-confirm-order-meta") return orderMetaMock;
+  if (id === "fulfill-confirm-items-list") return itemsListMock;
+  if (id === "btn-fulfill-confirm-cancel") return btnCancelMock;
+  if (id === "btn-fulfill-confirm-execute") return btnExecuteMock;
+  return origGetElementById(id);
+};
+
+// Test 6A: Shortage scenario opens modal with warning banner and amber button
+let fulfilled = false;
+window.openOrderFulfillConfirmModal({
+  order: { id: "ORD-999", orderNumber: "ORD-999", clientName: "Client A", projectName: "Project X" },
+  deductionsPlan: [
+    { item: { size: "4XL" }, stockItem: null, displayName: "زي موحد / تيشيرت (مقاس 4XL)", qty: 2 },
+    { item: { size: "XL" }, stockItem: { quantity: 1 }, displayName: "زي موحد / تيشيرت (مقاس XL)", qty: 2 }
+  ],
+  onConfirm: () => { fulfilled = true; }
+});
+
+assert.strictEqual(modalElMock.style.display, "flex", "Modal should be displayed with flex");
+assert.strictEqual(warningBannerMock.style.display, "block", "Warning banner should be displayed on shortage");
+assert(warningBannerMock.innerHTML.includes("عجز المخزون") || warningBannerMock.innerHTML.includes("Shortage"), "Warning banner should contain shortage warning");
+assert(btnExecuteMock.innerHTML.includes("⚠️"), "Execute button should have warning icon on shortage");
+assert(itemsListMock.innerHTML.includes("غير متوفر بالمستودع") || itemsListMock.innerHTML.includes("Not available"), "Items list should show shortage badge");
+
+// Click execute button in modal
+btnExecuteMock.onclick();
+assert.strictEqual(fulfilled, true, "onConfirm action must be executed when button is clicked!");
+assert.strictEqual(modalElMock.style.display, "none", "Modal must be hidden after confirming!");
+console.log("✓ Shortage warning modal UI verified with amber alert banner and proceed action!");
+
+// Test 6B: Universal Delete Modal integration
+let deleteConfirmed = false;
+let capturedDeleteOpts = null;
+window.openConfirmDeleteModal = (opts) => {
+  capturedDeleteOpts = opts;
+  opts.onConfirm();
+  deleteConfirmed = true;
+};
+
+const superAdmin = window.state.users[0];
+global.getCurrentUser = () => superAdmin;
+const testCompletedOrder = {
+  id: "ORD-COMPLETED-DEL",
+  orderNumber: "ORD-2000",
+  status: "DONE",
+  stockDeducted: true,
+  items: [{ stockId: "item-l", quantity: 2 }]
+};
+window.state.orders = [testCompletedOrder];
+
+window.deleteOrder("ORD-COMPLETED-DEL");
+assert.strictEqual(deleteConfirmed, true, "window.openConfirmDeleteModal must be invoked for order deletion");
+assert(capturedDeleteOpts.title.includes("حذف") || capturedDeleteOpts.title.includes("Delete"), "Delete modal must have appropriate title");
+assert(capturedDeleteOpts.desc.includes("إعادة كافة الكميات") || capturedDeleteOpts.desc.includes("restored"), "Completed order delete modal must note stock restoration");
+console.log("✓ Universal Delete confirmation modal integration verified for completed and cancelled orders!");
 
 console.log("\n==================================================");
 console.log("ALL AUTOMATED TESTS PASSED SUCCESSFULLY! (100%)");

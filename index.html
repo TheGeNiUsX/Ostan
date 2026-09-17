@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.57"></script>
+  <script src="orders-engine.js?v=1.0.58"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -4514,11 +4514,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.57",
-  "commit": "2a0ed5d",
-  "buildTime": 1789629783924,
-  "releaseDate": "2026-09-17T07:23:03.924Z",
-  "message": "feat(orders): stock rollback on delete, strict size isolation, dropdown size badges, bilingual dict & granular permissions"
+  "version": "1.0.58",
+  "commit": "0cdc9be",
+  "buildTime": 1789630577290,
+  "releaseDate": "2026-09-17T07:36:17.290Z",
+  "message": "feat(orders): add Total Required Materials & Sizing Demand Matrix with stock comparison and copy report"
 };
 
     let _ostanUpdateTriggered = false;
@@ -15961,7 +15961,56 @@
     </div>
   </div>
 
-  
+  <!-- =========================================================================
+       MODAL: ORDER FULFILLMENT & DEDUCTION CONFIRMATION (PROFESSIONAL UI)
+       ========================================================================= -->
+  <div id="modal-order-fulfill-confirm" class="hud-modal-overlay" style="display: none; z-index: 10005;" onclick="if(event.target===this) closeOrderFulfillConfirmModal()">
+    <div class="hud-modal-box" id="fulfill-confirm-box" style="max-width: 620px; width: 95vw; max-height: 90vh; overflow-y: auto; border: 1px solid rgba(16, 185, 129, 0.35); box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);">
+      <!-- Header -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.15rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.85rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div id="fulfill-confirm-icon-box" style="width: 44px; height: 44px; border-radius: 12px; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+            📦
+          </div>
+          <div>
+            <h3 id="fulfill-confirm-title" style="font-size: 1.1rem; font-weight: 800; color: var(--text-main); margin: 0;">
+              Confirm Order Fulfillment & Stock Deduction
+            </h3>
+            <div id="fulfill-confirm-subtitle" style="font-size: 0.78rem; color: var(--text-muted); margin-top: 3px;">
+              Deduct item quantities from live warehouse inventory
+            </div>
+          </div>
+        </div>
+        <button onclick="closeOrderFulfillConfirmModal()" class="btn btn-ghost" style="font-size: 1.2rem; padding: 0.2rem 0.5rem; color: var(--text-muted);">✕</button>
+      </div>
+
+      <!-- Warning Alert Banner (Rendered dynamically if shortages or unlinked items exist) -->
+      <div id="fulfill-confirm-warning-banner" style="display: none; margin-bottom: 1rem; padding: 0.85rem 1rem; border-radius: var(--radius-md); background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.3); color: #be123c; font-size: 0.82rem; line-height: 1.5;">
+      </div>
+
+      <!-- Order Metadata Bar -->
+      <div id="fulfill-confirm-order-meta" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; background: var(--bg-surface-elevated, #f8fafc); padding: 0.65rem 0.9rem; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); margin-bottom: 1rem; font-size: 0.82rem;">
+      </div>
+
+      <!-- Items Breakdown List -->
+      <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.5rem;" id="fulfill-confirm-items-header">
+        Items To Be Dispatched & Inventory Status:
+      </div>
+      <div id="fulfill-confirm-items-list" style="display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; max-height: 280px; overflow-y: auto;">
+      </div>
+
+      <!-- Footer Buttons -->
+      <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.65rem; padding-top: 0.85rem; border-top: 1px solid var(--border-subtle);">
+        <button type="button" onclick="closeOrderFulfillConfirmModal()" class="btn btn-secondary" id="btn-fulfill-confirm-cancel" style="padding: 0.55rem 1.1rem; font-size: 0.82rem;">
+          Cancel
+        </button>
+        <button type="button" id="btn-fulfill-confirm-execute" class="btn btn-primary" style="padding: 0.55rem 1.4rem; font-size: 0.82rem; font-weight: 800; background: #059669; border-color: #059669; box-shadow: 0 4px 15px rgba(5, 150, 105, 0.3);">
+          📦 Confirm & Deduct Stock
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- MODAL: CATEGORY MANAGER (SUPER ADMIN ONLY) -->
   <div id="modal-stock-category-manager" class="hud-modal-overlay" style="display: none; z-index: 10001;" onclick="if(event.target===this) closeCategoryManagerModal()">
     <div class="hud-modal-box" style="max-width: 540px; width: 92vw;">

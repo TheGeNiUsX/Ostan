@@ -254,6 +254,16 @@ In September 2026, Ostan's UI was elevated to an executive corporate dashboard i
     - **Combined Grand Sizes Ribbon & KPI Telemetry:** Displays total units needed across all orders, total active orders, distinct types, and a master sizing breakdown ribbon.
     - **Multi-Scope Flexibility:** Operators can toggle between `⚡ Active Demand (Pending + Approved)`, `🔍 Current View Filter`, and `🌐 All Orders`.
     - **Instant Copy & Collapse Controls:** Includes a single-click `📋 Copy Breakdown` button to copy a formatted report directly to the clipboard (ideal for sharing via WhatsApp with suppliers and team leads), plus collapsible state persistence (`ostan_orders_demand_collapsed`).
+17. **Executive UI Modal for Order Fulfillment Warnings & Deletions (`#modal-order-fulfill-confirm`)**:
+    - **Eradication of Native Browser `confirm()` Popups:** Replaced crude browser popup alerts (`thegeniusx.github.io says...`) with a custom, high-end executive modal UI matching Ostan's design language (`.hud-modal-overlay`, `.hud-modal-box`, `.glass-panel`).
+    - **Order Fulfillment & Stock Deduction Modal (`openOrderFulfillConfirmModal`):**
+      - Displays order number, client name, and total item count in an executive metadata pill bar.
+      - Dynamic visual status badges per item showing exact stock availability (`✓ متوفر بالمستودع (X)`), live warehouse quantity, and requested dispatch quantity.
+      - **Shortage & Unlinked Stock Warning Banner:** If any ordered size/item has insufficient stock or is unlinked to warehouse inventory, an amber/rose warning banner dynamically alerts the operator (`⚠️ تحذير عجز المخزون: يوجد عدد (X) صنف غير متوفر بالكمية المطلوبة...`), the icon switches to `⚠️`, and the button highlights with amber warning (`⚠️ تأكيد الصرف والمتابعة / Confirm & Proceed Anyway`).
+      - If all items are in stock, displays a sleek emerald theme with `📦 تأكيد واكتمال الصرف / Confirm & Deduct Stock`.
+    - **Universal Delete Modal Integration for Orders (`window.openConfirmDeleteModal`):**
+      - Connected single-order deletions and bulk cancelled-orders deletions directly to the universal 2-step deletion modal.
+      - Explicitly informs Super Admins that deleting completed orders will automatically restore all deducted stock back to the live warehouse inventory.
 
 ---
 
