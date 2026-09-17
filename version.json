@@ -1,7 +1,7 @@
 {
-  "version": "1.0.63",
-  "commit": "ade0c7f",
-  "buildTime": 1789654321186,
-  "releaseDate": "2026-09-17T14:12:01.186Z",
-  "message": "feat: compact landscape stock cards and high-density grid fitting 5+ per row"
+  "version": "1.0.64",
+  "commit": "641c84f",
+  "buildTime": 1789654554264,
+  "releaseDate": "2026-09-17T14:15:54.265Z",
+  "message": "feat(orders): real-time Cloud Firestore shared orders across authorized users and creator clarification under charts"
 }

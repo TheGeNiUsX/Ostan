@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.63"></script>
+  <script src="orders-engine.js?v=1.0.64"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -2335,8 +2335,8 @@
             </div>
           </div>
 
-          <!-- The Main Warehouse Grid (Wide Landscape Responsive UI - Fits 5+ Per Line) -->
-          <div id="warehouse-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 0.65rem;"></div>
+          <!-- The Main Warehouse Grid (Wide Adaptive Responsive UI - Auto-Fit to Fill Full Width) -->
+          <div id="warehouse-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem;"></div>
         </section>
 
         <!-- =====================================================================
@@ -4664,11 +4664,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.63",
-  "commit": "ade0c7f",
-  "buildTime": 1789654321186,
-  "releaseDate": "2026-09-17T14:12:01.186Z",
-  "message": "feat: compact landscape stock cards and high-density grid fitting 5+ per row"
+  "version": "1.0.64",
+  "commit": "641c84f",
+  "buildTime": 1789654554264,
+  "releaseDate": "2026-09-17T14:15:54.265Z",
+  "message": "feat(orders): real-time Cloud Firestore shared orders across authorized users and creator clarification under charts"
 };
 
     let _ostanUpdateTriggered = false;
@@ -10509,15 +10509,17 @@
               </div>
 
               <!-- Executive Telemetry & Wide Stock Health Progress Bar Chart -->
-              <div style="margin-top: 0.5rem; padding: 0.45rem 0.65rem; background: ${isLow ? 'rgba(244, 63, 94, 0.05)' : 'var(--bg-surface-elevated, #f8fafc)'}; border: 1px solid ${isLow ? 'rgba(244, 63, 94, 0.2)' : 'var(--border-subtle)'}; border-radius: var(--radius-md);">
-                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 0.4rem;">
-                  <div style="display: flex; align-items: baseline; gap: 4px;">
-                    <span style="font-size: 0.65rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">${isAr ? 'الرصيد:' : 'Stock:'}</span>
-                    <span style="font-size: 1.15rem; font-weight: 900; color: ${isLow ? '#be123c' : 'var(--text-main)'}; line-height: 1;">${curQty.toLocaleString()}</span>
-                    <span style="font-size: 0.65rem; font-weight: 600; color: var(--text-muted);">${isAr ? 'قطعة' : 'units'}</span>
+              <div style="margin-top: 0.5rem; padding: 0.55rem 0.75rem; background: ${isLow ? 'rgba(244, 63, 94, 0.05)' : 'var(--bg-surface-elevated, #f8fafc)'}; border: 1px solid ${isLow ? 'rgba(244, 63, 94, 0.2)' : 'var(--border-subtle)'}; border-radius: var(--radius-md); box-sizing: border-box;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;">
+                  <div style="display: flex; align-items: baseline; gap: 4px; flex-shrink: 0;">
+                    <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 700; text-transform: uppercase;">${isAr ? 'الرصيد:' : 'Stock:'}</span>
+                    <span style="font-size: 1.25rem; font-weight: 900; color: ${isLow ? '#be123c' : 'var(--text-main)'}; line-height: 1;">${curQty.toLocaleString()}</span>
+                    <span style="font-size: 0.7rem; font-weight: 600; color: var(--text-muted);">${isAr ? 'قطعة' : 'units'}</span>
                   </div>
-                  <div style="text-align: ${isAr ? 'left' : 'right'}; font-size: 0.68rem; color: var(--text-muted); font-weight: 600; white-space: nowrap;">
-                    ${isAr ? 'حد التنبيه:' : 'Min Alert:'} <strong style="font-weight: 800;">${thresh}</strong> ${isAr ? 'قطعة' : 'pcs'}
+                  <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; display: inline-flex; align-items: center; gap: 3px; flex-shrink: 0; background: rgba(0,0,0,0.03); padding: 2px 7px; border-radius: 4px;">
+                    <span>${isAr ? 'تنبيه:' : 'Min Alert:'}</span>
+                    <strong style="font-weight: 800; color: ${isLow ? '#be123c' : 'var(--text-main)'};">${thresh}</strong>
+                    <span>${isAr ? 'قطعة' : 'pcs'}</span>
                   </div>
                 </div>
 
