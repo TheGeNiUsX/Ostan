@@ -1,7 +1,7 @@
 {
-  "version": "1.0.66",
-  "commit": "10a1a42",
-  "buildTime": 1789656427352,
-  "releaseDate": "2026-09-17T14:47:07.352Z",
-  "message": "fix(warehouse): size cards to fit 5+ per row without becoming oversized"
+  "version": "1.0.67",
+  "commit": "59887b4",
+  "buildTime": 1789759247688,
+  "releaseDate": "2026-09-18T19:20:47.688Z",
+  "message": "fix(warehouse): dedicated 5-column responsive layout with width style"
 }

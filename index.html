@@ -13,7 +13,7 @@
   <!-- Core Scripts -->
   <script src="style.js?v=4.0.0"></script>
   <script src="translation.js?v=4.0.0"></script>
-  <script src="orders-engine.js?v=1.0.66"></script>
+  <script src="orders-engine.js?v=1.0.67"></script>
   <script>
     // Critical Keys Fallback: Guarantees translations are loaded even if browser cache delays translation.js
     (function() {
@@ -1544,7 +1544,7 @@
                   <div id="stat-total-employees" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">1</div>
                 </div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #0284c7; font-weight: 700;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #0284c7; font-weight: 700;">
                 <span id="stat-sub-employees" data-i18n="dash_active_on_duty" style="color: var(--text-faint); font-weight: 500;">1 Active on Duty</span>
                 <span data-i18n="dash_view_all">View All →</span>
               </div>
@@ -1559,7 +1559,7 @@
                   <div id="stat-open-tasks" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">0</div>
                 </div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #2563eb; font-weight: 700;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #2563eb; font-weight: 700;">
                 <span id="stat-sub-tasks" data-i18n="dash_all_tasks_completed" style="color: var(--text-faint); font-weight: 500;">All tasks up to date</span>
                 <span data-i18n="dash_view_all">View All →</span>
               </div>
@@ -1574,7 +1574,7 @@
                   <div id="stat-upcoming-reminders" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">0</div>
                 </div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #ef4444; font-weight: 700;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #ef4444; font-weight: 700;">
                 <span id="stat-sub-reminders" data-i18n="dash_no_reminders" style="color: var(--text-faint); font-weight: 500;">No pending alerts</span>
                 <span data-i18n="dash_view_alerts">View Alerts →</span>
               </div>
@@ -1589,7 +1589,7 @@
                   <div id="stat-low-stock" style="font-size: 2rem; font-weight: 800; line-height: 1.1; margin-top: 4px; color: var(--text-main);">0</div>
                 </div>
               </div>
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; pt-2; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #8b5cf6; font-weight: 700;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border-subtle); font-size: 0.75rem; color: #8b5cf6; font-weight: 700;">
                 <span id="stat-sub-stock" data-i18n="dash_stock_healthy" style="color: var(--text-faint); font-weight: 500;">Stock healthy</span>
                 <span data-i18n="dash_view_all">View All →</span>
               </div>
@@ -4693,11 +4693,11 @@
     // SYSTEM VERSION & SEAMLESS LIVE AUTO-UPDATE ENGINE
     // =========================================================================
     window.OSTAN_BUILD = {
-  "version": "1.0.66",
-  "commit": "10a1a42",
-  "buildTime": 1789656427352,
-  "releaseDate": "2026-09-17T14:47:07.352Z",
-  "message": "fix(warehouse): size cards to fit 5+ per row without becoming oversized"
+  "version": "1.0.67",
+  "commit": "59887b4",
+  "buildTime": 1789759247688,
+  "releaseDate": "2026-09-18T19:20:47.688Z",
+  "message": "fix(warehouse): dedicated 5-column responsive layout with width style"
 };
 
     let _ostanUpdateTriggered = false;
